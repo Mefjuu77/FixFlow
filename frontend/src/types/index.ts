@@ -18,7 +18,9 @@ export interface Ticket {
   status: 'NOWE' | 'W_TOKU' | 'ROZWIAZANE' | 'ZAMKNIETE';
   priority: 'NISKI' | 'NORMALNY' | 'WYSOKI';
   category: number;
+  category_name?: string;
   creator: number;
+  creator_details?: User;
   technician: number | null;
   created_at: string;
   updated_at: string;

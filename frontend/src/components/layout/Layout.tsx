@@ -16,7 +16,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   };
 
   const navItems = [
-    { name: 'Dashboard', path: '/dashboard', icon: <LayoutDashboard size={20} /> },
+    { name: 'Panel główny', path: '/dashboard', icon: <LayoutDashboard size={20} /> },
     { name: 'Zgłoszenia', path: '/tickets', icon: <Ticket size={20} /> },
     // Dostęp do panelu użytkowników i ustawień tylko dla Admina (można rozbudować później)
     ...(authContext?.user?.role === 'ADMIN' ? [
