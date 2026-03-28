@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import api from '../api/axiosConfig';
 import { Ticket } from '../types';
 import dayjs from 'dayjs';
@@ -15,7 +16,7 @@ const TicketsPage: React.FC = () => {
 
   const fetchTickets = async () => {
     try {
-      const response = await api.get('/tickets/');
+      const response = await api.get('tickets/');
       setTickets(response.data);
       setLoading(false);
     } catch (err) {
@@ -67,10 +68,13 @@ const TicketsPage: React.FC = () => {
       {/* Header & Actions */}
       <div className="flex flex-col items-center justify-between sm:flex-row">
         <h1 className="text-2xl font-bold text-gray-900">Lista zgłoszeń</h1>
-        <button className="flex items-center px-4 py-2 mt-4 text-white transition-colors bg-blue-600 rounded-lg sm:mt-0 hover:bg-blue-700">
+        <Link 
+          to="/create-ticket"
+          className="flex items-center px-4 py-2 mt-4 text-white transition-colors bg-blue-600 rounded-lg sm:mt-0 hover:bg-blue-700"
+        >
           <PlusCircle size={18} className="mr-2" />
           Nowe Zgłoszenie
-        </button>
+        </Link>
       </div>
 
       {/* Filters Bar */}
