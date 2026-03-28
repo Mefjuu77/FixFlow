@@ -4,8 +4,10 @@ import api from '../api/axiosConfig';
 import { Ticket } from '../types';
 import dayjs from 'dayjs';
 import { PlusCircle, Search, Filter } from 'lucide-react';
+import useTitle from '../hooks/useTitle';
 
 const TicketsPage: React.FC = () => {
+  useTitle('Zgłoszenia');
   const [tickets, setTickets] = useState<Ticket[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -132,7 +134,7 @@ const TicketsPage: React.FC = () => {
                       {dayjs(ticket.created_at).format('DD.MM.YYYY HH:mm')}
                     </td>
                     <td className="px-6 py-4 text-sm font-medium text-right whitespace-nowrap">
-                      <button className="text-blue-600 hover:text-blue-900">Podgląd</button>
+                      <Link to={`/tickets/${ticket.id}`} className="text-blue-600 hover:text-blue-900 font-bold transition-colors">Podgląd</Link>
                     </td>
                   </tr>
                 ))

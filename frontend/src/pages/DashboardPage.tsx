@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import dayjs from 'dayjs';
+import useTitle from '../hooks/useTitle';
 import relativeTime from 'dayjs/plugin/relativeTime';
 import 'dayjs/locale/pl';
 
@@ -22,6 +23,7 @@ dayjs.extend(relativeTime);
 dayjs.locale('pl');
 
 const DashboardPage: React.FC = () => {
+  useTitle('Panel główny');
   const authContext = useContext(AuthContext);
   const [tickets, setTickets] = useState<TicketType[]>([]);
   const [loading, setLoading] = useState(true);
@@ -90,7 +92,7 @@ const DashboardPage: React.FC = () => {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold text-gray-900 tracking-tight">
-            Witaj, {authContext?.user?.first_name || 'Użytkowniku'}! 👋
+            Witaj{authContext?.user?.first_name}! 👋
           </h1>
           <p className="mt-1 text-gray-500">Dzisiejsze podsumowanie:</p>
         </div>
@@ -120,9 +122,6 @@ const DashboardPage: React.FC = () => {
             <div className="flex items-center justify-between mb-4">
               <div className={`p-3 ${stat.bg} rounded-xl`}>
                 {stat.icon}
-              </div>
-              <div className="flex items-center text-green-600 text-xs font-bold bg-green-50 px-2 py-1 rounded-lg">
-                <TrendingUp className="w-3 h-3 mr-1" /> Stabilnie
               </div>
             </div>
             <p className="text-sm font-medium text-gray-500">{stat.label}</p>

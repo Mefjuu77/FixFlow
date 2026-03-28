@@ -3,8 +3,10 @@ import { useNavigate } from 'react-router-dom';
 import api from '../api/axiosConfig';
 import { AuthContext } from '../context/AuthContext';
 import { Lock, Mail, Wrench, ArrowRight, AlertCircle } from 'lucide-react';
+import useTitle from '../hooks/useTitle';
 
 const LoginPage: React.FC = () => {
+  useTitle('Logowanie');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -25,7 +27,11 @@ const LoginPage: React.FC = () => {
         navigate('/dashboard');
       }
     } catch (err: any) {
-      setError(err.response?.data?.detail || 'Niepoprawny email lub hasło. Spróbuj ponownie.');
+      if (err.response?.status === 401) {
+        setError('Błędny e-mail lub hasło.');
+      } else {
+        setError(err.response?.data?.detail || 'Wystąpił błąd logowania. Spróbuj ponownie.');
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -48,7 +54,6 @@ const LoginPage: React.FC = () => {
                 <Wrench className="w-8 h-8 text-blue-600" />
               </div>
               <h1 className="text-3xl font-extrabold tracking-tight text-gray-900">FixFlow</h1>
-              <p className="mt-2 text-sm text-gray-500 uppercase tracking-widest font-semibold">System Helpdesk</p>
             </div>
             
             {error && (
