@@ -7,7 +7,6 @@ import {
   ArrowLeft, 
   AlertCircle, 
   FileText, 
-  Flag, 
   Monitor, 
   Terminal, 
   Wifi, 
@@ -19,8 +18,10 @@ import {
   ChevronRight,
   ArrowDown
 } from 'lucide-react';
+import useTitle from '../hooks/useTitle';
 
 const CreateTicketPage: React.FC = () => {
+  useTitle('Nowe zgłoszenie');
   const [formData, setFormData] = useState<TicketPayload>({
     title: '',
     description: '',

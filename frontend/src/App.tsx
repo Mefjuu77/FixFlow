@@ -5,6 +5,7 @@ import LoginPage from './pages/LoginPage';
 import TicketsPage from './pages/TicketsPage';
 import DashboardPage from './pages/DashboardPage';
 import CreateTicketPage from './pages/CreateTicket';
+import TicketDetailsPage from './pages/TicketDetailsPage';
 import Layout from './components/layout/Layout';
 
 // Komponent chroniący ścieżki
@@ -35,6 +36,7 @@ const App: React.FC = () => {
           
           <Route path="/dashboard" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
           <Route path="/tickets" element={<ProtectedRoute><TicketsPage /></ProtectedRoute>} />
+          <Route path="/tickets/:id" element={<ProtectedRoute><TicketDetailsPage /></ProtectedRoute>} />
           <Route path="/create-ticket" element={<ProtectedRoute><CreateTicketPage /></ProtectedRoute>} />
           
           <Route path="/" element={<Navigate to="/dashboard" replace />} />
