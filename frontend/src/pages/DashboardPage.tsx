@@ -92,7 +92,7 @@ const DashboardPage: React.FC = () => {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold text-gray-900 tracking-tight">
-            Witaj{authContext?.user?.first_name}! 👋
+            Witaj {authContext?.user?.first_name}! 👋
           </h1>
           <p className="mt-1 text-gray-500">Dzisiejsze podsumowanie:</p>
         </div>

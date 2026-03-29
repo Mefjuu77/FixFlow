@@ -74,7 +74,7 @@ const LoginPage: React.FC = () => {
                     type="email"
                     required
                     className="w-full py-3 pl-12 pr-4 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all text-gray-900 placeholder-gray-400"
-                    placeholder="np. admin@fixflow.com"
+                    placeholder="test@fixflow.com"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                   />
