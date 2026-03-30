@@ -165,11 +165,6 @@ const TicketDetailsPage: React.FC = () => {
             </div>
           </div>
 
-          <div className="p-6 bg-blue-50 border border-blue-100 rounded-2xl">
-            <p className="text-xs text-blue-600 leading-relaxed font-medium">
-              Zgłoszenie jest widoczne dla pracowników działu IT oraz administratorów systemu. Wszystkie zmiany statusu są rejestrowane.
-            </p>
-          </div>
         </div>
       </div>
     </div>
