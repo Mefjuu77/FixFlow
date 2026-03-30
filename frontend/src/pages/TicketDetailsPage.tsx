@@ -3,14 +3,14 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { ticketService } from '../api/ticketService';
 import { Ticket } from '../types';
 import { AuthContext } from '../context/AuthContext';
-import { 
-  ArrowLeft, 
-  Clock, 
-  User, 
-  Tag, 
-  AlertCircle, 
-  CheckCircle2, 
-  PlayCircle, 
+import {
+  ArrowLeft,
+  Clock,
+  User,
+  Tag,
+  AlertCircle,
+  CheckCircle2,
+  PlayCircle,
   XCircle,
   Calendar,
   Wrench
@@ -77,13 +77,16 @@ const TicketDetailsPage: React.FC = () => {
                 <div className="flex items-center gap-3 mb-2">
                   <span className="text-sm font-bold text-gray-400 uppercase tracking-widest">Zgłoszenie #{ticket.id}</span>
                   <span className={`px-3 py-1 rounded-full text-xs font-bold border ${statusColors[ticket.status]}`}>
-                    {ticket.status}
+                    {ticket.status === 'W_TOKU' ? 'W toku' : 
+                     ticket.status === 'NOWE' ? 'Nowe' :
+                     ticket.status === 'ROZWIAZANE' ? 'Rozwiązane' :
+                     ticket.status === 'ZAMKNIETE' ? 'Zamknięte' : ticket.status}
                   </span>
                 </div>
                 <h1 className="text-3xl font-extrabold text-gray-900">{ticket.title}</h1>
               </div>
             </div>
-            
+
             <div className="p-8">
               <h3 className="text-sm font-bold text-gray-400 uppercase tracking-wider mb-4">Opis problemu</h3>
               <p className="text-gray-700 leading-relaxed whitespace-pre-wrap text-lg">
@@ -100,7 +103,7 @@ const TicketDetailsPage: React.FC = () => {
               </h3>
               <div className="flex flex-wrap gap-4">
                 {ticket.status === 'NOWE' && (
-                  <button 
+                  <button
                     onClick={() => handleStatusChange('W_TOKU')}
                     className="flex items-center px-6 py-3 bg-amber-500 text-white font-bold rounded-xl hover:bg-amber-600 transition-all shadow-lg shadow-amber-100"
                   >
@@ -108,7 +111,7 @@ const TicketDetailsPage: React.FC = () => {
                   </button>
                 )}
                 {(ticket.status === 'W_TOKU' || ticket.status === 'NOWE') && (
-                  <button 
+                  <button
                     onClick={() => handleStatusChange('ROZWIAZANE')}
                     className="flex items-center px-6 py-3 bg-green-600 text-white font-bold rounded-xl hover:bg-green-700 transition-all shadow-lg shadow-green-100"
                   >
@@ -116,7 +119,7 @@ const TicketDetailsPage: React.FC = () => {
                   </button>
                 )}
                 {ticket.status !== 'ZAMKNIETE' && (
-                  <button 
+                  <button
                     onClick={() => handleStatusChange('ZAMKNIETE')}
                     className="flex items-center px-6 py-3 bg-gray-800 text-white font-bold rounded-xl hover:bg-black transition-all shadow-lg shadow-gray-200"
                   >
@@ -132,7 +135,7 @@ const TicketDetailsPage: React.FC = () => {
         <div className="space-y-6">
           <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6 space-y-6">
             <h3 className="font-bold text-gray-900 border-b border-gray-50 pb-4">Informacje</h3>
-            
+
             <div className="space-y-4">
               <div className="flex items-center text-sm text-gray-600">
                 <User className="w-4 h-4 mr-3 text-gray-400" />
