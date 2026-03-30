@@ -49,20 +49,6 @@ const TicketsPage: React.FC = () => {
     );
   };
 
-  const getPriorityBadge = (priority: string) => {
-    const styles: Record<string, string> = {
-      NISKI: 'text-gray-600',
-      NORMALNY: 'text-blue-600',
-      WYSOKI: 'text-red-600 font-bold',
-    };
-    const labels: Record<string, string> = {
-      NISKI: 'Niski',
-      NORMALNY: 'Normalny',
-      WYSOKI: 'Wysoki',
-    };
-    return <span className={styles[priority] || ''}>{labels[priority] || priority}</span>;
-  };
-
   if (loading) return <div className="mt-10 text-center text-gray-500">Ładowanie zgłoszeń...</div>;
   if (error) return <div className="p-4 text-red-700 bg-red-100 rounded-md">{error}</div>;
 
@@ -108,10 +94,10 @@ const TicketsPage: React.FC = () => {
               <tr>
                 <th scope="col" className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase">ID</th>
                 <th scope="col" className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase">Tytuł</th>
+                <th scope="col" className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase">Osoba zgłaszająca</th>
+                <th scope="col" className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase">Osoba przypisana</th>
                 <th scope="col" className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase">Status</th>
-                <th scope="col" className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase">Priorytet</th>
                 <th scope="col" className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase">Utworzono</th>
-                <th scope="col" className="px-6 py-3 text-xs font-medium tracking-wider text-right text-gray-500 uppercase">Akcje</th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
@@ -126,21 +112,23 @@ const TicketsPage: React.FC = () => {
                   <tr key={ticket.id} className="transition-colors hover:bg-gray-50">
                     <td className="px-6 py-4 text-sm font-medium text-gray-900 whitespace-nowrap">#{ticket.id}</td>
                     <td className="px-6 py-4 text-sm text-gray-900">
-                      <Link to={`/tickets/${ticket.id}`} className="font-bold text-blue-600 hover:text-blue-800 hover:underline transition-colors">
+                      <Link to={`/tickets/${ticket.id}`} className="font-bold text-blue-600 hover:text-blue-800 hover:underline transition-colors drop-shadow-sm">
                         {ticket.title}
                       </Link>
+                    </td>
+                    <td className="px-6 py-4 text-sm text-gray-700 whitespace-nowrap font-medium">
+                      {ticket.creator_details ? `${ticket.creator_details.first_name} ${ticket.creator_details.last_name}` : 'Nieznany'}
+                    </td>
+                    <td className="px-6 py-4 text-sm whitespace-nowrap">
+                       {ticket.technician_details 
+                          ? <span className="text-gray-900 font-medium">{ticket.technician_details.first_name} {ticket.technician_details.last_name}</span> 
+                          : <span className="text-gray-400 italic">Nie przypisano</span>}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       {getStatusBadge(ticket.status)}
                     </td>
-                    <td className="px-6 py-4 text-sm whitespace-nowrap">
-                      {getPriorityBadge(ticket.priority)}
-                    </td>
-                    <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
+                    <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap font-medium">
                       {dayjs(ticket.created_at).format('DD.MM.YYYY HH:mm')}
-                    </td>
-                    <td className="px-6 py-4 text-sm font-medium text-right whitespace-nowrap">
-                      <Link to={`/tickets/${ticket.id}`} className="text-blue-600 hover:text-blue-900 font-bold transition-colors">Podgląd</Link>
                     </td>
                   </tr>
                 ))
