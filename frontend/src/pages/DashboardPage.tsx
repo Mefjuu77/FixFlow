@@ -145,7 +145,7 @@ const DashboardPage: React.FC = () => {
             </div>
           ) : (
             recentActivity.map((ticket) => (
-              <div key={ticket.id} className="p-6 flex items-start hover:bg-gray-50 transition-colors">
+              <Link to={`/tickets/${ticket.id}`} key={ticket.id} className="p-6 flex items-start hover:bg-gray-50 transition-colors block cursor-pointer">
                 <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0">
                   <TicketIcon className="w-5 h-5 text-blue-600" />
                 </div>
@@ -168,7 +168,7 @@ const DashboardPage: React.FC = () => {
                     {dayjs(ticket.updated_at).fromNow()}
                   </div>
                 </div>
-              </div>
+              </Link>
             ))
           )}
         </div>
