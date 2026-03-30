@@ -2,12 +2,12 @@ import React, { useContext, useEffect, useState } from 'react';
 import { AuthContext } from '../context/AuthContext';
 import api from '../api/axiosConfig';
 import { Ticket as TicketType } from '../types';
-import { 
-  ClipboardList, 
-  Clock, 
-  CheckCircle2, 
-  AlertCircle, 
-  Plus, 
+import {
+  ClipboardList,
+  Clock,
+  CheckCircle2,
+  AlertCircle,
+  Plus,
   ArrowUpRight,
   TrendingUp,
   Ticket as TicketIcon
@@ -43,31 +43,31 @@ const DashboardPage: React.FC = () => {
   }, []);
 
   const stats = [
-    { 
-      label: 'Wszystkie zgłoszenia', 
-      value: tickets.length, 
-      icon: <ClipboardList className="text-blue-600" />, 
+    {
+      label: 'Wszystkie zgłoszenia',
+      value: tickets.length,
+      icon: <ClipboardList className="text-blue-600" />,
       bg: 'bg-blue-50',
       border: 'border-blue-100'
     },
-    { 
-      label: 'Nowe', 
-      value: tickets.filter(t => t.status === 'NOWE').length, 
-      icon: <AlertCircle className="text-amber-600" />, 
+    {
+      label: 'Nowe',
+      value: tickets.filter(t => t.status === 'NOWE').length,
+      icon: <AlertCircle className="text-amber-600" />,
       bg: 'bg-amber-50',
       border: 'border-amber-100'
     },
-    { 
-      label: 'W toku', 
-      value: tickets.filter(t => t.status === 'W_TOKU').length, 
-      icon: <Clock className="text-indigo-600" />, 
+    {
+      label: 'W toku',
+      value: tickets.filter(t => t.status === 'W_TOKU').length,
+      icon: <Clock className="text-indigo-600" />,
       bg: 'bg-indigo-50',
       border: 'border-indigo-100'
     },
-    { 
-      label: 'Rozwiązane', 
-      value: tickets.filter(t => t.status === 'ROZWIAZANE' || t.status === 'ZAMKNIETE').length, 
-      icon: <CheckCircle2 className="text-green-600" />, 
+    {
+      label: 'Rozwiązane',
+      value: tickets.filter(t => t.status === 'ROZWIAZANE' || t.status === 'ZAMKNIETE').length,
+      icon: <CheckCircle2 className="text-green-600" />,
       bg: 'bg-green-50',
       border: 'border-green-100'
     },
@@ -92,18 +92,18 @@ const DashboardPage: React.FC = () => {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold text-gray-900 tracking-tight">
-            Witaj {authContext?.user?.first_name}! 👋
+            Witaj, {authContext?.user?.first_name}! 👋
           </h1>
           <p className="mt-1 text-gray-500">Dzisiejsze podsumowanie:</p>
         </div>
         <div className="flex gap-3">
-          <Link 
-            to="/tickets" 
+          <Link
+            to="/tickets"
             className="inline-flex items-center px-4 py-2 bg-white border border-gray-200 rounded-xl text-sm font-semibold text-gray-700 shadow-sm hover:bg-gray-50 transition-all"
           >
             Lista zgłoszeń
           </Link>
-          <Link 
+          <Link
             to="/create-ticket"
             className="inline-flex items-center px-4 py-2 bg-blue-600 rounded-xl text-sm font-bold text-white shadow-lg shadow-blue-200 hover:bg-blue-700 transition-all active:scale-95"
           >
@@ -115,8 +115,8 @@ const DashboardPage: React.FC = () => {
       {/* Siatka Statystyk */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
         {stats.map((stat, index) => (
-          <div 
-            key={index} 
+          <div
+            key={index}
             className={`p-6 bg-white border ${stat.border} rounded-2xl shadow-sm hover:shadow-md transition-shadow cursor-default`}
           >
             <div className="flex items-center justify-between mb-4">
@@ -152,17 +152,19 @@ const DashboardPage: React.FC = () => {
                 <div className="ml-4 flex-1">
                   <div className="flex items-center justify-between">
                     <p className="text-sm font-bold text-gray-900">Zgłoszenie #{ticket.id}: {ticket.title}</p>
-                    <span className={`px-2 py-1 text-[10px] font-bold rounded-lg uppercase ${
-                      ticket.status === 'NOWE' ? 'bg-blue-50 text-blue-700' :
+                    <span className={`px-2 py-1 text-[10px] font-bold rounded-lg uppercase ${ticket.status === 'NOWE' ? 'bg-blue-50 text-blue-700' :
                       ticket.status === 'W_TOKU' ? 'bg-amber-50 text-amber-700' :
-                      'bg-green-50 text-green-700'
-                    }`}>
-                      {ticket.status}
+                        'bg-green-50 text-green-700'
+                      }`}>
+                      {ticket.status === 'W_TOKU' ? 'W TOKU' : 
+                       ticket.status === 'NOWE' ? 'NOWE' :
+                       ticket.status === 'ROZWIAZANE' ? 'ROZWIĄZANE' :
+                       ticket.status === 'ZAMKNIETE' ? 'ZAMKNIĘTE' : ticket.status}
                     </span>
                   </div>
                   <p className="text-xs text-gray-500 mt-1 truncate max-w-2xl">{ticket.description}</p>
                   <div className="flex items-center mt-2 text-[10px] uppercase tracking-wider font-bold text-gray-400">
-                    <Clock className="w-3 h-3 mr-1" /> 
+                    <Clock className="w-3 h-3 mr-1" />
                     {dayjs(ticket.updated_at).fromNow()}
                   </div>
                 </div>
