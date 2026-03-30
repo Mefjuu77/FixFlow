@@ -65,7 +65,7 @@ const TicketDetailsPage: React.FC = () => {
   return (
     <div className="w-full pb-12 animate-in fade-in duration-500">
       <button onClick={() => navigate(-1)} className="flex items-center text-gray-500 hover:text-blue-600 font-semibold mb-6 transition-colors">
-        <ArrowLeft className="w-4 h-4 mr-1" /> Powrót do listy
+        <ArrowLeft className="w-4 h-4 mr-1" /> Wstecz
       </button>
 
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
