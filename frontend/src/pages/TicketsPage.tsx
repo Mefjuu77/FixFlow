@@ -9,6 +9,7 @@ import useTitle from '../hooks/useTitle';
 const TicketsPage: React.FC = () => {
   useTitle('Zgłoszenia');
   const [tickets, setTickets] = useState<Ticket[]>([]);
+  const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
@@ -65,6 +66,10 @@ const TicketsPage: React.FC = () => {
   if (loading) return <div className="mt-10 text-center text-gray-500">Ładowanie zgłoszeń...</div>;
   if (error) return <div className="p-4 text-red-700 bg-red-100 rounded-md">{error}</div>;
 
+  const filteredTickets = tickets.filter(ticket =>
+    ticket.title.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
   return (
     <div className="space-y-6">
       {/* Header & Actions */}
@@ -89,6 +94,8 @@ const TicketsPage: React.FC = () => {
             type="text"
             className="block w-full py-2 pl-10 pr-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
             placeholder="Szukaj po tytule..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
           />
         </div>
         <button className="flex items-center px-4 py-2 text-gray-700 transition-colors bg-gray-100 border border-gray-300 rounded-lg hover:bg-gray-200">
@@ -111,14 +118,14 @@ const TicketsPage: React.FC = () => {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {tickets.length === 0 ? (
+              {filteredTickets.length === 0 ? (
                 <tr>
                   <td colSpan={6} className="px-6 py-10 text-center text-gray-500">
-                    Brak zgłoszeń w systemie.
+                    Brak wyników do wyświetlenia.
                   </td>
                 </tr>
               ) : (
-                tickets.map((ticket) => (
+                filteredTickets.map((ticket) => (
                   <tr key={ticket.id} className="transition-colors hover:bg-gray-50">
                     <td className="px-6 py-4 text-sm font-medium text-gray-900 whitespace-nowrap">#{ticket.id}</td>
                     <td className="px-6 py-4 text-sm text-gray-900">
