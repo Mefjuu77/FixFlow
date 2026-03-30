@@ -122,7 +122,9 @@ const TicketsPage: React.FC = () => {
                   <tr key={ticket.id} className="transition-colors hover:bg-gray-50">
                     <td className="px-6 py-4 text-sm font-medium text-gray-900 whitespace-nowrap">#{ticket.id}</td>
                     <td className="px-6 py-4 text-sm text-gray-900">
-                      <div className="font-medium">{ticket.title}</div>
+                      <Link to={`/tickets/${ticket.id}`} className="font-bold text-blue-600 hover:text-blue-800 hover:underline transition-colors">
+                        {ticket.title}
+                      </Link>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       {getStatusBadge(ticket.status)}
