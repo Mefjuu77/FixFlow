@@ -105,7 +105,7 @@ const DashboardPage: React.FC = () => {
           </Link>
           <Link
             to="/create-ticket"
-            className="inline-flex items-center px-4 py-2 bg-blue-600 rounded-xl text-sm font-bold text-white shadow-lg shadow-blue-200 hover:bg-blue-700 transition-all active:scale-95"
+            className="inline-flex items-center px-4 py-2 bg-blue-600 rounded-xl text-sm font-bold text-white shadow-lg shadow-blue-200 hover:bg-blue-700 transition-all"
           >
             <Plus className="w-4 h-4 mr-2" /> Nowe zgłoszenie
           </Link>

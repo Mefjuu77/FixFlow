@@ -22,6 +22,7 @@ export interface Ticket {
   creator: number;
   creator_details?: User;
   technician: number | null;
+  technician_details?: User;
   created_at: string;
   updated_at: string;
 }
