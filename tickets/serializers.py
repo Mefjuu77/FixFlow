@@ -8,8 +8,9 @@ class CategorySerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 class TicketSerializer(serializers.ModelSerializer):
-    # Dodajemy szczegóły twórcy jako pole tylko do odczytu
+    # Dodajemy szczegóły twórcy oraz technika jako pole tylko do odczytu
     creator_details = UserSerializer(source='creator', read_only=True)
+    technician_details = UserSerializer(source='technician', read_only=True)
     category_name = serializers.ReadOnlyField(source='category.name')
 
     class Meta:
@@ -17,6 +18,6 @@ class TicketSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'title', 'description', 'status', 'priority', 
             'category', 'category_name', 'creator', 'creator_details', 
-            'technician', 'created_at', 'updated_at'
+            'technician', 'technician_details', 'created_at', 'updated_at'
         ]
         read_only_fields = ('creator', 'created_at', 'updated_at')

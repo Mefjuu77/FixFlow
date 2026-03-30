@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useContext, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ticketService } from '../api/ticketService';
-import { Ticket } from '../types';
+import { Ticket, User as UserType } from '../types';
 import { AuthContext } from '../context/AuthContext';
 import useTitle from '../hooks/useTitle';
 import {
@@ -42,6 +42,7 @@ const TicketDetailsPage: React.FC = () => {
   const [transitionCommentType, setTransitionCommentType] = useState<'reply' | 'internal'>('reply');
   const [transitionCommentText, setTransitionCommentText] = useState('');
   const [isSubmittingTransition, setIsSubmittingTransition] = useState(false);
+  const [availableTechnicians, setAvailableTechnicians] = useState<UserType[]>([]);
 
   const targetStatusLabel = transitionModalConfig.targetStatus === 'W_TOKU' ? 'W toku' : 
                             transitionModalConfig.targetStatus === 'NOWE' ? 'Nowe' :
@@ -68,7 +69,17 @@ const TicketDetailsPage: React.FC = () => {
 
   useEffect(() => {
     if (id) fetchTicket();
+    fetchTechnicians();
   }, [id]);
+
+  const fetchTechnicians = async () => {
+    try {
+      const techs = await ticketService.getTechnicians();
+      setAvailableTechnicians(techs);
+    } catch (err) {
+      console.error('Błąd pobierania techników:', err);
+    }
+  };
 
   const fetchTicket = async () => {
     try {
@@ -93,10 +104,11 @@ const TicketDetailsPage: React.FC = () => {
     if (!ticket || !transitionModalConfig.targetStatus) return;
     setIsSubmittingTransition(true);
     try {
-      const updates: Partial<Ticket> = { status: transitionModalConfig.targetStatus };
-      if (transitionAssignee !== null) {
-        updates.technician = transitionAssignee;
-      }
+      const updates: Partial<Ticket> = { 
+        status: transitionModalConfig.targetStatus,
+        technician: transitionAssignee
+      };
+      
       const updated = await ticketService.updateTicket(ticket.id, updates);
       setTicket(updated);
       setTransitionModalConfig({ isOpen: false, targetStatus: null });
@@ -342,9 +354,11 @@ const TicketDetailsPage: React.FC = () => {
                      className="w-full md:w-1/2 appearance-none bg-white border border-blue-500 rounded-md py-2 pl-10 pr-8 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm font-medium"
                    >
                      <option value="">Nie przypisano</option>
-                     {authContext?.user && (
-                       <option value={authContext.user.id}>{authContext.user.first_name} {authContext.user.last_name}</option>
-                     )}
+                     {availableTechnicians.map((tech) => (
+                       <option key={tech.id} value={tech.id}>
+                         {tech.first_name} {tech.last_name}
+                       </option>
+                     ))}
                    </select>
                    <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-gray-400">
                      <User className="w-4 h-4" />

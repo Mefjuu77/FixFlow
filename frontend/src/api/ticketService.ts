@@ -1,6 +1,6 @@
 import api from './axiosConfig';
 import { Category, TicketPayload } from '../types/ticket';
-import { Ticket } from '../types';
+import { Ticket, User } from '../types';
 
 export const ticketService = {
   getCategories: async (): Promise<Category[]> => {
@@ -10,6 +10,12 @@ export const ticketService = {
 
   createTicket: async (data: TicketPayload) => {
     const response = await api.post('tickets/', data);
+    return response.data;
+  },
+
+  // Pobranie listy wykwalifikowanych do zgłoszeń użytkowników
+  getTechnicians: async (): Promise<User[]> => {
+    const response = await api.get<User[]>('users/technicians/');
     return response.data;
   },
 
