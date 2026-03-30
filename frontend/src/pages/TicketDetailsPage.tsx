@@ -71,27 +71,61 @@ const TicketDetailsPage: React.FC = () => {
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
         {/* Lewa kolumna: Treść zgłoszenia */}
         <div className="lg:col-span-3 space-y-6">
-          <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
-            <div className="p-8 border-b border-gray-100 flex justify-between items-start">
-              <div>
-                <div className="flex items-center gap-3 mb-2">
-                  <span className="text-sm font-bold text-gray-400 uppercase tracking-widest">Zgłoszenie #{ticket.id}</span>
-                  <span className={`px-3 py-1 rounded-full text-xs font-bold border ${statusColors[ticket.status]}`}>
-                    {ticket.status === 'W_TOKU' ? 'W toku' : 
-                     ticket.status === 'NOWE' ? 'Nowe' :
-                     ticket.status === 'ROZWIAZANE' ? 'Rozwiązane' :
-                     ticket.status === 'ZAMKNIETE' ? 'Zamknięte' : ticket.status}
-                  </span>
+          <div className="flex items-center gap-3 mb-2">
+            <span className="text-sm font-semibold text-gray-500 hover:text-blue-600 hover:underline cursor-pointer transition-colors">Zgłoszenie #{ticket.id}</span>
+            <span className={`px-2 py-0.5 rounded-sm text-[10px] font-bold border uppercase tracking-wider ${statusColors[ticket.status]}`}>
+              {ticket.status === 'W_TOKU' ? 'W toku' : 
+               ticket.status === 'NOWE' ? 'Nowe' :
+               ticket.status === 'ROZWIAZANE' ? 'Rozwiązane' :
+               ticket.status === 'ZAMKNIETE' ? 'Zamknięte' : ticket.status}
+            </span>
+          </div>
+          <h1 className="text-2xl font-semibold text-gray-900 mb-6">{ticket.title}</h1>
+
+          <div className="bg-white rounded-sm border border-gray-200">
+            <div className="p-4 border-b border-gray-100 bg-white rounded-t-sm">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center flex-shrink-0">
+                  <User className="w-5 h-5 text-gray-500" />
                 </div>
-                <h1 className="text-3xl font-extrabold text-gray-900">{ticket.title}</h1>
+                <p className="text-sm text-gray-800">
+                  <span className="font-semibold">{ticket.creator_details?.first_name || 'Użytkownik'}</span> przesłał(a) zgłoszenie
+                </p>
               </div>
             </div>
 
-            <div className="p-8">
-              <h3 className="text-sm font-bold text-gray-400 uppercase tracking-wider mb-4">Opis problemu</h3>
-              <p className="text-gray-700 leading-relaxed whitespace-pre-wrap text-lg">
+            <div className="p-4">
+              <h3 className="text-sm font-semibold text-gray-800 mb-2">Opis</h3>
+              <p className="text-gray-700 leading-relaxed whitespace-pre-wrap text-sm">
                 {ticket.description}
               </p>
+            </div>
+          </div>
+
+          {/* Activity Section */}
+          <div className="mt-8">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">Aktywność</h3>
+            
+            <div className="flex border-b border-gray-200 mb-4 custom-scrollbar overflow-x-auto">
+              <button className="px-4 py-2 text-sm text-gray-600 hover:bg-gray-50 whitespace-nowrap">Logi</button>
+              <button className="px-4 py-2 text-sm text-blue-600 border-b-2 border-blue-600 bg-blue-50/50 font-medium whitespace-nowrap">Komentarze</button>
+              <button className="px-4 py-2 text-sm text-gray-600 hover:bg-gray-50 whitespace-nowrap">Historia</button>
+              <button className="px-4 py-2 text-sm text-gray-600 hover:bg-gray-50 whitespace-nowrap">Rejestr prac</button>
+              <button className="px-4 py-2 text-sm text-gray-600 hover:bg-gray-50 whitespace-nowrap">Zatwierdzenia</button>
+            </div>
+
+            <div className="flex gap-4 items-start mt-6">
+              <div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center flex-shrink-0 text-white font-bold text-xs uppercase">
+                {authContext?.user?.first_name ? authContext.user.first_name.charAt(0) : 'U'}
+              </div>
+              <div className="flex-1">
+                <div className="border border-gray-300 rounded-sm hover:border-gray-400 transition-colors p-3 bg-white cursor-text text-gray-500 text-sm">
+                  <span className="text-blue-600 font-medium">Dodaj notatkę wewnętrzną</span> <span className="mx-1">/</span> <span className="text-blue-600 font-medium">Odpowiedź klientowi</span>
+                </div>
+                <p className="text-xs text-gray-500 mt-2">
+                  <span className="font-semibold">Fachowa porada:</span> naciśnij <kbd className="px-1 py-0.5 border border-gray-200 rounded-sm bg-gray-50 text-[10px] items-center font-mono font-bold mx-1 text-gray-700">M</kbd>, aby skomentować
+                </p>
+              </div>
             </div>
           </div>
 
