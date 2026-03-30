@@ -63,14 +63,14 @@ const TicketDetailsPage: React.FC = () => {
   const isTechnicianOrAdmin = authContext?.user?.role === 'TECHNICIAN' || authContext?.user?.role === 'ADMIN';
 
   return (
-    <div className="max-w-5xl mx-auto pb-12 animate-in fade-in duration-500">
+    <div className="w-full pb-12 animate-in fade-in duration-500">
       <button onClick={() => navigate(-1)} className="flex items-center text-gray-500 hover:text-blue-600 font-semibold mb-6 transition-colors">
         <ArrowLeft className="w-4 h-4 mr-1" /> Powrót do listy
       </button>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
         {/* Lewa kolumna: Treść zgłoszenia */}
-        <div className="lg:col-span-2 space-y-6">
+        <div className="lg:col-span-3 space-y-6">
           <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
             <div className="p-8 border-b border-gray-100 flex justify-between items-start">
               <div>
