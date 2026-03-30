@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import api from '../api/axiosConfig';
 import { Ticket } from '../types';
 import dayjs from 'dayjs';
-import { PlusCircle, Search, Filter } from 'lucide-react';
+import { PlusCircle, Search } from 'lucide-react';
 import useTitle from '../hooks/useTitle';
 
 const TicketsPage: React.FC = () => {
@@ -85,22 +85,19 @@ const TicketsPage: React.FC = () => {
       </div>
 
       {/* Filters Bar */}
-      <div className="flex items-center p-4 space-x-4 bg-white border border-gray-200 shadow-sm rounded-xl">
-        <div className="relative flex-1">
+      <div className="flex items-center p-4 bg-white border border-gray-200 shadow-sm rounded-xl">
+        <div className="relative w-full max-w-sm">
           <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
             <Search size={18} className="text-gray-400" />
           </div>
           <input
             type="text"
-            className="block w-full py-2 pl-10 pr-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+            className="block w-full py-2 pl-10 pr-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 sm:text-sm transition-shadow"
             placeholder="Szukaj po tytule..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
         </div>
-        <button className="flex items-center px-4 py-2 text-gray-700 transition-colors bg-gray-100 border border-gray-300 rounded-lg hover:bg-gray-200">
-          <Filter size={18} className="mr-2" /> Filtruj
-        </button>
       </div>
 
       {/* Tickets Table */}
