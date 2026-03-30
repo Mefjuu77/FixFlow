@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { ticketService } from '../api/ticketService';
 import { Ticket } from '../types';
 import { AuthContext } from '../context/AuthContext';
+import useTitle from '../hooks/useTitle';
 import {
   ArrowLeft,
   User,
@@ -14,7 +15,17 @@ import {
   HelpCircle,
   AlertTriangle,
   Minus,
-  ArrowDown
+  ArrowDown,
+  X,
+  Bold,
+  Italic,
+  Underline,
+  Type,
+  Link as LinkIcon,
+  List,
+  ListOrdered,
+  Smile,
+  Plus
 } from 'lucide-react';
 
 const TicketDetailsPage: React.FC = () => {
@@ -26,6 +37,23 @@ const TicketDetailsPage: React.FC = () => {
   const navigate = useNavigate();
   const statusMenuRef = useRef<HTMLDivElement>(null);
   const [isStatusMenuOpen, setIsStatusMenuOpen] = useState(false);
+  const [transitionModalConfig, setTransitionModalConfig] = useState<{ isOpen: boolean; targetStatus: Ticket['status'] | null }>({ isOpen: false, targetStatus: null });
+  const [transitionAssignee, setTransitionAssignee] = useState<number | null>(null);
+  const [transitionCommentType, setTransitionCommentType] = useState<'reply' | 'internal'>('reply');
+  const [transitionCommentText, setTransitionCommentText] = useState('');
+  const [isSubmittingTransition, setIsSubmittingTransition] = useState(false);
+
+  const targetStatusLabel = transitionModalConfig.targetStatus === 'W_TOKU' ? 'W toku' : 
+                            transitionModalConfig.targetStatus === 'NOWE' ? 'Nowe' :
+                            transitionModalConfig.targetStatus === 'ROZWIAZANE' ? 'Rozwiązane' :
+                            transitionModalConfig.targetStatus === 'ZAMKNIETE' ? 'Zamknięte' : 
+                            transitionModalConfig.targetStatus;
+
+  const currentTitle = transitionModalConfig.isOpen && targetStatusLabel 
+    ? targetStatusLabel 
+    : (ticket ? `Zgłoszenie #${ticket.id}` : 'Szczegóły zgłoszenia');
+
+  useTitle(currentTitle);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -53,13 +81,29 @@ const TicketDetailsPage: React.FC = () => {
     }
   };
 
-  const handleStatusChange = async (newStatus: Ticket['status']) => {
-    if (!ticket) return;
+  const openTransitionModal = (newStatus: Ticket['status']) => {
+    setTransitionModalConfig({ isOpen: true, targetStatus: newStatus });
+    setTransitionAssignee(ticket?.technician || null);
+    setTransitionCommentType('reply');
+    setTransitionCommentText('');
+    setIsStatusMenuOpen(false);
+  };
+
+  const handleSubmitTransition = async () => {
+    if (!ticket || !transitionModalConfig.targetStatus) return;
+    setIsSubmittingTransition(true);
     try {
-      const updated = await ticketService.updateTicket(ticket.id, { status: newStatus });
+      const updates: Partial<Ticket> = { status: transitionModalConfig.targetStatus };
+      if (transitionAssignee !== null) {
+        updates.technician = transitionAssignee;
+      }
+      const updated = await ticketService.updateTicket(ticket.id, updates);
       setTicket(updated);
+      setTransitionModalConfig({ isOpen: false, targetStatus: null });
     } catch (err) {
-      alert('Błąd podczas zmiany statusu.');
+      alert('Błąd podczas aktualizacji zgłoszenia.');
+    } finally {
+      setIsSubmittingTransition(false);
     }
   };
 
@@ -168,25 +212,25 @@ const TicketDetailsPage: React.FC = () => {
                 {isStatusMenuOpen && (
                   <div className="absolute left-0 z-50 w-48 mt-2 bg-white border border-gray-100 rounded-xl shadow-xl py-2 animate-in fade-in zoom-in-95 duration-100">
                     <button
-                      onClick={() => { handleStatusChange('NOWE'); setIsStatusMenuOpen(false); }}
+                      onClick={() => openTransitionModal('NOWE')}
                       className="w-full text-left px-4 py-2.5 hover:bg-blue-50 text-gray-700 hover:text-blue-700 transition-colors text-sm font-medium"
                     >
                       Nowe
                     </button>
                     <button
-                      onClick={() => { handleStatusChange('W_TOKU'); setIsStatusMenuOpen(false); }}
+                      onClick={() => openTransitionModal('W_TOKU')}
                       className="w-full text-left px-4 py-2.5 hover:bg-blue-50 text-gray-700 hover:text-blue-700 transition-colors text-sm font-medium"
                     >
                       W toku
                     </button>
                     <button
-                      onClick={() => { handleStatusChange('ROZWIAZANE'); setIsStatusMenuOpen(false); }}
+                      onClick={() => openTransitionModal('ROZWIAZANE')}
                       className="w-full text-left px-4 py-2.5 hover:bg-blue-50 text-gray-700 hover:text-blue-700 transition-colors text-sm font-medium"
                     >
                       Rozwiązane
                     </button>
                     <button
-                      onClick={() => { handleStatusChange('ZAMKNIETE'); setIsStatusMenuOpen(false); }}
+                      onClick={() => openTransitionModal('ZAMKNIETE')}
                       className="w-full text-left px-4 py-2.5 hover:bg-red-50 text-gray-700 hover:text-red-700 transition-colors text-sm font-medium"
                     >
                       Zamknięte
@@ -267,6 +311,138 @@ const TicketDetailsPage: React.FC = () => {
 
         </div>
       </div>
+
+      {/* Modal Zmiany Statusu */}
+      {transitionModalConfig.isOpen && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 animate-in fade-in duration-200">
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl mx-4 overflow-hidden flex flex-col max-h-[90vh]">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+              <h2 className="text-xl font-semibold text-gray-900">
+                {transitionModalConfig.targetStatus === 'W_TOKU' ? 'W toku' : 
+                 transitionModalConfig.targetStatus === 'NOWE' ? 'Nowe' :
+                 transitionModalConfig.targetStatus === 'ROZWIAZANE' ? 'Rozwiązane' :
+                 transitionModalConfig.targetStatus === 'ZAMKNIETE' ? 'Zamknięte' : transitionModalConfig.targetStatus}
+              </h2>
+              <button 
+                onClick={() => setTransitionModalConfig({ isOpen: false, targetStatus: null })}
+                className="text-gray-400 hover:text-gray-600 transition-colors p-1"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            
+            <div className="p-6 overflow-y-auto space-y-6">
+              {/* Sekcja: Osoba przypisana */}
+              <div>
+                 <label className="block text-sm font-semibold text-gray-700 mb-1.5">Osoba przypisana</label>
+                 <div className="relative">
+                   <select 
+                     value={transitionAssignee || ''} 
+                     onChange={(e) => setTransitionAssignee(e.target.value ? Number(e.target.value) : null)}
+                     className="w-full md:w-1/2 appearance-none bg-white border border-blue-500 rounded-md py-2 pl-10 pr-8 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm font-medium"
+                   >
+                     <option value="">Nie przypisano</option>
+                     {authContext?.user && (
+                       <option value={authContext.user.id}>{authContext.user.first_name} {authContext.user.last_name}</option>
+                     )}
+                   </select>
+                   <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-gray-400">
+                     <User className="w-4 h-4" />
+                   </div>
+                   <div className="absolute inset-y-0 right-0 md:right-1/2 flex items-center pr-2 pointer-events-none text-gray-500">
+                     <ChevronDown className="w-4 h-4" />
+                   </div>
+                 </div>
+                 {authContext?.user && transitionAssignee !== authContext.user.id && (
+                   <button 
+                     onClick={() => setTransitionAssignee(authContext.user!.id)}
+                     className="text-blue-600 hover:underline text-sm font-medium mt-1.5 inline-block"
+                   >
+                     Przypisz do mnie
+                   </button>
+                 )}
+              </div>
+
+              {/* Sekcja: Komentarz */}
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">Komentarz</label>
+                
+                {/* Tabs */}
+                <div className="flex border-b border-gray-200">
+                  <button 
+                    onClick={() => setTransitionCommentType('reply')}
+                    className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${transitionCommentType === 'reply' ? 'border-gray-800 text-gray-900 bg-white' : 'border-transparent text-gray-500 bg-gray-50/50 hover:bg-gray-50'}`}
+                  >
+                    Odpowiedź klientowi
+                  </button>
+                  <button 
+                    onClick={() => setTransitionCommentType('internal')}
+                    className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${transitionCommentType === 'internal' ? 'border-gray-800 text-gray-900 bg-white' : 'border-transparent text-gray-500 bg-gray-50/50 hover:bg-gray-50'}`}
+                  >
+                    Dodaj komentarz wewnętrzny
+                  </button>
+                </div>
+
+                <div className="mt-4">
+                  {transitionCommentType === 'internal' && (
+                    <div className="flex items-center gap-1.5 text-xs text-amber-700 bg-amber-50 px-3 py-2 rounded-md mb-2">
+                       <Lock className="w-3.5 h-3.5" />
+                       <span className="font-medium">Twoje komentarze nie będą widoczne dla klientów w portalu.</span>
+                    </div>
+                  )}
+                  
+                  {/* Edytor tekstowy - Atrappa */}
+                  <div className={`border rounded-md bg-white overflow-hidden transition-colors ${transitionCommentType === 'internal' ? 'border-amber-200 shadow-sm shadow-amber-50' : 'border-gray-200'}`}>
+                    {/* Toolbar */}
+                    <div className="flex items-center gap-1 p-1 border-b border-gray-200 bg-gray-50/50 text-gray-500">
+                      <button className="p-1.5 hover:bg-gray-200 rounded text-sm flex items-center gap-1 font-medium">Styl <ChevronDown className="w-3 h-3"/></button>
+                      <div className="w-px h-4 bg-gray-300 mx-1"></div>
+                      <button className="p-1.5 hover:bg-gray-200 rounded"><Bold className="w-4 h-4" /></button>
+                      <button className="p-1.5 hover:bg-gray-200 rounded"><Italic className="w-4 h-4" /></button>
+                      <button className="p-1.5 hover:bg-gray-200 rounded"><Underline className="w-4 h-4" /></button>
+                      <button className="p-1.5 hover:bg-gray-200 rounded flex items-center"><Type className="w-4 h-4 text-gray-700"/><ChevronDown className="w-3 h-3 ml-0.5"/></button>
+                      <div className="w-px h-4 bg-gray-300 mx-1"></div>
+                      <button className="p-1.5 hover:bg-gray-200 rounded flex items-center"><LinkIcon className="w-4 h-4"/><ChevronDown className="w-3 h-3 ml-0.5"/></button>
+                      <div className="w-px h-4 bg-gray-300 mx-1"></div>
+                      <button className="p-1.5 hover:bg-gray-200 rounded"><List className="w-4 h-4" /></button>
+                      <button className="p-1.5 hover:bg-gray-200 rounded"><ListOrdered className="w-4 h-4" /></button>
+                      <div className="w-px h-4 bg-gray-300 mx-1"></div>
+                      <button className="p-1.5 hover:bg-gray-200 rounded flex items-center"><Smile className="w-4 h-4"/><ChevronDown className="w-3 h-3 ml-0.5"/></button>
+                      <button className="p-1.5 hover:bg-gray-200 rounded flex items-center"><Plus className="w-4 h-4"/><ChevronDown className="w-3 h-3 ml-0.5"/></button>
+                    </div>
+                    <textarea 
+                      value={transitionCommentText}
+                      onChange={(e) => setTransitionCommentText(e.target.value)}
+                      className={`w-full p-3 min-h-[120px] focus:outline-none resize-y text-sm ${transitionCommentType === 'internal' ? 'bg-amber-50/10' : ''}`}
+                      placeholder={transitionCommentType === 'internal' ? "Dodaj notatkę wewnętrzną..." : "Odpowiedz klientowi..."}
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="px-6 py-4 bg-gray-50 border-t border-gray-100 flex items-center justify-end gap-3 rounded-b-xl">
+              <button 
+                onClick={() => setTransitionModalConfig({ isOpen: false, targetStatus: null })}
+                className="px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-800 transition-colors"
+                disabled={isSubmittingTransition}
+              >
+                Anuluj
+              </button>
+              <button 
+                onClick={handleSubmitTransition}
+                disabled={isSubmittingTransition}
+                className="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold rounded-md shadow-sm transition-all disabled:opacity-70 flex items-center"
+              >
+                {transitionModalConfig.targetStatus === 'W_TOKU' ? 'W toku' : 
+                 transitionModalConfig.targetStatus === 'NOWE' ? 'Nowe' :
+                 transitionModalConfig.targetStatus === 'ROZWIAZANE' ? 'Rozwiązane' :
+                 transitionModalConfig.targetStatus === 'ZAMKNIETE' ? 'Zamknięte' : transitionModalConfig.targetStatus}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
