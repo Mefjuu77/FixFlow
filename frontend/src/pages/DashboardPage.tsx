@@ -114,6 +114,103 @@ const DashboardPage: React.FC = () => {
     );
   }
 
+  if (isEmployee) {
+    const activeTickets = tickets.filter(t => ['NOWE', 'W_TOKU'].includes(t.status));
+    const resolvedTickets = tickets.filter(t => ['ROZWIAZANE', 'ZAMKNIETE'].includes(t.status));
+
+    return (
+      <div className="w-full space-y-8 animate-in fade-in duration-500">
+        {/* Baner CTA */}
+        <div className="bg-gradient-to-r from-blue-600 to-indigo-700 rounded-3xl p-8 md:p-10 text-white shadow-xl shadow-blue-900/10 flex flex-col md:flex-row items-center justify-between gap-6 overflow-hidden relative">
+           <div className="absolute top-0 right-0 -mt-10 -mr-10 w-40 h-40 bg-white/10 blur-3xl rounded-full pointer-events-none"></div>
+           <div className="relative z-10 text-center md:text-left">
+             <h1 className="text-3xl md:text-4xl font-extrabold mb-3 tracking-tight">Cześć, {authContext?.user?.first_name}! 👋</h1>
+             <p className="text-blue-100 text-lg max-w-lg font-medium">Potrzebujesz pomocy IT, wsparcia technicznego lub coś nie działa poprawnie?</p>
+           </div>
+           <div className="relative z-10">
+             <Link
+               to="/create-ticket"
+               className="px-6 py-3.5 bg-white text-blue-700 font-extrabold rounded-xl shadow-lg hover:bg-gray-50 flex items-center whitespace-nowrap"
+             >
+               <Plus className="w-5 h-5 mr-2" />
+               Utwórz nowe zgłoszenie
+             </Link>
+           </div>
+        </div>
+
+        <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
+          {/* Aktywne Zgłoszenia */}
+          <div className="xl:col-span-2 space-y-4">
+            <h2 className="text-xl font-bold text-gray-900 flex items-center">
+              <Clock className="w-5 h-5 text-blue-600 mr-2" /> Twoje aktywne zgłoszenia
+            </h2>
+            <div className="bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden">
+               {activeTickets.length === 0 ? (
+                 <div className="p-12 pl-10 text-center flex flex-col items-center">
+                   <div className="w-16 h-16 bg-green-50 rounded-full flex items-center justify-center mb-4 text-green-600">
+                     <CheckCircle2 className="w-8 h-8" />
+                   </div>
+                   <h3 className="text-lg font-bold text-gray-900">Brak otwartych spraw</h3>
+                   <p className="text-sm text-gray-500 mt-1 max-w-sm">Wygląda na to, że wszystko działa bez zarzutu. Jeśli pojawią się problemy, użyj przycisku u góry.</p>
+                 </div>
+               ) : (
+                 <div className="divide-y divide-gray-50">
+                    {activeTickets.map(ticket => (
+                      <Link to={`/tickets/${ticket.id}`} key={ticket.id} className="p-6 flex items-start hover:bg-gray-50 transition-colors block group cursor-pointer">
+                         <div className="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center flex-shrink-0 group-hover:bg-blue-100 transition-colors">
+                           <TicketIcon className="w-5 h-5 text-blue-600" />
+                         </div>
+                         <div className="ml-4 flex-1">
+                           <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-1 gap-2">
+                             <h3 className="font-bold text-gray-900 group-hover:text-blue-600 transition-colors">{ticket.title}</h3>
+                             <span className={`px-2.5 py-1 text-[10px] font-bold rounded-lg uppercase whitespace-nowrap self-start sm:self-auto ${ticket.status === 'W_TOKU' ? 'bg-amber-100 text-amber-700' : 'bg-blue-100 text-blue-700'}`}>
+                               {ticket.status === 'W_TOKU' ? 'W TOKU' : 'NOWE'}
+                             </span>
+                           </div>
+                           <p className="text-sm text-gray-500 line-clamp-2 max-w-2xl">{ticket.description}</p>
+                           <div className="flex items-center text-xs font-medium text-gray-400 mt-3">
+                             Aktualizacja: {dayjs(ticket.updated_at).fromNow()}
+                           </div>
+                         </div>
+                      </Link>
+                    ))}
+                 </div>
+               )}
+            </div>
+          </div>
+          
+          {/* Ostatnio Rozwiązane */}
+          <div className="space-y-4">
+             <div className="flex items-center justify-between">
+               <h2 className="text-xl font-bold text-gray-900 flex items-center">
+                 <CheckCircle2 className="w-5 h-5 text-green-600 mr-2" /> Ostatnio zamknięte
+               </h2>
+               <Link to="/tickets" className="text-xs font-bold text-blue-600 hover:text-blue-800 transition-colors">
+                 Wszystkie
+               </Link>
+             </div>
+             
+             <div className="bg-white border border-gray-200 rounded-2xl shadow-sm p-5 space-y-3">
+               {resolvedTickets.length === 0 ? (
+                 <p className="text-sm text-gray-500 italic text-center py-6">Brak w historii.</p>
+               ) : (
+                 resolvedTickets.slice(0, 5).map(ticket => (
+                   <Link to={`/tickets/${ticket.id}`} key={ticket.id} className="block p-4 border border-gray-100 bg-gray-50/50 rounded-xl hover:border-blue-200 hover:bg-blue-50/30 hover:shadow-sm transition-all group">
+                     <p className="text-sm font-semibold text-gray-800 truncate mb-1 group-hover:text-blue-700 transition-colors">{ticket.title}</p>
+                     <div className="flex items-center justify-between">
+                       <p className="text-[11px] text-green-600 font-bold uppercase tracking-wider">{ticket.status === 'ROZWIAZANE' ? 'Rozwiązane' : 'Zamknięte'}</p>
+                       <p className="text-[10px] text-gray-400">{dayjs(ticket.updated_at).format('DD.MM.YYYY')}</p>
+                     </div>
+                   </Link>
+                 ))
+               )}
+             </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="w-full space-y-8 animate-in fade-in duration-500">
       {/* Powitanie */}
@@ -123,7 +220,7 @@ const DashboardPage: React.FC = () => {
             Witaj, {authContext?.user?.first_name}! 👋
           </h1>
           <p className="mt-1 text-gray-500">
-            {isEmployee ? 'Twoje aktywne zgłoszenia:' : 'Przegląd wszystkich zgłoszeń:'}
+            Przegląd wszystkich zgłoszeń:
           </p>
         </div>
         <div className="flex gap-3">
