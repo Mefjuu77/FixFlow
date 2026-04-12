@@ -76,7 +76,7 @@ const TicketsPage: React.FC = () => {
         <h1 className="text-2xl font-bold text-gray-900">
           {isEmployee ? 'Moje zgłoszenia' : 'Wszystkie zgłoszenia'}
         </h1>
-        <Link 
+        <Link
           to="/create-ticket"
           className="flex items-center px-4 py-2 mt-4 text-white transition-colors bg-blue-600 rounded-lg sm:mt-0 hover:bg-blue-700"
         >
@@ -102,21 +102,21 @@ const TicketsPage: React.FC = () => {
 
         {!isEmployee && (
           <div className="flex border border-gray-200 rounded-lg overflow-hidden bg-gray-50">
-            <button 
+            <button
               onClick={() => setFilterMode('all')}
               className={`px-4 py-2 text-sm font-medium transition-colors ${filterMode === 'all' ? 'bg-blue-600 text-white' : 'text-gray-600 hover:bg-gray-100'}`}
             >
               Wszystkie
             </button>
             <div className="w-px bg-gray-200"></div>
-            <button 
+            <button
               onClick={() => setFilterMode('assigned_to_me')}
               className={`px-4 py-2 text-sm font-medium transition-colors ${filterMode === 'assigned_to_me' ? 'bg-blue-600 text-white' : 'text-gray-600 hover:bg-gray-100'}`}
             >
               Przypisane do mnie
             </button>
             <div className="w-px bg-gray-200"></div>
-            <button 
+            <button
               onClick={() => setFilterMode('unassigned')}
               className={`px-4 py-2 text-sm font-medium transition-colors ${filterMode === 'unassigned' ? 'bg-blue-600 text-white' : 'text-gray-600 hover:bg-gray-100'}`}
             >
@@ -162,9 +162,9 @@ const TicketsPage: React.FC = () => {
                       </td>
                     )}
                     <td className="px-6 py-4 text-sm whitespace-nowrap">
-                       {ticket.technician_details 
-                          ? <span className="text-gray-900 font-medium">{ticket.technician_details.first_name} {ticket.technician_details.last_name}</span> 
-                          : <span className="text-gray-400 italic">Nie przypisano</span>}
+                      {ticket.technician_details
+                        ? <span className="text-gray-900 font-medium">{ticket.technician_details.first_name} {ticket.technician_details.last_name}</span>
+                        : <span className="text-gray-400 italic">Nie przypisano</span>}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       {getStatusBadge(ticket.status)}

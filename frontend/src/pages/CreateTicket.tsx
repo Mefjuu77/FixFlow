@@ -31,6 +31,7 @@ const CreateTicketPage: React.FC = () => {
   
   const [categories, setCategories] = useState<Category[]>([]);
   const [error, setError] = useState('');
+  const [fieldErrors, setFieldErrors] = useState<{ title?: string; description?: string }>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [activeDropdown, setActiveDropdown] = useState<'category' | 'priority' | null>(null);
   
@@ -90,19 +91,68 @@ const CreateTicketPage: React.FC = () => {
     { value: 'WYSOKI', label: 'Wysoki', icon: <AlertTriangle className="w-4 h-4 text-red-500" />, color: 'text-red-600' },
   ];
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const validateForm = (): boolean => {
+    const errors: { title?: string; description?: string } = {};
+    const trimmedTitle = formData.title.trim();
+    const trimmedDescription = formData.description.trim();
+
+    if (!trimmedTitle) {
+      errors.title = 'Tytuł jest wymagany.';
+    } else if (trimmedTitle.length < 5) {
+      errors.title = `Tytuł musi mieć co najmniej 5 znaków (obecnie ${trimmedTitle.length}).`;
+    } else if (trimmedTitle.length > 200) {
+      errors.title = `Tytuł nie może przekraczać 200 znaków (obecnie ${trimmedTitle.length}).`;
+    }
+
+    if (!trimmedDescription) {
+      errors.description = 'Opis jest wymagany.';
+    } else if (trimmedDescription.length < 10) {
+      errors.description = `Opis musi mieć co najmniej 10 znaków (obecnie ${trimmedDescription.length}).`;
+    }
+
     if (formData.category === 0) {
       setError('Proszę wybrać kategorię.');
-      return;
+      setFieldErrors(errors);
+      return false;
     }
+
+    setFieldErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
     setError('');
+
+    if (!validateForm()) return;
+
+    // Trimujemy dane przed wysłaniem
+    const payload: TicketPayload = {
+      ...formData,
+      title: formData.title.trim(),
+      description: formData.description.trim(),
+    };
+
     setIsSubmitting(true);
     try {
-      await ticketService.createTicket(formData);
+      await ticketService.createTicket(payload);
       navigate('/tickets');
     } catch (err: any) {
-      setError('Nie udało się utworzyć zgłoszenia.');
+      // Próba odczytania błędów walidacji z backendu
+      if (err?.response?.data) {
+        const data = err.response.data;
+        const backendErrors: { title?: string; description?: string } = {};
+        if (data.title) backendErrors.title = Array.isArray(data.title) ? data.title[0] : data.title;
+        if (data.description) backendErrors.description = Array.isArray(data.description) ? data.description[0] : data.description;
+        
+        if (Object.keys(backendErrors).length > 0) {
+          setFieldErrors(backendErrors);
+        } else {
+          setError('Nie udało się utworzyć zgłoszenia.');
+        }
+      } else {
+        setError('Nie udało się utworzyć zgłoszenia.');
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -126,24 +176,36 @@ const CreateTicketPage: React.FC = () => {
         <form onSubmit={handleSubmit} className="p-8 space-y-8">
           {error && (
             <div className="flex items-center p-4 bg-red-50 border border-red-100 rounded-xl text-red-700 text-sm">
-              <AlertCircle className="w-5 h-5 mr-3" /> {error}
+              <AlertCircle className="w-5 h-5 mr-3 flex-shrink-0" /> {error}
             </div>
           )}
 
           {/* Tytuł */}
           <div className="space-y-2">
-            <label className="text-sm font-bold text-gray-700 ml-1">Tytuł zgłoszenia</label>
+            <div className="flex items-center justify-between">
+              <label className="text-sm font-bold text-gray-700 ml-1">Tytuł zgłoszenia</label>
+              <span className={`text-xs font-medium ${formData.title.trim().length > 200 ? 'text-red-500' : 'text-gray-400'}`}>
+                {formData.title.trim().length} / 200
+              </span>
+            </div>
             <div className="relative group">
               <FileText className="absolute left-4 top-3.5 w-5 h-5 text-gray-400 group-focus-within:text-blue-500 transition-colors" />
               <input
                 type="text"
-                required
-                className="w-full pl-12 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:bg-white outline-none transition-all"
-                placeholder="Co się stało?"
+                className={`w-full pl-12 pr-4 py-3 bg-gray-50 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:bg-white outline-none transition-all ${fieldErrors.title ? 'border-red-300 bg-red-50/50' : 'border-gray-200'}`}
+                placeholder="Co się stało? (min. 5 znaków)"
                 value={formData.title}
-                onChange={(e) => setFormData({...formData, title: e.target.value})}
+                onChange={(e) => {
+                  setFormData({...formData, title: e.target.value});
+                  if (fieldErrors.title) setFieldErrors(prev => ({ ...prev, title: undefined }));
+                }}
               />
             </div>
+            {fieldErrors.title && (
+              <p className="text-xs text-red-600 font-medium ml-1 flex items-center">
+                <AlertCircle className="w-3 h-3 mr-1" /> {fieldErrors.title}
+              </p>
+            )}
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6" ref={dropdownRef}>
@@ -222,15 +284,27 @@ const CreateTicketPage: React.FC = () => {
 
           {/* Opis */}
           <div className="space-y-2">
-            <label className="text-sm font-bold text-gray-700 ml-1">Opis problemu</label>
+            <div className="flex items-center justify-between">
+              <label className="text-sm font-bold text-gray-700 ml-1">Opis problemu</label>
+              <span className={`text-xs font-medium ${formData.description.trim().length > 0 && formData.description.trim().length < 10 ? 'text-red-500' : 'text-gray-400'}`}>
+                {formData.description.trim().length} znaków
+              </span>
+            </div>
             <textarea
-              required
               rows={5}
-              className="w-full p-4 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:bg-white outline-none transition-all text-gray-900 resize-none"
-              placeholder="Podaj jak najwięcej szczegółów..."
+              className={`w-full p-4 bg-gray-50 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:bg-white outline-none transition-all text-gray-900 resize-none ${fieldErrors.description ? 'border-red-300 bg-red-50/50' : 'border-gray-200'}`}
+              placeholder="Podaj jak najwięcej szczegółów... (min. 10 znaków)"
               value={formData.description}
-              onChange={(e) => setFormData({...formData, description: e.target.value})}
+              onChange={(e) => {
+                setFormData({...formData, description: e.target.value});
+                if (fieldErrors.description) setFieldErrors(prev => ({ ...prev, description: undefined }));
+              }}
             />
+            {fieldErrors.description && (
+              <p className="text-xs text-red-600 font-medium ml-1 flex items-center">
+                <AlertCircle className="w-3 h-3 mr-1" /> {fieldErrors.description}
+              </p>
+            )}
           </div>
 
           <button
