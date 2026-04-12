@@ -42,35 +42,63 @@ const DashboardPage: React.FC = () => {
     fetchStats();
   }, []);
 
+  const isEmployee = authContext?.user?.role === 'EMPLOYEE';
+
   const stats = [
     {
-      label: 'Wszystkie zgłoszenia',
+      label: isEmployee ? 'Moje zgłoszenia' : 'Wszystkie zgłoszenia',
       value: tickets.length,
       icon: <ClipboardList className="text-blue-600" />,
       bg: 'bg-blue-50',
       border: 'border-blue-100'
     },
-    {
-      label: 'Nowe',
-      value: tickets.filter(t => t.status === 'NOWE').length,
-      icon: <AlertCircle className="text-amber-600" />,
-      bg: 'bg-amber-50',
-      border: 'border-amber-100'
-    },
-    {
-      label: 'W toku',
-      value: tickets.filter(t => t.status === 'W_TOKU').length,
-      icon: <Clock className="text-indigo-600" />,
-      bg: 'bg-indigo-50',
-      border: 'border-indigo-100'
-    },
-    {
-      label: 'Rozwiązane',
-      value: tickets.filter(t => t.status === 'ROZWIAZANE' || t.status === 'ZAMKNIETE').length,
-      icon: <CheckCircle2 className="text-green-600" />,
-      bg: 'bg-green-50',
-      border: 'border-green-100'
-    },
+    ...(isEmployee 
+      ? [
+          {
+            label: 'Nowe',
+            value: tickets.filter(t => t.status === 'NOWE').length,
+            icon: <AlertCircle className="text-amber-600" />,
+            bg: 'bg-amber-50',
+            border: 'border-amber-100'
+          },
+          {
+            label: 'W toku',
+            value: tickets.filter(t => t.status === 'W_TOKU').length,
+            icon: <Clock className="text-indigo-600" />,
+            bg: 'bg-indigo-50',
+            border: 'border-indigo-100'
+          },
+          {
+            label: 'Rozwiązane',
+            value: tickets.filter(t => t.status === 'ROZWIAZANE' || t.status === 'ZAMKNIETE').length,
+            icon: <CheckCircle2 className="text-green-600" />,
+            bg: 'bg-green-50',
+            border: 'border-green-100'
+          }
+        ]
+      : [
+          {
+            label: 'Przypisane do mnie',
+            value: tickets.filter(t => t.technician === authContext?.user?.id).length,
+            icon: <ClipboardList className="text-amber-600" />,
+            bg: 'bg-amber-50',
+            border: 'border-amber-100'
+          },
+          {
+            label: 'Nieprzypisane (Nowe)',
+            value: tickets.filter(t => t.technician === null).length,
+            icon: <AlertCircle className="text-indigo-600" />,
+            bg: 'bg-indigo-50',
+            border: 'border-indigo-100'
+          },
+          {
+            label: 'Rozwiązane',
+            value: tickets.filter(t => t.status === 'ROZWIAZANE' || t.status === 'ZAMKNIETE').length,
+            icon: <CheckCircle2 className="text-green-600" />,
+            bg: 'bg-green-50',
+            border: 'border-green-100'
+          }
+        ])
   ];
 
   // Pobranie 5 najnowszych aktywności (posortowane po dacie utworzenia/aktualizacji)
@@ -94,7 +122,9 @@ const DashboardPage: React.FC = () => {
           <h1 className="text-3xl font-bold text-gray-900 tracking-tight">
             Witaj, {authContext?.user?.first_name}! 👋
           </h1>
-          <p className="mt-1 text-gray-500">Dzisiejsze podsumowanie:</p>
+          <p className="mt-1 text-gray-500">
+            {isEmployee ? 'Twoje aktywne zgłoszenia:' : 'Przegląd wszystkich zgłoszeń:'}
+          </p>
         </div>
         <div className="flex gap-3">
           <Link

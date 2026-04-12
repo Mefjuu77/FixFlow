@@ -13,6 +13,12 @@ class TicketViewSet(viewsets.ModelViewSet):
     serializer_class = TicketSerializer
     permission_classes = [IsAuthenticated]
 
+    def get_queryset(self):
+        user = self.request.user
+        if user.role == 'EMPLOYEE':
+            return Ticket.objects.filter(creator=user)
+        return Ticket.objects.all()
+
     def perform_create(self, serializer):
         # Automatycznie przypisuje aktualnie zalogowanego użytkownika jako twórcę zgłoszenia
         serializer.save(creator=self.request.user)
