@@ -21,3 +21,18 @@ class TicketSerializer(serializers.ModelSerializer):
             'technician', 'technician_details', 'created_at', 'updated_at'
         ]
         read_only_fields = ('creator', 'created_at', 'updated_at')
+
+    def validate_title(self, value):
+        cleaned = value.strip()
+        if len(cleaned) < 5:
+            raise serializers.ValidationError('Tytuł musi mieć co najmniej 5 znaków.')
+        if len(cleaned) > 200:
+            raise serializers.ValidationError('Tytuł nie może przekraczać 200 znaków.')
+        return cleaned
+
+    def validate_description(self, value):
+        cleaned = value.strip()
+        if len(cleaned) < 10:
+            raise serializers.ValidationError('Opis musi mieć co najmniej 10 znaków.')
+        return cleaned
+
