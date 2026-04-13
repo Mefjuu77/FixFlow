@@ -1,7 +1,10 @@
 import React, { useEffect, useState, useContext, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import dayjs from 'dayjs';
+import 'dayjs/locale/pl';
+dayjs.locale('pl');
 import { ticketService } from '../api/ticketService';
-import { Ticket, User as UserType } from '../types';
+import { Ticket, User as UserType, Comment } from '../types';
 import { AuthContext } from '../context/AuthContext';
 import useTitle from '../hooks/useTitle';
 import {
@@ -17,22 +20,26 @@ import {
   Minus,
   ArrowDown,
   X,
-  Bold,
-  Italic,
-  Underline,
-  Type,
-  Link as LinkIcon,
-  List,
-  ListOrdered,
-  Smile,
-  Plus
+  Paperclip,
+  Image,
+  FileText,
+  Download
 } from 'lucide-react';
 
 const TicketDetailsPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const [ticket, setTicket] = useState<Ticket | null>(null);
+  const [comments, setComments] = useState<Comment[]>([]);
+  const [newCommentText, setNewCommentText] = useState('');
+  const [newCommentType, setNewCommentType] = useState<'REPLY' | 'INTERNAL'>('REPLY');
+  const [isSubmittingComment, setIsSubmittingComment] = useState(false);
+  const [activeTab, setActiveTab] = useState<'comments' | 'logs' | 'history' | 'work_log' | 'approvals'>('comments');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [commentError, setCommentError] = useState('');
+  const [newCommentFiles, setNewCommentFiles] = useState<File[]>([]);
+  const newCommentFileRef = useRef<HTMLInputElement>(null);
+
   const authContext = useContext(AuthContext);
   const navigate = useNavigate();
   const statusMenuRef = useRef<HTMLDivElement>(null);
@@ -43,15 +50,18 @@ const TicketDetailsPage: React.FC = () => {
   const [transitionCommentText, setTransitionCommentText] = useState('');
   const [isSubmittingTransition, setIsSubmittingTransition] = useState(false);
   const [availableTechnicians, setAvailableTechnicians] = useState<UserType[]>([]);
+  const [allUsers, setAllUsers] = useState<UserType[]>([]);
+  const [isEditingCreator, setIsEditingCreator] = useState(false);
+  const [isEditingTechnician, setIsEditingTechnician] = useState(false);
 
-  const targetStatusLabel = transitionModalConfig.targetStatus === 'W_TOKU' ? 'W toku' : 
-                            transitionModalConfig.targetStatus === 'NOWE' ? 'Nowe' :
-                            transitionModalConfig.targetStatus === 'ROZWIAZANE' ? 'Rozwiązane' :
-                            transitionModalConfig.targetStatus === 'ZAMKNIETE' ? 'Zamknięte' : 
-                            transitionModalConfig.targetStatus;
+  const targetStatusLabel = transitionModalConfig.targetStatus === 'W_TOKU' ? 'W toku' :
+    transitionModalConfig.targetStatus === 'NOWE' ? 'Nowe' :
+      transitionModalConfig.targetStatus === 'ROZWIAZANE' ? 'Rozwiązane' :
+        transitionModalConfig.targetStatus === 'ZAMKNIETE' ? 'Zamknięte' :
+          transitionModalConfig.targetStatus;
 
-  const currentTitle = transitionModalConfig.isOpen && targetStatusLabel 
-    ? targetStatusLabel 
+  const currentTitle = transitionModalConfig.isOpen && targetStatusLabel
+    ? targetStatusLabel
     : (ticket ? `Zgłoszenie #${ticket.id}` : 'Szczegóły zgłoszenia');
 
   useTitle(currentTitle);
@@ -68,9 +78,22 @@ const TicketDetailsPage: React.FC = () => {
 
 
   useEffect(() => {
-    if (id) fetchTicket();
+    if (id) {
+      fetchTicket();
+      fetchComments();
+    }
     fetchTechnicians();
+    fetchAllUsers();
   }, [id]);
+
+  const fetchComments = async () => {
+    try {
+      const data = await ticketService.getComments(id!);
+      setComments(data);
+    } catch (err) {
+      console.error('Błąd pobierania komentarzy:', err);
+    }
+  };
 
   const fetchTechnicians = async () => {
     try {
@@ -78,6 +101,15 @@ const TicketDetailsPage: React.FC = () => {
       setAvailableTechnicians(techs);
     } catch (err) {
       console.error('Błąd pobierania techników:', err);
+    }
+  };
+
+  const fetchAllUsers = async () => {
+    try {
+      const users = await ticketService.getUsers();
+      setAllUsers(users);
+    } catch (err) {
+      console.error('Błąd pobierania użytkowników:', err);
     }
   };
 
@@ -89,6 +121,57 @@ const TicketDetailsPage: React.FC = () => {
       setError('Nie udało się pobrać szczegółów zgłoszenia.');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const updateTicketField = async (updates: Partial<Ticket>) => {
+    if (!ticket) return;
+    try {
+      const updated = await ticketService.updateTicket(ticket.id, updates);
+      setTicket(updated);
+    } catch (err) {
+      console.error('Błąd aktualizacji', err);
+      alert('Błąd podczas aktualizacji.');
+    }
+  };
+
+  const handleAddComment = async () => {
+    setCommentError('');
+    const trimmed = newCommentText.trim();
+    if (!trimmed) {
+      setCommentError('Treść komentarza nie może być pusta.');
+      return;
+    }
+    if (trimmed.length > 5000) {
+      setCommentError('Treść komentarza nie może przekraczać 5000 znaków.');
+      return;
+    }
+
+    setIsSubmittingComment(true);
+    try {
+      const createdComment = await ticketService.addComment(id!, trimmed, newCommentType);
+
+      // Upload załączników do komentarza
+      if (newCommentFiles.length > 0) {
+        try {
+          await ticketService.uploadCommentAttachments(id!, createdComment.id, newCommentFiles);
+        } catch (uploadErr) {
+          console.error("Błąd podczas wgrywania załączników do komentarza:", uploadErr);
+        }
+      }
+
+      setNewCommentText('');
+      setNewCommentFiles([]);
+      await fetchComments();
+    } catch (err: any) {
+      console.error('Błąd dodawania komentarza:', err);
+      if (err.response?.data?.content) {
+        setCommentError(err.response.data.content[0]);
+      } else {
+        setCommentError('Wystąpił błąd podczas dodawania komentarza. Spróbuj ponownie.');
+      }
+    } finally {
+      setIsSubmittingComment(false);
     }
   };
 
@@ -104,15 +187,24 @@ const TicketDetailsPage: React.FC = () => {
     if (!ticket || !transitionModalConfig.targetStatus) return;
     setIsSubmittingTransition(true);
     try {
-      const updates: Partial<Ticket> = { 
+      const updates: Partial<Ticket> = {
         status: transitionModalConfig.targetStatus,
         technician: transitionAssignee
       };
-      
+
       const updated = await ticketService.updateTicket(ticket.id, updates);
       setTicket(updated);
+
+      // Jeśli wpisano komentarz, dodajemy go do zgłoszenia
+      if (transitionCommentText.trim()) {
+        const commentType = transitionCommentType === 'internal' ? 'INTERNAL' : 'REPLY';
+        await ticketService.addComment(ticket.id, transitionCommentText.trim(), commentType);
+        await fetchComments(); // Odświeżamy listę komentarzy w tle
+      }
+
       setTransitionModalConfig({ isOpen: false, targetStatus: null });
     } catch (err) {
+      console.error('Błąd podczas zmiany statusu/tworzenia komentarza', err);
       alert('Błąd podczas aktualizacji zgłoszenia.');
     } finally {
       setIsSubmittingTransition(false);
@@ -153,10 +245,10 @@ const TicketDetailsPage: React.FC = () => {
           <div className="flex items-center gap-3 mb-2">
             <span className="text-sm font-semibold text-gray-500 hover:text-blue-600 hover:underline cursor-pointer transition-colors">Zgłoszenie #{ticket.id}</span>
             <span className={`px-2 py-0.5 rounded-md text-[10px] font-bold border uppercase tracking-wider ${statusColors[ticket.status]}`}>
-              {ticket.status === 'W_TOKU' ? 'W toku' : 
-               ticket.status === 'NOWE' ? 'Nowe' :
-               ticket.status === 'ROZWIAZANE' ? 'Rozwiązane' :
-               ticket.status === 'ZAMKNIETE' ? 'Zamknięte' : ticket.status}
+              {ticket.status === 'W_TOKU' ? 'W toku' :
+                ticket.status === 'NOWE' ? 'Nowe' :
+                  ticket.status === 'ROZWIAZANE' ? 'Rozwiązane' :
+                    ticket.status === 'ZAMKNIETE' ? 'Zamknięte' : ticket.status}
             </span>
           </div>
           <h1 className="text-2xl font-semibold text-gray-900 mb-6">{ticket.title}</h1>
@@ -178,31 +270,221 @@ const TicketDetailsPage: React.FC = () => {
               <p className="text-gray-700 leading-relaxed whitespace-pre-wrap text-sm">
                 {ticket.description}
               </p>
+
+              {ticket.attachments && ticket.attachments.length > 0 && (
+                <div className="mt-4 pt-4 border-t border-gray-100">
+                  <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">Załączniki do zgłoszenia</h3>
+                  <div className="flex flex-wrap gap-2">
+                    {ticket.attachments.map(att => (
+                      <a
+                        key={att.id}
+                        href={att.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-2 p-2 pr-3 bg-gray-50 hover:bg-blue-50 border border-gray-200 hover:border-blue-300 rounded-lg transition-colors group"
+                      >
+                        {att.url.toLowerCase().match(/\.(jpeg|jpg|gif|png)$/) != null ? <Image className="w-4 h-4 text-blue-500" /> : <FileText className="w-4 h-4 text-gray-400" />}
+                        <span className="text-sm font-medium text-gray-700 group-hover:text-blue-700 truncate max-w-[200px]">{att.filename}</span>
+                        <Download className="w-3.5 h-3.5 text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity ml-1" />
+                      </a>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
 
           {/* Activity Section */}
           <div className="mt-8">
             <h3 className="text-lg font-semibold text-gray-900 mb-4">Aktywność</h3>
-            
+
             <div className="flex border-b border-gray-200 mb-4 custom-scrollbar overflow-x-auto">
-              <button className="px-4 py-2 text-sm text-gray-600 hover:bg-gray-50 whitespace-nowrap">Logi</button>
-              <button className="px-4 py-2 text-sm text-blue-600 border-b-2 border-blue-600 bg-blue-50/50 font-medium whitespace-nowrap">Komentarze</button>
-              <button className="px-4 py-2 text-sm text-gray-600 hover:bg-gray-50 whitespace-nowrap">Historia</button>
-              <button className="px-4 py-2 text-sm text-gray-600 hover:bg-gray-50 whitespace-nowrap">Rejestr prac</button>
-              <button className="px-4 py-2 text-sm text-gray-600 hover:bg-gray-50 whitespace-nowrap">Zatwierdzenia</button>
+              <button onClick={() => setActiveTab('logs')} className={`px-4 py-2 text-sm whitespace-nowrap transition-colors ${activeTab === 'logs' ? 'text-blue-600 border-b-2 border-blue-600 bg-blue-50/50 font-medium' : 'text-gray-600 hover:bg-gray-50'}`}>Logi</button>
+              <button onClick={() => setActiveTab('comments')} className={`px-4 py-2 text-sm whitespace-nowrap transition-colors ${activeTab === 'comments' ? 'text-blue-600 border-b-2 border-blue-600 bg-blue-50/50 font-medium' : 'text-gray-600 hover:bg-gray-50'}`}>Komentarze</button>
+              <button onClick={() => setActiveTab('history')} className={`px-4 py-2 text-sm whitespace-nowrap transition-colors ${activeTab === 'history' ? 'text-blue-600 border-b-2 border-blue-600 bg-blue-50/50 font-medium' : 'text-gray-600 hover:bg-gray-50'}`}>Historia</button>
+              <button onClick={() => setActiveTab('work_log')} className={`px-4 py-2 text-sm whitespace-nowrap transition-colors ${activeTab === 'work_log' ? 'text-blue-600 border-b-2 border-blue-600 bg-blue-50/50 font-medium' : 'text-gray-600 hover:bg-gray-50'}`}>Rejestr prac</button>
+              <button onClick={() => setActiveTab('approvals')} className={`px-4 py-2 text-sm whitespace-nowrap transition-colors ${activeTab === 'approvals' ? 'text-blue-600 border-b-2 border-blue-600 bg-blue-50/50 font-medium' : 'text-gray-600 hover:bg-gray-50'}`}>Zatwierdzenia</button>
             </div>
 
-            <div className="flex gap-4 items-start mt-6">
-              <div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center flex-shrink-0 text-white font-bold text-xs uppercase">
-                {authContext?.user?.first_name ? authContext.user.first_name.charAt(0) : 'U'}
-              </div>
-              <div className="flex-1">
-                <div className="border border-gray-300 rounded-xl hover:border-gray-400 transition-colors p-3 bg-white cursor-text text-gray-500 text-sm shadow-sm">
-                  <span className="text-blue-600 font-medium">Dodaj notatkę wewnętrzną</span> <span className="mx-1">/</span> <span className="text-blue-600 font-medium">Odpowiedź klientowi</span>
+            {activeTab === 'comments' && (
+              <div className="space-y-6">
+                {/* Lista Komentarzy */}
+                <div className="space-y-4 mb-8">
+                  {comments.length === 0 ? (
+                    <div className="text-center text-gray-500 text-sm py-4 italic">Brak komentarzy.</div>
+                  ) : (
+                    comments.map(comment => {
+                      const isInternal = comment.comment_type === 'INTERNAL';
+                      return (
+                        <div key={comment.id} className="flex gap-4 items-start">
+                          <div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center flex-shrink-0 text-white font-bold text-xs uppercase">
+                            {comment.author_details?.first_name ? comment.author_details.first_name.charAt(0) : 'U'}
+                          </div>
+                          <div className={`p-4 rounded-xl flex-1 ${isInternal ? 'bg-amber-50 border border-amber-200' : 'bg-gray-50 border border-gray-100'}`}>
+                            <div className="flex justify-between items-start mb-2">
+                              <span className="font-semibold text-gray-900 text-sm">{comment.author_details?.first_name} {comment.author_details?.last_name}</span>
+                              <span className="text-xs text-gray-500">
+                                {new Date(comment.created_at).toLocaleString()}
+                              </span>
+                            </div>
+                            {isInternal && (
+                              <div className="flex items-center gap-1.5 text-xs text-amber-700 bg-amber-100/50 px-2 py-1 rounded w-max mb-2">
+                                <Lock className="w-3 h-3" />
+                                <span className="font-medium uppercase tracking-wide">Notatka Wewnętrzna</span>
+                              </div>
+                            )}
+                            <p className="text-gray-700 text-sm whitespace-pre-wrap">{comment.content}</p>
+
+                            {comment.attachments && comment.attachments.length > 0 && (
+                              <div className="flex flex-wrap gap-2 mt-3 pt-3 border-t border-gray-100/70">
+                                {comment.attachments.map(att => (
+                                  <a key={att.id} href={att.url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 px-2.5 py-1.5 bg-white border border-gray-200 rounded-lg text-xs hover:border-blue-400 hover:bg-blue-50 transition-colors group text-gray-700">
+                                    {att.url.toLowerCase().match(/\.(jpeg|jpg|gif|png)$/) != null ? <Image className="w-3.5 h-3.5 text-blue-500" /> : <FileText className="w-3.5 h-3.5 text-gray-400" />}
+                                    <span className="truncate max-w-[150px]">{att.filename}</span>
+                                    <Download className="w-3 h-3 text-gray-400 opacity-0 group-hover:opacity-100 ml-1 transition-opacity" />
+                                  </a>
+                                ))}
+                              </div>
+                            )}
+
+                          </div>
+                        </div>
+                      )
+                    })
+                  )}
+                </div>
+
+                {/* Formularz Nowego Komentarza */}
+                <div className="flex gap-4 items-start mt-6 pt-6 border-t border-gray-100">
+                  <div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center flex-shrink-0 text-white font-bold text-xs uppercase">
+                    {authContext?.user?.first_name ? authContext.user.first_name.charAt(0) : 'U'}
+                  </div>
+                  <div className="flex-1 space-y-3">
+                    <div className="flex gap-2 mb-2">
+                      <button
+                        onClick={() => setNewCommentType('REPLY')}
+                        className={`text-sm font-medium px-3 py-1.5 rounded-lg transition-colors ${newCommentType === 'REPLY' ? 'bg-blue-100 text-blue-700' : 'text-gray-500 hover:bg-gray-100'}`}
+                      >
+                        Odpowiedz
+                      </button>
+                      {isTechnicianOrAdmin && (
+                        <button
+                          onClick={() => setNewCommentType('INTERNAL')}
+                          className={`text-sm font-medium px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1 ${newCommentType === 'INTERNAL' ? 'bg-amber-100 text-amber-800' : 'text-gray-500 hover:bg-gray-100'}`}
+                        >
+                          <Lock className="w-3 h-3" /> Notatka wewnętrzna
+                        </button>
+                      )}
+                    </div>
+
+                    <textarea
+                      value={newCommentText}
+                      onChange={(e) => {
+                        setNewCommentText(e.target.value);
+                        if (commentError) setCommentError('');
+                      }}
+                      placeholder={newCommentType === 'INTERNAL' ? "Dodaj notatkę wewnętrzną (widoczna tylko dla techników)..." : "Napisz odpowiedź..."}
+                      className={`w-full border rounded-xl p-4 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 min-h-[120px] resize-none transition-colors ${commentError ? 'border-red-300 bg-red-50 focus:ring-red-500' : newCommentType === 'INTERNAL' ? 'bg-amber-50/50 border-amber-200 focus:ring-amber-500 placeholder-amber-400' : 'bg-gray-50 border-gray-200'}`}
+                    />
+
+                    <div className="flex justify-between items-center mt-1">
+                      <div className="flex-1">
+                        {commentError && (
+                          <div className="text-red-500 text-xs font-medium flex items-center gap-1">
+                            <AlertTriangle className="w-3.5 h-3.5" />
+                            {commentError}
+                          </div>
+                        )}
+                      </div>
+                      <div className={`text-xs ${newCommentText.length > 5000 ? 'text-red-500 font-bold' : 'text-gray-400'}`}>
+                        {newCommentText.length} / 5000
+                      </div>
+                    </div>
+
+                    <div className="flex flex-col gap-2 mt-2">
+                      {/* Podgląd wybranych plików */}
+                      {newCommentFiles.length > 0 && (
+                        <div className="flex flex-wrap gap-2 mb-1">
+                          {newCommentFiles.map((file, idx) => (
+                            <div key={idx} className="flex items-center gap-1.5 px-2.5 py-1.5 bg-blue-50 border border-blue-100 text-blue-700 rounded-lg text-xs">
+                              <Paperclip className="w-3 h-3" />
+                              <span className="truncate max-w-[120px] font-medium">{file.name}</span>
+                              <button type="button" onClick={() => setNewCommentFiles(prev => prev.filter((_, i) => i !== idx))} className="ml-1 text-blue-400 hover:text-red-500 rounded-full transition-colors">
+                                <X className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <input
+                            type="file"
+                            multiple
+                            ref={newCommentFileRef}
+                            className="hidden"
+                            onChange={(e) => {
+                              if (e.target.files) {
+                                const MAX_FILE_SIZE = 5 * 1024 * 1024;
+                                const MAX_TOTAL_SIZE = 15 * 1024 * 1024;
+                                const ALLOWED_EXTENSIONS = ['.png', '.jpg', '.jpeg', '.gif', '.webp', '.pdf', '.doc', '.docx', '.txt', '.zip'];
+                                const validFiles: File[] = [];
+                                const invalidFiles: string[] = [];
+
+                                let currentTotal = newCommentFiles.reduce((sum, f) => sum + f.size, 0);
+
+                                Array.from(e.target.files).forEach(f => {
+                                  const extIndex = f.name.lastIndexOf('.');
+                                  const ext = extIndex >= 0 ? f.name.substring(extIndex).toLowerCase() : '';
+                                  if (!ALLOWED_EXTENSIONS.includes(ext)) {
+                                    invalidFiles.push(`${f.name} (niedozwolony format)`);
+                                  } else if (f.size > MAX_FILE_SIZE) {
+                                    invalidFiles.push(`${f.name} (powyżej 5MB)`);
+                                  } else if (currentTotal + f.size > MAX_TOTAL_SIZE) {
+                                    invalidFiles.push(`${f.name} (przekracza łączny limit 15MB)`);
+                                  } else {
+                                    validFiles.push(f);
+                                    currentTotal += f.size;
+                                  }
+                                });
+                                if (invalidFiles.length > 0) {
+                                  alert(`Odrzucono niektóre pliki:\n- ${invalidFiles.join('\n- ')}`);
+                                }
+                                setNewCommentFiles(prev => [...prev, ...validFiles]);
+                              }
+                              e.target.value = '';
+                            }}
+                          />
+                          <button
+                            type="button"
+                            onClick={() => newCommentFileRef.current?.click()}
+                            className="text-gray-500 hover:text-blue-600 transition-colors p-2 rounded-lg hover:bg-gray-100"
+                            title="Dodaj załącznik"
+                          >
+                            <Paperclip className="w-5 h-5" />
+                          </button>
+                        </div>
+                        <button
+                          onClick={handleAddComment}
+                          disabled={isSubmittingComment || (!newCommentText.trim() && newCommentFiles.length === 0)}
+                          className={`px-5 py-2.5 text-white text-sm font-bold rounded-lg transition-all shadow-sm flex items-center disabled:opacity-50 ${newCommentType === 'INTERNAL' ? 'bg-amber-600 hover:bg-amber-700 shadow-amber-200' : 'bg-blue-600 hover:bg-blue-700 shadow-blue-200'}`}
+                        >
+                          {isSubmittingComment ? <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div> : null}
+                          Wyślij
+                        </button>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
-            </div>
+            )}
+
+            {activeTab !== 'comments' && (
+              <div className="p-8 text-center text-gray-500 italic border border-gray-100 rounded-xl bg-gray-50/50">
+                Ta sekcja nie jest jeszcze dostępna.
+              </div>
+            )}
           </div>
 
         </div>
@@ -253,22 +535,47 @@ const TicketDetailsPage: React.FC = () => {
             )}
           </div>
 
-          {/* Akordeon: Szczegóły */}
+          {/* Stała zakładka: Szczegóły */}
           <div className="bg-white border border-gray-200 rounded-xl shadow-sm">
-            <div className="px-4 py-3 border-b border-gray-100 flex items-center gap-2 cursor-pointer hover:bg-gray-50 transition-colors">
-               <ChevronDown className="w-4 h-4 text-gray-500" />
-               <h3 className="font-semibold text-gray-800 text-sm">Szczegóły</h3>
+            <div className="px-4 py-3 border-b border-gray-100 flex items-center">
+              <h3 className="font-semibold text-gray-800 text-sm">Szczegóły</h3>
             </div>
-            
+
             <div className="p-4 space-y-4">
               {/* Row 1: Osoba zgłaszająca */}
               <div className="grid grid-cols-[130px_1fr] items-start">
                 <span className="text-sm text-gray-500 font-medium pt-0.5">Osoba zgłaszająca</span>
-                <div className="flex items-center gap-2 text-sm text-gray-900">
-                  <div className="w-5 h-5 rounded-full bg-gray-200 flex items-center justify-center flex-shrink-0 text-gray-500">
-                    <User className="w-3 h-3" />
-                  </div>
-                  {ticket.creator_details?.first_name} {ticket.creator_details?.last_name}
+                <div className="relative">
+                  {isEditingCreator && isTechnicianOrAdmin ? (
+                    <select
+                      autoFocus
+                      onBlur={() => setIsEditingCreator(false)}
+                      onChange={async (e) => {
+                        const newCreatorId = parseInt(e.target.value);
+                        if (newCreatorId !== ticket.creator) {
+                          await updateTicketField({ creator: newCreatorId });
+                        }
+                        setIsEditingCreator(false);
+                      }}
+                      className="w-full text-sm border border-gray-300 rounded-md py-1 px-2 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                      defaultValue={ticket.creator}
+                    >
+                      {allUsers.map(u => (
+                        <option key={u.id} value={u.id}>{u.first_name} {u.last_name}</option>
+                      ))}
+                    </select>
+                  ) : (
+                    <div
+                      className={`flex items-center gap-2 text-sm text-gray-900 ${isTechnicianOrAdmin ? 'cursor-pointer hover:bg-gray-50 p-1 -ml-1 rounded transition-colors' : ''}`}
+                      onClick={() => isTechnicianOrAdmin && setIsEditingCreator(true)}
+                      title={isTechnicianOrAdmin ? "Kliknij, aby zmienić zgłaszającego" : ""}
+                    >
+                      <div className="w-5 h-5 rounded-full bg-gray-200 flex items-center justify-center flex-shrink-0 text-gray-500">
+                        <User className="w-3 h-3" />
+                      </div>
+                      {ticket.creator_details?.first_name} {ticket.creator_details?.last_name}
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -276,9 +583,9 @@ const TicketDetailsPage: React.FC = () => {
               <div className="grid grid-cols-[130px_1fr] items-start">
                 <span className="text-sm text-gray-500 font-medium pt-0.5">Priorytet</span>
                 <div className="flex items-center gap-2 text-sm text-gray-900">
-                  {ticket.priority === 'WYSOKI' ? <AlertTriangle className="w-3.5 h-3.5 text-red-500" /> : 
-                   ticket.priority === 'NORMALNY' ? <Minus className="w-3.5 h-3.5 text-blue-500" /> : 
-                   <ArrowDown className="w-3.5 h-3.5 text-gray-400" />}
+                  {ticket.priority === 'WYSOKI' ? <AlertTriangle className="w-3.5 h-3.5 text-red-500" /> :
+                    ticket.priority === 'NORMALNY' ? <Minus className="w-3.5 h-3.5 text-blue-500" /> :
+                      <ArrowDown className="w-3.5 h-3.5 text-gray-400" />}
                   <span className={`font-medium ${ticket.priority === 'WYSOKI' ? 'text-red-600' : ticket.priority === 'NORMALNY' ? 'text-blue-600' : 'text-gray-600'}`}>
                     {ticket.priority.charAt(0) + ticket.priority.slice(1).toLowerCase()}
                   </span>
@@ -299,22 +606,71 @@ const TicketDetailsPage: React.FC = () => {
               {/* Row 4: Osoba przypisana */}
               <div className="grid grid-cols-[130px_1fr] items-start mt-4 pt-4 border-t border-gray-100">
                 <span className="text-sm text-gray-500 font-medium pt-0.5">Osoba przypisana</span>
-                <div className="space-y-1">
-                  <div className="flex items-center gap-2 text-sm text-gray-900">
-                    <div className="w-5 h-5 rounded-full bg-gray-200 flex items-center justify-center flex-shrink-0 text-gray-500">
-                      <User className="w-3 h-3" />
-                    </div>
-                    {ticket.technician_details ? (
-                      `${ticket.technician_details.first_name} ${ticket.technician_details.last_name}`
-                    ) : (
-                      'Nie przypisano'
-                    )}
-                  </div>
-                  {isTechnicianOrAdmin && !ticket.technician_details && (
-                    <button className="text-blue-600 hover:text-blue-800 text-sm font-medium hover:underline block pl-7">
-                      Przypisz do mnie
-                    </button>
+                <div className="space-y-1 relative">
+                  {isEditingTechnician && isTechnicianOrAdmin ? (
+                    <select
+                      autoFocus
+                      onBlur={() => setIsEditingTechnician(false)}
+                      onChange={async (e) => {
+                        const val = e.target.value;
+                        const newTechId = val ? parseInt(val) : null;
+                        if (newTechId !== ticket.technician) {
+                          await updateTicketField({ technician: newTechId });
+                        }
+                        setIsEditingTechnician(false);
+                      }}
+                      className="w-full text-sm border border-gray-300 rounded-md py-1 px-2 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                      defaultValue={ticket.technician || ''}
+                    >
+                      <option value="">Brak (nie przypisano)</option>
+                      {availableTechnicians.map(t => (
+                        <option key={t.id} value={t.id}>{t.first_name} {t.last_name}</option>
+                      ))}
+                    </select>
+                  ) : (
+                    <>
+                      <div
+                        className={`flex items-center gap-2 text-sm text-gray-900 ${isTechnicianOrAdmin ? 'cursor-pointer hover:bg-gray-50 p-1 -ml-1 rounded transition-colors' : ''}`}
+                        onClick={() => isTechnicianOrAdmin && setIsEditingTechnician(true)}
+                        title={isTechnicianOrAdmin ? "Kliknij, aby przypisać zgłoszenie" : ""}
+                      >
+                        <div className="w-5 h-5 rounded-full bg-gray-200 flex items-center justify-center flex-shrink-0 text-gray-500">
+                          <User className="w-3 h-3" />
+                        </div>
+                        {ticket.technician_details ? (
+                          `${ticket.technician_details.first_name} ${ticket.technician_details.last_name}`
+                        ) : (
+                          <span className="italic text-gray-500">Nie przypisano</span>
+                        )}
+                      </div>
+                      {isTechnicianOrAdmin && !ticket.technician_details && (
+                        <button
+                          onClick={() => {
+                            if (authContext?.user?.id) {
+                              updateTicketField({ technician: authContext.user.id });
+                            }
+                          }}
+                          className="text-blue-600 hover:text-blue-800 text-sm font-medium hover:underline block pl-7"
+                        >
+                          Przypisz do mnie
+                        </button>
+                      )}
+                    </>
                   )}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-[130px_1fr] items-start mt-4 pt-4 border-t border-gray-100">
+                <span className="text-sm text-gray-500 font-medium">Utworzono</span>
+                <div className="text-sm text-gray-900">
+                  {dayjs(ticket.created_at).format('DD.MM.YYYY, HH:mm')}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-[130px_1fr] items-start">
+                <span className="text-sm text-gray-500 font-medium">Zaktualizowano</span>
+                <div className="text-sm text-gray-900">
+                  {dayjs(ticket.updated_at).format('DD.MM.YYYY, HH:mm')}
                 </div>
               </div>
 
@@ -330,66 +686,66 @@ const TicketDetailsPage: React.FC = () => {
           <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl mx-4 overflow-hidden flex flex-col max-h-[90vh]">
             <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
               <h2 className="text-xl font-semibold text-gray-900">
-                {transitionModalConfig.targetStatus === 'W_TOKU' ? 'W toku' : 
-                 transitionModalConfig.targetStatus === 'NOWE' ? 'Nowe' :
-                 transitionModalConfig.targetStatus === 'ROZWIAZANE' ? 'Rozwiązane' :
-                 transitionModalConfig.targetStatus === 'ZAMKNIETE' ? 'Zamknięte' : transitionModalConfig.targetStatus}
+                {transitionModalConfig.targetStatus === 'W_TOKU' ? 'W toku' :
+                  transitionModalConfig.targetStatus === 'NOWE' ? 'Nowe' :
+                    transitionModalConfig.targetStatus === 'ROZWIAZANE' ? 'Rozwiązane' :
+                      transitionModalConfig.targetStatus === 'ZAMKNIETE' ? 'Zamknięte' : transitionModalConfig.targetStatus}
               </h2>
-              <button 
+              <button
                 onClick={() => setTransitionModalConfig({ isOpen: false, targetStatus: null })}
                 className="text-gray-400 hover:text-gray-600 transition-colors p-1"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
-            
+
             <div className="p-6 overflow-y-auto space-y-6">
               {/* Sekcja: Osoba przypisana */}
               <div>
-                 <label className="block text-sm font-semibold text-gray-700 mb-1.5">Osoba przypisana</label>
-                 <div className="relative">
-                   <select 
-                     value={transitionAssignee || ''} 
-                     onChange={(e) => setTransitionAssignee(e.target.value ? Number(e.target.value) : null)}
-                     className="w-full md:w-1/2 appearance-none bg-white border border-blue-500 rounded-md py-2 pl-10 pr-8 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm font-medium"
-                   >
-                     <option value="">Nie przypisano</option>
-                     {availableTechnicians.map((tech) => (
-                       <option key={tech.id} value={tech.id}>
-                         {tech.first_name} {tech.last_name}
-                       </option>
-                     ))}
-                   </select>
-                   <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-gray-400">
-                     <User className="w-4 h-4" />
-                   </div>
-                   <div className="absolute inset-y-0 right-0 md:right-1/2 flex items-center pr-2 pointer-events-none text-gray-500">
-                     <ChevronDown className="w-4 h-4" />
-                   </div>
-                 </div>
-                 {authContext?.user && transitionAssignee !== authContext.user.id && (
-                   <button 
-                     onClick={() => setTransitionAssignee(authContext.user!.id)}
-                     className="text-blue-600 hover:underline text-sm font-medium mt-1.5 inline-block"
-                   >
-                     Przypisz do mnie
-                   </button>
-                 )}
+                <label className="block text-sm font-semibold text-gray-700 mb-1.5">Osoba przypisana</label>
+                <div className="relative">
+                  <select
+                    value={transitionAssignee || ''}
+                    onChange={(e) => setTransitionAssignee(e.target.value ? Number(e.target.value) : null)}
+                    className="w-full md:w-1/2 appearance-none bg-white border border-blue-500 rounded-md py-2 pl-10 pr-8 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm font-medium"
+                  >
+                    <option value="">Nie przypisano</option>
+                    {availableTechnicians.map((tech) => (
+                      <option key={tech.id} value={tech.id}>
+                        {tech.first_name} {tech.last_name}
+                      </option>
+                    ))}
+                  </select>
+                  <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-gray-400">
+                    <User className="w-4 h-4" />
+                  </div>
+                  <div className="absolute inset-y-0 right-0 md:right-1/2 flex items-center pr-2 pointer-events-none text-gray-500">
+                    <ChevronDown className="w-4 h-4" />
+                  </div>
+                </div>
+                {authContext?.user && transitionAssignee !== authContext.user.id && (
+                  <button
+                    onClick={() => setTransitionAssignee(authContext.user!.id)}
+                    className="text-blue-600 hover:underline text-sm font-medium mt-1.5 inline-block"
+                  >
+                    Przypisz do mnie
+                  </button>
+                )}
               </div>
 
               {/* Sekcja: Komentarz */}
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-2">Komentarz</label>
-                
+
                 {/* Tabs */}
                 <div className="flex border-b border-gray-200">
-                  <button 
+                  <button
                     onClick={() => setTransitionCommentType('reply')}
                     className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${transitionCommentType === 'reply' ? 'border-gray-800 text-gray-900 bg-white' : 'border-transparent text-gray-500 bg-gray-50/50 hover:bg-gray-50'}`}
                   >
                     Odpowiedź klientowi
                   </button>
-                  <button 
+                  <button
                     onClick={() => setTransitionCommentType('internal')}
                     className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${transitionCommentType === 'internal' ? 'border-gray-800 text-gray-900 bg-white' : 'border-transparent text-gray-500 bg-gray-50/50 hover:bg-gray-50'}`}
                   >
@@ -400,31 +756,13 @@ const TicketDetailsPage: React.FC = () => {
                 <div className="mt-4">
                   {transitionCommentType === 'internal' && (
                     <div className="flex items-center gap-1.5 text-xs text-amber-700 bg-amber-50 px-3 py-2 rounded-md mb-2">
-                       <Lock className="w-3.5 h-3.5" />
-                       <span className="font-medium">Twoje komentarze nie będą widoczne dla klientów w portalu.</span>
+                      <Lock className="w-3.5 h-3.5" />
+                      <span className="font-medium">Twoje komentarze nie będą widoczne dla klientów w portalu.</span>
                     </div>
                   )}
-                  
-                  {/* Edytor tekstowy - Atrappa */}
+
                   <div className={`border rounded-md bg-white overflow-hidden transition-colors ${transitionCommentType === 'internal' ? 'border-amber-200 shadow-sm shadow-amber-50' : 'border-gray-200'}`}>
-                    {/* Toolbar */}
-                    <div className="flex items-center gap-1 p-1 border-b border-gray-200 bg-gray-50/50 text-gray-500">
-                      <button className="p-1.5 hover:bg-gray-200 rounded text-sm flex items-center gap-1 font-medium">Styl <ChevronDown className="w-3 h-3"/></button>
-                      <div className="w-px h-4 bg-gray-300 mx-1"></div>
-                      <button className="p-1.5 hover:bg-gray-200 rounded"><Bold className="w-4 h-4" /></button>
-                      <button className="p-1.5 hover:bg-gray-200 rounded"><Italic className="w-4 h-4" /></button>
-                      <button className="p-1.5 hover:bg-gray-200 rounded"><Underline className="w-4 h-4" /></button>
-                      <button className="p-1.5 hover:bg-gray-200 rounded flex items-center"><Type className="w-4 h-4 text-gray-700"/><ChevronDown className="w-3 h-3 ml-0.5"/></button>
-                      <div className="w-px h-4 bg-gray-300 mx-1"></div>
-                      <button className="p-1.5 hover:bg-gray-200 rounded flex items-center"><LinkIcon className="w-4 h-4"/><ChevronDown className="w-3 h-3 ml-0.5"/></button>
-                      <div className="w-px h-4 bg-gray-300 mx-1"></div>
-                      <button className="p-1.5 hover:bg-gray-200 rounded"><List className="w-4 h-4" /></button>
-                      <button className="p-1.5 hover:bg-gray-200 rounded"><ListOrdered className="w-4 h-4" /></button>
-                      <div className="w-px h-4 bg-gray-300 mx-1"></div>
-                      <button className="p-1.5 hover:bg-gray-200 rounded flex items-center"><Smile className="w-4 h-4"/><ChevronDown className="w-3 h-3 ml-0.5"/></button>
-                      <button className="p-1.5 hover:bg-gray-200 rounded flex items-center"><Plus className="w-4 h-4"/><ChevronDown className="w-3 h-3 ml-0.5"/></button>
-                    </div>
-                    <textarea 
+                    <textarea
                       value={transitionCommentText}
                       onChange={(e) => setTransitionCommentText(e.target.value)}
                       className={`w-full p-3 min-h-[120px] focus:outline-none resize-y text-sm ${transitionCommentType === 'internal' ? 'bg-amber-50/10' : ''}`}
@@ -436,22 +774,22 @@ const TicketDetailsPage: React.FC = () => {
             </div>
 
             <div className="px-6 py-4 bg-gray-50 border-t border-gray-100 flex items-center justify-end gap-3 rounded-b-xl">
-              <button 
+              <button
                 onClick={() => setTransitionModalConfig({ isOpen: false, targetStatus: null })}
                 className="px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-800 transition-colors"
                 disabled={isSubmittingTransition}
               >
                 Anuluj
               </button>
-              <button 
+              <button
                 onClick={handleSubmitTransition}
                 disabled={isSubmittingTransition}
                 className="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold rounded-md shadow-sm transition-all disabled:opacity-70 flex items-center"
               >
-                {transitionModalConfig.targetStatus === 'W_TOKU' ? 'W toku' : 
-                 transitionModalConfig.targetStatus === 'NOWE' ? 'Nowe' :
-                 transitionModalConfig.targetStatus === 'ROZWIAZANE' ? 'Rozwiązane' :
-                 transitionModalConfig.targetStatus === 'ZAMKNIETE' ? 'Zamknięte' : transitionModalConfig.targetStatus}
+                {transitionModalConfig.targetStatus === 'W_TOKU' ? 'W toku' :
+                  transitionModalConfig.targetStatus === 'NOWE' ? 'Nowe' :
+                    transitionModalConfig.targetStatus === 'ROZWIAZANE' ? 'Rozwiązane' :
+                      transitionModalConfig.targetStatus === 'ZAMKNIETE' ? 'Zamknięte' : transitionModalConfig.targetStatus}
               </button>
             </div>
           </div>
