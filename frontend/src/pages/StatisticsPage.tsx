@@ -1,0 +1,559 @@
+import React, { useContext, useEffect, useState } from 'react';
+import { AuthContext } from '../context/AuthContext';
+import api from '../api/axiosConfig';
+import { Ticket } from '../types';
+import { Link } from 'react-router-dom';
+import useTitle from '../hooks/useTitle';
+import {
+  AlertTriangle,
+  ArrowUpRight,
+  Lightbulb,
+  Users as UsersIcon,
+} from 'lucide-react';
+import dayjs from 'dayjs';
+import 'dayjs/locale/pl';
+dayjs.locale('pl');
+
+// ==================== DONUT CHART (czysty SVG) ====================
+interface DonutSegment {
+  label: string;
+  value: number;
+  color: string;
+}
+
+const DonutChart: React.FC<{ segments: DonutSegment[]; total: number }> = ({ segments, total }) => {
+  const size = 180;
+  const strokeWidth = 32;
+  const radius = (size - strokeWidth) / 2;
+  const circumference = 2 * Math.PI * radius;
+
+  let accumulated = 0;
+
+  return (
+    <div className="flex items-center gap-8">
+      <div className="relative" style={{ width: size, height: size }}>
+        <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
+          {/* Tło pierścienia */}
+          <circle
+            cx={size / 2}
+            cy={size / 2}
+            r={radius}
+            fill="none"
+            stroke="#f3f4f6"
+            strokeWidth={strokeWidth}
+          />
+          {segments.map((seg, i) => {
+            const pct = total > 0 ? seg.value / total : 0;
+            const offset = circumference * (1 - pct);
+            const rotation = accumulated * 360 - 90;
+            accumulated += pct;
+
+            return (
+              <circle
+                key={i}
+                cx={size / 2}
+                cy={size / 2}
+                r={radius}
+                fill="none"
+                stroke={seg.color}
+                strokeWidth={strokeWidth}
+                strokeDasharray={`${circumference}`}
+                strokeDashoffset={offset}
+                strokeLinecap="round"
+                transform={`rotate(${rotation} ${size / 2} ${size / 2})`}
+                style={{ transition: 'stroke-dashoffset 0.6s ease' }}
+              />
+            );
+          })}
+        </svg>
+        <div className="absolute inset-0 flex flex-col items-center justify-center">
+          <span className="text-3xl font-extrabold text-gray-900">{total}</span>
+          <span className="text-[11px] text-gray-500 font-medium">Całkowita liczba</span>
+        </div>
+      </div>
+
+      <div className="space-y-2">
+        {segments.map((seg, i) => (
+          <div key={i} className="flex items-center gap-2 text-sm">
+            <span className="w-3 h-3 rounded-sm flex-shrink-0" style={{ backgroundColor: seg.color }} />
+            <span className="text-gray-700 font-medium">{seg.label}: <span className="font-bold text-gray-900">{seg.value}</span></span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
+
+// ==================== HORIZONTAL BAR ====================
+const HorizontalBar: React.FC<{ label: string; value: number; max: number; color: string; icon?: React.ReactNode }> = ({ label, value, max, color, icon }) => {
+  const pct = max > 0 ? (value / max) * 100 : 0;
+  return (
+    <div className="flex items-center gap-3">
+      <div className="w-5 flex justify-center text-gray-400 flex-shrink-0">{icon}</div>
+      <span className="text-sm text-gray-700 w-32 truncate font-medium" title={label}>{label}</span>
+      <div className="flex-1 h-6 bg-gray-100 rounded-md overflow-hidden relative">
+        <div
+          className="h-full rounded-md flex items-center justify-end pr-2 transition-all duration-500 ease-out"
+          style={{ width: `${Math.max(pct, value > 0 ? 8 : 0)}%`, backgroundColor: color }}
+        >
+          {value > 0 && (
+            <span className="text-xs font-bold text-white drop-shadow-sm">{value}</span>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// ==================== MAIN PAGE ====================
+const StatisticsPage: React.FC = () => {
+  useTitle('Statystyki');
+  const authContext = useContext(AuthContext);
+  const [tickets, setTickets] = useState<Ticket[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const role = authContext?.user?.role;
+  const isAdmin = role === 'ADMIN';
+  const isTechnician = role === 'TECHNICIAN';
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const ticketRes = await api.get('tickets/');
+        setTickets(ticketRes.data);
+      } catch (err) {
+        console.error('Błąd pobierania danych statystyk', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchData();
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-full">
+        <div className="w-10 h-10 border-4 border-blue-600 border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  // ---------- Dane wspólne ----------
+  const activeTickets = tickets.filter(t => !['ROZWIAZANE', 'ZAMKNIETE'].includes(t.status));
+  const allCount = tickets.length;
+
+  // Statusy
+  const statusData: DonutSegment[] = isAdmin
+    ? [
+        { label: 'Nowe', value: tickets.filter(t => t.status === 'NOWE').length, color: '#3b82f6' },
+        { label: 'W toku', value: tickets.filter(t => t.status === 'W_TOKU').length, color: '#f59e0b' },
+        { label: 'Rozwiązane', value: tickets.filter(t => t.status === 'ROZWIAZANE').length, color: '#22c55e' },
+        { label: 'Zamknięte', value: tickets.filter(t => t.status === 'ZAMKNIETE').length, color: '#6b7280' },
+      ]
+    : [
+        { label: 'Nowe', value: tickets.filter(t => t.status === 'NOWE').length, color: '#3b82f6' },
+        { label: 'W toku', value: tickets.filter(t => t.status === 'W_TOKU').length, color: '#f59e0b' },
+        { label: 'Rozwiązane', value: tickets.filter(t => t.status === 'ROZWIAZANE').length, color: '#22c55e' },
+        { label: 'Zamknięte', value: tickets.filter(t => t.status === 'ZAMKNIETE').length, color: '#6b7280' },
+      ];
+
+  // Kategorie
+  const categoryMap = new Map<string, number>();
+  activeTickets.forEach(t => {
+    const cat = t.category_name || 'Nieznana';
+    categoryMap.set(cat, (categoryMap.get(cat) || 0) + 1);
+  });
+  const categorySorted = [...categoryMap.entries()].sort((a, b) => b[1] - a[1]);
+  const maxCategoryVal = categorySorted.length > 0 ? categorySorted[0][1] : 1;
+  const categoryColors = ['#3b82f6', '#6366f1', '#8b5cf6', '#ec4899', '#f59e0b', '#22c55e', '#14b8a6'];
+
+  // Priorytety
+  const priorityData: DonutSegment[] = [
+    { label: 'Wysoki', value: activeTickets.filter(t => t.priority === 'WYSOKI').length, color: '#ef4444' },
+    { label: 'Normalny', value: activeTickets.filter(t => t.priority === 'NORMALNY').length, color: '#3b82f6' },
+    { label: 'Niski', value: activeTickets.filter(t => t.priority === 'NISKI').length, color: '#9ca3af' },
+  ];
+
+  // Obciążenie zespołu
+  const workloadMap = new Map<string, number>();
+  let unassignedCount = 0;
+  activeTickets.forEach(t => {
+    if (!t.technician_details) {
+      unassignedCount++;
+    } else {
+      const name = `${t.technician_details.first_name} ${t.technician_details.last_name}`;
+      workloadMap.set(name, (workloadMap.get(name) || 0) + 1);
+    }
+  });
+  const workloadEntries = [...workloadMap.entries()].sort((a, b) => b[1] - a[1]);
+  const maxWorkload = Math.max(unassignedCount, ...(workloadEntries.map(e => e[1])), 1);
+
+  // Sugestie
+  const suggestions: { text: string; severity: 'warning' | 'info' | 'success' }[] = [];
+
+  if (unassignedCount > 0) {
+    suggestions.push({
+      text: `${unassignedCount} zgłosze${unassignedCount === 1 ? 'nie nie jest przypisane' : (unassignedCount < 5 ? 'nia nie są przypisane' : 'ń nie jest przypisanych')} do żadnego technika.`,
+      severity: 'warning'
+    });
+  }
+
+  const highPriorityOpen = activeTickets.filter(t => t.priority === 'WYSOKI');
+  if (highPriorityOpen.length > 0) {
+    suggestions.push({
+      text: `${highPriorityOpen.length} otwart${highPriorityOpen.length === 1 ? 'e zgłoszenie' : (highPriorityOpen.length < 5 ? 'e zgłoszenia' : 'ych zgłoszeń')} z wysokim priorytetem wymaga uwagi.`,
+      severity: 'warning'
+    });
+  }
+
+  const oldTickets = activeTickets.filter(t => dayjs().diff(dayjs(t.created_at), 'day') > 7);
+  if (oldTickets.length > 0) {
+    suggestions.push({
+      text: `${oldTickets.length} zgłosze${oldTickets.length === 1 ? 'nie jest' : (oldTickets.length < 5 ? 'nia są' : 'ń jest')} otwart${oldTickets.length === 1 ? 'e' : (oldTickets.length < 5 ? 'e' : 'ych')} dłużej niż 7 dni.`,
+      severity: 'info'
+    });
+  }
+
+  if (suggestions.length === 0) {
+    suggestions.push({
+      text: 'Brak problemów – wszystko wygląda dobrze!',
+      severity: 'success'
+    });
+  }
+
+  // ==================== TECHNIK ====================
+  if (isTechnician) {
+    const myTickets = tickets.filter(t => t.technician === authContext?.user?.id);
+    const myActive = myTickets.filter(t => !['ROZWIAZANE', 'ZAMKNIETE'].includes(t.status));
+    const myResolved = myTickets.filter(t => ['ROZWIAZANE', 'ZAMKNIETE'].includes(t.status));
+
+    const myStatusData: DonutSegment[] = [
+      { label: 'Nowe', value: myTickets.filter(t => t.status === 'NOWE').length, color: '#3b82f6' },
+      { label: 'W toku', value: myTickets.filter(t => t.status === 'W_TOKU').length, color: '#f59e0b' },
+      { label: 'Rozwiązane', value: myTickets.filter(t => t.status === 'ROZWIAZANE').length, color: '#22c55e' },
+      { label: 'Zamknięte', value: myTickets.filter(t => t.status === 'ZAMKNIETE').length, color: '#6b7280' },
+    ];
+
+    return (
+      <div className="w-full space-y-6 animate-in fade-in duration-500">
+        {/* Nagłówek */}
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900 tracking-tight">
+              Statystyki 📊
+            </h1>
+            <p className="mt-1 text-gray-500">
+              Przegląd Twoich przypisanych zgłoszeń i ogólnych danych.
+            </p>
+          </div>
+        </div>
+
+        {/* Kafelki podsumowania */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div className="bg-white border border-blue-100 rounded-2xl p-5 shadow-sm">
+            <p className="text-sm font-medium text-gray-500">Moje aktywne</p>
+            <p className="text-3xl font-extrabold text-blue-600 mt-1">{myActive.length}</p>
+          </div>
+          <div className="bg-white border border-green-100 rounded-2xl p-5 shadow-sm">
+            <p className="text-sm font-medium text-gray-500">Moje rozwiązane</p>
+            <p className="text-3xl font-extrabold text-green-600 mt-1">{myResolved.length}</p>
+          </div>
+          <div className="bg-white border border-amber-100 rounded-2xl p-5 shadow-sm">
+            <p className="text-sm font-medium text-gray-500">Nieprzypisane w systemie</p>
+            <p className="text-3xl font-extrabold text-amber-600 mt-1">{unassignedCount}</p>
+          </div>
+        </div>
+
+        {/* Siatka statystyk */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+          {/* Przegląd statusów (moje) */}
+          <div className="bg-white border border-gray-200 rounded-2xl shadow-sm p-6">
+            <div className="flex items-center justify-between mb-1">
+              <h3 className="font-bold text-gray-900">Przegląd statusów</h3>
+              <Link to="/tickets" className="text-xs font-bold text-blue-600 hover:text-blue-800 flex items-center">
+                Wyświetl zgłoszenia <ArrowUpRight className="w-3 h-3 ml-1" />
+              </Link>
+            </div>
+            <p className="text-xs text-gray-500 mb-5">Rozkład statusów Twoich zgłoszeń.</p>
+            <DonutChart segments={myStatusData} total={myTickets.length} />
+          </div>
+
+          {/* Rodzaj zgłoszeń */}
+          <div className="bg-white border border-gray-200 rounded-2xl shadow-sm p-6">
+            <div className="flex items-center justify-between mb-1">
+              <h3 className="font-bold text-gray-900">Rodzaj zgłoszeń</h3>
+              <Link to="/tickets" className="text-xs font-bold text-blue-600 hover:text-blue-800 flex items-center">
+                Wyświetl zgłoszenia <ArrowUpRight className="w-3 h-3 ml-1" />
+              </Link>
+            </div>
+            <p className="text-xs text-gray-500 mb-5">Otwarte zgłoszenia według kategorii.</p>
+            <div className="space-y-3">
+              {categorySorted.length === 0 ? (
+                <p className="text-sm text-gray-500 italic text-center py-6">Brak otwartych zgłoszeń.</p>
+              ) : (
+                categorySorted.map(([cat, count], i) => (
+                  <HorizontalBar key={cat} label={cat} value={count} max={maxCategoryVal} color={categoryColors[i % categoryColors.length]} />
+                ))
+              )}
+            </div>
+          </div>
+
+          {/* Podział priorytetów */}
+          <div className="bg-white border border-gray-200 rounded-2xl shadow-sm p-6">
+            <div className="flex items-center justify-between mb-1">
+              <h3 className="font-bold text-gray-900">Priorytety zgłoszeń</h3>
+            </div>
+            <p className="text-xs text-gray-500 mb-5">Rozkład aktywnych zgłoszeń według priorytetu.</p>
+            <DonutChart segments={priorityData} total={activeTickets.length} />
+          </div>
+
+          {/* Obciążenie zespołu */}
+          <div className="bg-white border border-gray-200 rounded-2xl shadow-sm p-6">
+            <div className="flex items-center justify-between mb-1">
+              <h3 className="font-bold text-gray-900">Obciążenie zespołu</h3>
+            </div>
+            <p className="text-xs text-gray-500 mb-5">Rozkład aktywnych zgłoszeń w zespole.</p>
+            <div className="space-y-3">
+              {unassignedCount > 0 && (
+                <div className="flex items-center gap-3">
+                  <div className="w-5 flex justify-center flex-shrink-0">
+                    <UsersIcon className="w-4 h-4 text-gray-400" />
+                  </div>
+                  <span className="text-sm text-gray-700 w-32 truncate font-medium italic">Nie przypisano</span>
+                  <div className="flex-1 h-6 bg-gray-100 rounded-md overflow-hidden relative">
+                    <div
+                      className="h-full rounded-md flex items-center justify-end pr-2 transition-all duration-500 ease-out bg-red-400"
+                      style={{ width: `${Math.max((unassignedCount / maxWorkload) * 100, 8)}%` }}
+                    >
+                      <span className="text-xs font-bold text-white drop-shadow-sm">{unassignedCount}</span>
+                    </div>
+                  </div>
+                </div>
+              )}
+              {workloadEntries.map(([name, count]) => (
+                <HorizontalBar key={name} label={name} value={count} max={maxWorkload} color="#6366f1" />
+              ))}
+              {workloadEntries.length === 0 && unassignedCount === 0 && (
+                <p className="text-sm text-gray-500 italic text-center py-6">Brak aktywnych zgłoszeń.</p>
+              )}
+            </div>
+          </div>
+
+          {/* Sugestie */}
+          <div className="bg-white border border-gray-200 rounded-2xl shadow-sm p-6">
+            <div className="flex items-center gap-2 mb-1">
+              <Lightbulb className="w-5 h-5 text-amber-500" />
+              <h3 className="font-bold text-gray-900">Sugestie</h3>
+            </div>
+            <p className="text-xs text-gray-500 mb-5">Automatyczne wskazówki na podstawie danych.</p>
+            <div className="space-y-3">
+              {suggestions.map((s, i) => (
+                <div
+                  key={i}
+                  className={`flex items-start gap-3 p-3 rounded-xl text-sm font-medium ${
+                    s.severity === 'warning'
+                      ? 'bg-amber-50 text-amber-800 border border-amber-200'
+                      : s.severity === 'info'
+                      ? 'bg-blue-50 text-blue-800 border border-blue-200'
+                      : 'bg-green-50 text-green-800 border border-green-200'
+                  }`}
+                >
+                  <AlertTriangle className={`w-4 h-4 mt-0.5 flex-shrink-0 ${
+                    s.severity === 'warning' ? 'text-amber-500' : s.severity === 'info' ? 'text-blue-500' : 'text-green-500'
+                  }`} />
+                  {s.text}
+                </div>
+              ))}
+            </div>
+          </div>
+
+        </div>
+      </div>
+    );
+  }
+
+  // ==================== ADMIN ====================
+  if (isAdmin) {
+    const totalResolved = tickets.filter(t => t.status === 'ROZWIAZANE').length;
+    const totalClosed = tickets.filter(t => t.status === 'ZAMKNIETE').length;
+
+    return (
+      <div className="w-full space-y-6 animate-in fade-in duration-500">
+        {/* Nagłówek */}
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900 tracking-tight">
+              Statystyki 📊
+            </h1>
+            <p className="mt-1 text-gray-500">
+              Globalny przegląd systemu i obciążenia zespołu.
+            </p>
+          </div>
+        </div>
+
+        {/* Kafelki podsumowania */}
+        <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
+          <div className="bg-white border border-blue-100 rounded-2xl p-5 shadow-sm">
+            <p className="text-sm font-medium text-gray-500">Wszystkie</p>
+            <p className="text-3xl font-extrabold text-blue-600 mt-1">{allCount}</p>
+          </div>
+          <div className="bg-white border border-amber-100 rounded-2xl p-5 shadow-sm">
+            <p className="text-sm font-medium text-gray-500">Aktywne</p>
+            <p className="text-3xl font-extrabold text-amber-600 mt-1">{activeTickets.length}</p>
+          </div>
+          <div className="bg-white border border-green-100 rounded-2xl p-5 shadow-sm">
+            <p className="text-sm font-medium text-gray-500">Rozwiązane</p>
+            <p className="text-3xl font-extrabold text-green-600 mt-1">{totalResolved}</p>
+          </div>
+          <div className="bg-white border border-gray-200 rounded-2xl p-5 shadow-sm">
+            <p className="text-sm font-medium text-gray-500">Zamknięte</p>
+            <p className="text-3xl font-extrabold text-gray-600 mt-1">{totalClosed}</p>
+          </div>
+        </div>
+
+        {/* Siatka statystyk */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+          {/* Przegląd statusów */}
+          <div className="bg-white border border-gray-200 rounded-2xl shadow-sm p-6">
+            <div className="flex items-center justify-between mb-1">
+              <h3 className="font-bold text-gray-900">Przegląd statusów</h3>
+              <Link to="/tickets" className="text-xs font-bold text-blue-600 hover:text-blue-800 flex items-center">
+                Wyświetl wszystkie zgłoszenia <ArrowUpRight className="w-3 h-3 ml-1" />
+              </Link>
+            </div>
+            <p className="text-xs text-gray-500 mb-5">Szybki wgląd w status wszystkich zgłoszeń.</p>
+            <DonutChart segments={statusData} total={allCount} />
+          </div>
+
+          {/* Rodzaj zgłoszeń */}
+          <div className="bg-white border border-gray-200 rounded-2xl shadow-sm p-6">
+            <div className="flex items-center justify-between mb-1">
+              <h3 className="font-bold text-gray-900">Rodzaj zgłoszeń</h3>
+              <Link to="/tickets" className="text-xs font-bold text-blue-600 hover:text-blue-800 flex items-center">
+                Wyświetl wszystkie zgłoszenia <ArrowUpRight className="w-3 h-3 ml-1" />
+              </Link>
+            </div>
+            <p className="text-xs text-gray-500 mb-5">Otwarte zgłoszenia według kategorii.</p>
+            <div className="space-y-3">
+              {categorySorted.length === 0 ? (
+                <p className="text-sm text-gray-500 italic text-center py-6">Brak otwartych zgłoszeń.</p>
+              ) : (
+                categorySorted.map(([cat, count], i) => (
+                  <HorizontalBar key={cat} label={cat} value={count} max={maxCategoryVal} color={categoryColors[i % categoryColors.length]} />
+                ))
+              )}
+            </div>
+          </div>
+
+          {/* Podział priorytetów */}
+          <div className="bg-white border border-gray-200 rounded-2xl shadow-sm p-6">
+            <div className="flex items-center justify-between mb-1">
+              <h3 className="font-bold text-gray-900">Priorytety zgłoszeń</h3>
+            </div>
+            <p className="text-xs text-gray-500 mb-5">Rozkład aktywnych zgłoszeń według priorytetu.</p>
+            <DonutChart segments={priorityData} total={activeTickets.length} />
+          </div>
+
+          {/* Obciążenie zespołu */}
+          <div className="bg-white border border-gray-200 rounded-2xl shadow-sm p-6">
+            <div className="flex items-center justify-between mb-1">
+              <h3 className="font-bold text-gray-900">Obciążenie zespołu</h3>
+            </div>
+            <p className="text-xs text-gray-500 mb-5">Monitoruj potencjał wykonawczy swojego zespołu.</p>
+
+            <div className="space-y-1 mb-4">
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-gray-600 font-medium">Osoba przypisana</span>
+                <span className="text-gray-600 font-medium">Rozkład prac</span>
+              </div>
+            </div>
+
+            <div className="space-y-3">
+              {unassignedCount > 0 && (
+                <div className="flex items-center gap-3">
+                  <div className="w-5 flex justify-center flex-shrink-0">
+                    <UsersIcon className="w-4 h-4 text-gray-400" />
+                  </div>
+                  <span className="text-sm text-gray-700 w-32 truncate font-medium italic">Nie przypisano</span>
+                  <div className="flex-1 h-6 bg-gray-100 rounded-md overflow-hidden relative">
+                    <div
+                      className="h-full rounded-md flex items-center justify-end pr-2 transition-all duration-500 ease-out bg-red-400"
+                      style={{ width: `${Math.max((unassignedCount / maxWorkload) * 100, 8)}%` }}
+                    >
+                      <span className="text-xs font-bold text-white drop-shadow-sm">{Math.round((unassignedCount / activeTickets.length) * 100) || 0}%</span>
+                    </div>
+                  </div>
+                </div>
+              )}
+              {workloadEntries.map(([name, count]) => {
+                const pct = activeTickets.length > 0 ? Math.round((count / activeTickets.length) * 100) : 0;
+                return (
+                  <div key={name} className="flex items-center gap-3">
+                    <div className="w-5 h-5 rounded-full bg-indigo-100 flex items-center justify-center flex-shrink-0">
+                      <span className="text-[10px] font-bold text-indigo-600">{name.charAt(0)}</span>
+                    </div>
+                    <span className="text-sm text-gray-700 w-32 truncate font-medium">{name}</span>
+                    <div className="flex-1 h-6 bg-gray-100 rounded-md overflow-hidden relative">
+                      <div
+                        className="h-full rounded-md flex items-center justify-end pr-2 transition-all duration-500 ease-out bg-indigo-500"
+                        style={{ width: `${Math.max((count / maxWorkload) * 100, 8)}%` }}
+                      >
+                        <span className="text-xs font-bold text-white drop-shadow-sm">{pct}%</span>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+              {workloadEntries.length === 0 && unassignedCount === 0 && (
+                <p className="text-sm text-gray-500 italic text-center py-6">Brak aktywnych zgłoszeń.</p>
+              )}
+            </div>
+          </div>
+
+          {/* Sugestie */}
+          <div className="bg-white border border-gray-200 rounded-2xl shadow-sm p-6">
+            <div className="flex items-center gap-2 mb-1">
+              <Lightbulb className="w-5 h-5 text-amber-500" />
+              <h3 className="font-bold text-gray-900">Sugestie</h3>
+            </div>
+            <p className="text-xs text-gray-500 mb-5">Automatyczne wskazówki na podstawie danych.</p>
+            <div className="space-y-3">
+              {suggestions.map((s, i) => (
+                <div
+                  key={i}
+                  className={`flex items-start gap-3 p-3 rounded-xl text-sm font-medium ${
+                    s.severity === 'warning'
+                      ? 'bg-amber-50 text-amber-800 border border-amber-200'
+                      : s.severity === 'info'
+                      ? 'bg-blue-50 text-blue-800 border border-blue-200'
+                      : 'bg-green-50 text-green-800 border border-green-200'
+                  }`}
+                >
+                  <AlertTriangle className={`w-4 h-4 mt-0.5 flex-shrink-0 ${
+                    s.severity === 'warning' ? 'text-amber-500' : s.severity === 'info' ? 'text-blue-500' : 'text-green-500'
+                  }`} />
+                  {s.text}
+                </div>
+              ))}
+            </div>
+          </div>
+
+        </div>
+      </div>
+    );
+  }
+
+  // Fallback – rola bez dostępu
+  return (
+    <div className="flex items-center justify-center h-full">
+      <div className="text-center p-10">
+        <h2 className="text-xl font-bold text-gray-700">Brak dostępu</h2>
+        <p className="text-sm text-gray-500 mt-2">Sekcja statystyk jest dostępna tylko dla techników i administratorów.</p>
+      </div>
+    </div>
+  );
+};
+
+export default StatisticsPage;

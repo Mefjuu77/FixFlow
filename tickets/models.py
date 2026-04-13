@@ -49,3 +49,50 @@ class Ticket(models.Model):
 
     def __str__(self):
         return f"[{self.id}] {self.title}"
+
+
+class Comment(models.Model):
+    class CommentType(models.TextChoices):
+        REPLY = 'REPLY', 'Odpowiedź'
+        INTERNAL = 'INTERNAL', 'Notatka wewnętrzna'
+
+    ticket = models.ForeignKey(Ticket, on_delete=models.CASCADE, related_name='comments')
+    author = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='comments'
+    )
+    content = models.TextField()
+    comment_type = models.CharField(
+        max_length=20,
+        choices=CommentType.choices,
+        default=CommentType.REPLY
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['created_at']
+
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+        # Podbicie daty ostatniej aktualizacji zgłoszenia
+        self.ticket.save()
+
+    def __str__(self):
+        return f"Komentarz #{self.id} do zgłoszenia [{self.ticket.id}]"
+
+
+class Attachment(models.Model):
+    ticket = models.ForeignKey(Ticket, on_delete=models.CASCADE, related_name='attachments')
+    comment = models.ForeignKey(Comment, on_delete=models.CASCADE, related_name='attachments', null=True, blank=True)
+    file = models.FileField(upload_to='attachments/%Y/%m/')
+    filename = models.CharField(max_length=255)
+    uploaded_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='uploaded_attachments'
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.filename} (zgłoszenie #{self.ticket.id})"

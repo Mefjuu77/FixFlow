@@ -16,7 +16,10 @@ import {
   AlertTriangle,
   Minus,
   ChevronRight,
-  ArrowDown
+  ArrowDown,
+  Paperclip,
+  X,
+  Image
 } from 'lucide-react';
 import useTitle from '../hooks/useTitle';
 
@@ -34,6 +37,8 @@ const CreateTicketPage: React.FC = () => {
   const [fieldErrors, setFieldErrors] = useState<{ title?: string; description?: string }>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [activeDropdown, setActiveDropdown] = useState<'category' | 'priority' | null>(null);
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   
   const navigate = useNavigate();
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -135,7 +140,15 @@ const CreateTicketPage: React.FC = () => {
 
     setIsSubmitting(true);
     try {
-      await ticketService.createTicket(payload);
+      const created = await ticketService.createTicket(payload);
+      // Upload załączników jeśli są
+      if (selectedFiles.length > 0 && created.id) {
+        try {
+          await ticketService.uploadAttachments(created.id, selectedFiles);
+        } catch (uploadErr) {
+          console.error('Błąd uploadu załączników:', uploadErr);
+        }
+      }
       navigate('/tickets');
     } catch (err: any) {
       // Próba odczytania błędów walidacji z backendu
@@ -304,6 +317,76 @@ const CreateTicketPage: React.FC = () => {
               <p className="text-xs text-red-600 font-medium ml-1 flex items-center">
                 <AlertCircle className="w-3 h-3 mr-1" /> {fieldErrors.description}
               </p>
+            )}
+          </div>
+
+          {/* Załączniki */}
+          <div className="space-y-2">
+            <label className="text-sm font-bold text-gray-700 ml-1">Załączniki (opcjonalne)</label>
+            <div
+              onClick={() => fileInputRef.current?.click()}
+              className="w-full flex items-center justify-center gap-2 py-4 border-2 border-dashed border-gray-300 rounded-xl cursor-pointer hover:border-blue-400 hover:bg-blue-50/30 transition-all text-gray-500 hover:text-blue-600"
+            >
+              <Paperclip className="w-4 h-4" />
+              <span className="text-sm font-medium">Kliknij, aby dołączyć pliki (screenshoty, dokumenty...)</span>
+            </div>
+            <input
+              ref={fileInputRef}
+              type="file"
+              multiple
+              accept="image/*,.pdf,.doc,.docx,.txt,.zip"
+              className="hidden"
+              onChange={(e) => {
+                if (e.target.files) {
+                  const MAX_FILE_SIZE = 5 * 1024 * 1024;
+                  const MAX_TOTAL_SIZE = 15 * 1024 * 1024;
+                  const ALLOWED_EXTENSIONS = ['.png', '.jpg', '.jpeg', '.gif', '.webp', '.pdf', '.doc', '.docx', '.txt', '.zip'];
+                  const validFiles: File[] = [];
+                  const invalidFiles: string[] = [];
+                  
+                  let currentTotal = selectedFiles.reduce((sum, f) => sum + f.size, 0);
+
+                  Array.from(e.target.files).forEach(f => {
+                    const extIndex = f.name.lastIndexOf('.');
+                    const ext = extIndex >= 0 ? f.name.substring(extIndex).toLowerCase() : '';
+                    if (!ALLOWED_EXTENSIONS.includes(ext)) {
+                      invalidFiles.push(`${f.name} (niedozwolony format)`);
+                    } else if (f.size > MAX_FILE_SIZE) {
+                      invalidFiles.push(`${f.name} (powyżej 5MB)`);
+                    } else if (currentTotal + f.size > MAX_TOTAL_SIZE) {
+                      invalidFiles.push(`${f.name} (przekracza łączny limit 15MB)`);
+                    } else {
+                      validFiles.push(f);
+                      currentTotal += f.size;
+                    }
+                  });
+                  if (invalidFiles.length > 0) {
+                    alert(`Odrzucono niektóre pliki:\n- ${invalidFiles.join('\n- ')}`);
+                  }
+                  setSelectedFiles(prev => [...prev, ...validFiles]);
+                }
+                e.target.value = '';
+              }}
+            />
+            {selectedFiles.length > 0 && (
+              <div className="space-y-1.5 mt-2">
+                {selectedFiles.map((file, idx) => (
+                  <div key={idx} className="flex items-center justify-between px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm">
+                    <div className="flex items-center gap-2 min-w-0">
+                      {file.type.startsWith('image/') ? <Image className="w-4 h-4 text-blue-500 flex-shrink-0" /> : <FileText className="w-4 h-4 text-gray-400 flex-shrink-0" />}
+                      <span className="truncate text-gray-700 font-medium">{file.name}</span>
+                      <span className="text-gray-400 text-xs flex-shrink-0">{(file.size / 1024).toFixed(0)} KB</span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setSelectedFiles(prev => prev.filter((_, i) => i !== idx))}
+                      className="p-1 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded transition-colors flex-shrink-0"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+                ))}
+              </div>
             )}
           </div>
 
