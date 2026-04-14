@@ -175,18 +175,22 @@ const StatisticsPage: React.FC = () => {
   ];
 
   // Obciążenie zespołu
-  const workloadMap = new Map<string, number>();
+  const workloadMap = new Map<string, { count: number; avatar?: string | null }>();
   let unassignedCount = 0;
   activeTickets.forEach(t => {
     if (!t.technician_details) {
       unassignedCount++;
     } else {
       const name = `${t.technician_details.first_name} ${t.technician_details.last_name}`;
-      workloadMap.set(name, (workloadMap.get(name) || 0) + 1);
+      const current = workloadMap.get(name);
+      workloadMap.set(name, {
+        count: (current?.count || 0) + 1,
+        avatar: t.technician_details.avatar
+      });
     }
   });
-  const workloadEntries = [...workloadMap.entries()].sort((a, b) => b[1] - a[1]);
-  const maxWorkload = Math.max(unassignedCount, ...(workloadEntries.map(e => e[1])), 1);
+  const workloadEntries = [...workloadMap.entries()].sort((a, b) => b[1].count - a[1].count);
+  const maxWorkload = Math.max(unassignedCount, ...(workloadEntries.map(e => e[1].count)), 1);
 
   // Sugestie
   const suggestions: { text: string; severity: 'warning' | 'info' | 'success' }[] = [];
@@ -331,8 +335,8 @@ const StatisticsPage: React.FC = () => {
                   </div>
                 </div>
               )}
-              {workloadEntries.map(([name, count]) => (
-                <HorizontalBar key={name} label={name} value={count} max={maxWorkload} color="#6366f1" />
+              {workloadEntries.map(([name, data]) => (
+                <HorizontalBar key={name} label={name} value={data.count} max={maxWorkload} color="#6366f1" />
               ))}
               {workloadEntries.length === 0 && unassignedCount === 0 && (
                 <p className="text-sm text-gray-500 italic text-center py-6">Brak aktywnych zgłoszeń.</p>
@@ -487,18 +491,22 @@ const StatisticsPage: React.FC = () => {
                   </div>
                 </div>
               )}
-              {workloadEntries.map(([name, count]) => {
-                const pct = activeTickets.length > 0 ? Math.round((count / activeTickets.length) * 100) : 0;
+              {workloadEntries.map(([name, data]) => {
+                const pct = activeTickets.length > 0 ? Math.round((data.count / activeTickets.length) * 100) : 0;
                 return (
                   <div key={name} className="flex items-center gap-3">
-                    <div className="w-5 h-5 rounded-full bg-indigo-100 flex items-center justify-center flex-shrink-0">
-                      <span className="text-[10px] font-bold text-indigo-600">{name.charAt(0)}</span>
+                    <div className="w-5 h-5 rounded-full bg-indigo-100 flex items-center justify-center flex-shrink-0 overflow-hidden outline outline-1 outline-gray-200">
+                      {data.avatar ? (
+                        <img src={data.avatar} alt="Avatar" className="w-full h-full object-cover" />
+                      ) : (
+                        <span className="text-[10px] font-bold text-indigo-600">{name.charAt(0)}</span>
+                      )}
                     </div>
                     <span className="text-sm text-gray-700 w-32 truncate font-medium">{name}</span>
                     <div className="flex-1 h-6 bg-gray-100 rounded-md overflow-hidden relative">
                       <div
                         className="h-full rounded-md flex items-center justify-end pr-2 transition-all duration-500 ease-out bg-indigo-500"
-                        style={{ width: `${Math.max((count / maxWorkload) * 100, 8)}%` }}
+                        style={{ width: `${Math.max((data.count / maxWorkload) * 100, 8)}%` }}
                       >
                         <span className="text-xs font-bold text-white drop-shadow-sm">{pct}%</span>
                       </div>

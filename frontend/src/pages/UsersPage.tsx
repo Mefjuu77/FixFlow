@@ -226,8 +226,12 @@ const UsersPage: React.FC = () => {
                   <tr key={user.id} className="hover:bg-gray-50/60 transition-colors">
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
-                        <div className="w-9 h-9 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white font-bold text-sm flex-shrink-0">
-                          {user.first_name ? user.first_name.charAt(0).toUpperCase() : '?'}
+                        <div className="w-9 h-9 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center overflow-hidden outline outline-1 outline-gray-200 text-white font-bold text-sm flex-shrink-0">
+                          {user.avatar ? (
+                            <img src={user.avatar} alt="Avatar" className="w-full h-full object-cover" />
+                          ) : (
+                            user.first_name ? user.first_name.charAt(0).toUpperCase() : '?'
+                          )}
                         </div>
                         <div>
                           <p className="text-sm font-semibold text-gray-900">{user.first_name} {user.last_name}</p>

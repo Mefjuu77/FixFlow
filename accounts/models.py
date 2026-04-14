@@ -17,6 +17,12 @@ class CustomUser(AbstractUser):
         default=Role.EMPLOYEE,
         verbose_name=_('Rola')
     )
+    avatar = models.ImageField(
+        upload_to='avatars/',
+        null=True,
+        blank=True,
+        verbose_name=_('Zdjęcie profilowe')
+    )
 
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = []

@@ -67,10 +67,14 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
 
         <div className="p-4 border-t border-gray-800">
           <div className="flex items-center mb-4">
-            <div className="flex items-center justify-center w-10 h-10 bg-blue-600 rounded-full flex-shrink-0">
-              <span className="font-bold text-white uppercase">
-                {authContext?.user?.first_name ? authContext.user.first_name.charAt(0) : 'U'}
-              </span>
+            <div className="flex items-center justify-center w-10 h-10 bg-blue-600 rounded-full flex-shrink-0 overflow-hidden outline outline-1 outline-white/10">
+              {authContext?.user?.avatar ? (
+                <img src={authContext.user.avatar} alt="Avatar" className="w-full h-full object-cover" />
+              ) : (
+                <span className="font-bold text-white uppercase">
+                  {authContext?.user?.first_name ? authContext.user.first_name.charAt(0) : 'U'}
+                </span>
+              )}
             </div>
             <div className="ml-3 overflow-hidden">
               <p className="text-sm font-medium text-white truncate" title={`${authContext?.user?.first_name} ${authContext?.user?.last_name}`}>

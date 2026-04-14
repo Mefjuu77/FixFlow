@@ -4,6 +4,7 @@ export interface User {
   role: 'EMPLOYEE' | 'TECHNICIAN' | 'ADMIN';
   first_name: string;
   last_name: string;
+  avatar?: string | null;
 }
 
 export interface Category {
