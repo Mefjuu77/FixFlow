@@ -1,7 +1,8 @@
 import React, { useContext } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { AuthContext } from '../../context/AuthContext';
-import { LayoutDashboard, Ticket, Users, Settings, LogOut, Wrench, BarChart3 } from 'lucide-react';
+import { ThemeContext } from '../../context/ThemeContext';
+import { LayoutDashboard, Ticket, Users, Settings, LogOut, Wrench, BarChart3, Moon, Sun } from 'lucide-react';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -9,6 +10,7 @@ interface LayoutProps {
 
 const Layout: React.FC<LayoutProps> = ({ children }) => {
   const authContext = useContext(AuthContext);
+  const themeContext = useContext(ThemeContext);
   const location = useLocation();
 
   const handleLogout = () => {
@@ -22,11 +24,12 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
     ...(authContext?.user?.role === 'ADMIN' || authContext?.user?.role === 'TECHNICIAN' ? [
       { name: 'Statystyki', path: '/statistics', icon: <BarChart3 size={20} /> }
     ] : []),
-    // Dostęp do panelu użytkowników i ustawień tylko dla Admina
+    // Dostęp do panelu użytkowników tylko dla Admina
     ...(authContext?.user?.role === 'ADMIN' ? [
       { name: 'Użytkownicy', path: '/users', icon: <Users size={20} /> },
-      { name: 'Ustawienia', path: '/settings', icon: <Settings size={20} /> }
-    ] : [])
+    ] : []),
+    // Ustawienia dostępne dla wszystkich
+    { name: 'Ustawienia', path: '/settings', icon: <Settings size={20} /> }
   ];
 
   const roleNames: Record<string, string> = {
@@ -85,12 +88,21 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
               </p>
             </div>
           </div>
-          <button
-            onClick={handleLogout}
-            className="flex items-center justify-center w-full px-4 py-2 text-sm text-gray-300 transition-colors bg-gray-800 rounded-md hover:bg-gray-700 hover:text-white"
-          >
-            <LogOut size={16} className="mr-2" /> Wyloguj się
-          </button>
+          <div className="flex gap-2">
+            <button
+              onClick={handleLogout}
+              className="flex-1 flex items-center justify-center px-4 py-2 text-sm text-gray-300 transition-colors bg-gray-800 rounded-md hover:bg-gray-700 hover:text-white"
+            >
+              <LogOut size={16} className="mr-2" /> Wyloguj się
+            </button>
+            <button
+              onClick={() => themeContext?.toggleTheme()}
+              className="flex items-center justify-center w-9 h-9 text-gray-300 transition-colors bg-gray-800 rounded-md hover:bg-gray-700 hover:text-white flex-shrink-0"
+              title={themeContext?.isDark ? 'Włącz jasny motyw' : 'Włącz ciemny motyw'}
+            >
+              {themeContext?.isDark ? <Sun size={16} /> : <Moon size={16} />}
+            </button>
+          </div>
         </div>
       </div>
 
