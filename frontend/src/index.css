@@ -26,8 +26,8 @@ html.dark .text-gray-900 { color: #f1f5f9 !important; }
 html.dark .text-gray-800 { color: #e2e8f0 !important; }
 html.dark .text-gray-700 { color: #cbd5e1 !important; }
 html.dark .text-gray-600 { color: #94a3b8 !important; }
-html.dark .text-gray-500 { color: #8096ae !important; }
-html.dark .text-gray-400 { color: #64748b !important; }
+html.dark .text-gray-500 { color: #94a3b8 !important; }
+html.dark .text-gray-400 { color: #8096ae !important; }
 
 /* ---- Badge Colored Text ---- */
 html.dark .text-blue-800, html.dark .text-blue-700 { color: #60a5fa !important; } /* text-blue-400 */
@@ -39,7 +39,7 @@ html.dark .text-violet-800, html.dark .text-violet-700 { color: #a78bfa !importa
 
 /* ---- Borders ---- */
 html.dark .border-gray-200 { border-color: #334155 !important; }
-html.dark .border-gray-100 { border-color: #1e293b !important; }
+html.dark .border-gray-100, html.dark .border-gray-100\/70 { border-color: #1e293b !important; }
 html.dark .border-gray-50 { border-color: #1e293b !important; }
 html.dark .border-gray-800 { border-color: #1e293b !important; }
 
@@ -57,7 +57,7 @@ html.dark select {
 }
 html.dark input::placeholder,
 html.dark textarea::placeholder {
-  color: #475569 !important;
+  color: #94a3b8 !important;
 }
 html.dark input:focus,
 html.dark textarea:focus,
@@ -83,22 +83,22 @@ html.dark .bg-black\/50 { background-color: rgba(0,0,0,0.7) !important; }
 html.dark .bg-black\/80 { background-color: rgba(0,0,0,0.9) !important; }
 
 /* ---- Status badges (preserve colors but adjust background for dark) ---- */
-html.dark .bg-blue-50 { background-color: rgba(59,130,246,0.15) !important; }
-html.dark .bg-amber-50 { background-color: rgba(245,158,11,0.15) !important; }
-html.dark .bg-green-50 { background-color: rgba(34,197,94,0.15) !important; }
-html.dark .bg-red-50 { background-color: rgba(239,68,68,0.15) !important; }
-html.dark .bg-violet-50 { background-color: rgba(139,92,246,0.15) !important; }
+html.dark .bg-blue-50 { background-color: rgba(59,130,246,0.25) !important; }
+html.dark .bg-amber-50 { background-color: rgba(245,158,11,0.25) !important; }
+html.dark .bg-green-50 { background-color: rgba(34,197,94,0.25) !important; }
+html.dark .bg-red-50 { background-color: rgba(239,68,68,0.25) !important; }
+html.dark .bg-violet-50 { background-color: rgba(139,92,246,0.25) !important; }
 
 /* ---- Colored borders (KPI cards, status accents) ---- */
-html.dark .border-blue-200 { border-color: rgba(59,130,246,0.35) !important; }
-html.dark .border-blue-100 { border-color: rgba(59,130,246,0.2) !important; }
-html.dark .border-amber-200 { border-color: rgba(245,158,11,0.35) !important; }
-html.dark .border-amber-100 { border-color: rgba(245,158,11,0.2) !important; }
-html.dark .border-green-200 { border-color: rgba(34,197,94,0.35) !important; }
-html.dark .border-green-100 { border-color: rgba(34,197,94,0.2) !important; }
-html.dark .border-red-200 { border-color: rgba(239,68,68,0.35) !important; }
-html.dark .border-red-100 { border-color: rgba(239,68,68,0.2) !important; }
-html.dark .border-violet-200 { border-color: rgba(139,92,246,0.35) !important; }
+html.dark .border-blue-200 { border-color: rgba(59,130,246,0.6) !important; }
+html.dark .border-blue-100 { border-color: rgba(59,130,246,0.3) !important; }
+html.dark .border-amber-200 { border-color: rgba(245,158,11,0.6) !important; }
+html.dark .border-amber-100 { border-color: rgba(245,158,11,0.3) !important; }
+html.dark .border-green-200 { border-color: rgba(34,197,94,0.6) !important; }
+html.dark .border-green-100 { border-color: rgba(34,197,94,0.3) !important; }
+html.dark .border-red-200 { border-color: rgba(239,68,68,0.6) !important; }
+html.dark .border-red-100 { border-color: rgba(239,68,68,0.3) !important; }
+html.dark .border-violet-200 { border-color: rgba(139,92,246,0.6) !important; }
 
 /* ---- Badge / tag backgrounds ---- */
 html.dark .bg-blue-100 { background-color: rgba(59,130,246,0.2) !important; }
