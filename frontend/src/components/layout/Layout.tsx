@@ -108,13 +108,6 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
 
       {/* Main Content */}
       <div className="flex flex-col flex-1 overflow-hidden">
-        {/* Top Navbar */}
-        <header className="flex items-center justify-between px-6 py-4 bg-white border-b border-gray-200">
-          <h2 className="text-xl font-semibold text-gray-800">
-            {navItems.find(item => location.pathname.includes(item.path))?.name || 'Panel'}
-          </h2>
-        </header>
-
         {/* Page Content */}
         <main className="flex-1 p-6 overflow-y-auto bg-gray-50">
           {children}
