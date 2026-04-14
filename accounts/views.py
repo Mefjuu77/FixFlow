@@ -2,7 +2,8 @@ from rest_framework.views import APIView
 from rest_framework import generics, status
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated, BasePermission
-from .serializers import UserSerializer, UserCreateSerializer, UserUpdateSerializer
+from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
+from .serializers import UserSerializer, UserCreateSerializer, UserUpdateSerializer, ProfileUpdateSerializer
 from .models import CustomUser
 
 class IsAdmin(BasePermission):
@@ -21,14 +22,23 @@ class TechnicianListView(generics.ListAPIView):
 
 class CurrentUserView(APIView):
     """
-    Zwraca dane aktualnie zalogowanego użytkownika
-    na podstawie przekazanego tokenu JWT.
+    GET: Zwraca dane aktualnie zalogowanego użytkownika.
+    PATCH: Aktualizuje profil (imię, nazwisko, avatar).
     """
     permission_classes = [IsAuthenticated]
+    parser_classes = [MultiPartParser, FormParser, JSONParser]
 
     def get(self, request):
-        serializer = UserSerializer(request.user)
+        serializer = UserSerializer(request.user, context={'request': request})
         return Response(serializer.data)
+
+    def patch(self, request):
+        serializer = ProfileUpdateSerializer(request.user, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            # Zwróć pełne dane użytkownika po aktualizacji
+            return Response(UserSerializer(request.user, context={'request': request}).data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 class UserListView(generics.ListAPIView):
     """

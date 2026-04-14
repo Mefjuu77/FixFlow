@@ -37,3 +37,12 @@ class UserUpdateSerializer(serializers.ModelSerializer):
             instance.set_password(password)
         instance.save()
         return instance
+
+class ProfileUpdateSerializer(serializers.ModelSerializer):
+    """
+    Serializer do aktualizacji własnego profilu.
+    Pozwala zmieniać tylko imię, nazwisko i avatar.
+    """
+    class Meta:
+        model = User
+        fields = ('first_name', 'last_name', 'avatar')
