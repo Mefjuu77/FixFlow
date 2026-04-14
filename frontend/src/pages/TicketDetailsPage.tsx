@@ -23,7 +23,11 @@ import {
   Paperclip,
   Image,
   FileText,
-  Download
+  Download,
+  ZoomIn,
+  ExternalLink,
+  ChevronLeft,
+  ChevronRight
 } from 'lucide-react';
 
 const TicketDetailsPage: React.FC = () => {
@@ -39,6 +43,7 @@ const TicketDetailsPage: React.FC = () => {
   const [commentError, setCommentError] = useState('');
   const [newCommentFiles, setNewCommentFiles] = useState<File[]>([]);
   const newCommentFileRef = useRef<HTMLInputElement>(null);
+  const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
 
   const authContext = useContext(AuthContext);
   const navigate = useNavigate();
@@ -274,21 +279,82 @@ const TicketDetailsPage: React.FC = () => {
               {ticket.attachments && ticket.attachments.length > 0 && (
                 <div className="mt-4 pt-4 border-t border-gray-100">
                   <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">Załączniki do zgłoszenia</h3>
-                  <div className="flex flex-wrap gap-2">
-                    {ticket.attachments.map(att => (
-                      <a
-                        key={att.id}
-                        href={att.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex items-center gap-2 p-2 pr-3 bg-gray-50 hover:bg-blue-50 border border-gray-200 hover:border-blue-300 rounded-lg transition-colors group"
-                      >
-                        {att.url.toLowerCase().match(/\.(jpeg|jpg|gif|png)$/) != null ? <Image className="w-4 h-4 text-blue-500" /> : <FileText className="w-4 h-4 text-gray-400" />}
-                        <span className="text-sm font-medium text-gray-700 group-hover:text-blue-700 truncate max-w-[200px]">{att.filename}</span>
-                        <Download className="w-3.5 h-3.5 text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity ml-1" />
-                      </a>
-                    ))}
-                  </div>
+                  {/* Image attachments - horizontal carousel */}
+                  {(() => {
+                    const imageAtts = ticket.attachments.filter(att => att.url?.toLowerCase().match(/\.(jpeg|jpg|gif|png|webp)$/));
+                    if (imageAtts.length === 0) return null;
+                    const scrollId = 'ticket-img-scroll';
+                    const scroll = (dir: 'left' | 'right') => {
+                      const el = document.getElementById(scrollId);
+                      if (el) el.scrollBy({ left: dir === 'left' ? -240 : 240, behavior: 'smooth' });
+                    };
+                    return (
+                      <div className="relative group/carousel mb-3">
+                        <div className="flex items-center gap-1.5 mb-2">
+                          <span className="text-xs font-semibold text-gray-500">{imageAtts.length} {imageAtts.length === 1 ? 'zdjęcie' : imageAtts.length < 5 ? 'zdjęcia' : 'zdjęć'}</span>
+                        </div>
+                        {imageAtts.length > 3 && (
+                          <>
+                            <button
+                              onClick={() => scroll('left')}
+                              className="absolute left-0 top-1/2 -translate-y-1/2 z-10 w-8 h-8 bg-white/90 hover:bg-white border border-gray-200 rounded-full flex items-center justify-center shadow-md opacity-0 group-hover/carousel:opacity-100 transition-opacity duration-200 -ml-3"
+                            >
+                              <ChevronLeft className="w-4 h-4 text-gray-700" />
+                            </button>
+                            <button
+                              onClick={() => scroll('right')}
+                              className="absolute right-0 top-1/2 -translate-y-1/2 z-10 w-8 h-8 bg-white/90 hover:bg-white border border-gray-200 rounded-full flex items-center justify-center shadow-md opacity-0 group-hover/carousel:opacity-100 transition-opacity duration-200 -mr-3"
+                            >
+                              <ChevronRight className="w-4 h-4 text-gray-700" />
+                            </button>
+                          </>
+                        )}
+                        <div
+                          id={scrollId}
+                          className="flex gap-3 overflow-x-auto pb-2 scroll-smooth"
+                          style={{ scrollbarWidth: 'thin', scrollbarColor: '#d1d5db transparent' }}
+                        >
+                          {imageAtts.map(att => (
+                            <div
+                              key={att.id}
+                              className="group relative flex-shrink-0 w-[220px] rounded-xl overflow-hidden border border-gray-200 hover:border-blue-400 bg-gray-50 cursor-pointer transition-all hover:shadow-lg"
+                              onClick={() => setLightboxUrl(att.url)}
+                            >
+                              <div className="aspect-[4/3] overflow-hidden">
+                                <img
+                                  src={att.url}
+                                  alt={att.filename}
+                                  className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                                  loading="lazy"
+                                />
+                              </div>
+                              <div className="px-2 py-1.5 bg-white border-t border-gray-100">
+                                <p className="text-[11px] text-gray-600 truncate font-medium">{att.filename}</p>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  })()}
+                  {/* Non-image attachments */}
+                  {ticket.attachments.filter(att => !att.url?.toLowerCase().match(/\.(jpeg|jpg|gif|png|webp)$/)).length > 0 && (
+                    <div className="flex flex-wrap gap-2">
+                      {ticket.attachments.filter(att => !att.url?.toLowerCase().match(/\.(jpeg|jpg|gif|png|webp)$/)).map(att => (
+                        <a
+                          key={att.id}
+                          href={att.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex items-center gap-2 p-2 pr-3 bg-gray-50 hover:bg-blue-50 border border-gray-200 hover:border-blue-300 rounded-lg transition-colors group"
+                        >
+                          <FileText className="w-4 h-4 text-gray-400" />
+                          <span className="text-sm font-medium text-gray-700 group-hover:text-blue-700 truncate max-w-[200px]">{att.filename}</span>
+                          <Download className="w-3.5 h-3.5 text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity ml-1" />
+                        </a>
+                      ))}
+                    </div>
+                  )}
                 </div>
               )}
             </div>
@@ -317,10 +383,16 @@ const TicketDetailsPage: React.FC = () => {
                       const isInternal = comment.comment_type === 'INTERNAL';
                       return (
                         <div key={comment.id} className="flex gap-4 items-start">
-                          <div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center flex-shrink-0 text-white font-bold text-xs uppercase">
-                            {comment.author_details?.first_name ? comment.author_details.first_name.charAt(0) : 'U'}
+                          <div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center flex-shrink-0 overflow-hidden outline outline-1 outline-gray-200">
+                            {comment.author_details?.avatar ? (
+                              <img src={comment.author_details.avatar} alt="Avatar" className="w-full h-full object-cover" />
+                            ) : (
+                              <span className="text-white font-bold text-xs uppercase">
+                                {comment.author_details?.first_name ? comment.author_details.first_name.charAt(0) : 'U'}
+                              </span>
+                            )}
                           </div>
-                          <div className={`p-4 rounded-xl flex-1 ${isInternal ? 'bg-amber-50 border border-amber-200' : 'bg-gray-50 border border-gray-100'}`}>
+                          <div className={`p-4 rounded-xl flex-1 min-w-0 ${isInternal ? 'bg-amber-50 border border-amber-200' : 'bg-gray-50 border border-gray-100'}`}>
                             <div className="flex justify-between items-start mb-2">
                               <span className="font-semibold text-gray-900 text-sm">{comment.author_details?.first_name} {comment.author_details?.last_name}</span>
                               <span className="text-xs text-gray-500">
@@ -336,14 +408,74 @@ const TicketDetailsPage: React.FC = () => {
                             <p className="text-gray-700 text-sm whitespace-pre-wrap">{comment.content}</p>
 
                             {comment.attachments && comment.attachments.length > 0 && (
-                              <div className="flex flex-wrap gap-2 mt-3 pt-3 border-t border-gray-100/70">
-                                {comment.attachments.map(att => (
-                                  <a key={att.id} href={att.url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 px-2.5 py-1.5 bg-white border border-gray-200 rounded-lg text-xs hover:border-blue-400 hover:bg-blue-50 transition-colors group text-gray-700">
-                                    {att.url.toLowerCase().match(/\.(jpeg|jpg|gif|png)$/) != null ? <Image className="w-3.5 h-3.5 text-blue-500" /> : <FileText className="w-3.5 h-3.5 text-gray-400" />}
-                                    <span className="truncate max-w-[150px]">{att.filename}</span>
-                                    <Download className="w-3 h-3 text-gray-400 opacity-0 group-hover:opacity-100 ml-1 transition-opacity" />
-                                  </a>
-                                ))}
+                              <div className="mt-3 pt-3 border-t border-gray-100/70">
+                                {/* Comment image attachments - horizontal carousel */}
+                                {(() => {
+                                  const commentImageAtts = comment.attachments.filter(att => att.url?.toLowerCase().match(/\.(jpeg|jpg|gif|png|webp)$/));
+                                  if (commentImageAtts.length === 0) return null;
+                                  const scrollId = `comment-img-scroll-${comment.id}`;
+                                  const scroll = (dir: 'left' | 'right') => {
+                                    const el = document.getElementById(scrollId);
+                                    if (el) el.scrollBy({ left: dir === 'left' ? -200 : 200, behavior: 'smooth' });
+                                  };
+                                  return (
+                                    <div className="relative group/carousel mb-2">
+                                      {commentImageAtts.length > 2 && (
+                                        <>
+                                          <button
+                                            onClick={() => scroll('left')}
+                                            className="absolute left-0 top-1/2 -translate-y-1/2 z-10 w-7 h-7 bg-white/90 hover:bg-white border border-gray-200 rounded-full flex items-center justify-center shadow-md opacity-0 group-hover/carousel:opacity-100 transition-opacity duration-200 -ml-2.5"
+                                          >
+                                            <ChevronLeft className="w-3.5 h-3.5 text-gray-700" />
+                                          </button>
+                                          <button
+                                            onClick={() => scroll('right')}
+                                            className="absolute right-0 top-1/2 -translate-y-1/2 z-10 w-7 h-7 bg-white/90 hover:bg-white border border-gray-200 rounded-full flex items-center justify-center shadow-md opacity-0 group-hover/carousel:opacity-100 transition-opacity duration-200 -mr-2.5"
+                                          >
+                                            <ChevronRight className="w-3.5 h-3.5 text-gray-700" />
+                                          </button>
+                                        </>
+                                      )}
+                                      <div
+                                        id={scrollId}
+                                        className="flex gap-2 overflow-x-auto pb-1.5 scroll-smooth"
+                                        style={{ scrollbarWidth: 'thin', scrollbarColor: '#d1d5db transparent' }}
+                                      >
+                                        {commentImageAtts.map(att => (
+                                          <div
+                                            key={att.id}
+                                            className="group relative flex-shrink-0 w-[180px] rounded-lg overflow-hidden border border-gray-200 hover:border-blue-400 bg-gray-50 cursor-pointer transition-all hover:shadow-md"
+                                            onClick={() => setLightboxUrl(att.url)}
+                                          >
+                                            <div className="aspect-[4/3] overflow-hidden">
+                                              <img
+                                                src={att.url}
+                                                alt={att.filename}
+                                                className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                                                loading="lazy"
+                                              />
+                                            </div>
+                                            <div className="px-1.5 py-1 bg-white border-t border-gray-100">
+                                              <p className="text-[10px] text-gray-600 truncate font-medium">{att.filename}</p>
+                                            </div>
+                                          </div>
+                                        ))}
+                                      </div>
+                                    </div>
+                                  );
+                                })()}
+                                {/* Comment non-image attachments */}
+                                {comment.attachments.filter(att => !att.url?.toLowerCase().match(/\.(jpeg|jpg|gif|png|webp)$/)).length > 0 && (
+                                  <div className="flex flex-wrap gap-2">
+                                    {comment.attachments.filter(att => !att.url?.toLowerCase().match(/\.(jpeg|jpg|gif|png|webp)$/)).map(att => (
+                                      <a key={att.id} href={att.url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 px-2.5 py-1.5 bg-white border border-gray-200 rounded-lg text-xs hover:border-blue-400 hover:bg-blue-50 transition-colors group text-gray-700">
+                                        <FileText className="w-3.5 h-3.5 text-gray-400" />
+                                        <span className="truncate max-w-[150px]">{att.filename}</span>
+                                        <Download className="w-3 h-3 text-gray-400 opacity-0 group-hover:opacity-100 ml-1 transition-opacity" />
+                                      </a>
+                                    ))}
+                                  </div>
+                                )}
                               </div>
                             )}
 
@@ -356,8 +488,14 @@ const TicketDetailsPage: React.FC = () => {
 
                 {/* Formularz Nowego Komentarza */}
                 <div className="flex gap-4 items-start mt-6 pt-6 border-t border-gray-100">
-                  <div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center flex-shrink-0 text-white font-bold text-xs uppercase">
-                    {authContext?.user?.first_name ? authContext.user.first_name.charAt(0) : 'U'}
+                  <div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center flex-shrink-0 overflow-hidden outline outline-1 outline-gray-200">
+                    {authContext?.user?.avatar ? (
+                      <img src={authContext.user.avatar} alt="Avatar" className="w-full h-full object-cover" />
+                    ) : (
+                      <span className="text-white font-bold text-xs uppercase">
+                        {authContext?.user?.first_name ? authContext.user.first_name.charAt(0) : 'U'}
+                      </span>
+                    )}
                   </div>
                   <div className="flex-1 space-y-3">
                     <div className="flex gap-2 mb-2">
@@ -790,6 +928,51 @@ const TicketDetailsPage: React.FC = () => {
                   transitionModalConfig.targetStatus === 'NOWE' ? 'Nowe' :
                     transitionModalConfig.targetStatus === 'ROZWIAZANE' ? 'Rozwiązane' :
                       transitionModalConfig.targetStatus === 'ZAMKNIETE' ? 'Zamknięte' : transitionModalConfig.targetStatus}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Lightbox Modal for full-size image viewing */}
+      {lightboxUrl && (
+        <div
+          className="fixed inset-0 z-[200] flex items-center justify-center bg-black/80 animate-in fade-in duration-200 cursor-zoom-out"
+          onClick={() => setLightboxUrl(null)}
+        >
+          <div className="relative w-[98vw] h-[98vh] flex items-center justify-center animate-in zoom-in-95 duration-200">
+            <img
+              src={lightboxUrl}
+              alt="Podgląd załącznika"
+              className="max-w-full max-h-full rounded-xl shadow-2xl object-contain"
+              onClick={(e) => e.stopPropagation()}
+            />
+            <div className="absolute top-3 right-3 flex items-center gap-2">
+              <a
+                href={lightboxUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={(e) => e.stopPropagation()}
+                className="p-2 bg-black/60 hover:bg-black/80 shadow-md backdrop-blur-md rounded-lg transition-all text-white border border-white/10"
+                title="Otwórz w nowej karcie"
+              >
+                <ExternalLink className="w-5 h-5" />
+              </a>
+              <a
+                href={lightboxUrl}
+                download
+                onClick={(e) => e.stopPropagation()}
+                className="p-2 bg-black/60 hover:bg-black/80 shadow-md backdrop-blur-md rounded-lg transition-all text-white border border-white/10"
+                title="Pobierz"
+              >
+                <Download className="w-5 h-5" />
+              </a>
+              <button
+                onClick={() => setLightboxUrl(null)}
+                className="p-2 bg-black/60 hover:bg-black/80 shadow-md backdrop-blur-md rounded-lg transition-all text-white border border-white/10"
+                title="Zamknij"
+              >
+                <X className="w-5 h-5" />
               </button>
             </div>
           </div>
