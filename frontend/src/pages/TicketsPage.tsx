@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useContext, useRef } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
 import api from '../api/axiosConfig';
 import { Ticket } from '../types';
@@ -100,14 +100,15 @@ const getCategoryIcon = (name: string) => {
 const TicketsPage: React.FC = () => {
   useTitle('Zgłoszenia');
   const authContext = useContext(AuthContext);
+  const [searchParams] = useSearchParams();
   const [tickets, setTickets] = useState<Ticket[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
-  // Filtry technika i admina
-  const [statusFilter, setStatusFilter] = useState<string>('all');
-  const [priorityFilter, setPriorityFilter] = useState<string>('all');
+  // Filtry technika i admina — inicjalizacja z URL params
+  const [statusFilter, setStatusFilter] = useState<string>(searchParams.get('status') || 'all');
+  const [priorityFilter, setPriorityFilter] = useState<string>(searchParams.get('priority') || 'all');
   const [assignmentFilter, setAssignmentFilter] = useState<string>('all');
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
 
