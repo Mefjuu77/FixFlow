@@ -5,7 +5,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from .models import Category, Ticket, Comment, Attachment
 from .serializers import CategorySerializer, TicketSerializer, CommentSerializer, AttachmentSerializer
-from .email import send_comment_notification, send_status_change_notification
+from .email import send_comment_notification, send_status_change_notification, send_ticket_created_notification, send_technician_assigned_notification
 
 class CategoryViewSet(viewsets.ModelViewSet):
     queryset = Category.objects.all()
@@ -25,15 +25,23 @@ class TicketViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         # Automatycznie przypisuje aktualnie zalogowanego użytkownika jako twórcę zgłoszenia
-        serializer.save(creator=self.request.user)
+        ticket = serializer.save(creator=self.request.user)
+        send_ticket_created_notification(ticket)
 
     def perform_update(self, serializer):
-        old_status = self.get_object().status
+        old_ticket = self.get_object()
+        old_status = old_ticket.status
+        old_technician = old_ticket.technician
+        
         ticket = serializer.save()
         
         # Jeśli status się zmienił, wysyłamy maila do twórcy zgłoszenia
         if old_status != ticket.status:
             send_status_change_notification(ticket, old_status, ticket.status)
+
+        # Jeśli technik został przypisany / zmieniony na kogoś innego
+        if old_technician != ticket.technician and ticket.technician is not None:
+            send_technician_assigned_notification(ticket, old_technician=old_technician)
 
 
 class CommentListCreateView(generics.ListCreateAPIView):
