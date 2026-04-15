@@ -290,6 +290,43 @@ const TicketDetailsPage: React.FC = () => {
           </div>
           <h1 className="text-2xl font-semibold text-gray-900 mb-6">{ticket.title}</h1>
 
+          {/* Prominent status banner for employees */}
+          {!isTechnicianOrAdmin && (
+            <div className={`flex items-center gap-3 p-4 rounded-xl border mb-2 ${ticket.status === 'NOWE' ? 'bg-blue-50 border-blue-200' :
+                ticket.status === 'W_TOKU' ? 'bg-amber-50 border-amber-200' :
+                  ticket.status === 'ROZWIAZANE' ? 'bg-green-50 border-green-200' :
+                    'bg-gray-50 border-gray-200'
+              }`}>
+              <div className={`w-3 h-3 rounded-full flex-shrink-0 ${ticket.status === 'NOWE' ? 'bg-blue-500' :
+                  ticket.status === 'W_TOKU' ? 'bg-amber-500 animate-pulse' :
+                    ticket.status === 'ROZWIAZANE' ? 'bg-green-500' :
+                      'bg-gray-400'
+                }`} />
+              <div>
+                <p className={`text-sm font-bold ${ticket.status === 'NOWE' ? 'text-blue-800' :
+                    ticket.status === 'W_TOKU' ? 'text-amber-800' :
+                      ticket.status === 'ROZWIAZANE' ? 'text-green-800' :
+                        'text-gray-700'
+                  }`}>
+                  Status: {ticket.status === 'W_TOKU' ? 'W toku' :
+                    ticket.status === 'NOWE' ? 'Nowe' :
+                      ticket.status === 'ROZWIAZANE' ? 'Rozwiązane' :
+                        ticket.status === 'ZAMKNIETE' ? 'Zamknięte' : ticket.status}
+                </p>
+                <p className={`text-xs mt-0.5 ${ticket.status === 'NOWE' ? 'text-blue-600' :
+                    ticket.status === 'W_TOKU' ? 'text-amber-600' :
+                      ticket.status === 'ROZWIAZANE' ? 'text-green-600' :
+                        'text-gray-500'
+                  }`}>
+                  {ticket.status === 'NOWE' ? 'Twoje zgłoszenie oczekuje na rozpatrzenie.' :
+                    ticket.status === 'W_TOKU' ? 'Twoje zgłoszenie jest w trakcie realizacji.' :
+                      ticket.status === 'ROZWIAZANE' ? 'Zgłodzenie zostało rozwiązane.' :
+                        'Zgłoszenie zostało zamknięte.'}
+                </p>
+              </div>
+            </div>
+          )}
+
           <div className="bg-white rounded-xl border border-gray-200 shadow-sm">
             <div className="p-4 border-b border-gray-100 bg-white rounded-t-xl">
               <div className="flex items-center gap-3">
@@ -404,17 +441,19 @@ const TicketDetailsPage: React.FC = () => {
 
           {/* Activity Section */}
           <div className="mt-8">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Aktywność</h3>
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">{isTechnicianOrAdmin ? 'Aktywność' : 'Aktywność'}</h3>
 
-            <div className="flex border-b border-gray-200 mb-4 custom-scrollbar overflow-x-auto">
-              <button onClick={() => setActiveTab('logs')} className={`px-4 py-2 text-sm whitespace-nowrap transition-colors ${activeTab === 'logs' ? 'text-blue-600 border-b-2 border-blue-600 bg-blue-50/50 font-medium' : 'text-gray-600 hover:bg-gray-50'}`}>Logi</button>
-              <button onClick={() => setActiveTab('comments')} className={`px-4 py-2 text-sm whitespace-nowrap transition-colors ${activeTab === 'comments' ? 'text-blue-600 border-b-2 border-blue-600 bg-blue-50/50 font-medium' : 'text-gray-600 hover:bg-gray-50'}`}>Komentarze</button>
-              <button onClick={() => setActiveTab('history')} className={`px-4 py-2 text-sm whitespace-nowrap transition-colors ${activeTab === 'history' ? 'text-blue-600 border-b-2 border-blue-600 bg-blue-50/50 font-medium' : 'text-gray-600 hover:bg-gray-50'}`}>Historia</button>
-              <button onClick={() => setActiveTab('work_log')} className={`px-4 py-2 text-sm whitespace-nowrap transition-colors ${activeTab === 'work_log' ? 'text-blue-600 border-b-2 border-blue-600 bg-blue-50/50 font-medium' : 'text-gray-600 hover:bg-gray-50'}`}>Rejestr prac</button>
-              <button onClick={() => setActiveTab('approvals')} className={`px-4 py-2 text-sm whitespace-nowrap transition-colors ${activeTab === 'approvals' ? 'text-blue-600 border-b-2 border-blue-600 bg-blue-50/50 font-medium' : 'text-gray-600 hover:bg-gray-50'}`}>Zatwierdzenia</button>
-            </div>
+            {isTechnicianOrAdmin && (
+              <div className="flex border-b border-gray-200 mb-4 custom-scrollbar overflow-x-auto">
+                <button onClick={() => setActiveTab('logs')} className={`px-4 py-2 text-sm whitespace-nowrap transition-colors ${activeTab === 'logs' ? 'text-blue-600 border-b-2 border-blue-600 bg-blue-50/50 font-medium' : 'text-gray-600 hover:bg-gray-50'}`}>Logi</button>
+                <button onClick={() => setActiveTab('comments')} className={`px-4 py-2 text-sm whitespace-nowrap transition-colors ${activeTab === 'comments' ? 'text-blue-600 border-b-2 border-blue-600 bg-blue-50/50 font-medium' : 'text-gray-600 hover:bg-gray-50'}`}>Komentarze</button>
+                <button onClick={() => setActiveTab('history')} className={`px-4 py-2 text-sm whitespace-nowrap transition-colors ${activeTab === 'history' ? 'text-blue-600 border-b-2 border-blue-600 bg-blue-50/50 font-medium' : 'text-gray-600 hover:bg-gray-50'}`}>Historia</button>
+                <button onClick={() => setActiveTab('work_log')} className={`px-4 py-2 text-sm whitespace-nowrap transition-colors ${activeTab === 'work_log' ? 'text-blue-600 border-b-2 border-blue-600 bg-blue-50/50 font-medium' : 'text-gray-600 hover:bg-gray-50'}`}>Rejestr prac</button>
+                <button onClick={() => setActiveTab('approvals')} className={`px-4 py-2 text-sm whitespace-nowrap transition-colors ${activeTab === 'approvals' ? 'text-blue-600 border-b-2 border-blue-600 bg-blue-50/50 font-medium' : 'text-gray-600 hover:bg-gray-50'}`}>Zatwierdzenia</button>
+              </div>
+            )}
 
-            {activeTab === 'comments' && (
+            {(activeTab === 'comments' || !isTechnicianOrAdmin) && (
               <div className={`flex ${isTechnicianOrAdmin ? 'flex-col-reverse' : 'flex-col'}`}>
                 {/* Lista Komentarzy */}
                 <div className={`space-y-4 ${isTechnicianOrAdmin ? 'pt-4' : 'mb-8'}`}>
