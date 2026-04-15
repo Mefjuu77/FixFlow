@@ -369,23 +369,56 @@ const CreateTicketPage: React.FC = () => {
               }}
             />
             {selectedFiles.length > 0 && (
-              <div className="space-y-1.5 mt-2">
-                {selectedFiles.map((file, idx) => (
-                  <div key={idx} className="flex items-center justify-between px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm">
-                    <div className="flex items-center gap-2 min-w-0">
-                      {file.type.startsWith('image/') ? <Image className="w-4 h-4 text-blue-500 flex-shrink-0" /> : <FileText className="w-4 h-4 text-gray-400 flex-shrink-0" />}
-                      <span className="truncate text-gray-700 font-medium">{file.name}</span>
-                      <span className="text-gray-400 text-xs flex-shrink-0">{(file.size / 1024).toFixed(0)} KB</span>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => setSelectedFiles(prev => prev.filter((_, i) => i !== idx))}
-                      className="p-1 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded transition-colors flex-shrink-0"
-                    >
-                      <X className="w-4 h-4" />
-                    </button>
+              <div className="mt-3 space-y-3">
+                {/* Podgląd obrazków */}
+                {selectedFiles.some(f => f.type.startsWith('image/')) && (
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+                    {selectedFiles.map((file, idx) =>
+                      file.type.startsWith('image/') ? (
+                        <div key={idx} className="relative group rounded-xl overflow-hidden border border-gray-200 bg-gray-50 aspect-square">
+                          <img
+                            src={URL.createObjectURL(file)}
+                            alt={file.name}
+                            className="w-full h-full object-cover"
+                            onLoad={(e) => URL.revokeObjectURL((e.target as HTMLImageElement).src)}
+                          />
+                          <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-all duration-200" />
+                          <div className="absolute bottom-0 left-0 right-0 p-2 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                            <p className="text-white text-xs font-medium truncate">{file.name}</p>
+                            <p className="text-white/70 text-[10px]">{(file.size / 1024).toFixed(0)} KB</p>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => setSelectedFiles(prev => prev.filter((_, i) => i !== idx))}
+                            className="absolute top-1.5 right-1.5 w-6 h-6 bg-red-500 hover:bg-red-600 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-200 shadow-lg"
+                          >
+                            <X className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      ) : null
+                    )}
                   </div>
-                ))}
+                )}
+
+                {/* Pozostałe pliki (nie-obrazki) */}
+                {selectedFiles.map((file, idx) =>
+                  !file.type.startsWith('image/') ? (
+                    <div key={idx} className="flex items-center justify-between px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <FileText className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                        <span className="truncate text-gray-700 font-medium">{file.name}</span>
+                        <span className="text-gray-400 text-xs flex-shrink-0">{(file.size / 1024).toFixed(0)} KB</span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setSelectedFiles(prev => prev.filter((_, i) => i !== idx))}
+                        className="p-1 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded transition-colors flex-shrink-0"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    </div>
+                  ) : null
+                )}
               </div>
             )}
           </div>
