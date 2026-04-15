@@ -4,7 +4,7 @@ import dayjs from 'dayjs';
 import 'dayjs/locale/pl';
 dayjs.locale('pl');
 import { ticketService } from '../api/ticketService';
-import { Ticket, User as UserType, Comment } from '../types';
+import { Ticket, User as UserType, Comment, Category } from '../types';
 import { AuthContext } from '../context/AuthContext';
 import useTitle from '../hooks/useTitle';
 import {
@@ -58,6 +58,12 @@ const TicketDetailsPage: React.FC = () => {
   const [allUsers, setAllUsers] = useState<UserType[]>([]);
   const [isEditingCreator, setIsEditingCreator] = useState(false);
   const [isEditingTechnician, setIsEditingTechnician] = useState(false);
+  const [isEditingPriority, setIsEditingPriority] = useState(false);
+  const [isEditingCategory, setIsEditingCategory] = useState(false);
+  const [categories, setCategories] = useState<Category[]>([]);
+
+  const priorityDropdownRef = useRef<HTMLDivElement>(null);
+  const categoryDropdownRef = useRef<HTMLDivElement>(null);
 
   const targetStatusLabel = transitionModalConfig.targetStatus === 'W_TOKU' ? 'W toku' :
     transitionModalConfig.targetStatus === 'NOWE' ? 'Nowe' :
@@ -73,8 +79,15 @@ const TicketDetailsPage: React.FC = () => {
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (statusMenuRef.current && !statusMenuRef.current.contains(event.target as Node)) {
+      const target = event.target as Node;
+      if (statusMenuRef.current && !statusMenuRef.current.contains(target)) {
         setIsStatusMenuOpen(false);
+      }
+      if (priorityDropdownRef.current && !priorityDropdownRef.current.contains(target)) {
+        setIsEditingPriority(false);
+      }
+      if (categoryDropdownRef.current && !categoryDropdownRef.current.contains(target)) {
+        setIsEditingCategory(false);
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
@@ -89,6 +102,7 @@ const TicketDetailsPage: React.FC = () => {
     }
     fetchTechnicians();
     fetchAllUsers();
+    fetchCategories();
   }, [id]);
 
   const fetchComments = async () => {
@@ -115,6 +129,15 @@ const TicketDetailsPage: React.FC = () => {
       setAllUsers(users);
     } catch (err) {
       console.error('Błąd pobierania użytkowników:', err);
+    }
+  };
+
+  const fetchCategories = async () => {
+    try {
+      const cats = await ticketService.getCategories();
+      setCategories(cats);
+    } catch (err) {
+      console.error('Błąd pobierania kategorii:', err);
     }
   };
 
@@ -730,24 +753,82 @@ const TicketDetailsPage: React.FC = () => {
               {/* Row 2: Priorytet */}
               <div className="grid grid-cols-[130px_1fr] items-start">
                 <span className="text-sm text-gray-500 font-medium pt-0.5">Priorytet</span>
-                <div className="flex items-center gap-2 text-sm text-gray-900">
-                  {ticket.priority === 'WYSOKI' ? <AlertTriangle className="w-3.5 h-3.5 text-red-500" /> :
-                    ticket.priority === 'NORMALNY' ? <Minus className="w-3.5 h-3.5 text-blue-500" /> :
-                      <ArrowDown className="w-3.5 h-3.5 text-gray-400" />}
-                  <span className={`font-medium ${ticket.priority === 'WYSOKI' ? 'text-red-600' : ticket.priority === 'NORMALNY' ? 'text-blue-600' : 'text-gray-600'}`}>
-                    {ticket.priority.charAt(0) + ticket.priority.slice(1).toLowerCase()}
-                  </span>
+                <div className="relative" ref={priorityDropdownRef}>
+                  <div
+                    className={`flex items-center gap-2 text-sm text-gray-900 ${isTechnicianOrAdmin ? 'cursor-pointer hover:bg-gray-50 p-1 -ml-1 rounded transition-colors' : ''}`}
+                    onClick={() => isTechnicianOrAdmin && setIsEditingPriority(!isEditingPriority)}
+                    title={isTechnicianOrAdmin ? 'Kliknij, aby zmienić priorytet' : ''}
+                  >
+                    {ticket.priority === 'WYSOKI' ? <AlertTriangle className="w-3.5 h-3.5 text-red-500" /> :
+                      ticket.priority === 'NORMALNY' ? <Minus className="w-3.5 h-3.5 text-blue-500" /> :
+                        <ArrowDown className="w-3.5 h-3.5 text-gray-400" />}
+                    <span className={`font-medium ${ticket.priority === 'WYSOKI' ? 'text-red-600' : ticket.priority === 'NORMALNY' ? 'text-blue-600' : 'text-gray-600'}`}>
+                      {ticket.priority === 'WYSOKI' ? 'Wysoki' : ticket.priority === 'NORMALNY' ? 'Normalny' : 'Niski'}
+                    </span>
+                  </div>
+                  {isEditingPriority && isTechnicianOrAdmin && (
+                    <div className="absolute z-50 left-0 top-full mt-1 bg-white border border-gray-200 rounded-xl shadow-lg py-1 w-44 animate-in fade-in zoom-in-95 duration-100">
+                      {[
+                        { value: 'NISKI', label: 'Niski', icon: <ArrowDown className="w-3.5 h-3.5 text-gray-400" />, color: 'text-gray-600' },
+                        { value: 'NORMALNY', label: 'Normalny', icon: <Minus className="w-3.5 h-3.5 text-blue-500" />, color: 'text-blue-600' },
+                        { value: 'WYSOKI', label: 'Wysoki', icon: <AlertTriangle className="w-3.5 h-3.5 text-red-500" />, color: 'text-red-600' },
+                      ].map(opt => (
+                        <button
+                          key={opt.value}
+                          type="button"
+                          onMouseDown={async (e) => {
+                            e.preventDefault();
+                            if (opt.value !== ticket.priority) {
+                              await updateTicketField({ priority: opt.value as Ticket['priority'] });
+                            }
+                            setIsEditingPriority(false);
+                          }}
+                          className={`w-full flex items-center gap-2.5 px-3 py-2 text-sm hover:bg-blue-50 transition-colors ${ticket.priority === opt.value ? 'bg-blue-50/50 font-semibold' : ''}`}
+                        >
+                          {opt.icon}
+                          <span className={`font-medium ${opt.color}`}>{opt.label}</span>
+                        </button>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </div>
 
               {/* Row 3: Kategoria */}
               <div className="grid grid-cols-[130px_1fr] items-start">
                 <span className="text-sm text-gray-500 font-medium">Kategoria</span>
-                <div className="flex items-center gap-2 text-sm text-gray-900">
-                  <span className="w-5 flex justify-center text-gray-500">
-                    {getCategoryIcon(ticket.category_name || '')}
-                  </span>
-                  {ticket.category_name}
+                <div className="relative" ref={categoryDropdownRef}>
+                  <div
+                    className={`flex items-center gap-2 text-sm text-gray-900 ${isTechnicianOrAdmin ? 'cursor-pointer hover:bg-gray-50 p-1 -ml-1 rounded transition-colors' : ''}`}
+                    onClick={() => isTechnicianOrAdmin && setIsEditingCategory(!isEditingCategory)}
+                    title={isTechnicianOrAdmin ? 'Kliknij, aby zmienić kategorię' : ''}
+                  >
+                    <span className="w-5 flex justify-center text-gray-500">
+                      {getCategoryIcon(ticket.category_name || '')}
+                    </span>
+                    {ticket.category_name}
+                  </div>
+                  {isEditingCategory && isTechnicianOrAdmin && (
+                    <div className="absolute z-50 left-0 top-full mt-1 bg-white border border-gray-200 rounded-xl shadow-lg py-1 w-48 max-h-60 overflow-y-auto animate-in fade-in zoom-in-95 duration-100">
+                      {categories.map(cat => (
+                        <button
+                          key={cat.id}
+                          type="button"
+                          onMouseDown={async (e) => {
+                            e.preventDefault();
+                            if (cat.id !== ticket.category) {
+                              await updateTicketField({ category: cat.id } as any);
+                            }
+                            setIsEditingCategory(false);
+                          }}
+                          className={`w-full flex items-center gap-2.5 px-3 py-2 text-sm hover:bg-blue-50 transition-colors ${ticket.category === cat.id ? 'bg-blue-50/50 font-semibold' : ''}`}
+                        >
+                          <span className="w-4 flex justify-center text-gray-500">{getCategoryIcon(cat.name)}</span>
+                          <span className="font-medium text-gray-700">{cat.name}</span>
+                        </button>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </div>
 
