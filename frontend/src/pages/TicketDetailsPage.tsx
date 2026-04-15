@@ -278,7 +278,7 @@ const TicketDetailsPage: React.FC = () => {
 
       <div className="grid grid-cols-1 lg:grid-cols-[1fr_410px] gap-8">
         {/* Lewa kolumna: Treść zgłoszenia */}
-        <div className="space-y-6">
+        <div className="space-y-6 min-w-0">
           <div className="flex items-center gap-3 mb-2">
             <span className="text-sm font-semibold text-gray-500 hover:text-blue-600 hover:underline cursor-pointer transition-colors">Zgłoszenie #{ticket.id}</span>
             <span className={`px-2 py-0.5 rounded-md text-[10px] font-bold border uppercase tracking-wider ${statusColors[ticket.status]}`}>
