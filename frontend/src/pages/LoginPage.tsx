@@ -1,5 +1,5 @@
-import React, { useState, useContext } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useContext, useEffect } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import api from '../api/axiosConfig';
 import { AuthContext } from '../context/AuthContext';
 import { Lock, Mail, Wrench, ArrowRight, AlertCircle } from 'lucide-react';
@@ -14,6 +14,16 @@ const LoginPage: React.FC = () => {
   
   const authContext = useContext(AuthContext);
   const navigate = useNavigate();
+  const location = useLocation();
+
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    if (params.get('session_expired') === 'true') {
+      setError('Twoja sesja wygasła. Ze względów bezpieczeństwa zostaniesz poproszony o ponowne logowanie.');
+      // Czyścimy parametr z paska adresu, aby po ewentualnym odświeżeniu błąd zniknął
+      window.history.replaceState({}, document.title, '/login');
+    }
+  }, [location.search]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
