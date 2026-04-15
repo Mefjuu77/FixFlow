@@ -18,8 +18,7 @@ import {
   ChevronRight,
   ArrowDown,
   Paperclip,
-  X,
-  Image
+  X
 } from 'lucide-react';
 import useTitle from '../hooks/useTitle';
 
