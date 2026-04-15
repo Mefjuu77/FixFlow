@@ -37,8 +37,12 @@ const CustomDropdown: React.FC<CustomDropdownProps> = ({ value, onChange, option
         className={`flex items-center justify-between pl-3 pr-3 py-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-sm font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700/50 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all ${className}`}
       >
         <span className="flex items-center gap-2 truncate text-inherit">
-          {selected?.icon}
-          {selected ? selected.label : placeholder}
+          {selected?.value === 'all' ? placeholder : (
+            <>
+              {selected?.icon}
+              {selected ? selected.label : placeholder}
+            </>
+          )}
         </span>
         <ChevronDown className={`w-4 h-4 text-gray-400 flex-shrink-0 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
       </button>
@@ -224,7 +228,7 @@ const TicketsPage: React.FC = () => {
               onChange={setStatusFilter}
               placeholder="Status"
               options={[
-                { value: 'all', label: 'Status' },
+                { value: 'all', label: 'Wszystkie' },
                 { value: 'NOWE', label: `Nowe (${statusCounts.NOWE})`, icon: <Circle className="w-4 h-4 text-blue-500" /> },
                 { value: 'W_TOKU', label: `W toku (${statusCounts.W_TOKU})`, icon: <Circle className="w-4 h-4 text-amber-500" /> },
                 { value: 'ROZWIAZANE', label: `Rozwiązane (${statusCounts.ROZWIAZANE})`, icon: <CheckCircle2 className="w-4 h-4 text-green-500" /> },
@@ -239,7 +243,7 @@ const TicketsPage: React.FC = () => {
               onChange={setCategoryFilter}
               placeholder="Kategoria"
               options={[
-                { value: 'all', label: 'Kategoria' },
+                { value: 'all', label: 'Wszystkie' },
                 ...categories.map(cat => ({
                    value: cat as string,
                    label: cat as string,
@@ -255,7 +259,7 @@ const TicketsPage: React.FC = () => {
               onChange={setPriorityFilter}
               placeholder="Priorytet"
               options={[
-                { value: 'all', label: 'Priorytet' },
+                { value: 'all', label: 'Wszystkie' },
                 { value: 'WYSOKI', label: 'Wysoki', icon: <AlertTriangle className="w-4 h-4 text-red-500" /> },
                 { value: 'NORMALNY', label: 'Normalny', icon: <Minus className="w-4 h-4 text-blue-500" /> },
                 { value: 'NISKI', label: 'Niski', icon: <ArrowDown className="w-4 h-4 text-gray-400" /> }
@@ -267,8 +271,9 @@ const TicketsPage: React.FC = () => {
             <CustomDropdown
               value={assignmentFilter}
               onChange={setAssignmentFilter}
+              placeholder="Przypisanie"
               options={[
-                { value: 'all', label: 'Przypisanie: Wszystkie', icon: <Users className="w-4 h-4 text-gray-400" /> },
+                { value: 'all', label: 'Wszystkie' },
                 ...(isTechnician ? [{ value: 'assigned_to_me', label: 'Przypisane do mnie', icon: <UserCheck className="w-4 h-4 text-blue-600" /> }] : []),
                 { value: 'assigned', label: 'Przypisane', icon: <UserCheck className="w-4 h-4 text-green-600" /> },
                 { value: 'unassigned', label: 'Nieprzypisane', icon: <UserMinus className="w-4 h-4 text-red-500" /> }
@@ -328,10 +333,11 @@ const TicketsPage: React.FC = () => {
                 filteredTickets.map(ticket => (
                   <tr key={ticket.id} className="hover:bg-gray-50/60 transition-colors">
                     <td className="px-6 py-4 text-sm font-medium text-gray-400 whitespace-nowrap">#{ticket.id}</td>
-                    <td className="px-6 py-4 text-sm">
+                    <td className="px-6 py-4 text-sm max-w-[200px] sm:max-w-[250px] lg:max-w-[350px]">
                       <Link
                         to={`/tickets/${ticket.id}`}
-                        className="font-bold text-blue-600 hover:text-blue-800 hover:underline transition-colors"
+                        title={ticket.title}
+                        className="inline-block font-bold text-blue-600 hover:text-blue-800 hover:underline transition-colors whitespace-normal break-words"
                       >
                         {ticket.title}
                       </Link>
