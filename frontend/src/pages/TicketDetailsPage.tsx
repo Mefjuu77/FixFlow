@@ -267,9 +267,9 @@ const TicketDetailsPage: React.FC = () => {
         <ArrowLeft className="w-4 h-4 mr-1" /> Wstecz
       </button>
 
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-[1fr_380px] gap-8">
         {/* Lewa kolumna: Treść zgłoszenia */}
-        <div className="lg:col-span-3 space-y-6">
+        <div className="space-y-6">
           <div className="flex items-center gap-3 mb-2">
             <span className="text-sm font-semibold text-gray-500 hover:text-blue-600 hover:underline cursor-pointer transition-colors">Zgłoszenie #{ticket.id}</span>
             <span className={`px-2 py-0.5 rounded-md text-[10px] font-bold border uppercase tracking-wider ${statusColors[ticket.status]}`}>
@@ -295,8 +295,8 @@ const TicketDetailsPage: React.FC = () => {
                 </div>
                 <p className="text-sm text-gray-800">
                   <span className="font-semibold">
-                    {ticket.creator_details?.first_name 
-                      ? `${ticket.creator_details.first_name} ${ticket.creator_details.last_name || ''}`.trim() 
+                    {ticket.creator_details?.first_name
+                      ? `${ticket.creator_details.first_name} ${ticket.creator_details.last_name || ''}`.trim()
                       : 'Użytkownik'}
                   </span> przesłał(a) zgłoszenie
                 </p>
@@ -714,7 +714,7 @@ const TicketDetailsPage: React.FC = () => {
 
             <div className="p-4 space-y-4">
               {/* Row 1: Osoba zgłaszająca */}
-              <div className="grid grid-cols-[130px_1fr] items-start">
+              <div className="grid grid-cols-[170px_1fr] items-start">
                 <span className="text-sm text-gray-500 font-medium pt-0.5">Osoba zgłaszająca</span>
                 <div className="relative">
                   {isEditingCreator && isTechnicianOrAdmin ? (
@@ -751,7 +751,7 @@ const TicketDetailsPage: React.FC = () => {
               </div>
 
               {/* Row 2: Priorytet */}
-              <div className="grid grid-cols-[130px_1fr] items-start">
+              <div className="grid grid-cols-[170px_1fr] items-start">
                 <span className="text-sm text-gray-500 font-medium pt-0.5">Priorytet</span>
                 <div className="relative" ref={priorityDropdownRef}>
                   <div
@@ -795,7 +795,7 @@ const TicketDetailsPage: React.FC = () => {
               </div>
 
               {/* Row 3: Kategoria */}
-              <div className="grid grid-cols-[130px_1fr] items-start">
+              <div className="grid grid-cols-[170px_1fr] items-start">
                 <span className="text-sm text-gray-500 font-medium">Kategoria</span>
                 <div className="relative" ref={categoryDropdownRef}>
                   <div
@@ -833,7 +833,7 @@ const TicketDetailsPage: React.FC = () => {
               </div>
 
               {/* Row 4: Osoba przypisana */}
-              <div className="grid grid-cols-[130px_1fr] items-start mt-4 pt-4 border-t border-gray-100">
+              <div className="grid grid-cols-[170px_1fr] items-start mt-4 pt-4 border-t border-gray-100">
                 <span className="text-sm text-gray-500 font-medium pt-0.5">Osoba przypisana</span>
                 <div className="space-y-1 relative">
                   {isEditingTechnician && isTechnicianOrAdmin ? (
@@ -889,14 +889,14 @@ const TicketDetailsPage: React.FC = () => {
                 </div>
               </div>
 
-              <div className="grid grid-cols-[130px_1fr] items-start mt-4 pt-4 border-t border-gray-100">
+              <div className="grid grid-cols-[170px_1fr] items-start mt-4 pt-4 border-t border-gray-100">
                 <span className="text-sm text-gray-500 font-medium">Utworzono</span>
                 <div className="text-sm text-gray-900">
                   {dayjs(ticket.created_at).format('DD.MM.YYYY, HH:mm')}
                 </div>
               </div>
 
-              <div className="grid grid-cols-[130px_1fr] items-start">
+              <div className="grid grid-cols-[170px_1fr] items-start">
                 <span className="text-sm text-gray-500 font-medium">Zaktualizowano</span>
                 <div className="text-sm text-gray-900">
                   {dayjs(ticket.updated_at).format('DD.MM.YYYY, HH:mm')}
