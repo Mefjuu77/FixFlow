@@ -456,9 +456,9 @@ const TicketDetailsPage: React.FC = () => {
             {(activeTab === 'comments' || !isTechnicianOrAdmin) && (
               <div className={`flex ${isTechnicianOrAdmin ? 'flex-col-reverse' : 'flex-col'}`}>
                 {/* Lista Komentarzy */}
-                <div className={`space-y-4 ${isTechnicianOrAdmin ? 'pt-4' : 'mb-8'}`}>
+                <div className={`space-y-4 ${isTechnicianOrAdmin ? 'pt-4' : 'mb-2'}`}>
                   {comments.length === 0 ? (
-                    <div className="text-center text-gray-500 text-sm py-4 italic">Brak komentarzy.</div>
+                    <div className="text-center text-gray-500 text-sm py-2 italic">Brak komentarzy.</div>
                   ) : (
                     (isTechnicianOrAdmin ? [...comments].reverse() : comments).map(comment => {
                       const isInternal = comment.comment_type === 'INTERNAL';
@@ -568,7 +568,7 @@ const TicketDetailsPage: React.FC = () => {
                 </div>
 
                 {/* Formularz Nowego Komentarza */}
-                <div className={`flex gap-4 items-start ${isTechnicianOrAdmin ? 'mb-6 pb-6 border-b border-gray-100/70' : 'mt-6 pt-6 border-t border-gray-100'}`}>
+                <div className={`flex gap-4 items-start ${isTechnicianOrAdmin ? 'mb-6 pb-6 border-b border-gray-100/70' : 'pt-4 border-t border-gray-100'}`}>
                   <div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center flex-shrink-0 overflow-hidden outline outline-1 outline-gray-200">
                     {authContext?.user?.avatar ? (
                       <img src={authContext.user.avatar} alt="Avatar" className="w-full h-full object-cover" />
