@@ -22,63 +22,120 @@ interface DonutSegment {
 }
 
 const DonutChart: React.FC<{ segments: DonutSegment[]; total: number }> = ({ segments, total }) => {
-  const size = 180;
-  const strokeWidth = 32;
+  const [hovered, setHovered] = useState<number | null>(null);
+  const size = 200;
+  const strokeWidth = 34;
   const radius = (size - strokeWidth) / 2;
   const circumference = 2 * Math.PI * radius;
+
+  // Precompute segment angles for mouse hit detection
+  const segmentAngles: { start: number; end: number }[] = [];
+  let a = 0;
+  segments.forEach(seg => {
+    const pct = total > 0 ? seg.value / total : 0;
+    segmentAngles.push({ start: a * 360, end: (a + pct) * 360 });
+    a += pct;
+  });
+
+  const handleMouseMove = (e: React.MouseEvent<SVGSVGElement>) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    const x = e.clientX - rect.left - size / 2;
+    const y = e.clientY - rect.top - size / 2;
+    const dist = Math.sqrt(x * x + y * y);
+    const innerR = radius - strokeWidth / 2;
+    const outerR = radius + strokeWidth / 2;
+
+    if (dist < innerR || dist > outerR) { setHovered(null); return; }
+
+    let angle = Math.atan2(y, x) * (180 / Math.PI) + 90;
+    if (angle < 0) angle += 360;
+
+    const idx = segmentAngles.findIndex(s => angle >= s.start && angle < s.end);
+    setHovered(idx >= 0 ? idx : null);
+  };
 
   let accumulated = 0;
 
   return (
-    <div className="flex items-center gap-8">
-      <div className="relative" style={{ width: size, height: size }}>
-        <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
-          {/* Tło pierścienia */}
-          <circle
-            cx={size / 2}
-            cy={size / 2}
-            r={radius}
-            fill="none"
-            stroke="#f3f4f6"
-            strokeWidth={strokeWidth}
-          />
+    <div className="flex items-center justify-between w-full">
+      <div className="relative flex-shrink-0" style={{ width: size + 16, height: size + 16 }}>
+        <svg
+          width={size + 16} height={size + 16} viewBox={`-8 -8 ${size + 16} ${size + 16}`}
+          onMouseMove={(e) => {
+            const rect = e.currentTarget.getBoundingClientRect();
+            const svgX = e.clientX - rect.left;
+            const svgY = e.clientY - rect.top;
+            const scale = (size + 16) / rect.width;
+            const x = (svgX * scale - 8) - size / 2;
+            const y = (svgY * scale - 8) - size / 2;
+            const dist = Math.sqrt(x * x + y * y);
+            const innerR = radius - strokeWidth / 2;
+            const outerR = radius + strokeWidth / 2 + 8;
+            if (dist < innerR || dist > outerR) { setHovered(null); return; }
+            let angle = Math.atan2(y, x) * (180 / Math.PI) + 90;
+            if (angle < 0) angle += 360;
+            const idx = segmentAngles.findIndex(s => angle >= s.start && angle < s.end);
+            setHovered(idx >= 0 ? idx : null);
+          }}
+          onMouseLeave={() => setHovered(null)}
+          className="cursor-pointer overflow-visible"
+        >
+          <circle cx={size / 2} cy={size / 2} r={radius} fill="none" stroke="#f3f4f6" strokeWidth={strokeWidth} />
           {segments.map((seg, i) => {
             const pct = total > 0 ? seg.value / total : 0;
-            const offset = circumference * (1 - pct);
+            const gap = 1;
+            const segLength = circumference * pct - gap;
+            const offset = circumference - Math.max(segLength, 0);
             const rotation = accumulated * 360 - 90;
             accumulated += pct;
-
+            const isHovered = hovered === i;
+            const isDimmed = hovered !== null && hovered !== i;
             return (
               <circle
-                key={i}
-                cx={size / 2}
-                cy={size / 2}
-                r={radius}
-                fill="none"
+                key={i} cx={size / 2} cy={size / 2} r={radius} fill="none"
                 stroke={seg.color}
-                strokeWidth={strokeWidth}
-                strokeDasharray={`${circumference}`}
-                strokeDashoffset={offset}
-                strokeLinecap="round"
+                strokeWidth={isHovered ? strokeWidth + 8 : strokeWidth}
+                strokeDasharray={`${Math.max(segLength, 0)} ${circumference}`}
+                strokeLinecap="butt"
                 transform={`rotate(${rotation} ${size / 2} ${size / 2})`}
-                style={{ transition: 'stroke-dashoffset 0.6s ease' }}
+                opacity={isDimmed ? 0.25 : 1}
+                style={{ transition: 'stroke-width 0.2s ease, opacity 0.2s ease' }}
               />
             );
           })}
         </svg>
-        <div className="absolute inset-0 flex flex-col items-center justify-center">
-          <span className="text-3xl font-extrabold text-gray-900">{total}</span>
-          <span className="text-[11px] text-gray-500 font-medium">Całkowita liczba</span>
+        <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+          {hovered !== null && segments[hovered] ? (
+            <>
+              <span className="text-2xl font-extrabold text-gray-900">{segments[hovered].value}</span>
+              <span className="text-xs font-bold" style={{ color: segments[hovered].color }}>{segments[hovered].label}</span>
+              <span className="text-[10px] text-gray-400 font-medium">{total > 0 ? Math.round((segments[hovered].value / total) * 100) : 0}%</span>
+            </>
+          ) : (
+            <>
+              <span className="text-3xl font-extrabold text-gray-900">{total}</span>
+              <span className="text-[10px] text-gray-400 font-semibold uppercase tracking-wider">Łącznie</span>
+            </>
+          )}
         </div>
       </div>
 
-      <div className="space-y-2">
-        {segments.map((seg, i) => (
-          <div key={i} className="flex items-center gap-2 text-sm">
-            <span className="w-3 h-3 rounded-sm flex-shrink-0" style={{ backgroundColor: seg.color }} />
-            <span className="text-gray-700 font-medium">{seg.label}: <span className="font-bold text-gray-900">{seg.value}</span></span>
-          </div>
-        ))}
+      <div className="space-y-2 ml-auto">
+        {segments.map((seg, i) => {
+          const isActive = hovered === i;
+          return (
+            <div
+              key={i}
+              className={`flex items-center gap-2.5 px-3 py-1.5 rounded-lg cursor-pointer transition-all duration-200 ${isActive ? 'bg-gray-100 scale-[1.03]' : 'hover:bg-gray-50'}`}
+              onMouseEnter={() => setHovered(i)}
+              onMouseLeave={() => setHovered(null)}
+            >
+              <span className={`w-3 h-3 rounded-sm flex-shrink-0 transition-transform duration-200 ${isActive ? 'scale-125' : ''}`} style={{ backgroundColor: seg.color }} />
+              <span className={`text-sm font-medium transition-colors ${isActive ? 'text-gray-900' : 'text-gray-600'}`}>{seg.label}:</span>
+              <span className="text-sm font-bold text-gray-900">{seg.value}</span>
+            </div>
+          );
+        })}
       </div>
     </div>
   );
@@ -145,17 +202,17 @@ const StatisticsPage: React.FC = () => {
   // Statusy
   const statusData: DonutSegment[] = isAdmin
     ? [
-        { label: 'Nowe', value: tickets.filter(t => t.status === 'NOWE').length, color: '#3b82f6' },
-        { label: 'W toku', value: tickets.filter(t => t.status === 'W_TOKU').length, color: '#f59e0b' },
-        { label: 'Rozwiązane', value: tickets.filter(t => t.status === 'ROZWIAZANE').length, color: '#22c55e' },
-        { label: 'Zamknięte', value: tickets.filter(t => t.status === 'ZAMKNIETE').length, color: '#6b7280' },
-      ]
+      { label: 'Nowe', value: tickets.filter(t => t.status === 'NOWE').length, color: '#3b82f6' },
+      { label: 'W toku', value: tickets.filter(t => t.status === 'W_TOKU').length, color: '#f59e0b' },
+      { label: 'Rozwiązane', value: tickets.filter(t => t.status === 'ROZWIAZANE').length, color: '#22c55e' },
+      { label: 'Zamknięte', value: tickets.filter(t => t.status === 'ZAMKNIETE').length, color: '#6b7280' },
+    ]
     : [
-        { label: 'Nowe', value: tickets.filter(t => t.status === 'NOWE').length, color: '#3b82f6' },
-        { label: 'W toku', value: tickets.filter(t => t.status === 'W_TOKU').length, color: '#f59e0b' },
-        { label: 'Rozwiązane', value: tickets.filter(t => t.status === 'ROZWIAZANE').length, color: '#22c55e' },
-        { label: 'Zamknięte', value: tickets.filter(t => t.status === 'ZAMKNIETE').length, color: '#6b7280' },
-      ];
+      { label: 'Nowe', value: tickets.filter(t => t.status === 'NOWE').length, color: '#3b82f6' },
+      { label: 'W toku', value: tickets.filter(t => t.status === 'W_TOKU').length, color: '#f59e0b' },
+      { label: 'Rozwiązane', value: tickets.filter(t => t.status === 'ROZWIAZANE').length, color: '#22c55e' },
+      { label: 'Zamknięte', value: tickets.filter(t => t.status === 'ZAMKNIETE').length, color: '#6b7280' },
+    ];
 
   // Kategorie
   const categoryMap = new Map<string, number>();
@@ -355,17 +412,15 @@ const StatisticsPage: React.FC = () => {
               {suggestions.map((s, i) => (
                 <div
                   key={i}
-                  className={`flex items-start gap-3 p-3 rounded-xl text-sm font-medium ${
-                    s.severity === 'warning'
-                      ? 'bg-amber-50 text-amber-800 border border-amber-200'
-                      : s.severity === 'info'
+                  className={`flex items-start gap-3 p-3 rounded-xl text-sm font-medium ${s.severity === 'warning'
+                    ? 'bg-amber-50 text-amber-800 border border-amber-200'
+                    : s.severity === 'info'
                       ? 'bg-blue-50 text-blue-800 border border-blue-200'
                       : 'bg-green-50 text-green-800 border border-green-200'
-                  }`}
+                    }`}
                 >
-                  <AlertTriangle className={`w-4 h-4 mt-0.5 flex-shrink-0 ${
-                    s.severity === 'warning' ? 'text-amber-500' : s.severity === 'info' ? 'text-blue-500' : 'text-green-500'
-                  }`} />
+                  <AlertTriangle className={`w-4 h-4 mt-0.5 flex-shrink-0 ${s.severity === 'warning' ? 'text-amber-500' : s.severity === 'info' ? 'text-blue-500' : 'text-green-500'
+                    }`} />
                   {s.text}
                 </div>
               ))}
@@ -531,17 +586,15 @@ const StatisticsPage: React.FC = () => {
               {suggestions.map((s, i) => (
                 <div
                   key={i}
-                  className={`flex items-start gap-3 p-3 rounded-xl text-sm font-medium ${
-                    s.severity === 'warning'
-                      ? 'bg-amber-50 text-amber-800 border border-amber-200'
-                      : s.severity === 'info'
+                  className={`flex items-start gap-3 p-3 rounded-xl text-sm font-medium ${s.severity === 'warning'
+                    ? 'bg-amber-50 text-amber-800 border border-amber-200'
+                    : s.severity === 'info'
                       ? 'bg-blue-50 text-blue-800 border border-blue-200'
                       : 'bg-green-50 text-green-800 border border-green-200'
-                  }`}
+                    }`}
                 >
-                  <AlertTriangle className={`w-4 h-4 mt-0.5 flex-shrink-0 ${
-                    s.severity === 'warning' ? 'text-amber-500' : s.severity === 'info' ? 'text-blue-500' : 'text-green-500'
-                  }`} />
+                  <AlertTriangle className={`w-4 h-4 mt-0.5 flex-shrink-0 ${s.severity === 'warning' ? 'text-amber-500' : s.severity === 'info' ? 'text-blue-500' : 'text-green-500'
+                    }`} />
                   {s.text}
                 </div>
               ))}
