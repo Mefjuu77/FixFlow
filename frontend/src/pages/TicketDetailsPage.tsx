@@ -261,11 +261,21 @@ const TicketDetailsPage: React.FC = () => {
           <div className="bg-white rounded-xl border border-gray-200 shadow-sm">
             <div className="p-4 border-b border-gray-100 bg-white rounded-t-xl">
               <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center flex-shrink-0">
-                  <User className="w-5 h-5 text-gray-500" />
+                <div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center flex-shrink-0 overflow-hidden outline outline-1 outline-gray-200">
+                  {ticket.creator_details?.avatar ? (
+                    <img src={ticket.creator_details.avatar} alt="Avatar" className="w-full h-full object-cover" />
+                  ) : (
+                    <span className="text-white font-bold text-xs uppercase">
+                      {ticket.creator_details?.first_name ? ticket.creator_details.first_name.charAt(0) : 'U'}
+                    </span>
+                  )}
                 </div>
                 <p className="text-sm text-gray-800">
-                  <span className="font-semibold">{ticket.creator_details?.first_name || 'Użytkownik'}</span> przesłał(a) zgłoszenie
+                  <span className="font-semibold">
+                    {ticket.creator_details?.first_name 
+                      ? `${ticket.creator_details.first_name} ${ticket.creator_details.last_name || ''}`.trim() 
+                      : 'Użytkownik'}
+                  </span> przesłał(a) zgłoszenie
                 </p>
               </div>
             </div>
@@ -373,13 +383,13 @@ const TicketDetailsPage: React.FC = () => {
             </div>
 
             {activeTab === 'comments' && (
-              <div className="flex flex-col-reverse">
+              <div className={`flex ${isTechnicianOrAdmin ? 'flex-col-reverse' : 'flex-col'}`}>
                 {/* Lista Komentarzy */}
-                <div className="space-y-4 pt-4">
+                <div className={`space-y-4 ${isTechnicianOrAdmin ? 'pt-4' : 'mb-8'}`}>
                   {comments.length === 0 ? (
                     <div className="text-center text-gray-500 text-sm py-4 italic">Brak komentarzy.</div>
                   ) : (
-                    [...comments].reverse().map(comment => {
+                    (isTechnicianOrAdmin ? [...comments].reverse() : comments).map(comment => {
                       const isInternal = comment.comment_type === 'INTERNAL';
                       return (
                         <div key={comment.id} className="flex gap-4 items-start">
@@ -487,7 +497,7 @@ const TicketDetailsPage: React.FC = () => {
                 </div>
 
                 {/* Formularz Nowego Komentarza */}
-                <div className="flex gap-4 items-start mb-6 pb-6 border-b border-gray-100/70">
+                <div className={`flex gap-4 items-start ${isTechnicianOrAdmin ? 'mb-6 pb-6 border-b border-gray-100/70' : 'mt-6 pt-6 border-t border-gray-100'}`}>
                   <div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center flex-shrink-0 overflow-hidden outline outline-1 outline-gray-200">
                     {authContext?.user?.avatar ? (
                       <img src={authContext.user.avatar} alt="Avatar" className="w-full h-full object-cover" />
