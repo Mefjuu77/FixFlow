@@ -4,7 +4,7 @@ import { AuthContext } from '../context/AuthContext';
 import api from '../api/axiosConfig';
 import { Ticket } from '../types';
 import dayjs from 'dayjs';
-import { PlusCircle, Search, ChevronDown, AlertTriangle, Minus, ArrowDown, Folder, Tag, Filter, Users, UserCheck, UserMinus, Monitor, Terminal, Wifi, Lock, HelpCircle } from 'lucide-react';
+import { PlusCircle, Search, ChevronDown, AlertTriangle, Minus, ArrowDown, Folder, Tag, Filter, Users, UserCheck, UserMinus, Monitor, Terminal, Wifi, Lock, HelpCircle, Circle, CheckCircle2, XCircle } from 'lucide-react';
 import useTitle from '../hooks/useTitle';
 
 interface CustomDropdownProps {
@@ -34,9 +34,9 @@ const CustomDropdown: React.FC<CustomDropdownProps> = ({ value, onChange, option
       <button 
         type="button"
         onClick={() => setIsOpen(!isOpen)}
-        className={`flex items-center justify-between pl-3 pr-3 py-2 bg-white border border-gray-200 rounded-xl text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 ${className}`}
+        className={`flex items-center justify-between pl-3 pr-3 py-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-sm font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700/50 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all ${className}`}
       >
-        <span className="flex items-center gap-2 truncate">
+        <span className="flex items-center gap-2 truncate text-inherit">
           {selected?.icon}
           {selected ? selected.label : placeholder}
         </span>
@@ -44,13 +44,13 @@ const CustomDropdown: React.FC<CustomDropdownProps> = ({ value, onChange, option
       </button>
       
       {isOpen && (
-        <div className="absolute z-[60] left-0 mt-1 bg-white border border-gray-200 rounded-xl shadow-lg py-1 max-h-60 overflow-y-auto w-full min-w-max">
+        <div className="absolute z-[60] left-0 mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg dark:shadow-[0_10px_40px_rgba(0,0,0,0.5)] py-1 max-h-60 overflow-y-auto w-full min-w-max animate-in fade-in zoom-in-95 duration-100">
           {options.map((opt) => (
             <button
               type="button"
               key={opt.value}
               onClick={() => { onChange(opt.value); setIsOpen(false); }}
-              className={`flex items-center w-full gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-blue-50 transition-colors ${value === opt.value ? 'bg-blue-50/50 font-semibold text-blue-700' : ''}`}
+              className={`flex items-center w-full gap-2 px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-blue-50 dark:hover:bg-gray-700 transition-colors ${value === opt.value ? 'bg-blue-50/50 dark:bg-blue-900/30 font-semibold text-blue-700 dark:text-blue-400' : ''}`}
             >
               {opt.icon}
               <span className="truncate">{opt.label}</span>
@@ -203,35 +203,7 @@ const TicketsPage: React.FC = () => {
 
       {/* ============ Filtry ADMIN / TECHNIK ============ */}
       {(isAdmin || isTechnician) && (
-        <div className="space-y-4">
-          {/* Status tabs */}
-          <div className="flex flex-wrap gap-2">
-            {[
-              { key: 'all', label: 'Wszystkie', count: statusCounts.all },
-              { key: 'NOWE', label: 'Nowe', count: statusCounts.NOWE },
-              { key: 'W_TOKU', label: 'W toku', count: statusCounts.W_TOKU },
-              { key: 'ROZWIAZANE', label: 'Rozwiązane', count: statusCounts.ROZWIAZANE },
-              { key: 'ZAMKNIETE', label: 'Zamknięte', count: statusCounts.ZAMKNIETE },
-            ].map(tab => (
-              <button
-                key={tab.key}
-                onClick={() => setStatusFilter(tab.key)}
-                className={`px-4 py-2 text-sm font-semibold rounded-xl transition-all ${
-                  statusFilter === tab.key
-                    ? 'bg-blue-600 text-white shadow-md shadow-blue-200'
-                    : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50'
-                }`}
-              >
-                {tab.label}
-                <span className={`ml-1.5 text-xs px-1.5 py-0.5 rounded-md ${
-                  statusFilter === tab.key ? 'bg-blue-500 text-blue-100' : 'bg-gray-100 text-gray-500'
-                }`}>
-                  {tab.count}
-                </span>
-              </button>
-            ))}
-          </div>
-
+        <>
           {/* Dropdowns row */}
           <div className="flex flex-col sm:flex-row gap-3 p-4 bg-white border border-gray-200 rounded-xl shadow-sm">
             {/* Wyszukiwarka */}
@@ -246,32 +218,49 @@ const TicketsPage: React.FC = () => {
               />
             </div>
 
+            {/* Status */}
+            <CustomDropdown
+              value={statusFilter}
+              onChange={setStatusFilter}
+              placeholder="Status"
+              options={[
+                { value: 'all', label: 'Status' },
+                { value: 'NOWE', label: `Nowe (${statusCounts.NOWE})`, icon: <Circle className="w-4 h-4 text-blue-500" /> },
+                { value: 'W_TOKU', label: `W toku (${statusCounts.W_TOKU})`, icon: <Circle className="w-4 h-4 text-amber-500" /> },
+                { value: 'ROZWIAZANE', label: `Rozwiązane (${statusCounts.ROZWIAZANE})`, icon: <CheckCircle2 className="w-4 h-4 text-green-500" /> },
+                { value: 'ZAMKNIETE', label: `Zamknięte (${statusCounts.ZAMKNIETE})`, icon: <XCircle className="w-4 h-4 text-gray-400" /> }
+              ]}
+              className="w-36 sm:w-44"
+            />
+
             {/* Kategoria */}
             <CustomDropdown
               value={categoryFilter}
               onChange={setCategoryFilter}
+              placeholder="Kategoria"
               options={[
-                { value: 'all', label: 'Kategoria: Wszystkie', icon: <Folder className="w-4 h-4 text-gray-400" /> },
+                { value: 'all', label: 'Kategoria' },
                 ...categories.map(cat => ({
                    value: cat as string,
                    label: cat as string,
                    icon: getCategoryIcon(cat as string)
                 }))
               ]}
-              className="w-48 sm:w-52"
+              className="w-40 sm:w-48"
             />
 
             {/* Priorytet */}
             <CustomDropdown
               value={priorityFilter}
               onChange={setPriorityFilter}
+              placeholder="Priorytet"
               options={[
-                { value: 'all', label: 'Priorytet: Wszystkie', icon: <Filter className="w-4 h-4 text-gray-400" /> },
+                { value: 'all', label: 'Priorytet' },
                 { value: 'WYSOKI', label: 'Wysoki', icon: <AlertTriangle className="w-4 h-4 text-red-500" /> },
                 { value: 'NORMALNY', label: 'Normalny', icon: <Minus className="w-4 h-4 text-blue-500" /> },
                 { value: 'NISKI', label: 'Niski', icon: <ArrowDown className="w-4 h-4 text-gray-400" /> }
               ]}
-              className="w-40 sm:w-48"
+              className="w-36 sm:w-44"
             />
 
             {/* Przypisanie */}
@@ -287,7 +276,7 @@ const TicketsPage: React.FC = () => {
               className="w-44 sm:w-56"
             />
           </div>
-        </div>
+        </>
       )}
 
       {/* ============ Filtry PRACOWNIK ============ */}
