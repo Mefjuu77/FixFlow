@@ -2,7 +2,7 @@ import React, { useContext, useEffect, useState } from 'react';
 import { AuthContext } from '../context/AuthContext';
 import api from '../api/axiosConfig';
 import { Ticket } from '../types';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import useTitle from '../hooks/useTitle';
 import {
   AlertTriangle,
@@ -19,9 +19,11 @@ interface DonutSegment {
   label: string;
   value: number;
   color: string;
+  filterValue?: string;
 }
 
-const DonutChart: React.FC<{ segments: DonutSegment[]; total: number }> = ({ segments, total }) => {
+const DonutChart: React.FC<{ segments: DonutSegment[]; total: number; filterType?: string }> = ({ segments, total, filterType }) => {
+  const navigate = useNavigate();
   const [hovered, setHovered] = useState<number | null>(null);
   const size = 200;
   const strokeWidth = 34;
@@ -78,6 +80,11 @@ const DonutChart: React.FC<{ segments: DonutSegment[]; total: number }> = ({ seg
             setHovered(idx >= 0 ? idx : null);
           }}
           onMouseLeave={() => setHovered(null)}
+          onClick={() => {
+            if (hovered !== null && filterType && segments[hovered]?.filterValue) {
+              navigate(`/tickets?${filterType}=${segments[hovered].filterValue}`);
+            }
+          }}
           className="cursor-pointer overflow-visible"
         >
           <circle cx={size / 2} cy={size / 2} r={radius} fill="none" stroke="#f3f4f6" strokeWidth={strokeWidth} />
@@ -129,6 +136,7 @@ const DonutChart: React.FC<{ segments: DonutSegment[]; total: number }> = ({ seg
               className={`flex items-center gap-2.5 px-3 py-1.5 rounded-lg cursor-pointer transition-all duration-200 ${isActive ? 'bg-gray-100 scale-[1.03]' : 'hover:bg-gray-50'}`}
               onMouseEnter={() => setHovered(i)}
               onMouseLeave={() => setHovered(null)}
+              onClick={() => { if (filterType && seg.filterValue) navigate(`/tickets?${filterType}=${seg.filterValue}`); }}
             >
               <span className={`w-3 h-3 rounded-sm flex-shrink-0 transition-transform duration-200 ${isActive ? 'scale-125' : ''}`} style={{ backgroundColor: seg.color }} />
               <span className={`text-sm font-medium transition-colors ${isActive ? 'text-gray-900' : 'text-gray-600'}`}>{seg.label}:</span>
@@ -200,19 +208,12 @@ const StatisticsPage: React.FC = () => {
   const allCount = tickets.length;
 
   // Statusy
-  const statusData: DonutSegment[] = isAdmin
-    ? [
-      { label: 'Nowe', value: tickets.filter(t => t.status === 'NOWE').length, color: '#3b82f6' },
-      { label: 'W toku', value: tickets.filter(t => t.status === 'W_TOKU').length, color: '#f59e0b' },
-      { label: 'Rozwiązane', value: tickets.filter(t => t.status === 'ROZWIAZANE').length, color: '#22c55e' },
-      { label: 'Zamknięte', value: tickets.filter(t => t.status === 'ZAMKNIETE').length, color: '#6b7280' },
-    ]
-    : [
-      { label: 'Nowe', value: tickets.filter(t => t.status === 'NOWE').length, color: '#3b82f6' },
-      { label: 'W toku', value: tickets.filter(t => t.status === 'W_TOKU').length, color: '#f59e0b' },
-      { label: 'Rozwiązane', value: tickets.filter(t => t.status === 'ROZWIAZANE').length, color: '#22c55e' },
-      { label: 'Zamknięte', value: tickets.filter(t => t.status === 'ZAMKNIETE').length, color: '#6b7280' },
-    ];
+  const statusData: DonutSegment[] = [
+    { label: 'Nowe', value: tickets.filter(t => t.status === 'NOWE').length, color: '#3b82f6', filterValue: 'NOWE' },
+    { label: 'W toku', value: tickets.filter(t => t.status === 'W_TOKU').length, color: '#f59e0b', filterValue: 'W_TOKU' },
+    { label: 'Rozwiązane', value: tickets.filter(t => t.status === 'ROZWIAZANE').length, color: '#22c55e', filterValue: 'ROZWIAZANE' },
+    { label: 'Zamknięte', value: tickets.filter(t => t.status === 'ZAMKNIETE').length, color: '#6b7280', filterValue: 'ZAMKNIETE' },
+  ];
 
   // Kategorie
   const categoryMap = new Map<string, number>();
@@ -226,9 +227,9 @@ const StatisticsPage: React.FC = () => {
 
   // Priorytety
   const priorityData: DonutSegment[] = [
-    { label: 'Wysoki', value: activeTickets.filter(t => t.priority === 'WYSOKI').length, color: '#ef4444' },
-    { label: 'Normalny', value: activeTickets.filter(t => t.priority === 'NORMALNY').length, color: '#3b82f6' },
-    { label: 'Niski', value: activeTickets.filter(t => t.priority === 'NISKI').length, color: '#9ca3af' },
+    { label: 'Wysoki', value: activeTickets.filter(t => t.priority === 'WYSOKI').length, color: '#ef4444', filterValue: 'WYSOKI' },
+    { label: 'Normalny', value: activeTickets.filter(t => t.priority === 'NORMALNY').length, color: '#3b82f6', filterValue: 'NORMALNY' },
+    { label: 'Niski', value: activeTickets.filter(t => t.priority === 'NISKI').length, color: '#9ca3af', filterValue: 'NISKI' },
   ];
 
   // Obciążenie zespołu
@@ -289,10 +290,10 @@ const StatisticsPage: React.FC = () => {
     const myResolved = myTickets.filter(t => ['ROZWIAZANE', 'ZAMKNIETE'].includes(t.status));
 
     const myStatusData: DonutSegment[] = [
-      { label: 'Nowe', value: myTickets.filter(t => t.status === 'NOWE').length, color: '#3b82f6' },
-      { label: 'W toku', value: myTickets.filter(t => t.status === 'W_TOKU').length, color: '#f59e0b' },
-      { label: 'Rozwiązane', value: myTickets.filter(t => t.status === 'ROZWIAZANE').length, color: '#22c55e' },
-      { label: 'Zamknięte', value: myTickets.filter(t => t.status === 'ZAMKNIETE').length, color: '#6b7280' },
+      { label: 'Nowe', value: myTickets.filter(t => t.status === 'NOWE').length, color: '#3b82f6', filterValue: 'NOWE' },
+      { label: 'W toku', value: myTickets.filter(t => t.status === 'W_TOKU').length, color: '#f59e0b', filterValue: 'W_TOKU' },
+      { label: 'Rozwiązane', value: myTickets.filter(t => t.status === 'ROZWIAZANE').length, color: '#22c55e', filterValue: 'ROZWIAZANE' },
+      { label: 'Zamknięte', value: myTickets.filter(t => t.status === 'ZAMKNIETE').length, color: '#6b7280', filterValue: 'ZAMKNIETE' },
     ];
 
     return (
@@ -337,7 +338,7 @@ const StatisticsPage: React.FC = () => {
               </Link>
             </div>
             <p className="text-xs text-gray-500 mb-5">Rozkład statusów Twoich zgłoszeń.</p>
-            <DonutChart segments={myStatusData} total={myTickets.length} />
+            <DonutChart segments={myStatusData} total={myTickets.length} filterType="status" />
           </div>
 
           {/* Rodzaj zgłoszeń */}
@@ -366,7 +367,7 @@ const StatisticsPage: React.FC = () => {
               <h3 className="font-bold text-gray-900">Priorytety zgłoszeń</h3>
             </div>
             <p className="text-xs text-gray-500 mb-5">Rozkład aktywnych zgłoszeń według priorytetu.</p>
-            <DonutChart segments={priorityData} total={activeTickets.length} />
+            <DonutChart segments={priorityData} total={activeTickets.length} filterType="priority" />
           </div>
 
           {/* Obciążenie zespołu */}
@@ -483,7 +484,7 @@ const StatisticsPage: React.FC = () => {
               </Link>
             </div>
             <p className="text-xs text-gray-500 mb-5">Szybki wgląd w status wszystkich zgłoszeń.</p>
-            <DonutChart segments={statusData} total={allCount} />
+            <DonutChart segments={statusData} total={allCount} filterType="status" />
           </div>
 
           {/* Rodzaj zgłoszeń */}
@@ -512,7 +513,7 @@ const StatisticsPage: React.FC = () => {
               <h3 className="font-bold text-gray-900">Priorytety zgłoszeń</h3>
             </div>
             <p className="text-xs text-gray-500 mb-5">Rozkład aktywnych zgłoszeń według priorytetu.</p>
-            <DonutChart segments={priorityData} total={activeTickets.length} />
+            <DonutChart segments={priorityData} total={activeTickets.length} filterType="priority" />
           </div>
 
           {/* Obciążenie zespołu */}
