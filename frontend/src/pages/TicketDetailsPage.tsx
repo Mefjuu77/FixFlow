@@ -267,7 +267,7 @@ const TicketDetailsPage: React.FC = () => {
         <ArrowLeft className="w-4 h-4 mr-1" /> Wstecz
       </button>
 
-      <div className="grid grid-cols-1 lg:grid-cols-[1fr_380px] gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-[1fr_410px] gap-8">
         {/* Lewa kolumna: Treść zgłoszenia */}
         <div className="space-y-6">
           <div className="flex items-center gap-3 mb-2">
@@ -714,7 +714,7 @@ const TicketDetailsPage: React.FC = () => {
 
             <div className="p-4 space-y-4">
               {/* Row 1: Osoba zgłaszająca */}
-              <div className="grid grid-cols-[170px_1fr] items-start">
+              <div className="grid grid-cols-[160px_1fr] items-start">
                 <span className="text-sm text-gray-500 font-medium pt-0.5">Osoba zgłaszająca</span>
                 <div className="relative">
                   {isEditingCreator && isTechnicianOrAdmin ? (
@@ -751,7 +751,7 @@ const TicketDetailsPage: React.FC = () => {
               </div>
 
               {/* Row 2: Priorytet */}
-              <div className="grid grid-cols-[170px_1fr] items-start">
+              <div className="grid grid-cols-[160px_1fr] items-start">
                 <span className="text-sm text-gray-500 font-medium pt-0.5">Priorytet</span>
                 <div className="relative" ref={priorityDropdownRef}>
                   <div
@@ -767,7 +767,7 @@ const TicketDetailsPage: React.FC = () => {
                     </span>
                   </div>
                   {isEditingPriority && isTechnicianOrAdmin && (
-                    <div className="absolute z-50 left-0 top-full mt-1 bg-white border border-gray-200 rounded-xl shadow-lg py-1 w-44 animate-in fade-in zoom-in-95 duration-100">
+                    <div className="absolute z-50 left-0 -ml-1 top-full mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-xl shadow-lg dark:shadow-[0_10px_40px_rgba(0,0,0,0.4)] py-1 w-[calc(100%+8px)] animate-in fade-in zoom-in-95 duration-100">
                       {[
                         { value: 'NISKI', label: 'Niski', icon: <ArrowDown className="w-3.5 h-3.5 text-gray-400" />, color: 'text-gray-600' },
                         { value: 'NORMALNY', label: 'Normalny', icon: <Minus className="w-3.5 h-3.5 text-blue-500" />, color: 'text-blue-600' },
@@ -783,7 +783,7 @@ const TicketDetailsPage: React.FC = () => {
                             }
                             setIsEditingPriority(false);
                           }}
-                          className={`w-full flex items-center gap-2.5 px-3 py-2 text-sm hover:bg-blue-50 transition-colors ${ticket.priority === opt.value ? 'bg-blue-50/50 font-semibold' : ''}`}
+                          className={`w-full flex items-center gap-2.5 px-3 py-2 text-sm hover:bg-blue-50 dark:hover:bg-gray-700 transition-colors ${ticket.priority === opt.value ? 'bg-blue-50/50 dark:bg-blue-900/40 font-semibold' : ''}`}
                         >
                           {opt.icon}
                           <span className={`font-medium ${opt.color}`}>{opt.label}</span>
@@ -795,7 +795,7 @@ const TicketDetailsPage: React.FC = () => {
               </div>
 
               {/* Row 3: Kategoria */}
-              <div className="grid grid-cols-[170px_1fr] items-start">
+              <div className="grid grid-cols-[160px_1fr] items-start">
                 <span className="text-sm text-gray-500 font-medium">Kategoria</span>
                 <div className="relative" ref={categoryDropdownRef}>
                   <div
@@ -809,7 +809,7 @@ const TicketDetailsPage: React.FC = () => {
                     {ticket.category_name}
                   </div>
                   {isEditingCategory && isTechnicianOrAdmin && (
-                    <div className="absolute z-50 left-0 top-full mt-1 bg-white border border-gray-200 rounded-xl shadow-lg py-1 w-48 max-h-60 overflow-y-auto animate-in fade-in zoom-in-95 duration-100">
+                    <div className="absolute z-50 left-0 -ml-1 top-full mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-xl shadow-lg dark:shadow-[0_10px_40px_rgba(0,0,0,0.4)] py-1 w-[calc(100%+8px)] max-h-60 overflow-y-auto animate-in fade-in zoom-in-95 duration-100">
                       {categories.map(cat => (
                         <button
                           key={cat.id}
@@ -821,7 +821,7 @@ const TicketDetailsPage: React.FC = () => {
                             }
                             setIsEditingCategory(false);
                           }}
-                          className={`w-full flex items-center gap-2.5 px-3 py-2 text-sm hover:bg-blue-50 transition-colors ${ticket.category === cat.id ? 'bg-blue-50/50 font-semibold' : ''}`}
+                          className={`w-full flex items-center gap-2.5 px-3 py-2 text-sm hover:bg-blue-50 dark:hover:bg-gray-700 transition-colors ${ticket.category === cat.id ? 'bg-blue-50/50 dark:bg-blue-900/40 font-semibold' : ''}`}
                         >
                           <span className="w-4 flex justify-center text-gray-500">{getCategoryIcon(cat.name)}</span>
                           <span className="font-medium text-gray-700">{cat.name}</span>
@@ -833,7 +833,7 @@ const TicketDetailsPage: React.FC = () => {
               </div>
 
               {/* Row 4: Osoba przypisana */}
-              <div className="grid grid-cols-[170px_1fr] items-start mt-4 pt-4 border-t border-gray-100">
+              <div className="grid grid-cols-[160px_1fr] items-start mt-4 pt-4 border-t border-gray-100">
                 <span className="text-sm text-gray-500 font-medium pt-0.5">Osoba przypisana</span>
                 <div className="space-y-1 relative">
                   {isEditingTechnician && isTechnicianOrAdmin ? (
@@ -889,14 +889,14 @@ const TicketDetailsPage: React.FC = () => {
                 </div>
               </div>
 
-              <div className="grid grid-cols-[170px_1fr] items-start mt-4 pt-4 border-t border-gray-100">
+              <div className="grid grid-cols-[160px_1fr] items-start mt-4 pt-4 border-t border-gray-100">
                 <span className="text-sm text-gray-500 font-medium">Utworzono</span>
                 <div className="text-sm text-gray-900">
                   {dayjs(ticket.created_at).format('DD.MM.YYYY, HH:mm')}
                 </div>
               </div>
 
-              <div className="grid grid-cols-[170px_1fr] items-start">
+              <div className="grid grid-cols-[160px_1fr] items-start">
                 <span className="text-sm text-gray-500 font-medium">Zaktualizowano</span>
                 <div className="text-sm text-gray-900">
                   {dayjs(ticket.updated_at).format('DD.MM.YYYY, HH:mm')}
