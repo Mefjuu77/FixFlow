@@ -27,7 +27,8 @@ import {
   ZoomIn,
   ExternalLink,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  UserMinus
 } from 'lucide-react';
 
 const TicketDetailsPage: React.FC = () => {
@@ -64,6 +65,8 @@ const TicketDetailsPage: React.FC = () => {
 
   const priorityDropdownRef = useRef<HTMLDivElement>(null);
   const categoryDropdownRef = useRef<HTMLDivElement>(null);
+  const creatorDropdownRef = useRef<HTMLDivElement>(null);
+  const technicianDropdownRef = useRef<HTMLDivElement>(null);
 
   const targetStatusLabel = transitionModalConfig.targetStatus === 'W_TOKU' ? 'W toku' :
     transitionModalConfig.targetStatus === 'NOWE' ? 'Nowe' :
@@ -88,6 +91,12 @@ const TicketDetailsPage: React.FC = () => {
       }
       if (categoryDropdownRef.current && !categoryDropdownRef.current.contains(target)) {
         setIsEditingCategory(false);
+      }
+      if (creatorDropdownRef.current && !creatorDropdownRef.current.contains(target)) {
+        setIsEditingCreator(false);
+      }
+      if (technicianDropdownRef.current && !technicianDropdownRef.current.contains(target)) {
+        setIsEditingTechnician(false);
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
@@ -716,35 +725,46 @@ const TicketDetailsPage: React.FC = () => {
               {/* Row 1: Osoba zgłaszająca */}
               <div className="grid grid-cols-[160px_1fr] items-start">
                 <span className="text-sm text-gray-500 font-medium pt-0.5">Osoba zgłaszająca</span>
-                <div className="relative">
-                  {isEditingCreator && isTechnicianOrAdmin ? (
-                    <select
-                      autoFocus
-                      onBlur={() => setIsEditingCreator(false)}
-                      onChange={async (e) => {
-                        const newCreatorId = parseInt(e.target.value);
-                        if (newCreatorId !== ticket.creator) {
-                          await updateTicketField({ creator: newCreatorId });
-                        }
-                        setIsEditingCreator(false);
-                      }}
-                      className="w-full text-sm border border-gray-300 rounded-md py-1 px-2 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                      defaultValue={ticket.creator}
-                    >
+                <div className="relative" ref={creatorDropdownRef}>
+                  <div
+                    className={`flex items-center gap-2 text-sm text-gray-900 ${isTechnicianOrAdmin ? 'cursor-pointer hover:bg-gray-50 p-1 -ml-1 rounded transition-colors' : ''}`}
+                    onClick={() => isTechnicianOrAdmin && setIsEditingCreator(!isEditingCreator)}
+                    title={isTechnicianOrAdmin ? "Kliknij, aby zmienić zgłaszającego" : ""}
+                  >
+                    <div className="w-5 h-5 rounded-full bg-blue-600 flex items-center justify-center flex-shrink-0 text-white overflow-hidden">
+                      {ticket.creator_details?.avatar ? (
+                        <img src={ticket.creator_details.avatar} alt="Avatar" className="w-full h-full object-cover" />
+                      ) : (
+                        <span className="text-[10px] font-bold uppercase">{ticket.creator_details?.first_name?.charAt(0) || 'U'}</span>
+                      )}
+                    </div>
+                    {ticket.creator_details?.first_name} {ticket.creator_details?.last_name}
+                  </div>
+                  {isEditingCreator && isTechnicianOrAdmin && (
+                    <div className="absolute z-50 left-0 -ml-1 top-full mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-xl shadow-lg dark:shadow-[0_10px_40px_rgba(0,0,0,0.4)] py-1 w-[calc(100%+8px)] max-h-60 overflow-y-auto animate-in fade-in zoom-in-95 duration-100">
                       {allUsers.map(u => (
-                        <option key={u.id} value={u.id}>{u.first_name} {u.last_name}</option>
+                        <button
+                          key={u.id}
+                          type="button"
+                          onMouseDown={async (e) => {
+                            e.preventDefault();
+                            if (u.id !== ticket.creator) {
+                              await updateTicketField({ creator: u.id });
+                            }
+                            setIsEditingCreator(false);
+                          }}
+                          className={`w-full flex items-center gap-2.5 px-3 py-2 text-sm hover:bg-blue-50 dark:hover:bg-gray-700 transition-colors ${ticket.creator === u.id ? 'bg-blue-50/50 dark:bg-blue-900/40 font-semibold' : ''}`}
+                        >
+                          <div className="w-5 h-5 rounded-full bg-blue-600 text-white flex items-center justify-center flex-shrink-0 overflow-hidden">
+                            {u.avatar ? (
+                              <img src={u.avatar} alt="" className="w-full h-full object-cover" />
+                            ) : (
+                              <span className="text-[10px] font-bold uppercase">{u.first_name?.charAt(0) || 'U'}</span>
+                            )}
+                          </div>
+                          <span className="font-medium text-gray-700 dark:text-gray-200">{u.first_name} {u.last_name}</span>
+                        </button>
                       ))}
-                    </select>
-                  ) : (
-                    <div
-                      className={`flex items-center gap-2 text-sm text-gray-900 ${isTechnicianOrAdmin ? 'cursor-pointer hover:bg-gray-50 p-1 -ml-1 rounded transition-colors' : ''}`}
-                      onClick={() => isTechnicianOrAdmin && setIsEditingCreator(true)}
-                      title={isTechnicianOrAdmin ? "Kliknij, aby zmienić zgłaszającego" : ""}
-                    >
-                      <div className="w-5 h-5 rounded-full bg-gray-200 flex items-center justify-center flex-shrink-0 text-gray-500">
-                        <User className="w-3 h-3" />
-                      </div>
-                      {ticket.creator_details?.first_name} {ticket.creator_details?.last_name}
                     </div>
                   )}
                 </div>
@@ -835,56 +855,85 @@ const TicketDetailsPage: React.FC = () => {
               {/* Row 4: Osoba przypisana */}
               <div className="grid grid-cols-[160px_1fr] items-start mt-4 pt-4 border-t border-gray-100">
                 <span className="text-sm text-gray-500 font-medium pt-0.5">Osoba przypisana</span>
-                <div className="space-y-1 relative">
-                  {isEditingTechnician && isTechnicianOrAdmin ? (
-                    <select
-                      autoFocus
-                      onBlur={() => setIsEditingTechnician(false)}
-                      onChange={async (e) => {
-                        const val = e.target.value;
-                        const newTechId = val ? parseInt(val) : null;
-                        if (newTechId !== ticket.technician) {
-                          await updateTicketField({ technician: newTechId });
-                        }
-                        setIsEditingTechnician(false);
-                      }}
-                      className="w-full text-sm border border-gray-300 rounded-md py-1 px-2 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                      defaultValue={ticket.technician || ''}
-                    >
-                      <option value="">Brak (nie przypisano)</option>
-                      {availableTechnicians.map(t => (
-                        <option key={t.id} value={t.id}>{t.first_name} {t.last_name}</option>
-                      ))}
-                    </select>
-                  ) : (
-                    <>
-                      <div
-                        className={`flex items-center gap-2 text-sm text-gray-900 ${isTechnicianOrAdmin ? 'cursor-pointer hover:bg-gray-50 p-1 -ml-1 rounded transition-colors' : ''}`}
-                        onClick={() => isTechnicianOrAdmin && setIsEditingTechnician(true)}
-                        title={isTechnicianOrAdmin ? "Kliknij, aby przypisać zgłoszenie" : ""}
-                      >
-                        <div className="w-5 h-5 rounded-full bg-gray-200 flex items-center justify-center flex-shrink-0 text-gray-500">
-                          <User className="w-3 h-3" />
-                        </div>
-                        {ticket.technician_details ? (
-                          `${ticket.technician_details.first_name} ${ticket.technician_details.last_name}`
+                <div className="space-y-1 relative" ref={technicianDropdownRef}>
+                  <div
+                    className={`flex items-center gap-2 text-sm text-gray-900 ${isTechnicianOrAdmin ? 'cursor-pointer hover:bg-gray-50 p-1 -ml-1 rounded transition-colors' : ''}`}
+                    onClick={() => isTechnicianOrAdmin && setIsEditingTechnician(!isEditingTechnician)}
+                    title={isTechnicianOrAdmin ? "Kliknij, aby przypisać zgłoszenie" : ""}
+                  >
+                    {ticket.technician_details ? (
+                      <div className="w-5 h-5 rounded-full bg-blue-600 flex items-center justify-center flex-shrink-0 text-white overflow-hidden">
+                        {ticket.technician_details.avatar ? (
+                          <img src={ticket.technician_details.avatar} alt="Avatar" className="w-full h-full object-cover" />
                         ) : (
-                          <span className="italic text-gray-500">Nie przypisano</span>
+                          <span className="text-[10px] font-bold uppercase">{ticket.technician_details.first_name?.charAt(0) || 'U'}</span>
                         )}
                       </div>
-                      {isTechnicianOrAdmin && !ticket.technician_details && (
+                    ) : (
+                      <div className="w-5 h-5 rounded-full bg-gray-200 flex items-center justify-center flex-shrink-0 text-gray-500">
+                        <User className="w-3 h-3" />
+                      </div>
+                    )}
+                    {ticket.technician_details ? (
+                      `${ticket.technician_details.first_name} ${ticket.technician_details.last_name}`
+                    ) : (
+                      <span className="italic text-gray-500">Nie przypisano</span>
+                    )}
+                  </div>
+                  {isEditingTechnician && isTechnicianOrAdmin && (
+                    <div className="absolute z-50 left-0 -ml-1 top-full mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-xl shadow-lg dark:shadow-[0_10px_40px_rgba(0,0,0,0.4)] py-1 w-[calc(100%+8px)] max-h-60 overflow-y-auto animate-in fade-in zoom-in-95 duration-100">
+                      <button
+                        type="button"
+                        onMouseDown={async (e) => {
+                          e.preventDefault();
+                          if (ticket.technician !== null) {
+                            await updateTicketField({ technician: null });
+                          }
+                          setIsEditingTechnician(false);
+                        }}
+                        className={`w-full flex items-center gap-2.5 px-3 py-2 text-sm hover:bg-blue-50 dark:hover:bg-gray-700 transition-colors ${ticket.technician === null ? 'bg-blue-50/50 dark:bg-blue-900/40 font-semibold' : ''}`}
+                      >
+                        <div className="w-5 h-5 rounded-full bg-gray-200 text-gray-400 flex items-center justify-center flex-shrink-0">
+                          <UserMinus className="w-3 h-3" />
+                        </div>
+                        <span className="font-medium text-gray-700 dark:text-gray-200 italic">Brak (nie przypisano)</span>
+                      </button>
+                      {availableTechnicians.map(t => (
                         <button
-                          onClick={() => {
-                            if (authContext?.user?.id) {
-                              updateTicketField({ technician: authContext.user.id });
+                          key={t.id}
+                          type="button"
+                          onMouseDown={async (e) => {
+                            e.preventDefault();
+                            if (t.id !== ticket.technician) {
+                              await updateTicketField({ technician: t.id });
                             }
+                            setIsEditingTechnician(false);
                           }}
-                          className="text-blue-600 hover:text-blue-800 text-sm font-medium hover:underline block pl-7"
+                          className={`w-full flex items-center gap-2.5 px-3 py-2 text-sm hover:bg-blue-50 dark:hover:bg-gray-700 transition-colors ${ticket.technician === t.id ? 'bg-blue-50/50 dark:bg-blue-900/40 font-semibold' : ''}`}
                         >
-                          Przypisz do mnie
+                          <div className="w-5 h-5 rounded-full bg-blue-600 text-white flex items-center justify-center flex-shrink-0 overflow-hidden">
+                            {t.avatar ? (
+                              <img src={t.avatar} alt="" className="w-full h-full object-cover" />
+                            ) : (
+                              <span className="text-[10px] font-bold uppercase">{t.first_name?.charAt(0) || 'U'}</span>
+                            )}
+                          </div>
+                          <span className="font-medium text-gray-700 dark:text-gray-200">{t.first_name} {t.last_name}</span>
                         </button>
-                      )}
-                    </>
+                      ))}
+                    </div>
+                  )}
+                  {isTechnicianOrAdmin && !ticket.technician_details && !isEditingTechnician && (
+                    <button
+                      onClick={() => {
+                        if (authContext?.user?.id) {
+                          updateTicketField({ technician: authContext.user.id });
+                        }
+                      }}
+                      className="text-blue-600 hover:text-blue-800 text-sm font-medium hover:underline block pl-7"
+                    >
+                      Przypisz do mnie
+                    </button>
                   )}
                 </div>
               </div>
