@@ -87,10 +87,12 @@ const DonutChart: React.FC<{ segments: DonutSegment[]; total: number; filterType
           }}
           className="cursor-pointer overflow-visible"
         >
-          <circle cx={size / 2} cy={size / 2} r={radius} fill="none" stroke="#f3f4f6" strokeWidth={strokeWidth} />
+          {total === 0 && (
+            <circle cx={size / 2} cy={size / 2} r={radius} fill="none" className="stroke-gray-100" strokeWidth={strokeWidth} />
+          )}
           {segments.map((seg, i) => {
             const pct = total > 0 ? seg.value / total : 0;
-            const gap = 1;
+            const gap = 2; // Slightly wider gap since we removed the solid background track
             const segLength = circumference * pct - gap;
             const offset = circumference - Math.max(segLength, 0);
             const rotation = accumulated * 360 - 90;
@@ -105,7 +107,7 @@ const DonutChart: React.FC<{ segments: DonutSegment[]; total: number; filterType
                 strokeDasharray={`${Math.max(segLength, 0)} ${circumference}`}
                 strokeLinecap="butt"
                 transform={`rotate(${rotation} ${size / 2} ${size / 2})`}
-                opacity={isDimmed ? 0.25 : 1}
+                opacity={isDimmed ? 0.4 : 1}
                 style={{ transition: 'stroke-width 0.2s ease, opacity 0.2s ease' }}
               />
             );
