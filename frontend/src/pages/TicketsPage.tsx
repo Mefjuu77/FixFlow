@@ -4,8 +4,10 @@ import { AuthContext } from '../context/AuthContext';
 import api from '../api/axiosConfig';
 import { Ticket } from '../types';
 import dayjs from 'dayjs';
-import { PlusCircle, Search, ChevronDown, AlertTriangle, Minus, ArrowDown, Folder, Tag, Filter, Users, UserCheck, UserMinus, Monitor, Terminal, Wifi, Lock, HelpCircle, Circle, CheckCircle2, XCircle } from 'lucide-react';
+import { PlusCircle, Search, ChevronDown, ChevronUp, AlertTriangle, Minus, ArrowUp, ArrowDown, Folder, Tag, Filter, Users, UserCheck, UserMinus, Monitor, Terminal, Wifi, Lock, HelpCircle, Circle, CheckCircle2, XCircle } from 'lucide-react';
 import useTitle from '../hooks/useTitle';
+
+type SortField = 'id' | 'title' | 'category_name' | 'priority' | 'creator' | 'technician' | 'status' | 'created_at';
 
 interface CustomDropdownProps {
   value: string;
@@ -115,6 +117,7 @@ const TicketsPage: React.FC = () => {
   const [priorityFilter, setPriorityFilter] = useState<string>(searchParams.get('priority') || 'all');
   const [assignmentFilter, setAssignmentFilter] = useState<string>('all');
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
+  const [sortConfig, setSortConfig] = useState<{ key: SortField, direction: 'asc' | 'desc' }>({ key: 'created_at', direction: 'desc' });
 
   const role = authContext?.user?.role;
   const isEmployee = role === 'EMPLOYEE';
@@ -171,8 +174,111 @@ const TicketsPage: React.FC = () => {
     }
   }
 
-  // Sortowanie: najnowsze na górze
-  filteredTickets = filteredTickets.sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime());
+  // ---------- Logika Sortowania ----------
+  const handleSort = (key: SortField) => {
+    setSortConfig(current => ({
+      key,
+      direction: current.key === key && current.direction === 'asc' ? 'desc' : 'asc'
+    }));
+  };
+
+  const getSortTooltip = (key: SortField, label: string) => {
+    const isActive = sortConfig.key === key;
+    const direction = sortConfig.direction;
+    let sortLegend = '';
+    
+    if (!isActive) {
+      if (key === 'created_at') sortLegend = 'Sortuj od najstarszych';
+      else if (key === 'id') sortLegend = 'Sortuj rosnąco';
+      else if (key === 'priority') sortLegend = 'Sortuj od najniższego';
+      else sortLegend = 'Sortuj A → Z';
+    } else {
+      if (key === 'created_at') {
+        sortLegend = direction === 'asc' ? 'Posortowane od najstarszych' : 'Posortowane od najnowszych';
+      } else if (key === 'id') {
+        sortLegend = direction === 'asc' ? 'Posortowane rosnąco' : 'Posortowane malejąco';
+      } else if (key === 'priority') {
+        sortLegend = direction === 'asc' ? 'Posortowane od najniższego' : 'Posortowane od najwyższego';
+      } else {
+        sortLegend = direction === 'asc' ? 'Posortowane A → Z' : 'Posortowane Z → A';
+      }
+    }
+    
+    return `${label} • ${sortLegend}`;
+  };
+
+  const renderSortableHeader = (field: SortField, label: string) => {
+    const isActive = sortConfig.key === field;
+    const direction = sortConfig.direction;
+    const isAsc = direction === 'asc';
+
+    return (
+      <th 
+        key={field}
+        className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100/80 transition-colors group/th" 
+        onClick={() => handleSort(field)}
+      >
+        <div className="flex items-center gap-1 relative w-max">
+          {label}
+          <span className={`transition-opacity duration-200 flex items-center ${isActive ? 'opacity-100 text-blue-600' : 'opacity-0 group-hover/th:opacity-100 text-gray-400'}`}>
+            {(!isActive || isAsc) ? <ArrowUp className="w-3.5 h-3.5" /> : <ArrowDown className="w-3.5 h-3.5" />}
+          </span>
+          
+          {/* Custom Tooltip */}
+          <div className={`absolute top-full mt-2 z-[60] pointer-events-none opacity-0 group-hover/th:opacity-100 transition-opacity duration-200 ${field === 'id' ? '-left-3' : field === 'created_at' ? '-right-3' : 'left-1/2 -translate-x-1/2'}`}>
+            <div className="bg-[#24272f] text-white text-[11.5px] font-medium px-3 py-2 rounded shadow-lg w-max max-w-[160px] whitespace-normal normal-case tracking-normal text-left leading-snug">
+              {getSortTooltip(field, label)}
+            </div>
+          </div>
+        </div>
+      </th>
+    );
+  };
+
+  filteredTickets = [...filteredTickets].sort((a, b) => {
+    let aValue: any = a.id;
+    let bValue: any = b.id;
+
+    switch (sortConfig.key) {
+      case 'id':
+        aValue = a.id;
+        bValue = b.id;
+        break;
+      case 'title':
+        aValue = a.title.toLowerCase();
+        bValue = b.title.toLowerCase();
+        break;
+      case 'category_name':
+        aValue = a.category_name?.toLowerCase() || '';
+        bValue = b.category_name?.toLowerCase() || '';
+        break;
+      case 'priority':
+        const priorityOrder = { 'WYSOKI': 3, 'NORMALNY': 2, 'NISKI': 1 };
+        aValue = priorityOrder[a.priority as keyof typeof priorityOrder] || 0;
+        bValue = priorityOrder[b.priority as keyof typeof priorityOrder] || 0;
+        break;
+      case 'creator':
+        aValue = a.creator_details ? `${a.creator_details.first_name} ${a.creator_details.last_name}`.toLowerCase() : '';
+        bValue = b.creator_details ? `${b.creator_details.first_name} ${b.creator_details.last_name}`.toLowerCase() : '';
+        break;
+      case 'technician':
+        aValue = a.technician_details ? `${a.technician_details.first_name} ${a.technician_details.last_name}`.toLowerCase() : '';
+        bValue = b.technician_details ? `${b.technician_details.first_name} ${b.technician_details.last_name}`.toLowerCase() : '';
+        break;
+      case 'status':
+        aValue = a.status.toLowerCase();
+        bValue = b.status.toLowerCase();
+        break;
+      case 'created_at':
+        aValue = new Date(a.created_at).getTime();
+        bValue = new Date(b.created_at).getTime();
+        break;
+    }
+
+    if (aValue < bValue) return sortConfig.direction === 'asc' ? -1 : 1;
+    if (aValue > bValue) return sortConfig.direction === 'asc' ? 1 : -1;
+    return 0;
+  });
 
   // Unikalne kategorie z zgloszen
   const categories = [...new Set(tickets.map(t => t.category_name).filter(Boolean))];
@@ -290,19 +396,15 @@ const TicketsPage: React.FC = () => {
         <div className="overflow-x-auto">
           <table className="w-full text-left">
             <thead>
-              <tr className="border-b border-gray-100 bg-gray-50/70">
-                <th className="px-6 py-3.5 text-xs font-bold text-gray-500 uppercase tracking-wider">ID</th>
-                <th className="px-6 py-3.5 text-xs font-bold text-gray-500 uppercase tracking-wider">Tytuł</th>
-                <th className="px-6 py-3.5 text-xs font-bold text-gray-500 uppercase tracking-wider">Kategoria</th>
-                {!isEmployee && (
-                  <th className="px-6 py-3.5 text-xs font-bold text-gray-500 uppercase tracking-wider">Priorytet</th>
-                )}
-                <th className="px-6 py-3.5 text-xs font-bold text-gray-500 uppercase tracking-wider">Zgłaszający</th>
-                {!isEmployee && (
-                  <th className="px-6 py-3.5 text-xs font-bold text-gray-500 uppercase tracking-wider">Przypisany</th>
-                )}
-                <th className="px-6 py-3.5 text-xs font-bold text-gray-500 uppercase tracking-wider">Status</th>
-                <th className="px-6 py-3.5 text-xs font-bold text-gray-500 uppercase tracking-wider">Utworzono</th>
+               <tr className="border-b-2 border-gray-200 bg-gray-50/50">
+                {renderSortableHeader('id', 'ID')}
+                {renderSortableHeader('title', 'Tytuł')}
+                {renderSortableHeader('category_name', 'Kategoria')}
+                {!isEmployee && renderSortableHeader('priority', 'Priorytet')}
+                {renderSortableHeader('creator', 'Zgłaszający')}
+                {!isEmployee && renderSortableHeader('technician', 'Przypisany')}
+                {renderSortableHeader('status', 'Status')}
+                {renderSortableHeader('created_at', 'Utworzono')}
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50">
