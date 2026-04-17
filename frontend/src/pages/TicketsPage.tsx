@@ -453,24 +453,99 @@ const TicketsPage: React.FC = () => {
         <div className="overflow-x-auto">
           <table className="w-full text-left">
             <thead>
-               <tr className="border-b-2 border-gray-200 bg-gray-50/50">
-                <th className="px-6 py-4 w-10 text-center">
-                  <input 
-                    type="checkbox" 
-                    className="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500 cursor-pointer"
-                    onChange={handleSelectAll}
-                    checked={filteredTickets.length > 0 && selectedTicketIds.length === filteredTickets.length}
-                  />
-                </th>
-                {renderSortableHeader('id', 'ID')}
-                {renderSortableHeader('title', 'Tytuł')}
-                {renderSortableHeader('category_name', 'Kategoria')}
-                {!isEmployee && renderSortableHeader('priority', 'Priorytet')}
-                {renderSortableHeader('creator', 'Zgłaszający')}
-                {!isEmployee && renderSortableHeader('technician', 'Przypisany')}
-                {renderSortableHeader('status', 'Status')}
-                {renderSortableHeader('created_at', 'Utworzono')}
-              </tr>
+              {selectedTicketIds.length > 0 ? (
+                <tr className="border-b-2 border-blue-200 bg-blue-50/60 transition-colors animate-in fade-in duration-200 z-10 relative">
+                  <th className="px-6 py-4 w-10 text-center">
+                    <input 
+                      type="checkbox" 
+                      className="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500 cursor-pointer"
+                      onChange={handleSelectAll}
+                      checked={filteredTickets.length > 0 && selectedTicketIds.length === filteredTickets.length}
+                    />
+                  </th>
+                  <th colSpan={isEmployee ? 6 : 8} className="px-6 py-2 font-normal text-left">
+                    <div className="flex items-center gap-4">
+                      <div className="px-3 py-1.5 bg-white text-blue-700 rounded-xl font-bold text-sm border border-blue-100 whitespace-nowrap shadow-sm flex items-center">
+                        <span className="w-5 h-5 bg-blue-100 text-blue-800 rounded-md flex items-center justify-center text-xs mr-2">{selectedTicketIds.length}</span>
+                        Wybrane
+                      </div>
+
+                      <div className="w-px h-6 bg-blue-200/50"></div>
+
+                      {(isAdmin || isTechnician) && (
+                        <CustomDropdown
+                          className="w-48 bg-white border-blue-100 hover:bg-blue-50 text-blue-900"
+                          value={bulkAssignee}
+                          onChange={setBulkAssignee}
+                          placeholder="Przypisz do..."
+                          options={[
+                            { 
+                              value: 'me', 
+                              label: 'Przypisz do mnie', 
+                              icon: authContext?.user?.avatar ? (
+                                <img src={authContext.user.avatar} className="w-5 h-5 rounded-full object-cover mr-1" alt="Ty" />
+                              ) : (
+                                <div className="w-5 h-5 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center text-[10px] mr-1">Ty</div>
+                              )
+                            },
+                            ...technicians.filter(t => t.id !== authContext?.user?.id).map((tech) => ({
+                              value: String(tech.id),
+                              label: `${tech.first_name} ${tech.last_name}`,
+                              icon: tech.avatar ? (
+                                <img src={tech.avatar} className="w-5 h-5 rounded-full object-cover mr-1" alt={`${tech.first_name}`} />
+                              ) : (
+                                <div className="w-5 h-5 rounded-full bg-gray-100 text-gray-700 flex items-center justify-center text-[10px] mr-1">{tech.first_name[0]}{tech.last_name[0]}</div>
+                              )
+                            }))
+                          ]}
+                        />
+                      )}
+
+                      <CustomDropdown
+                        className="w-44 bg-white border-blue-100 hover:bg-blue-50 text-blue-900"
+                        value={bulkStatus}
+                        onChange={setBulkStatus}
+                        placeholder="Zmień status..."
+                        options={[
+                          { value: 'NOWE', label: 'Nowe', icon: <div className="w-2.5 h-2.5 rounded-full bg-blue-500 mr-2"></div> },
+                          { value: 'W_TOKU', label: 'W toku', icon: <div className="w-2.5 h-2.5 rounded-full bg-amber-500 mr-2"></div> },
+                          { value: 'ROZWIAZANE', label: 'Rozwiązane', icon: <div className="w-2.5 h-2.5 rounded-full bg-green-500 mr-2"></div> },
+                          { value: 'ZAMKNIETE', label: 'Zamknięte', icon: <div className="w-2.5 h-2.5 rounded-full bg-gray-400 mr-2"></div> },
+                        ]}
+                      />
+
+                      <div className="w-px h-6 bg-blue-200/50"></div>
+
+                      <button 
+                        onClick={handleBulkAction}
+                        disabled={isBulkSubmitting || (!bulkAssignee && !bulkStatus)}
+                        className="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-sm font-bold flex items-center transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-sm shadow-blue-200"
+                      >
+                        {isBulkSubmitting ? 'Przetwarzanie...' : 'Zastosuj'}
+                      </button>
+                    </div>
+                  </th>
+                </tr>
+              ) : (
+                <tr className="border-b-2 border-gray-200 bg-gray-50/50 transition-colors animate-in fade-in">
+                  <th className="px-6 py-4 w-10 text-center">
+                    <input 
+                      type="checkbox" 
+                      className="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500 cursor-pointer"
+                      onChange={handleSelectAll}
+                      checked={filteredTickets.length > 0 && selectedTicketIds.length === filteredTickets.length}
+                    />
+                  </th>
+                  {renderSortableHeader('id', 'ID')}
+                  {renderSortableHeader('title', 'Tytuł')}
+                  {renderSortableHeader('category_name', 'Kategoria')}
+                  {!isEmployee && renderSortableHeader('priority', 'Priorytet')}
+                  {renderSortableHeader('creator', 'Zgłaszający')}
+                  {!isEmployee && renderSortableHeader('technician', 'Przypisany')}
+                  {renderSortableHeader('status', 'Status')}
+                  {renderSortableHeader('created_at', 'Utworzono')}
+                </tr>
+              )}
             </thead>
             <tbody className="divide-y divide-gray-50">
               {filteredTickets.length === 0 ? (
@@ -553,62 +628,6 @@ const TicketsPage: React.FC = () => {
           </table>
         </div>
       </div>
-
-      {/* Floating Action Bar (Bulk Actions) */}
-      {selectedTicketIds.length > 0 && (
-        <div className="fixed bottom-8 left-1/2 -translate-x-1/2 bg-white border border-gray-200 shadow-2xl rounded-2xl p-3 flex items-center gap-4 z-[100] animate-in slide-in-from-bottom-8 duration-300">
-          <div className="pl-3 pr-4 py-1.5 bg-blue-50 text-blue-700 rounded-lg font-bold text-sm flex items-center border border-blue-100">
-            Wybrano: {selectedTicketIds.length}
-          </div>
-          <div className="w-px h-8 bg-gray-200"></div>
-          
-          <button onClick={() => { setSelectedTicketIds([]); setBulkStatus(''); setBulkAssignee(''); }} className="text-gray-500 hover:text-gray-700 text-sm font-medium px-2 outline-none">
-            Anuluj
-          </button>
-          
-          {(isAdmin || isTechnician) && (
-            <CustomDropdown
-              className="w-48 bg-gray-50 border-gray-100 hover:bg-gray-100 dark:bg-gray-800"
-              value={bulkAssignee}
-              onChange={setBulkAssignee}
-              placeholder="Przypisz do..."
-              placement="top"
-              options={[
-                { value: 'me', label: 'Przypisz do mnie', icon: <div className="w-5 h-5 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center text-[10px] mr-1">Ty</div> },
-                ...technicians.filter(t => t.id !== authContext?.user?.id).map((tech) => ({
-                  value: String(tech.id),
-                  label: `${tech.first_name} ${tech.last_name}`,
-                  icon: <div className="w-5 h-5 rounded-full bg-gray-200 text-gray-700 flex items-center justify-center text-[10px] mr-1">{tech.first_name[0]}{tech.last_name[0]}</div>
-                }))
-              ]}
-            />
-          )}
-
-          <CustomDropdown
-            className="w-44 bg-gray-50 border-gray-100 hover:bg-gray-100 dark:bg-gray-800"
-            value={bulkStatus}
-            onChange={setBulkStatus}
-            placeholder="Zmień status..."
-            placement="top"
-            options={[
-              { value: 'NOWE', label: 'Nowe', icon: <div className="w-2.5 h-2.5 rounded-full bg-blue-500 mr-2"></div> },
-              { value: 'W_TOKU', label: 'W toku', icon: <div className="w-2.5 h-2.5 rounded-full bg-amber-500 mr-2"></div> },
-              { value: 'ROZWIAZANE', label: 'Rozwiązane', icon: <div className="w-2.5 h-2.5 rounded-full bg-green-500 mr-2"></div> },
-              { value: 'ZAMKNIETE', label: 'Zamknięte', icon: <div className="w-2.5 h-2.5 rounded-full bg-gray-400 mr-2"></div> },
-            ]}
-          />
-
-          <div className="w-px h-8 bg-gray-200"></div>
-
-          <button 
-            onClick={handleBulkAction}
-            disabled={isBulkSubmitting || (!bulkAssignee && !bulkStatus)}
-            className="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-sm font-bold flex items-center transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {isBulkSubmitting ? 'Przetwarzanie...' : 'Wykonaj'}
-          </button>
-        </div>
-      )}
     </div>
   );
 };
