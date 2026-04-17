@@ -254,12 +254,13 @@ const TicketsPage: React.FC = () => {
 
       const response = await api.get('tickets/');
       setTickets(response.data);
-      setSelectedTicketIds([]);
-      setBulkStatus('');
-      setBulkAssignee('');
-
       setBulkSuccessMessage('Zmiany zostały pomyślnie zastosowane!');
-      setTimeout(() => setBulkSuccessMessage(''), 4000);
+      setTimeout(() => {
+        setBulkSuccessMessage('');
+        setSelectedTicketIds([]);
+        setBulkStatus('');
+        setBulkAssignee('');
+      }, 4000);
     } catch (err) {
       console.error('Bulk update error', err);
       alert('Wystąpił błąd podczas masowej aktualizacji.');
