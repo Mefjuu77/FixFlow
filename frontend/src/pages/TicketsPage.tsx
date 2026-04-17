@@ -5,7 +5,7 @@ import api from '../api/axiosConfig';
 import { ticketService } from '../api/ticketService';
 import { Ticket, User } from '../types';
 import dayjs from 'dayjs';
-import { PlusCircle, Search, ChevronDown, ChevronUp, AlertTriangle, Minus, ArrowUp, ArrowDown, Folder, Tag, Filter, Users, UserCheck, UserMinus, Monitor, Terminal, Wifi, Lock, HelpCircle, Circle, CheckCircle2, XCircle } from 'lucide-react';
+import { PlusCircle, Search, ChevronDown, ChevronUp, AlertTriangle, Minus, ArrowUp, ArrowDown, Folder, Tag, Filter, Users, UserCheck, UserMinus, Monitor, Terminal, Wifi, Lock, HelpCircle, Circle, CheckCircle2, XCircle, Loader2 } from 'lucide-react';
 import useTitle from '../hooks/useTitle';
 
 type SortField = 'id' | 'title' | 'category_name' | 'priority' | 'creator' | 'technician' | 'status' | 'created_at';
@@ -22,7 +22,7 @@ interface CustomDropdownProps {
 const CustomDropdown: React.FC<CustomDropdownProps> = ({ value, onChange, options, placeholder = "Wybierz", className = "w-48", placement = 'bottom' }) => {
   const [isOpen, setIsOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
-  
+
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       if (ref.current && !ref.current.contains(e.target as Node)) setIsOpen(false);
@@ -35,7 +35,7 @@ const CustomDropdown: React.FC<CustomDropdownProps> = ({ value, onChange, option
 
   return (
     <div className="relative" ref={ref}>
-      <button 
+      <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
         className={`flex items-center justify-between pl-3 pr-3 py-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-sm font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700/50 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all ${className}`}
@@ -50,7 +50,7 @@ const CustomDropdown: React.FC<CustomDropdownProps> = ({ value, onChange, option
         </span>
         <ChevronDown className={`w-4 h-4 text-gray-400 flex-shrink-0 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
       </button>
-      
+
       {isOpen && (
         <div className={`absolute z-[60] left-0 ${placement === 'top' ? 'bottom-full mb-1 origin-bottom' : 'top-full mt-1 origin-top'} bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg dark:shadow-[0_10px_40px_rgba(0,0,0,0.5)] py-1 max-h-60 overflow-y-auto w-full min-w-max animate-in fade-in zoom-in-95 duration-100`}>
           {options.map((opt) => (
@@ -120,11 +120,12 @@ const TicketsPage: React.FC = () => {
   const [assignmentFilter, setAssignmentFilter] = useState<string>('all');
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
   const [sortConfig, setSortConfig] = useState<{ key: SortField, direction: 'asc' | 'desc' }>({ key: 'created_at', direction: 'desc' });
-  
+
   const [isBulkSubmitting, setIsBulkSubmitting] = useState(false);
   const [selectedTicketIds, setSelectedTicketIds] = useState<number[]>([]);
   const [bulkStatus, setBulkStatus] = useState<string>('');
   const [bulkAssignee, setBulkAssignee] = useState<string>('');
+  const [bulkSuccessMessage, setBulkSuccessMessage] = useState<string>('');
 
   const [technicians, setTechnicians] = useState<User[]>([]);
 
@@ -133,8 +134,8 @@ const TicketsPage: React.FC = () => {
   const isAdmin = role === 'ADMIN';
   const isTechnician = role === 'TECHNICIAN';
 
-  useEffect(() => { 
-    fetchTickets(); 
+  useEffect(() => {
+    fetchTickets();
     if (isAdmin || isTechnician) {
       ticketService.getTechnicians().then(setTechnicians).catch(console.error);
     }
@@ -200,7 +201,7 @@ const TicketsPage: React.FC = () => {
     const isActive = sortConfig.key === key;
     const direction = sortConfig.direction;
     let sortLegend = '';
-    
+
     if (!isActive) {
       if (key === 'created_at') sortLegend = 'Sortuj od najstarszych';
       else if (key === 'id') sortLegend = 'Sortuj rosnąco';
@@ -217,7 +218,7 @@ const TicketsPage: React.FC = () => {
         sortLegend = direction === 'asc' ? 'Posortowane A → Z' : 'Posortowane Z → A';
       }
     }
-    
+
     return `${label} • ${sortLegend}`;
   };
 
@@ -230,7 +231,7 @@ const TicketsPage: React.FC = () => {
   };
 
   const handleSelectTicket = (ticketId: number) => {
-    setSelectedTicketIds(prev => 
+    setSelectedTicketIds(prev =>
       prev.includes(ticketId) ? prev.filter(id => id !== ticketId) : [...prev, ticketId]
     );
   };
@@ -238,7 +239,7 @@ const TicketsPage: React.FC = () => {
   const handleBulkAction = async () => {
     if (selectedTicketIds.length === 0) return;
     if (!bulkStatus && !bulkAssignee) return;
-    
+
     setIsBulkSubmitting(true);
     try {
       const updates: Partial<Ticket> = {};
@@ -248,14 +249,17 @@ const TicketsPage: React.FC = () => {
       } else if (bulkAssignee) {
         updates.technician = Number(bulkAssignee);
       }
-      
+
       await Promise.all(selectedTicketIds.map(id => ticketService.updateTicket(id, updates)));
-      
+
       const response = await api.get('tickets/');
       setTickets(response.data);
       setSelectedTicketIds([]);
       setBulkStatus('');
       setBulkAssignee('');
+
+      setBulkSuccessMessage('Zmiany zostały pomyślnie zastosowane!');
+      setTimeout(() => setBulkSuccessMessage(''), 4000);
     } catch (err) {
       console.error('Bulk update error', err);
       alert('Wystąpił błąd podczas masowej aktualizacji.');
@@ -270,9 +274,9 @@ const TicketsPage: React.FC = () => {
     const isAsc = direction === 'asc';
 
     return (
-      <th 
+      <th
         key={field}
-        className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100/80 transition-colors group/th" 
+        className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100/80 transition-colors group/th"
         onClick={() => handleSort(field)}
       >
         <div className="flex items-center gap-1 relative w-max">
@@ -280,7 +284,7 @@ const TicketsPage: React.FC = () => {
           <span className={`transition-opacity duration-200 flex items-center ${isActive ? 'opacity-100 text-blue-600' : 'opacity-0 group-hover/th:opacity-100 text-gray-400'}`}>
             {(!isActive || isAsc) ? <ArrowUp className="w-3.5 h-3.5" /> : <ArrowDown className="w-3.5 h-3.5" />}
           </span>
-          
+
           {/* Custom Tooltip */}
           <div className={`absolute top-full mt-2 z-[60] pointer-events-none opacity-0 group-hover/th:opacity-100 transition-opacity duration-200 ${field === 'id' ? '-left-3' : field === 'created_at' ? '-right-3' : 'left-1/2 -translate-x-1/2'}`}>
             <div className="bg-[#24272f] text-white text-[11.5px] font-medium px-3 py-2 rounded shadow-lg w-max max-w-[160px] whitespace-normal normal-case tracking-normal text-left leading-snug">
@@ -373,79 +377,79 @@ const TicketsPage: React.FC = () => {
       {/* ============ Filtry ============ */}
       <div className="flex flex-col sm:flex-row gap-3 p-4 bg-white border border-gray-200 rounded-xl shadow-sm">
         {/* Wyszukiwarka */}
-            <div className="relative flex-1 max-w-sm">
-              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-              <input
-                type="text"
-                className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                placeholder="Szukaj po tytule, ID lub osobie..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
-            </div>
+        <div className="relative flex-1 max-w-sm">
+          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+          <input
+            type="text"
+            className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
+            placeholder="Szukaj po tytule, ID lub osobie..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
+        </div>
 
-            {/* Status */}
-            <CustomDropdown
-              value={statusFilter}
-              onChange={setStatusFilter}
-              placeholder="Status"
-              options={[
-                { value: 'all', label: 'Wszystkie' },
-                { value: 'NOWE', label: `Nowe (${statusCounts.NOWE})`, icon: <Circle className="w-4 h-4 text-blue-500" /> },
-                { value: 'W_TOKU', label: `W toku (${statusCounts.W_TOKU})`, icon: <Circle className="w-4 h-4 text-amber-500" /> },
-                { value: 'ROZWIAZANE', label: `Rozwiązane (${statusCounts.ROZWIAZANE})`, icon: <CheckCircle2 className="w-4 h-4 text-green-500" /> },
-                { value: 'ZAMKNIETE', label: `Zamknięte (${statusCounts.ZAMKNIETE})`, icon: <XCircle className="w-4 h-4 text-gray-400" /> }
-              ]}
-              className="w-36 sm:w-44"
-            />
+        {/* Status */}
+        <CustomDropdown
+          value={statusFilter}
+          onChange={setStatusFilter}
+          placeholder="Status"
+          options={[
+            { value: 'all', label: 'Wszystkie' },
+            { value: 'NOWE', label: `Nowe (${statusCounts.NOWE})`, icon: <Circle className="w-4 h-4 text-blue-500" /> },
+            { value: 'W_TOKU', label: `W toku (${statusCounts.W_TOKU})`, icon: <Circle className="w-4 h-4 text-amber-500" /> },
+            { value: 'ROZWIAZANE', label: `Rozwiązane (${statusCounts.ROZWIAZANE})`, icon: <CheckCircle2 className="w-4 h-4 text-green-500" /> },
+            { value: 'ZAMKNIETE', label: `Zamknięte (${statusCounts.ZAMKNIETE})`, icon: <XCircle className="w-4 h-4 text-gray-400" /> }
+          ]}
+          className="w-36 sm:w-44"
+        />
 
-            {/* Kategoria */}
-            <CustomDropdown
-              value={categoryFilter}
-              onChange={setCategoryFilter}
-              placeholder="Kategoria"
-              options={[
-                { value: 'all', label: 'Wszystkie' },
-                ...categories.map(cat => ({
-                   value: cat as string,
-                   label: cat as string,
-                   icon: getCategoryIcon(cat as string)
-                }))
-              ]}
-              className="w-40 sm:w-48"
-            />
+        {/* Kategoria */}
+        <CustomDropdown
+          value={categoryFilter}
+          onChange={setCategoryFilter}
+          placeholder="Kategoria"
+          options={[
+            { value: 'all', label: 'Wszystkie' },
+            ...categories.map(cat => ({
+              value: cat as string,
+              label: cat as string,
+              icon: getCategoryIcon(cat as string)
+            }))
+          ]}
+          className="w-40 sm:w-48"
+        />
 
-            {/* Priorytet (tylko dla Admina/Technika) */}
-            {(isAdmin || isTechnician) && (
-              <CustomDropdown
-                value={priorityFilter}
-                onChange={setPriorityFilter}
-                placeholder="Priorytet"
-                options={[
-                  { value: 'all', label: 'Wszystkie' },
-                  { value: 'WYSOKI', label: 'Wysoki', icon: <AlertTriangle className="w-4 h-4 text-red-500" /> },
-                  { value: 'NORMALNY', label: 'Normalny', icon: <Minus className="w-4 h-4 text-blue-500" /> },
-                  { value: 'NISKI', label: 'Niski', icon: <ArrowDown className="w-4 h-4 text-gray-400" /> }
-                ]}
-                className="w-36 sm:w-44"
-              />
-            )}
+        {/* Priorytet (tylko dla Admina/Technika) */}
+        {(isAdmin || isTechnician) && (
+          <CustomDropdown
+            value={priorityFilter}
+            onChange={setPriorityFilter}
+            placeholder="Priorytet"
+            options={[
+              { value: 'all', label: 'Wszystkie' },
+              { value: 'WYSOKI', label: 'Wysoki', icon: <AlertTriangle className="w-4 h-4 text-red-500" /> },
+              { value: 'NORMALNY', label: 'Normalny', icon: <Minus className="w-4 h-4 text-blue-500" /> },
+              { value: 'NISKI', label: 'Niski', icon: <ArrowDown className="w-4 h-4 text-gray-400" /> }
+            ]}
+            className="w-36 sm:w-44"
+          />
+        )}
 
-            {/* Przypisanie (tylko dla Admina/Technika) */}
-            {(isAdmin || isTechnician) && (
-              <CustomDropdown
-                value={assignmentFilter}
-                onChange={setAssignmentFilter}
-                placeholder="Przypisanie"
-                options={[
-                  { value: 'all', label: 'Wszystkie' },
-                  ...(isTechnician ? [{ value: 'assigned_to_me', label: 'Przypisane do mnie', icon: <UserCheck className="w-4 h-4 text-blue-600" /> }] : []),
-                  { value: 'assigned', label: 'Przypisane', icon: <UserCheck className="w-4 h-4 text-green-600" /> },
-                  { value: 'unassigned', label: 'Nieprzypisane', icon: <UserMinus className="w-4 h-4 text-red-500" /> }
-                ]}
-                className="w-44 sm:w-56"
-              />
-            )}
+        {/* Przypisanie (tylko dla Admina/Technika) */}
+        {(isAdmin || isTechnician) && (
+          <CustomDropdown
+            value={assignmentFilter}
+            onChange={setAssignmentFilter}
+            placeholder="Przypisanie"
+            options={[
+              { value: 'all', label: 'Wszystkie' },
+              ...(isTechnician ? [{ value: 'assigned_to_me', label: 'Przypisane do mnie', icon: <UserCheck className="w-4 h-4 text-blue-600" /> }] : []),
+              { value: 'assigned', label: 'Przypisane', icon: <UserCheck className="w-4 h-4 text-green-600" /> },
+              { value: 'unassigned', label: 'Nieprzypisane', icon: <UserMinus className="w-4 h-4 text-red-500" /> }
+            ]}
+            className="w-44 sm:w-56"
+          />
+        )}
       </div>
 
       {/* ============ Tabela ============ */}
@@ -456,8 +460,8 @@ const TicketsPage: React.FC = () => {
               {selectedTicketIds.length > 0 ? (
                 <tr className="border-b-2 border-blue-200 bg-blue-50/60 transition-colors animate-in fade-in duration-200 z-10 relative">
                   <th className="px-6 py-4 w-10 text-center">
-                    <input 
-                      type="checkbox" 
+                    <input
+                      type="checkbox"
                       className="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500 cursor-pointer"
                       onChange={handleSelectAll}
                       checked={filteredTickets.length > 0 && selectedTicketIds.length === filteredTickets.length}
@@ -467,7 +471,7 @@ const TicketsPage: React.FC = () => {
                     <div className="flex items-center gap-4">
                       <div className="px-3 py-1.5 bg-white text-blue-700 rounded-xl font-bold text-sm border border-blue-100 whitespace-nowrap shadow-sm flex items-center">
                         <span className="w-5 h-5 bg-blue-100 text-blue-800 rounded-md flex items-center justify-center text-xs mr-2">{selectedTicketIds.length}</span>
-                        Wybrane
+                        Wybrano
                       </div>
 
                       <div className="w-px h-6 bg-blue-200/50"></div>
@@ -479,23 +483,11 @@ const TicketsPage: React.FC = () => {
                           onChange={setBulkAssignee}
                           placeholder="Przypisz do..."
                           options={[
-                            { 
-                              value: 'me', 
-                              label: 'Przypisz do mnie', 
-                              icon: authContext?.user?.avatar ? (
-                                <img src={authContext.user.avatar} className="w-5 h-5 rounded-full object-cover mr-1" alt="Ty" />
-                              ) : (
-                                <div className="w-5 h-5 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center text-[10px] mr-1">Ty</div>
-                              )
-                            },
+                            { value: 'me', label: 'Przypisz do mnie', icon: <div className="w-5 h-5 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center text-[10px] mr-1">Ty</div> },
                             ...technicians.filter(t => t.id !== authContext?.user?.id).map((tech) => ({
                               value: String(tech.id),
                               label: `${tech.first_name} ${tech.last_name}`,
-                              icon: tech.avatar ? (
-                                <img src={tech.avatar} className="w-5 h-5 rounded-full object-cover mr-1" alt={`${tech.first_name}`} />
-                              ) : (
-                                <div className="w-5 h-5 rounded-full bg-gray-100 text-gray-700 flex items-center justify-center text-[10px] mr-1">{tech.first_name[0]}{tech.last_name[0]}</div>
-                              )
+                              icon: <div className="w-5 h-5 rounded-full bg-gray-100 text-gray-700 flex items-center justify-center text-[10px] mr-1">{tech.first_name[0]}{tech.last_name[0]}</div>
                             }))
                           ]}
                         />
@@ -516,12 +508,22 @@ const TicketsPage: React.FC = () => {
 
                       <div className="w-px h-6 bg-blue-200/50"></div>
 
-                      <button 
+                      <button
                         onClick={handleBulkAction}
                         disabled={isBulkSubmitting || (!bulkAssignee && !bulkStatus)}
-                        className="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-sm font-bold flex items-center transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-sm shadow-blue-200"
+                        className={`px-5 py-2 text-white rounded-xl text-sm font-bold flex items-center gap-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-sm ${
+                          bulkSuccessMessage 
+                            ? 'bg-green-500 hover:bg-green-600 shadow-green-200 pointer-events-none' 
+                            : 'bg-blue-600 hover:bg-blue-700 shadow-blue-200'
+                        }`}
                       >
-                        {isBulkSubmitting ? 'Przetwarzanie...' : 'Zastosuj'}
+                        {isBulkSubmitting && <Loader2 className="w-4 h-4 animate-spin flex-shrink-0" />}
+                        {!isBulkSubmitting && bulkSuccessMessage && <CheckCircle2 className="w-4 h-4 flex-shrink-0" />}
+                        {isBulkSubmitting 
+                          ? 'Przetwarzanie...' 
+                          : bulkSuccessMessage 
+                            ? 'Sukces!' 
+                            : 'Zastosuj'}
                       </button>
                     </div>
                   </th>
@@ -529,8 +531,8 @@ const TicketsPage: React.FC = () => {
               ) : (
                 <tr className="border-b-2 border-gray-200 bg-gray-50/50 transition-colors animate-in fade-in">
                   <th className="px-6 py-4 w-10 text-center">
-                    <input 
-                      type="checkbox" 
+                    <input
+                      type="checkbox"
                       className="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500 cursor-pointer"
                       onChange={handleSelectAll}
                       checked={filteredTickets.length > 0 && selectedTicketIds.length === filteredTickets.length}
@@ -558,8 +560,8 @@ const TicketsPage: React.FC = () => {
                 filteredTickets.map(ticket => (
                   <tr key={ticket.id} className={`hover:bg-gray-50/60 transition-colors ${selectedTicketIds.includes(ticket.id) ? 'bg-blue-50/30' : ''}`}>
                     <td className="px-6 py-4 text-center">
-                      <input 
-                        type="checkbox" 
+                      <input
+                        type="checkbox"
                         className="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500 cursor-pointer"
                         checked={selectedTicketIds.includes(ticket.id)}
                         onChange={() => handleSelectTicket(ticket.id)}
