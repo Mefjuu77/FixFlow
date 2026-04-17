@@ -287,7 +287,7 @@ const TicketsPage: React.FC = () => {
           </span>
 
           {/* Custom Tooltip */}
-          <div className={`absolute top-full mt-2 z-[60] pointer-events-none opacity-0 group-hover/th:opacity-100 transition-opacity duration-200 ${field === 'id' ? '-left-3' : field === 'created_at' ? '-right-3' : 'left-1/2 -translate-x-1/2'}`}>
+          <div className={`absolute top-full mt-2 z-[60] pointer-events-none opacity-0 group-hover/th:opacity-100 transition-opacity duration-200 ${field === 'created_at' ? '-right-3' : 'left-1/2 -translate-x-1/2'}`}>
             <div className="bg-[#24272f] text-white text-[11.5px] font-medium px-3 py-2 rounded shadow-lg w-max max-w-[160px] whitespace-normal normal-case tracking-normal text-left leading-snug">
               {getSortTooltip(field, label)}
             </div>
@@ -459,43 +459,55 @@ const TicketsPage: React.FC = () => {
           <table className="w-full text-left">
             <thead>
               {selectedTicketIds.length > 0 ? (
-                <tr className="border-b-2 border-blue-200 bg-blue-50/60 transition-colors animate-in fade-in duration-200 z-10 relative">
-                  <th className="px-6 py-4 w-10 text-center">
+                <tr className="border-b-2 border-gray-200 dark:border-gray-700/80 bg-gray-50/50 dark:bg-[#1a1d24] transition-colors animate-in fade-in duration-200 z-10 relative">
+                  <th className="py-4 pl-5 pr-3 w-10 text-center align-middle">
                     <input
                       type="checkbox"
-                      className="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500 cursor-pointer"
+                      className="w-4 h-4 text-blue-600 rounded border-gray-300 dark:border-gray-600 dark:bg-gray-700 focus:ring-blue-500 cursor-pointer translate-y-[2px]"
                       onChange={handleSelectAll}
                       checked={filteredTickets.length > 0 && selectedTicketIds.length === filteredTickets.length}
                     />
                   </th>
                   <th colSpan={isEmployee ? 6 : 8} className="px-6 py-2 font-normal text-left">
                     <div className="flex items-center gap-4">
-                      <div className="px-3 py-1.5 bg-white text-blue-700 rounded-xl font-bold text-sm border border-blue-100 whitespace-nowrap shadow-sm flex items-center">
-                        <span className="w-5 h-5 bg-blue-100 text-blue-800 rounded-md flex items-center justify-center text-xs mr-2">{selectedTicketIds.length}</span>
+                      <div className="px-3 py-1.5 bg-white dark:bg-gray-800 text-blue-700 dark:text-blue-400 rounded-xl font-bold text-sm border border-blue-100 dark:border-blue-800 whitespace-nowrap shadow-sm flex items-center">
+                        <span className="w-5 h-5 bg-blue-100 dark:bg-blue-900/50 text-blue-800 dark:text-blue-300 rounded-md flex items-center justify-center text-xs mr-2">{selectedTicketIds.length}</span>
                         Wybrano
                       </div>
 
-                      <div className="w-px h-6 bg-blue-200/50"></div>
+                      <div className="w-px h-6 bg-blue-200/50 dark:bg-blue-800/50"></div>
 
                       {(isAdmin || isTechnician) && (
                         <CustomDropdown
-                          className="w-48 bg-white border-blue-100 hover:bg-blue-50 text-blue-900"
+                          className="w-48 shadow-sm bg-white dark:bg-gray-800 border-blue-100 dark:border-gray-700 hover:bg-blue-50 dark:hover:bg-gray-700/50 text-blue-900 dark:text-gray-200"
                           value={bulkAssignee}
                           onChange={setBulkAssignee}
                           placeholder="Przypisz do..."
                           options={[
-                            { value: 'me', label: 'Przypisz do mnie', icon: <div className="w-5 h-5 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center text-[10px] mr-1">Ty</div> },
+                            { 
+                              value: 'me', 
+                              label: 'Przypisz do mnie', 
+                              icon: authContext?.user?.avatar ? (
+                                <img src={authContext.user.avatar} alt="" className="w-5 h-5 rounded-full object-cover mr-1" />
+                              ) : (
+                                <div className="w-5 h-5 rounded-full bg-blue-100 dark:bg-blue-900/60 text-blue-700 dark:text-blue-300 flex items-center justify-center text-[10px] mr-1">Ty</div>
+                              )
+                            },
                             ...technicians.filter(t => t.id !== authContext?.user?.id).map((tech) => ({
                               value: String(tech.id),
                               label: `${tech.first_name} ${tech.last_name}`,
-                              icon: <div className="w-5 h-5 rounded-full bg-gray-100 text-gray-700 flex items-center justify-center text-[10px] mr-1">{tech.first_name[0]}{tech.last_name[0]}</div>
+                              icon: tech.avatar ? (
+                                <img src={tech.avatar} alt="" className="w-5 h-5 rounded-full object-cover mr-1" />
+                              ) : (
+                                <div className="w-5 h-5 rounded-full bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 flex items-center justify-center text-[10px] mr-1">{tech.first_name[0]}{tech.last_name[0]}</div>
+                              )
                             }))
                           ]}
                         />
                       )}
 
                       <CustomDropdown
-                        className="w-44 bg-white border-blue-100 hover:bg-blue-50 text-blue-900"
+                        className="w-44 shadow-sm bg-white dark:bg-gray-800 border-blue-100 dark:border-gray-700 hover:bg-blue-50 dark:hover:bg-gray-700/50 text-blue-900 dark:text-gray-200"
                         value={bulkStatus}
                         onChange={setBulkStatus}
                         placeholder="Zmień status..."
@@ -507,14 +519,14 @@ const TicketsPage: React.FC = () => {
                         ]}
                       />
 
-                      <div className="w-px h-6 bg-blue-200/50"></div>
+                      <div className="w-px h-6 bg-blue-200/50 dark:bg-blue-800/50"></div>
 
                       <button
                         onClick={handleBulkAction}
                         disabled={isBulkSubmitting || (!bulkAssignee && !bulkStatus)}
                         className={`px-5 py-2 text-white rounded-xl text-sm font-bold flex items-center gap-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-sm ${bulkSuccessMessage
-                            ? 'bg-green-500 hover:bg-green-600 shadow-green-200 pointer-events-none'
-                            : 'bg-blue-600 hover:bg-blue-700 shadow-blue-200'
+                          ? 'bg-green-500 hover:bg-green-600 shadow-green-200 dark:shadow-none pointer-events-none'
+                          : 'bg-blue-600 hover:bg-blue-700 shadow-blue-200 dark:shadow-none'
                           }`}
                       >
                         {isBulkSubmitting && <Loader2 className="w-4 h-4 animate-spin flex-shrink-0" />}
@@ -530,10 +542,10 @@ const TicketsPage: React.FC = () => {
                 </tr>
               ) : (
                 <tr className="border-b-2 border-gray-200 bg-gray-50/50 transition-colors animate-in fade-in">
-                  <th className="px-6 py-4 w-10 text-center">
+                  <th className="py-4 pl-5 pr-3 w-10 text-center align-middle">
                     <input
                       type="checkbox"
-                      className="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500 cursor-pointer"
+                      className="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500 cursor-pointer translate-y-[2px]"
                       onChange={handleSelectAll}
                       checked={filteredTickets.length > 0 && selectedTicketIds.length === filteredTickets.length}
                     />
@@ -558,22 +570,25 @@ const TicketsPage: React.FC = () => {
                 </tr>
               ) : (
                 filteredTickets.map(ticket => (
-                  <tr key={ticket.id} className={`hover:bg-gray-50/60 transition-colors ${selectedTicketIds.includes(ticket.id) ? 'bg-blue-50/30' : ''}`}>
-                    <td className="px-6 py-4 text-center">
+                  <tr key={ticket.id} className={`transition-colors ${selectedTicketIds.includes(ticket.id)
+                    ? 'bg-blue-50/60 hover:bg-blue-100/60 dark:bg-blue-900/50 dark:hover:bg-blue-800/60'
+                    : 'hover:bg-gray-50/60 dark:hover:bg-gray-700/30'
+                    }`}>
+                    <td className="py-4 pl-5 pr-3 w-10 text-center align-middle">
                       <input
                         type="checkbox"
-                        className="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500 cursor-pointer"
+                        className="w-4 h-4 text-blue-600 rounded border-gray-300 dark:border-gray-600 dark:bg-gray-700 focus:ring-blue-500 cursor-pointer translate-y-[2px]"
                         checked={selectedTicketIds.includes(ticket.id)}
                         onChange={() => handleSelectTicket(ticket.id)}
                       />
                     </td>
-                    <td className="px-6 py-4 text-sm font-medium text-gray-400 whitespace-nowrap">#{ticket.id}</td>
+                    <td className="px-6 py-4 text-sm font-medium text-gray-400 dark:text-gray-500 whitespace-nowrap">#{ticket.id}</td>
                     <td className="px-6 py-4 text-sm max-w-[200px] sm:max-w-[250px] lg:max-w-[350px]">
                       {selectedTicketIds.length > 0 ? (
                         <div
                           title={ticket.title}
                           onClick={() => handleSelectTicket(ticket.id)}
-                          className="inline-block font-bold text-gray-700 hover:text-gray-900 cursor-pointer transition-colors whitespace-normal break-words"
+                          className="inline-block font-bold text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white cursor-pointer transition-colors whitespace-normal break-words"
                         >
                           {ticket.title}
                         </div>
