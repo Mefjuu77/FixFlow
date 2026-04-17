@@ -121,19 +121,12 @@ const TicketsPage: React.FC = () => {
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
   const [sortConfig, setSortConfig] = useState<{ key: SortField, direction: 'asc' | 'desc' }>({ key: 'created_at', direction: 'desc' });
 
-  // Bulk Actions state
-  const [selectedTicketIds, setSelectedTicketIds] = useState<number[]>([]);
-  const [isBulkSubmitting, setIsBulkSubmitting] = useState(false);
-  const [bulkStatus, setBulkStatus] = useState<string>('');
-  const [bulkAssignee, setBulkAssignee] = useState<string>('');
   const [technicians, setTechnicians] = useState<User[]>([]);
 
   const role = authContext?.user?.role;
   const isEmployee = role === 'EMPLOYEE';
   const isAdmin = role === 'ADMIN';
   const isTechnician = role === 'TECHNICIAN';
-
-  const isSelectionActive = selectedTicketIds.length > 0;
 
   useEffect(() => {
     fetchTickets();
@@ -221,50 +214,6 @@ const TicketsPage: React.FC = () => {
     }
     
     return `${label} • ${sortLegend}`;
-  };
-
-  // ---- Bulk Actions handlers ----
-  const handleSelectAll = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.checked) {
-      setSelectedTicketIds(filteredTickets.map(t => t.id));
-    } else {
-      setSelectedTicketIds([]);
-    }
-  };
-
-  const handleSelectTicket = (ticketId: number) => {
-    setSelectedTicketIds(prev =>
-      prev.includes(ticketId) ? prev.filter(id => id !== ticketId) : [...prev, ticketId]
-    );
-  };
-
-  const clearBulkSelection = () => {
-    setSelectedTicketIds([]);
-    setBulkStatus('');
-    setBulkAssignee('');
-  };
-
-  const handleBulkExecute = async () => {
-    if (selectedTicketIds.length === 0 || (!bulkStatus && !bulkAssignee)) return;
-    setIsBulkSubmitting(true);
-    try {
-      const updates: Partial<Ticket> = {};
-      if (bulkStatus) updates.status = bulkStatus as any;
-      if (bulkAssignee === 'me' && authContext?.user) {
-        updates.technician = authContext.user.id;
-      } else if (bulkAssignee) {
-        updates.technician = Number(bulkAssignee);
-      }
-      await Promise.all(selectedTicketIds.map(id => ticketService.updateTicket(id, updates)));
-      const response = await api.get('tickets/');
-      setTickets(response.data);
-      clearBulkSelection();
-    } catch (err) {
-      console.error('Bulk update error', err);
-      alert('Wystąpił błąd podczas masowej aktualizacji.');
-    } finally {
-      setIsBulkSubmitting(false);
-    }
   };
 
   const renderSortableHeader = (field: SortField, label: string) => {
@@ -456,81 +405,7 @@ const TicketsPage: React.FC = () => {
         <div className="overflow-x-auto">
           <table className="w-full text-left">
             <thead>
-              {isSelectionActive ? (
-                <tr className="border-b-2 border-blue-200 bg-blue-50/60">
-                  <th className="px-4 py-3 w-10 text-center">
-                    <input
-                      type="checkbox"
-                      className="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500 cursor-pointer accent-blue-600"
-                      onChange={handleSelectAll}
-                      checked={filteredTickets.length > 0 && selectedTicketIds.length === filteredTickets.length}
-                    />
-                  </th>
-                  <th colSpan={(isEmployee ? 6 : 8)} className="px-4 py-2">
-                    <div className="flex items-center gap-3">
-                      <span className="text-sm font-bold text-blue-700 whitespace-nowrap">
-                        Zaznaczono: {selectedTicketIds.length}
-                      </span>
-
-                      <div className="w-px h-6 bg-blue-200" />
-
-                      {(isAdmin || isTechnician) && (
-                        <CustomDropdown
-                          className="w-48"
-                          value={bulkAssignee}
-                          onChange={setBulkAssignee}
-                          placeholder="Przypisz do..."
-                          options={[
-                            { value: 'me', label: 'Przypisz do mnie', icon: <UserCheck className="w-4 h-4 text-blue-600" /> },
-                            ...technicians.filter(t => t.id !== authContext?.user?.id).map(tech => ({
-                              value: String(tech.id),
-                              label: `${tech.first_name} ${tech.last_name}`,
-                            }))
-                          ]}
-                        />
-                      )}
-
-                      <CustomDropdown
-                        className="w-44"
-                        value={bulkStatus}
-                        onChange={setBulkStatus}
-                        placeholder="Zmień status..."
-                        options={[
-                          { value: 'NOWE', label: 'Nowe', icon: <Circle className="w-3.5 h-3.5 text-blue-500" /> },
-                          { value: 'W_TOKU', label: 'W toku', icon: <Circle className="w-3.5 h-3.5 text-amber-500" /> },
-                          { value: 'ROZWIAZANE', label: 'Rozwiązane', icon: <CheckCircle2 className="w-3.5 h-3.5 text-green-500" /> },
-                          { value: 'ZAMKNIETE', label: 'Zamknięte', icon: <XCircle className="w-3.5 h-3.5 text-gray-400" /> },
-                        ]}
-                      />
-
-                      <button
-                        onClick={handleBulkExecute}
-                        disabled={isBulkSubmitting || (!bulkAssignee && !bulkStatus)}
-                        className="px-4 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-bold transition-colors disabled:opacity-40 disabled:cursor-not-allowed whitespace-nowrap"
-                      >
-                        {isBulkSubmitting ? 'Przetwarzanie...' : 'Wykonaj'}
-                      </button>
-
-                      <button
-                        onClick={clearBulkSelection}
-                        className="p-1.5 text-blue-400 hover:text-blue-700 hover:bg-blue-100 rounded-lg transition-colors"
-                        title="Anuluj zaznaczenie"
-                      >
-                        <X className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </th>
-                </tr>
-              ) : (
                <tr className="border-b-2 border-gray-200 bg-gray-50/50">
-                <th className="px-4 py-4 w-10 text-center">
-                  <input
-                    type="checkbox"
-                    className="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500 cursor-pointer accent-blue-600"
-                    onChange={handleSelectAll}
-                    checked={filteredTickets.length > 0 && selectedTicketIds.length === filteredTickets.length}
-                  />
-                </th>
                 {renderSortableHeader('id', 'ID')}
                 {renderSortableHeader('title', 'Tytuł')}
                 {renderSortableHeader('category_name', 'Kategoria')}
@@ -540,47 +415,26 @@ const TicketsPage: React.FC = () => {
                 {renderSortableHeader('status', 'Status')}
                 {renderSortableHeader('created_at', 'Utworzono')}
               </tr>
-              )}
             </thead>
             <tbody className="divide-y divide-gray-50">
               {filteredTickets.length === 0 ? (
                 <tr>
-                  <td colSpan={(isAdmin ? 8 : 6) + 1} className="px-6 py-12 text-center text-gray-500 text-sm italic">
+                  <td colSpan={isAdmin ? 8 : 6} className="px-6 py-12 text-center text-gray-500 text-sm italic">
                     Brak zgłoszeń spełniających kryteria.
                   </td>
                 </tr>
               ) : (
-                filteredTickets.map(ticket => {
-                  const isSelected = selectedTicketIds.includes(ticket.id);
-                  return (
-                  <tr key={ticket.id} className={`hover:bg-gray-50/60 transition-colors ${isSelected ? 'bg-blue-50/40' : ''}`}>
-                    <td className="px-4 py-4 text-center">
-                      <input
-                        type="checkbox"
-                        className="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500 cursor-pointer accent-blue-600"
-                        checked={isSelected}
-                        onChange={() => handleSelectTicket(ticket.id)}
-                      />
-                    </td>
+                filteredTickets.map(ticket => (
+                  <tr key={ticket.id} className="hover:bg-gray-50/60 transition-colors">
                     <td className="px-6 py-4 text-sm font-medium text-gray-400 whitespace-nowrap">#{ticket.id}</td>
                     <td className="px-6 py-4 text-sm max-w-[200px] sm:max-w-[250px] lg:max-w-[350px]">
-                      {isSelectionActive ? (
-                        <span
-                          title={ticket.title}
-                          onClick={() => handleSelectTicket(ticket.id)}
-                          className="inline-block font-bold text-gray-500 cursor-pointer transition-colors whitespace-normal break-words"
-                        >
-                          {ticket.title}
-                        </span>
-                      ) : (
-                        <Link
-                          to={`/tickets/${ticket.id}`}
-                          title={ticket.title}
-                          className="inline-block font-bold text-blue-600 hover:text-blue-800 hover:underline transition-colors whitespace-normal break-words"
-                        >
-                          {ticket.title}
-                        </Link>
-                      )}
+                      <Link
+                        to={`/tickets/${ticket.id}`}
+                        title={ticket.title}
+                        className="inline-block font-bold text-blue-600 hover:text-blue-800 hover:underline transition-colors whitespace-normal break-words"
+                      >
+                        {ticket.title}
+                      </Link>
                     </td>
                     <td className="px-6 py-4 text-sm text-gray-600 whitespace-nowrap">
                       <span className="flex items-center gap-1.5 font-medium">
@@ -619,8 +473,7 @@ const TicketsPage: React.FC = () => {
                       {dayjs(ticket.created_at).format('DD.MM.YYYY HH:mm')}
                     </td>
                   </tr>
-                  );
-                })
+                ))
               )}
             </tbody>
           </table>
