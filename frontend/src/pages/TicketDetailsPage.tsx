@@ -293,20 +293,20 @@ const TicketDetailsPage: React.FC = () => {
           {/* Prominent status banner for employees */}
           {!isTechnicianOrAdmin && (
             <div className={`flex items-center gap-3 p-4 rounded-xl border mb-2 ${ticket.status === 'NOWE' ? 'bg-blue-50 border-blue-200' :
-                ticket.status === 'W_TOKU' ? 'bg-amber-50 border-amber-200' :
-                  ticket.status === 'ROZWIAZANE' ? 'bg-green-50 border-green-200' :
-                    'bg-gray-50 border-gray-200'
+              ticket.status === 'W_TOKU' ? 'bg-amber-50 border-amber-200' :
+                ticket.status === 'ROZWIAZANE' ? 'bg-green-50 border-green-200' :
+                  'bg-gray-50 border-gray-200'
               }`}>
               <div className={`w-3 h-3 rounded-full flex-shrink-0 ${ticket.status === 'NOWE' ? 'bg-blue-500' :
-                  ticket.status === 'W_TOKU' ? 'bg-amber-500 animate-pulse' :
-                    ticket.status === 'ROZWIAZANE' ? 'bg-green-500' :
-                      'bg-gray-400'
+                ticket.status === 'W_TOKU' ? 'bg-amber-500 animate-pulse' :
+                  ticket.status === 'ROZWIAZANE' ? 'bg-green-500' :
+                    'bg-gray-400'
                 }`} />
               <div>
                 <p className={`text-sm font-bold ${ticket.status === 'NOWE' ? 'text-blue-800' :
-                    ticket.status === 'W_TOKU' ? 'text-amber-800' :
-                      ticket.status === 'ROZWIAZANE' ? 'text-green-800' :
-                        'text-gray-700'
+                  ticket.status === 'W_TOKU' ? 'text-amber-800' :
+                    ticket.status === 'ROZWIAZANE' ? 'text-green-800' :
+                      'text-gray-700'
                   }`}>
                   Status: {ticket.status === 'W_TOKU' ? 'W toku' :
                     ticket.status === 'NOWE' ? 'Nowe' :
@@ -314,9 +314,9 @@ const TicketDetailsPage: React.FC = () => {
                         ticket.status === 'ZAMKNIETE' ? 'Zamknięte' : ticket.status}
                 </p>
                 <p className={`text-xs mt-0.5 ${ticket.status === 'NOWE' ? 'text-blue-600' :
-                    ticket.status === 'W_TOKU' ? 'text-amber-600' :
-                      ticket.status === 'ROZWIAZANE' ? 'text-green-600' :
-                        'text-gray-500'
+                  ticket.status === 'W_TOKU' ? 'text-amber-600' :
+                    ticket.status === 'ROZWIAZANE' ? 'text-green-600' :
+                      'text-gray-500'
                   }`}>
                   {ticket.status === 'NOWE' ? 'Twoje zgłoszenie oczekuje na rozpatrzenie.' :
                     ticket.status === 'W_TOKU' ? 'Twoje zgłoszenie jest w trakcie realizacji.' :
@@ -1060,7 +1060,7 @@ const TicketDetailsPage: React.FC = () => {
                     onClick={() => setTransitionCommentType('reply')}
                     className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${transitionCommentType === 'reply' ? 'border-gray-800 text-gray-900 bg-white' : 'border-transparent text-gray-500 bg-gray-50/50 hover:bg-gray-50'}`}
                   >
-                    Odpowiedź klientowi
+                    Odpowiedz klientowi
                   </button>
                   <button
                     onClick={() => setTransitionCommentType('internal')}
