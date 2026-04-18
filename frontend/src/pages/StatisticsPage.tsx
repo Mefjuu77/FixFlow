@@ -9,10 +9,24 @@ import {
   ArrowUpRight,
   Lightbulb,
   Users as UsersIcon,
+  Monitor,
+  Terminal,
+  Wifi,
+  Lock,
+  HelpCircle,
 } from 'lucide-react';
 import dayjs from 'dayjs';
 import 'dayjs/locale/pl';
 dayjs.locale('pl');
+
+const getCategoryIcon = (name: string) => {
+  const lowerName = name.toLowerCase();
+  if (lowerName.includes('sprzęt')) return <Monitor className="w-4 h-4" />;
+  if (lowerName.includes('oprogramowanie')) return <Terminal className="w-4 h-4" />;
+  if (lowerName.includes('sieć')) return <Wifi className="w-4 h-4" />;
+  if (lowerName.includes('dostęp')) return <Lock className="w-4 h-4" />;
+  return <HelpCircle className="w-4 h-4" />;
+};
 
 // ==================== DONUT CHART (czysty SVG) ====================
 interface DonutSegment {
@@ -369,7 +383,7 @@ const StatisticsPage: React.FC = () => {
                 <p className="text-sm text-gray-500 italic text-center py-6">Brak otwartych zgłoszeń.</p>
               ) : (
                 categorySorted.map(([cat, count], i) => (
-                  <HorizontalBar key={cat} label={cat} value={count} max={maxCategoryVal} color={categoryColors[i % categoryColors.length]} total={activeTickets.length} onClick={() => navigate(`/tickets?category=${encodeURIComponent(cat)}`)} />
+                  <HorizontalBar key={cat} label={cat} value={count} max={maxCategoryVal} color={categoryColors[i % categoryColors.length]} total={activeTickets.length} icon={getCategoryIcon(cat)} onClick={() => navigate(`/tickets?category=${encodeURIComponent(cat)}`)} />
                 ))
               )}
             </div>
@@ -508,7 +522,7 @@ const StatisticsPage: React.FC = () => {
                 <p className="text-sm text-gray-500 italic text-center py-6">Brak otwartych zgłoszeń.</p>
               ) : (
                 categorySorted.map(([cat, count], i) => (
-                  <HorizontalBar key={cat} label={cat} value={count} max={maxCategoryVal} color={categoryColors[i % categoryColors.length]} total={activeTickets.length} onClick={() => navigate(`/tickets?category=${encodeURIComponent(cat)}`)} />
+                  <HorizontalBar key={cat} label={cat} value={count} max={maxCategoryVal} color={categoryColors[i % categoryColors.length]} total={activeTickets.length} icon={getCategoryIcon(cat)} onClick={() => navigate(`/tickets?category=${encodeURIComponent(cat)}`)} />
                 ))
               )}
             </div>
