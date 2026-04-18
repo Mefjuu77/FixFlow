@@ -5,7 +5,7 @@ import api from '../api/axiosConfig';
 import { ticketService } from '../api/ticketService';
 import { Ticket, User } from '../types';
 import dayjs from 'dayjs';
-import { PlusCircle, Search, ChevronDown, ChevronUp, AlertTriangle, Minus, ArrowUp, ArrowDown, Folder, Tag, Filter, Users, UserCheck, UserMinus, Monitor, Terminal, Wifi, Lock, HelpCircle, Circle, CheckCircle2, XCircle, Loader2 } from 'lucide-react';
+import { PlusCircle, Search, ChevronDown, ChevronUp, AlertTriangle, Minus, ArrowUp, ArrowDown, Folder, Tag, Filter, Users, UserCheck, UserMinus, Monitor, Terminal, Wifi, Lock, HelpCircle, Circle, CheckCircle2, XCircle, Loader2, ChevronsUp, Equal, ChevronsDown } from 'lucide-react';
 import useTitle from '../hooks/useTitle';
 
 type SortField = 'id' | 'title' | 'category_name' | 'priority' | 'creator' | 'technician' | 'status' | 'created_at';
@@ -91,9 +91,9 @@ const PRIORITY_LABELS: Record<string, string> = {
 };
 
 const PRIORITY_ICONS: Record<string, React.ReactNode> = {
-  WYSOKI: <AlertTriangle className="w-3.5 h-3.5 text-red-500" />,
-  NORMALNY: <Minus className="w-3.5 h-3.5 text-blue-500" />,
-  NISKI: <ArrowDown className="w-3.5 h-3.5 text-gray-400" />,
+  WYSOKI: <ChevronsUp className="w-4 h-4 text-red-500" />,
+  NORMALNY: <Equal className="w-4 h-4 text-blue-500" />,
+  NISKI: <ChevronsDown className="w-4 h-4 text-gray-400" />,
 };
 
 const getCategoryIcon = (name: string) => {
@@ -431,9 +431,9 @@ const TicketsPage: React.FC = () => {
             placeholder="Priorytet"
             options={[
               { value: 'all', label: 'Wszystkie' },
-              { value: 'WYSOKI', label: 'Wysoki', icon: <AlertTriangle className="w-4 h-4 text-red-500" /> },
-              { value: 'NORMALNY', label: 'Normalny', icon: <Minus className="w-4 h-4 text-blue-500" /> },
-              { value: 'NISKI', label: 'Niski', icon: <ArrowDown className="w-4 h-4 text-gray-400" /> }
+              { value: 'WYSOKI', label: 'Wysoki', icon: <ChevronsUp className="w-4 h-4 text-red-500" /> },
+              { value: 'NORMALNY', label: 'Normalny', icon: <Equal className="w-4 h-4 text-blue-500" /> },
+              { value: 'NISKI', label: 'Niski', icon: <ChevronsDown className="w-4 h-4 text-gray-400" /> }
             ]}
             className="w-36 sm:w-44"
           />
