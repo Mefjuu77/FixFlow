@@ -17,8 +17,9 @@ import {
   Lock,
   HelpCircle,
   AlertTriangle,
-  Minus,
-  ArrowDown,
+  ChevronsUp,
+  Equal,
+  ChevronsDown,
   X,
   Paperclip,
   Image,
@@ -818,9 +819,9 @@ const TicketDetailsPage: React.FC = () => {
                     onClick={() => isTechnicianOrAdmin && setIsEditingPriority(!isEditingPriority)}
                     title={isTechnicianOrAdmin ? 'Kliknij, aby zmienić priorytet' : ''}
                   >
-                    {ticket.priority === 'WYSOKI' ? <AlertTriangle className="w-3.5 h-3.5 text-red-500" /> :
-                      ticket.priority === 'NORMALNY' ? <Minus className="w-3.5 h-3.5 text-blue-500" /> :
-                        <ArrowDown className="w-3.5 h-3.5 text-gray-400" />}
+                    {ticket.priority === 'WYSOKI' ? <ChevronsUp className="w-3.5 h-3.5 text-red-500" /> :
+                      ticket.priority === 'NORMALNY' ? <Equal className="w-3.5 h-3.5 text-blue-500" /> :
+                        <ChevronsDown className="w-3.5 h-3.5 text-gray-400" />}
                     <span className={`font-medium ${ticket.priority === 'WYSOKI' ? 'text-red-600' : ticket.priority === 'NORMALNY' ? 'text-blue-600' : 'text-gray-600'}`}>
                       {ticket.priority === 'WYSOKI' ? 'Wysoki' : ticket.priority === 'NORMALNY' ? 'Normalny' : 'Niski'}
                     </span>
@@ -828,9 +829,9 @@ const TicketDetailsPage: React.FC = () => {
                   {isEditingPriority && isTechnicianOrAdmin && (
                     <div className="absolute z-50 left-0 -ml-1 top-full mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-xl shadow-lg dark:shadow-[0_10px_40px_rgba(0,0,0,0.4)] py-1 w-[calc(100%+8px)] animate-in fade-in zoom-in-95 duration-100">
                       {[
-                        { value: 'NISKI', label: 'Niski', icon: <ArrowDown className="w-3.5 h-3.5 text-gray-400" />, color: 'text-gray-600' },
-                        { value: 'NORMALNY', label: 'Normalny', icon: <Minus className="w-3.5 h-3.5 text-blue-500" />, color: 'text-blue-600' },
-                        { value: 'WYSOKI', label: 'Wysoki', icon: <AlertTriangle className="w-3.5 h-3.5 text-red-500" />, color: 'text-red-600' },
+                        { value: 'NISKI', label: 'Niski', icon: <ChevronsDown className="w-3.5 h-3.5 text-gray-400" />, color: 'text-gray-600' },
+                        { value: 'NORMALNY', label: 'Normalny', icon: <Equal className="w-3.5 h-3.5 text-blue-500" />, color: 'text-blue-600' },
+                        { value: 'WYSOKI', label: 'Wysoki', icon: <ChevronsUp className="w-3.5 h-3.5 text-red-500" />, color: 'text-red-600' },
                       ].map(opt => (
                         <button
                           key={opt.value}

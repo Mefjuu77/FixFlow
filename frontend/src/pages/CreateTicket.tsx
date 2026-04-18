@@ -13,10 +13,10 @@ import {
   Lock, 
   HelpCircle, 
   ChevronDown,
-  AlertTriangle,
-  Minus,
+  ChevronsUp,
+  Equal,
+  ChevronsDown,
   ChevronRight,
-  ArrowDown,
   Paperclip,
   X
 } from 'lucide-react';
@@ -90,9 +90,9 @@ const CreateTicketPage: React.FC = () => {
   };
 
   const priorityOptions = [
-    { value: 'NISKI', label: 'Niski', icon: <ArrowDown className="w-4 h-4 text-gray-400" />, color: 'text-gray-600' },
-    { value: 'NORMALNY', label: 'Normalny', icon: <Minus className="w-4 h-4 text-blue-500" />, color: 'text-blue-600' },
-    { value: 'WYSOKI', label: 'Wysoki', icon: <AlertTriangle className="w-4 h-4 text-red-500" />, color: 'text-red-600' },
+    { value: 'NISKI', label: 'Niski', icon: <ChevronsDown className="w-4 h-4 text-gray-400" />, color: 'text-gray-600' },
+    { value: 'NORMALNY', label: 'Normalny', icon: <Equal className="w-4 h-4 text-blue-500" />, color: 'text-blue-600' },
+    { value: 'WYSOKI', label: 'Wysoki', icon: <ChevronsUp className="w-4 h-4 text-red-500" />, color: 'text-red-600' },
   ];
 
   const validateForm = (): boolean => {
