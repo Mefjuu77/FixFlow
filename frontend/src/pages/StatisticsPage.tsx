@@ -152,22 +152,32 @@ const DonutChart: React.FC<{ segments: DonutSegment[]; total: number; filterType
 };
 
 // ==================== HORIZONTAL BAR ====================
-const HorizontalBar: React.FC<{ label: string; value: number; max: number; color: string; icon?: React.ReactNode }> = ({ label, value, max, color, icon }) => {
+const HorizontalBar: React.FC<{ label: string; value: number; max: number; color: string; icon?: React.ReactNode; onClick?: () => void; total?: number }> = ({ label, value, max, color, icon, onClick, total }) => {
   const pct = max > 0 ? (value / max) * 100 : 0;
+  const percentage = total && total > 0 ? Math.round((value / total) * 100) : null;
+  const [isHovered, setIsHovered] = useState(false);
   return (
-    <div className="flex items-center gap-3">
+    <div
+      className={`flex items-center gap-3 px-2 py-1.5 rounded-lg transition-all duration-200 ${onClick ? 'cursor-pointer' : ''} ${isHovered ? 'bg-gray-50 dark:bg-gray-800/50 scale-[1.01]' : ''}`}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+      onClick={onClick}
+    >
       <div className="w-5 flex justify-center text-gray-400 flex-shrink-0">{icon}</div>
-      <span className="text-sm text-gray-700 w-32 truncate font-medium" title={label}>{label}</span>
-      <div className="flex-1 h-6 bg-gray-100 rounded-md overflow-hidden relative">
+      <span className={`text-sm w-32 truncate font-medium transition-colors ${isHovered ? 'text-gray-900 dark:text-white' : 'text-gray-700 dark:text-gray-300'}`} title={label}>{label}</span>
+      <div className="flex-1 h-6 bg-gray-100 dark:bg-gray-700/50 rounded-md overflow-hidden relative">
         <div
           className="h-full rounded-md flex items-center justify-end pr-2 transition-all duration-500 ease-out"
-          style={{ width: `${Math.max(pct, value > 0 ? 8 : 0)}%`, backgroundColor: color }}
+          style={{ width: `${Math.max(pct, value > 0 ? 8 : 0)}%`, backgroundColor: color, transform: isHovered ? 'scaleY(1.15)' : 'scaleY(1)', transformOrigin: 'bottom' }}
         >
           {value > 0 && (
             <span className="text-xs font-bold text-white drop-shadow-sm">{value}</span>
           )}
         </div>
       </div>
+      {percentage !== null && (
+        <span className={`text-xs font-semibold w-10 text-right transition-colors ${isHovered ? 'text-gray-900 dark:text-white' : 'text-gray-400'}`}>{percentage}%</span>
+      )}
     </div>
   );
 };
@@ -176,6 +186,7 @@ const HorizontalBar: React.FC<{ label: string; value: number; max: number; color
 const StatisticsPage: React.FC = () => {
   useTitle('Statystyki');
   const authContext = useContext(AuthContext);
+  const navigate = useNavigate();
   const [tickets, setTickets] = useState<Ticket[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -235,7 +246,7 @@ const StatisticsPage: React.FC = () => {
   ];
 
   // Obciążenie zespołu
-  const workloadMap = new Map<string, { count: number; avatar?: string | null }>();
+  const workloadMap = new Map<string, { count: number; avatar?: string | null; techId?: number }>();
   let unassignedCount = 0;
   activeTickets.forEach(t => {
     if (!t.technician_details) {
@@ -245,7 +256,8 @@ const StatisticsPage: React.FC = () => {
       const current = workloadMap.get(name);
       workloadMap.set(name, {
         count: (current?.count || 0) + 1,
-        avatar: t.technician_details.avatar
+        avatar: t.technician_details.avatar,
+        techId: t.technician_details.id
       });
     }
   });
@@ -357,7 +369,7 @@ const StatisticsPage: React.FC = () => {
                 <p className="text-sm text-gray-500 italic text-center py-6">Brak otwartych zgłoszeń.</p>
               ) : (
                 categorySorted.map(([cat, count], i) => (
-                  <HorizontalBar key={cat} label={cat} value={count} max={maxCategoryVal} color={categoryColors[i % categoryColors.length]} />
+                  <HorizontalBar key={cat} label={cat} value={count} max={maxCategoryVal} color={categoryColors[i % categoryColors.length]} total={activeTickets.length} onClick={() => navigate(`/tickets?category=${encodeURIComponent(cat)}`)} />
                 ))
               )}
             </div>
@@ -380,23 +392,16 @@ const StatisticsPage: React.FC = () => {
             <p className="text-xs text-gray-500 mb-5">Rozkład aktywnych zgłoszeń w zespole.</p>
             <div className="space-y-3">
               {unassignedCount > 0 && (
-                <div className="flex items-center gap-3">
-                  <div className="w-5 flex justify-center flex-shrink-0">
-                    <UsersIcon className="w-4 h-4 text-gray-400" />
-                  </div>
-                  <span className="text-sm text-gray-700 w-32 truncate font-medium italic">Nie przypisano</span>
-                  <div className="flex-1 h-6 bg-gray-100 rounded-md overflow-hidden relative">
-                    <div
-                      className="h-full rounded-md flex items-center justify-end pr-2 transition-all duration-500 ease-out bg-red-400"
-                      style={{ width: `${Math.max((unassignedCount / maxWorkload) * 100, 8)}%` }}
-                    >
-                      <span className="text-xs font-bold text-white drop-shadow-sm">{unassignedCount}</span>
-                    </div>
-                  </div>
-                </div>
+                <HorizontalBar label="Nie przypisano" value={unassignedCount} max={maxWorkload} color="#f87171" total={activeTickets.length} icon={<UsersIcon className="w-4 h-4 text-gray-400" />} onClick={() => navigate('/tickets?assignment=unassigned')} />
               )}
               {workloadEntries.map(([name, data]) => (
-                <HorizontalBar key={name} label={name} value={data.count} max={maxWorkload} color="#6366f1" />
+                <HorizontalBar key={name} label={name} value={data.count} max={maxWorkload} color="#6366f1" total={activeTickets.length} icon={
+                  data.avatar ? (
+                    <img src={data.avatar} alt="" className="w-5 h-5 rounded-full object-cover" />
+                  ) : (
+                    <div className="w-5 h-5 rounded-full bg-indigo-100 flex items-center justify-center"><span className="text-[10px] font-bold text-indigo-600">{name.charAt(0)}</span></div>
+                  )
+                } onClick={() => navigate(`/tickets?assignment=${data.techId}`)} />
               ))}
               {workloadEntries.length === 0 && unassignedCount === 0 && (
                 <p className="text-sm text-gray-500 italic text-center py-6">Brak aktywnych zgłoszeń.</p>
@@ -503,7 +508,7 @@ const StatisticsPage: React.FC = () => {
                 <p className="text-sm text-gray-500 italic text-center py-6">Brak otwartych zgłoszeń.</p>
               ) : (
                 categorySorted.map(([cat, count], i) => (
-                  <HorizontalBar key={cat} label={cat} value={count} max={maxCategoryVal} color={categoryColors[i % categoryColors.length]} />
+                  <HorizontalBar key={cat} label={cat} value={count} max={maxCategoryVal} color={categoryColors[i % categoryColors.length]} total={activeTickets.length} onClick={() => navigate(`/tickets?category=${encodeURIComponent(cat)}`)} />
                 ))
               )}
             </div>
@@ -534,44 +539,17 @@ const StatisticsPage: React.FC = () => {
 
             <div className="space-y-3">
               {unassignedCount > 0 && (
-                <div className="flex items-center gap-3">
-                  <div className="w-5 flex justify-center flex-shrink-0">
-                    <UsersIcon className="w-4 h-4 text-gray-400" />
-                  </div>
-                  <span className="text-sm text-gray-700 w-32 truncate font-medium italic">Nie przypisano</span>
-                  <div className="flex-1 h-6 bg-gray-100 rounded-md overflow-hidden relative">
-                    <div
-                      className="h-full rounded-md flex items-center justify-end pr-2 transition-all duration-500 ease-out bg-red-400"
-                      style={{ width: `${Math.max((unassignedCount / maxWorkload) * 100, 8)}%` }}
-                    >
-                      <span className="text-xs font-bold text-white drop-shadow-sm">{Math.round((unassignedCount / activeTickets.length) * 100) || 0}%</span>
-                    </div>
-                  </div>
-                </div>
+                <HorizontalBar label="Nie przypisano" value={unassignedCount} max={maxWorkload} color="#f87171" total={activeTickets.length} icon={<UsersIcon className="w-4 h-4 text-gray-400" />} onClick={() => navigate('/tickets?assignment=unassigned')} />
               )}
-              {workloadEntries.map(([name, data]) => {
-                const pct = activeTickets.length > 0 ? Math.round((data.count / activeTickets.length) * 100) : 0;
-                return (
-                  <div key={name} className="flex items-center gap-3">
-                    <div className="w-5 h-5 rounded-full bg-indigo-100 flex items-center justify-center flex-shrink-0 overflow-hidden outline outline-1 outline-gray-200">
-                      {data.avatar ? (
-                        <img src={data.avatar} alt="Avatar" className="w-full h-full object-cover" />
-                      ) : (
-                        <span className="text-[10px] font-bold text-indigo-600">{name.charAt(0)}</span>
-                      )}
-                    </div>
-                    <span className="text-sm text-gray-700 w-32 truncate font-medium">{name}</span>
-                    <div className="flex-1 h-6 bg-gray-100 rounded-md overflow-hidden relative">
-                      <div
-                        className="h-full rounded-md flex items-center justify-end pr-2 transition-all duration-500 ease-out bg-indigo-500"
-                        style={{ width: `${Math.max((data.count / maxWorkload) * 100, 8)}%` }}
-                      >
-                        <span className="text-xs font-bold text-white drop-shadow-sm">{pct}%</span>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
+              {workloadEntries.map(([name, data]) => (
+                <HorizontalBar key={name} label={name} value={data.count} max={maxWorkload} color="#6366f1" total={activeTickets.length} icon={
+                  data.avatar ? (
+                    <img src={data.avatar} alt="" className="w-5 h-5 rounded-full object-cover" />
+                  ) : (
+                    <div className="w-5 h-5 rounded-full bg-indigo-100 flex items-center justify-center"><span className="text-[10px] font-bold text-indigo-600">{name.charAt(0)}</span></div>
+                  )
+                } onClick={() => navigate(`/tickets?assignment=${data.techId}`)} />
+              ))}
               {workloadEntries.length === 0 && unassignedCount === 0 && (
                 <p className="text-sm text-gray-500 italic text-center py-6">Brak aktywnych zgłoszeń.</p>
               )}

@@ -117,8 +117,8 @@ const TicketsPage: React.FC = () => {
   // Filtry technika i admina — inicjalizacja z URL params
   const [statusFilter, setStatusFilter] = useState<string>(searchParams.get('status') || 'all');
   const [priorityFilter, setPriorityFilter] = useState<string>(searchParams.get('priority') || 'all');
-  const [assignmentFilter, setAssignmentFilter] = useState<string>('all');
-  const [categoryFilter, setCategoryFilter] = useState<string>('all');
+  const [assignmentFilter, setAssignmentFilter] = useState<string>(searchParams.get('assignment') || 'all');
+  const [categoryFilter, setCategoryFilter] = useState<string>(searchParams.get('category') || 'all');
   const [sortConfig, setSortConfig] = useState<{ key: SortField, direction: 'asc' | 'desc' }>({ key: 'created_at', direction: 'desc' });
 
   const [isBulkSubmitting, setIsBulkSubmitting] = useState(false);
@@ -182,10 +182,13 @@ const TicketsPage: React.FC = () => {
     }
     if (assignmentFilter === 'unassigned') {
       filteredTickets = filteredTickets.filter(t => t.technician === null);
-    } else if (assignmentFilter === 'assigned') {
-      filteredTickets = filteredTickets.filter(t => t.technician !== null);
     } else if (assignmentFilter === 'assigned_to_me') {
       filteredTickets = filteredTickets.filter(t => t.technician === authContext?.user?.id);
+    } else if (assignmentFilter !== 'all') {
+      const techId = Number(assignmentFilter);
+      if (!isNaN(techId)) {
+        filteredTickets = filteredTickets.filter(t => t.technician === techId);
+      }
     }
   }
 
@@ -444,9 +447,21 @@ const TicketsPage: React.FC = () => {
             placeholder="Przypisanie"
             options={[
               { value: 'all', label: 'Wszystkie' },
-              ...(isTechnician ? [{ value: 'assigned_to_me', label: 'Przypisane do mnie', icon: <UserCheck className="w-4 h-4 text-blue-600" /> }] : []),
-              { value: 'assigned', label: 'Przypisane', icon: <UserCheck className="w-4 h-4 text-green-600" /> },
-              { value: 'unassigned', label: 'Nieprzypisane', icon: <UserMinus className="w-4 h-4 text-red-500" /> }
+              { value: 'assigned_to_me', label: 'Moje zgłoszenia', icon: authContext?.user?.avatar ? (
+                <img src={authContext.user.avatar} alt="" className="w-4 h-4 rounded-full object-cover" />
+              ) : (
+                <UserCheck className="w-4 h-4 text-blue-600" />
+              ) },
+              { value: 'unassigned', label: 'Nieprzypisane', icon: <UserMinus className="w-4 h-4 text-red-500" /> },
+              ...technicians.filter(t => t.id !== authContext?.user?.id).map((tech) => ({
+                value: String(tech.id),
+                label: `${tech.first_name} ${tech.last_name}`,
+                icon: tech.avatar ? (
+                  <img src={tech.avatar} alt="" className="w-4 h-4 rounded-full object-cover" />
+                ) : (
+                  <div className="w-4 h-4 rounded-full bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 flex items-center justify-center text-[8px] font-bold">{tech.first_name[0]}{tech.last_name[0]}</div>
+                )
+              }))
             ]}
             className="w-44 sm:w-56"
           />
