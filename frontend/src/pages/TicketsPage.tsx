@@ -633,16 +633,34 @@ const TicketsPage: React.FC = () => {
                         </span>
                       </td>
                     )}
-                    <td className="px-6 py-4 text-sm text-gray-700 whitespace-nowrap font-medium">
-                      {ticket.creator_details
-                        ? `${ticket.creator_details.first_name} ${ticket.creator_details.last_name}`
-                        : <span className="text-gray-400 italic">Nieznany</span>}
+                    <td className="px-6 py-4 text-sm text-gray-700 dark:text-gray-300 whitespace-nowrap font-medium">
+                      {ticket.creator_details ? (
+                        <span className="flex items-center gap-2">
+                          {ticket.creator_details.avatar ? (
+                            <img src={ticket.creator_details.avatar} alt="" className="w-5 h-5 rounded-full object-cover flex-shrink-0" />
+                          ) : (
+                            <div className="w-5 h-5 rounded-full bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 flex items-center justify-center text-[9px] font-bold flex-shrink-0">
+                              {ticket.creator_details.first_name[0]}{ticket.creator_details.last_name[0]}
+                            </div>
+                          )}
+                          {ticket.creator_details.first_name} {ticket.creator_details.last_name}
+                        </span>
+                      ) : <span className="text-gray-400 italic">Nieznany</span>}
                     </td>
                     {!isEmployee && (
                       <td className="px-6 py-4 text-sm whitespace-nowrap">
-                        {ticket.technician_details
-                          ? <span className="text-gray-900 font-medium">{ticket.technician_details.first_name} {ticket.technician_details.last_name}</span>
-                          : <span className="text-gray-400 italic">Nie przypisano</span>}
+                        {ticket.technician_details ? (
+                          <span className="flex items-center gap-2 text-gray-900 dark:text-gray-200 font-medium">
+                            {ticket.technician_details.avatar ? (
+                              <img src={ticket.technician_details.avatar} alt="" className="w-5 h-5 rounded-full object-cover flex-shrink-0" />
+                            ) : (
+                              <div className="w-5 h-5 rounded-full bg-indigo-100 dark:bg-indigo-900/40 text-indigo-600 dark:text-indigo-300 flex items-center justify-center text-[9px] font-bold flex-shrink-0">
+                                {ticket.technician_details.first_name[0]}{ticket.technician_details.last_name[0]}
+                              </div>
+                            )}
+                            {ticket.technician_details.first_name} {ticket.technician_details.last_name}
+                          </span>
+                        ) : <span className="text-gray-400 italic">Nie przypisano</span>}
                       </td>
                     )}
                     <td className="px-6 py-4 whitespace-nowrap">
