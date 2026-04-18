@@ -399,10 +399,10 @@ const TicketsPage: React.FC = () => {
           placeholder="Status"
           options={[
             { value: 'all', label: 'Wszystkie' },
-            { value: 'NOWE', label: `Nowe (${statusCounts.NOWE})`, icon: <Circle className="w-4 h-4 text-blue-500" /> },
-            { value: 'W_TOKU', label: `W toku (${statusCounts.W_TOKU})`, icon: <Circle className="w-4 h-4 text-amber-500" /> },
-            { value: 'ROZWIAZANE', label: `Rozwiązane (${statusCounts.ROZWIAZANE})`, icon: <CheckCircle2 className="w-4 h-4 text-green-500" /> },
-            { value: 'ZAMKNIETE', label: `Zamknięte (${statusCounts.ZAMKNIETE})`, icon: <XCircle className="w-4 h-4 text-gray-400" /> }
+            { value: 'NOWE', label: `Nowe (${statusCounts.NOWE})`, icon: <Circle className="w-4 h-4 text-blue-600 dark:text-blue-400 stroke-[2.5]" /> },
+            { value: 'W_TOKU', label: `W toku (${statusCounts.W_TOKU})`, icon: <Circle className="w-4 h-4 text-amber-500 dark:text-amber-400 stroke-[2.5]" /> },
+            { value: 'ROZWIAZANE', label: `Rozwiązane (${statusCounts.ROZWIAZANE})`, icon: <CheckCircle2 className="w-4 h-4 text-green-600 dark:text-green-400 stroke-[2.5]" /> },
+            { value: 'ZAMKNIETE', label: `Zamknięte (${statusCounts.ZAMKNIETE})`, icon: <XCircle className="w-4 h-4 text-gray-500 dark:text-gray-400 stroke-[2.5]" /> }
           ]}
           className="w-36 sm:w-44"
         />
@@ -447,11 +447,13 @@ const TicketsPage: React.FC = () => {
             placeholder="Przypisanie"
             options={[
               { value: 'all', label: 'Wszystkie' },
-              { value: 'assigned_to_me', label: 'Moje zgłoszenia', icon: authContext?.user?.avatar ? (
-                <img src={authContext.user.avatar} alt="" className="w-4 h-4 rounded-full object-cover" />
-              ) : (
-                <UserCheck className="w-4 h-4 text-blue-600" />
-              ) },
+              {
+                value: 'assigned_to_me', label: 'Moje zgłoszenia', icon: authContext?.user?.avatar ? (
+                  <img src={authContext.user.avatar} alt="" className="w-4 h-4 rounded-full object-cover" />
+                ) : (
+                  <UserCheck className="w-4 h-4 text-blue-600" />
+                )
+              },
               { value: 'unassigned', label: 'Nieprzypisane', icon: <UserMinus className="w-4 h-4 text-red-500" /> },
               ...technicians.filter(t => t.id !== authContext?.user?.id).map((tech) => ({
                 value: String(tech.id),
@@ -499,9 +501,9 @@ const TicketsPage: React.FC = () => {
                           onChange={setBulkAssignee}
                           placeholder="Przypisz do..."
                           options={[
-                            { 
-                              value: 'me', 
-                              label: 'Przypisz do mnie', 
+                            {
+                              value: 'me',
+                              label: 'Przypisz do mnie',
                               icon: authContext?.user?.avatar ? (
                                 <img src={authContext.user.avatar} alt="" className="w-5 h-5 rounded-full object-cover mr-1" />
                               ) : (
@@ -527,10 +529,10 @@ const TicketsPage: React.FC = () => {
                         onChange={setBulkStatus}
                         placeholder="Zmień status..."
                         options={[
-                          { value: 'NOWE', label: 'Nowe', icon: <div className="w-2.5 h-2.5 rounded-full bg-blue-500 mr-2"></div> },
-                          { value: 'W_TOKU', label: 'W toku', icon: <div className="w-2.5 h-2.5 rounded-full bg-amber-500 mr-2"></div> },
-                          { value: 'ROZWIAZANE', label: 'Rozwiązane', icon: <div className="w-2.5 h-2.5 rounded-full bg-green-500 mr-2"></div> },
-                          { value: 'ZAMKNIETE', label: 'Zamknięte', icon: <div className="w-2.5 h-2.5 rounded-full bg-gray-400 mr-2"></div> },
+                          { value: 'NOWE', label: 'Nowe', icon: <Circle className="w-4 h-4 text-blue-600 dark:text-blue-400 stroke-[2.5]" /> },
+                          { value: 'W_TOKU', label: 'W toku', icon: <Circle className="w-4 h-4 text-amber-500 dark:text-amber-400 stroke-[2.5]" /> },
+                          { value: 'ROZWIAZANE', label: 'Rozwiązane', icon: <CheckCircle2 className="w-4 h-4 text-green-600 dark:text-green-400 stroke-[2.5]" /> },
+                          { value: 'ZAMKNIETE', label: 'Zamknięte', icon: <XCircle className="w-4 h-4 text-gray-500 dark:text-gray-400 stroke-[2.5]" /> },
                         ]}
                       />
 
