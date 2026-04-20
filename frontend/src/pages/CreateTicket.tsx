@@ -7,11 +7,11 @@ import {
   ArrowLeft, 
   AlertCircle, 
   FileText, 
-  Monitor, 
-  Terminal, 
-  Wifi, 
-  Lock, 
-  HelpCircle, 
+  Cpu, 
+  AppWindow, 
+  Globe, 
+  KeyRound, 
+  Shapes, 
   ChevronDown,
   ChevronsUp,
   Equal,
@@ -82,11 +82,11 @@ const CreateTicketPage: React.FC = () => {
 
   const getCategoryIcon = (name: string) => {
     const lowerName = name.toLowerCase();
-    if (lowerName.includes('sprzęt')) return <Monitor className="w-4 h-4" />;
-    if (lowerName.includes('oprogramowanie')) return <Terminal className="w-4 h-4" />;
-    if (lowerName.includes('sieć')) return <Wifi className="w-4 h-4" />;
-    if (lowerName.includes('dostęp')) return <Lock className="w-4 h-4" />;
-    return <HelpCircle className="w-4 h-4" />;
+    if (lowerName.includes('sprzęt')) return <Cpu className="w-4 h-4" />;
+    if (lowerName.includes('oprogramowanie')) return <AppWindow className="w-4 h-4" />;
+    if (lowerName.includes('sieć')) return <Globe className="w-4 h-4" />;
+    if (lowerName.includes('dostęp')) return <KeyRound className="w-4 h-4" />;
+    return <Shapes className="w-4 h-4" />;
   };
 
   const priorityOptions = [
