@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Category, Ticket, Comment, Attachment
+from .models import Category, Ticket, Comment, Attachment, TicketLog, WorkLog
 from accounts.serializers import UserSerializer
 
 class CategorySerializer(serializers.ModelSerializer):
@@ -76,3 +76,37 @@ class CommentSerializer(serializers.ModelSerializer):
         if len(cleaned) > 5000:
             raise serializers.ValidationError('Treść komentarza nie może przekraczać 5000 znaków.')
         return cleaned
+
+
+class TicketLogSerializer(serializers.ModelSerializer):
+    user_details = UserSerializer(source='user', read_only=True)
+    action_display = serializers.CharField(source='get_action_display', read_only=True)
+
+    class Meta:
+        model = TicketLog
+        fields = ['id', 'ticket', 'user', 'user_details', 'action', 'action_display', 'old_value', 'new_value', 'created_at']
+        read_only_fields = ('__all__',)
+
+
+class WorkLogSerializer(serializers.ModelSerializer):
+    author_details = UserSerializer(source='author', read_only=True)
+
+    class Meta:
+        model = WorkLog
+        fields = ['id', 'ticket', 'author', 'author_details', 'description', 'duration_minutes', 'created_at']
+        read_only_fields = ('author', 'ticket', 'created_at')
+
+    def validate_description(self, value):
+        cleaned = value.strip()
+        if not cleaned:
+            raise serializers.ValidationError('Opis wykonanej pracy nie może być pusty.')
+        if len(cleaned) > 2000:
+            raise serializers.ValidationError('Opis nie może przekraczać 2000 znaków.')
+        return cleaned
+
+    def validate_duration_minutes(self, value):
+        if value <= 0:
+            raise serializers.ValidationError('Czas pracy musi być większy od 0.')
+        if value > 1440:
+            raise serializers.ValidationError('Czas pracy nie może przekraczać 24h (1440 min).')
+        return value

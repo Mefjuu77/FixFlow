@@ -96,3 +96,53 @@ class Attachment(models.Model):
 
     def __str__(self):
         return f"{self.filename} (zgłoszenie #{self.ticket.id})"
+
+
+class TicketLog(models.Model):
+    """Automatyczny log zdarzeń na zgłoszeniu."""
+    class ActionType(models.TextChoices):
+        CREATED = 'CREATED', 'Utworzono zgłoszenie'
+        STATUS_CHANGED = 'STATUS_CHANGED', 'Zmieniono status'
+        TECHNICIAN_ASSIGNED = 'TECHNICIAN_ASSIGNED', 'Przypisano technika'
+        TECHNICIAN_REMOVED = 'TECHNICIAN_REMOVED', 'Usunięto technika'
+        PRIORITY_CHANGED = 'PRIORITY_CHANGED', 'Zmieniono priorytet'
+        CATEGORY_CHANGED = 'CATEGORY_CHANGED', 'Zmieniono kategorię'
+        CREATOR_CHANGED = 'CREATOR_CHANGED', 'Zmieniono zgłaszającego'
+
+    ticket = models.ForeignKey(Ticket, on_delete=models.CASCADE, related_name='logs')
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='ticket_logs'
+    )
+    action = models.CharField(max_length=30, choices=ActionType.choices)
+    old_value = models.CharField(max_length=200, blank=True, default='')
+    new_value = models.CharField(max_length=200, blank=True, default='')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"Log [{self.get_action_display()}] zgłoszenie #{self.ticket_id}"
+
+
+class WorkLog(models.Model):
+    """Ręczny wpis technika o pracach wykonanych na zgłoszeniu."""
+    ticket = models.ForeignKey(Ticket, on_delete=models.CASCADE, related_name='work_logs')
+    author = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='work_logs'
+    )
+    description = models.TextField()
+    duration_minutes = models.PositiveIntegerField(help_text='Czas pracy w minutach')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"WorkLog #{self.id} ({self.duration_minutes}min) zgłoszenie #{self.ticket_id}"

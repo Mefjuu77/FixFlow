@@ -3,8 +3,8 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.exceptions import PermissionDenied
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from .models import Category, Ticket, Comment, Attachment
-from .serializers import CategorySerializer, TicketSerializer, CommentSerializer, AttachmentSerializer
+from .models import Category, Ticket, Comment, Attachment, TicketLog, WorkLog
+from .serializers import CategorySerializer, TicketSerializer, CommentSerializer, AttachmentSerializer, TicketLogSerializer, WorkLogSerializer
 from .email import send_comment_notification, send_status_change_notification, send_ticket_created_notification, send_technician_assigned_notification
 
 class CategoryViewSet(viewsets.ModelViewSet):
@@ -28,20 +28,85 @@ class TicketViewSet(viewsets.ModelViewSet):
         ticket = serializer.save(creator=self.request.user)
         send_ticket_created_notification(ticket)
 
+        # Log: utworzenie zgłoszenia
+        TicketLog.objects.create(
+            ticket=ticket,
+            user=self.request.user,
+            action=TicketLog.ActionType.CREATED,
+            new_value=ticket.title,
+        )
+
     def perform_update(self, serializer):
         old_ticket = self.get_object()
         old_status = old_ticket.status
         old_technician = old_ticket.technician
+        old_priority = old_ticket.priority
+        old_category = old_ticket.category
+        old_creator = old_ticket.creator
         
         ticket = serializer.save()
-        
-        # Jeśli status się zmienił, wysyłamy maila do twórcy zgłoszenia
+        user = self.request.user
+
+        # Log: zmiana statusu
         if old_status != ticket.status:
+            TicketLog.objects.create(
+                ticket=ticket,
+                user=user,
+                action=TicketLog.ActionType.STATUS_CHANGED,
+                old_value=old_status,
+                new_value=ticket.status,
+            )
             send_status_change_notification(ticket, old_status, ticket.status)
 
-        # Jeśli technik został przypisany / zmieniony na kogoś innego
-        if old_technician != ticket.technician and ticket.technician is not None:
-            send_technician_assigned_notification(ticket, old_technician=old_technician)
+        # Log: zmiana technika
+        if old_technician != ticket.technician:
+            if ticket.technician is not None:
+                TicketLog.objects.create(
+                    ticket=ticket,
+                    user=user,
+                    action=TicketLog.ActionType.TECHNICIAN_ASSIGNED,
+                    old_value=f"{old_technician.first_name} {old_technician.last_name}" if old_technician else '',
+                    new_value=f"{ticket.technician.first_name} {ticket.technician.last_name}",
+                )
+                send_technician_assigned_notification(ticket, old_technician=old_technician)
+            else:
+                TicketLog.objects.create(
+                    ticket=ticket,
+                    user=user,
+                    action=TicketLog.ActionType.TECHNICIAN_REMOVED,
+                    old_value=f"{old_technician.first_name} {old_technician.last_name}" if old_technician else '',
+                    new_value='',
+                )
+
+        # Log: zmiana priorytetu
+        if old_priority != ticket.priority:
+            TicketLog.objects.create(
+                ticket=ticket,
+                user=user,
+                action=TicketLog.ActionType.PRIORITY_CHANGED,
+                old_value=old_priority,
+                new_value=ticket.priority,
+            )
+
+        # Log: zmiana kategorii
+        if old_category != ticket.category:
+            TicketLog.objects.create(
+                ticket=ticket,
+                user=user,
+                action=TicketLog.ActionType.CATEGORY_CHANGED,
+                old_value=old_category.name if old_category else '',
+                new_value=ticket.category.name if ticket.category else '',
+            )
+
+        # Log: zmiana zgłaszającego
+        if old_creator != ticket.creator:
+            TicketLog.objects.create(
+                ticket=ticket,
+                user=user,
+                action=TicketLog.ActionType.CREATOR_CHANGED,
+                old_value=f"{old_creator.first_name} {old_creator.last_name}" if old_creator else '',
+                new_value=f"{ticket.creator.first_name} {ticket.creator.last_name}" if ticket.creator else '',
+            )
 
 
 class CommentListCreateView(generics.ListCreateAPIView):
@@ -87,6 +152,53 @@ class CommentListCreateView(generics.ListCreateAPIView):
 
         comment = serializer.save(author=user, ticket=ticket)
         send_comment_notification(comment)
+
+
+class TicketLogListView(generics.ListAPIView):
+    """Lista logów systemowych dla danego zgłoszenia."""
+    serializer_class = TicketLogSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        ticket_id = self.kwargs.get('ticket_id')
+        user = self.request.user
+
+        # Pracownicy nie widzą logów systemowych
+        if user.role == 'EMPLOYEE':
+            return TicketLog.objects.none()
+
+        return TicketLog.objects.filter(ticket_id=ticket_id)
+
+
+class WorkLogListCreateView(generics.ListCreateAPIView):
+    """Lista i tworzenie wpisów rejestru prac dla danego zgłoszenia."""
+    serializer_class = WorkLogSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        ticket_id = self.kwargs.get('ticket_id')
+        user = self.request.user
+
+        # Pracownicy nie widzą rejestru prac
+        if user.role == 'EMPLOYEE':
+            return WorkLog.objects.none()
+
+        return WorkLog.objects.filter(ticket_id=ticket_id)
+
+    def perform_create(self, serializer):
+        ticket_id = self.kwargs.get('ticket_id')
+        user = self.request.user
+
+        if user.role == 'EMPLOYEE':
+            raise PermissionDenied('Nie masz uprawnień do dodawania wpisów rejestru prac.')
+
+        try:
+            ticket = Ticket.objects.get(id=ticket_id)
+        except Ticket.DoesNotExist:
+            from rest_framework.exceptions import ValidationError
+            raise ValidationError('Zgłoszenie nie istnieje.')
+
+        serializer.save(author=user, ticket=ticket)
 
 
 class TicketAttachmentView(APIView):
