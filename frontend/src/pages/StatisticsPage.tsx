@@ -53,23 +53,6 @@ const DonutChart: React.FC<{ segments: DonutSegment[]; total: number; filterType
     a += pct;
   });
 
-  const handleMouseMove = (e: React.MouseEvent<SVGSVGElement>) => {
-    const rect = e.currentTarget.getBoundingClientRect();
-    const x = e.clientX - rect.left - size / 2;
-    const y = e.clientY - rect.top - size / 2;
-    const dist = Math.sqrt(x * x + y * y);
-    const innerR = radius - strokeWidth / 2;
-    const outerR = radius + strokeWidth / 2;
-
-    if (dist < innerR || dist > outerR) { setHovered(null); return; }
-
-    let angle = Math.atan2(y, x) * (180 / Math.PI) + 90;
-    if (angle < 0) angle += 360;
-
-    const idx = segmentAngles.findIndex(s => angle >= s.start && angle < s.end);
-    setHovered(idx >= 0 ? idx : null);
-  };
-
   let accumulated = 0;
 
   return (
@@ -108,7 +91,6 @@ const DonutChart: React.FC<{ segments: DonutSegment[]; total: number; filterType
             const pct = total > 0 ? seg.value / total : 0;
             const gap = 2; // Slightly wider gap since we removed the solid background track
             const segLength = circumference * pct - gap;
-            const offset = circumference - Math.max(segLength, 0);
             const rotation = accumulated * 360 - 90;
             accumulated += pct;
             const isHovered = hovered === i;
