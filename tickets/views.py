@@ -43,6 +43,8 @@ class TicketViewSet(viewsets.ModelViewSet):
         old_priority = old_ticket.priority
         old_category = old_ticket.category
         old_creator = old_ticket.creator
+        old_title = old_ticket.title
+        old_description = old_ticket.description
         
         ticket = serializer.save()
         user = self.request.user
@@ -106,6 +108,24 @@ class TicketViewSet(viewsets.ModelViewSet):
                 action=TicketLog.ActionType.CREATOR_CHANGED,
                 old_value=f"{old_creator.first_name} {old_creator.last_name}" if old_creator else '',
                 new_value=f"{ticket.creator.first_name} {ticket.creator.last_name}" if ticket.creator else '',
+            )
+
+        # Log: zmiana tytułu
+        if old_title != ticket.title:
+            TicketLog.objects.create(
+                ticket=ticket,
+                user=user,
+                action=TicketLog.ActionType.TITLE_CHANGED,
+                old_value=old_title[:200],
+                new_value=ticket.title[:200],
+            )
+
+        # Log: zmiana opisu
+        if old_description != ticket.description:
+            TicketLog.objects.create(
+                ticket=ticket,
+                user=user,
+                action=TicketLog.ActionType.DESCRIPTION_CHANGED,
             )
 
 
@@ -249,6 +269,13 @@ class TicketAttachmentView(APIView):
                 uploaded_by=request.user,
             )
             created.append(attachment)
+            # Log: dodanie załącznika
+            TicketLog.objects.create(
+                ticket=ticket,
+                user=request.user,
+                action=TicketLog.ActionType.ATTACHMENT_ADDED,
+                new_value=f.name,
+            )
 
         serializer = AttachmentSerializer(created, many=True, context={'request': request})
         return Response(serializer.data, status=status.HTTP_201_CREATED)
@@ -298,6 +325,13 @@ class CommentAttachmentView(APIView):
                 uploaded_by=request.user,
             )
             created.append(attachment)
+            # Log: dodanie załącznika (z komentarza)
+            TicketLog.objects.create(
+                ticket=ticket,
+                user=request.user,
+                action=TicketLog.ActionType.ATTACHMENT_ADDED,
+                new_value=f.name,
+            )
 
         serializer = AttachmentSerializer(created, many=True, context={'request': request})
         return Response(serializer.data, status=status.HTTP_201_CREATED)
