@@ -11,12 +11,13 @@ import {
   ArrowLeft,
   User,
   ChevronDown,
-  Monitor,
-  Terminal,
-  Wifi,
-  Lock,
-  HelpCircle,
+  Cpu,
+  AppWindow,
+  Globe,
+  KeyRound,
+  Shapes,
   AlertTriangle,
+  Lock,
   ChevronsUp,
   Equal,
   ChevronsDown,
@@ -262,13 +263,13 @@ const TicketDetailsPage: React.FC = () => {
   const isTechnicianOrAdmin = authContext?.user?.role === 'TECHNICIAN' || authContext?.user?.role === 'ADMIN';
 
   const getCategoryIcon = (name: string) => {
-    if (!name) return <HelpCircle className="w-3.5 h-3.5" />;
+    if (!name) return <Shapes className="w-3.5 h-3.5" />;
     const lowerName = name.toLowerCase();
-    if (lowerName.includes('sprzęt')) return <Monitor className="w-3.5 h-3.5" />;
-    if (lowerName.includes('oprogramowanie')) return <Terminal className="w-3.5 h-3.5" />;
-    if (lowerName.includes('sieć')) return <Wifi className="w-3.5 h-3.5" />;
-    if (lowerName.includes('dostęp')) return <Lock className="w-3.5 h-3.5" />;
-    return <HelpCircle className="w-3.5 h-3.5" />;
+    if (lowerName.includes('sprzęt')) return <Cpu className="w-3.5 h-3.5" />;
+    if (lowerName.includes('oprogramowanie')) return <AppWindow className="w-3.5 h-3.5" />;
+    if (lowerName.includes('sieć')) return <Globe className="w-3.5 h-3.5" />;
+    if (lowerName.includes('dostęp')) return <KeyRound className="w-3.5 h-3.5" />;
+    return <Shapes className="w-3.5 h-3.5" />;
   };
 
   return (
