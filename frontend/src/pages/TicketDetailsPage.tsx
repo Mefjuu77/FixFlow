@@ -4,7 +4,7 @@ import dayjs from 'dayjs';
 import 'dayjs/locale/pl';
 dayjs.locale('pl');
 import { ticketService } from '../api/ticketService';
-import { Ticket, User as UserType, Comment, Category } from '../types';
+import { Ticket, User as UserType, Comment, Category, TicketLog, WorkLog } from '../types';
 import { AuthContext } from '../context/AuthContext';
 import useTitle from '../hooks/useTitle';
 import {
@@ -23,14 +23,20 @@ import {
   ChevronsDown,
   X,
   Paperclip,
-  Image,
   FileText,
   Download,
-  ZoomIn,
   ExternalLink,
   ChevronLeft,
   ChevronRight,
-  UserMinus
+  UserMinus,
+  Clock,
+  Plus,
+  Activity,
+  ArrowRightLeft,
+  UserPlus,
+  UserX,
+  FolderOpen,
+  FileClock
 } from 'lucide-react';
 
 const TicketDetailsPage: React.FC = () => {
@@ -40,7 +46,12 @@ const TicketDetailsPage: React.FC = () => {
   const [newCommentText, setNewCommentText] = useState('');
   const [newCommentType, setNewCommentType] = useState<'REPLY' | 'INTERNAL'>('REPLY');
   const [isSubmittingComment, setIsSubmittingComment] = useState(false);
-  const [activeTab, setActiveTab] = useState<'comments' | 'logs' | 'history' | 'work_log' | 'approvals'>('comments');
+  const [activeTab, setActiveTab] = useState<'comments' | 'logs' | 'history' | 'work_log'>('comments');
+  const [ticketLogs, setTicketLogs] = useState<TicketLog[]>([]);
+  const [workLogs, setWorkLogs] = useState<WorkLog[]>([]);
+  const [newWorkLogDesc, setNewWorkLogDesc] = useState('');
+  const [newWorkLogMinutes, setNewWorkLogMinutes] = useState('');
+  const [isSubmittingWorkLog, setIsSubmittingWorkLog] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [commentError, setCommentError] = useState('');
@@ -110,6 +121,8 @@ const TicketDetailsPage: React.FC = () => {
     if (id) {
       fetchTicket();
       fetchComments();
+      fetchLogs();
+      fetchWorkLogs();
     }
     fetchTechnicians();
     fetchAllUsers();
@@ -122,6 +135,41 @@ const TicketDetailsPage: React.FC = () => {
       setComments(data);
     } catch (err) {
       console.error('Błąd pobierania komentarzy:', err);
+    }
+  };
+
+  const fetchLogs = async () => {
+    try {
+      const data = await ticketService.getLogs(id!);
+      setTicketLogs(data);
+    } catch (err) {
+      console.error('Błąd pobierania logów:', err);
+    }
+  };
+
+  const fetchWorkLogs = async () => {
+    try {
+      const data = await ticketService.getWorkLogs(id!);
+      setWorkLogs(data);
+    } catch (err) {
+      console.error('Błąd pobierania rejestru prac:', err);
+    }
+  };
+
+  const handleAddWorkLog = async () => {
+    const trimmed = newWorkLogDesc.trim();
+    const minutes = parseInt(newWorkLogMinutes);
+    if (!trimmed || isNaN(minutes) || minutes <= 0) return;
+    setIsSubmittingWorkLog(true);
+    try {
+      await ticketService.addWorkLog(id!, trimmed, minutes);
+      setNewWorkLogDesc('');
+      setNewWorkLogMinutes('');
+      fetchWorkLogs();
+    } catch (err) {
+      console.error('Błąd dodawania wpisu:', err);
+    } finally {
+      setIsSubmittingWorkLog(false);
     }
   };
 
@@ -168,6 +216,7 @@ const TicketDetailsPage: React.FC = () => {
     try {
       const updated = await ticketService.updateTicket(ticket.id, updates);
       setTicket(updated);
+      fetchLogs();
     } catch (err) {
       console.error('Błąd aktualizacji', err);
       alert('Błąd podczas aktualizacji.');
@@ -242,6 +291,7 @@ const TicketDetailsPage: React.FC = () => {
       }
 
       setTransitionModalConfig({ isOpen: false, targetStatus: null });
+      fetchLogs();
     } catch (err) {
       console.error('Błąd podczas zmiany statusu/tworzenia komentarza', err);
       alert('Błąd podczas aktualizacji zgłoszenia.');
@@ -447,11 +497,12 @@ const TicketDetailsPage: React.FC = () => {
 
             {isTechnicianOrAdmin && (
               <div className="flex border-b border-gray-200 mb-4 custom-scrollbar overflow-x-auto">
-                <button onClick={() => setActiveTab('logs')} className={`px-4 py-2 text-sm whitespace-nowrap transition-colors ${activeTab === 'logs' ? 'text-blue-600 border-b-2 border-blue-600 bg-blue-50/50 font-medium' : 'text-gray-600 hover:bg-gray-50'}`}>Logi</button>
+                {authContext?.user?.role === 'ADMIN' && (
+                  <button onClick={() => setActiveTab('logs')} className={`px-4 py-2 text-sm whitespace-nowrap transition-colors ${activeTab === 'logs' ? 'text-blue-600 border-b-2 border-blue-600 bg-blue-50/50 font-medium' : 'text-gray-600 hover:bg-gray-50'}`}>Logi</button>
+                )}
                 <button onClick={() => setActiveTab('comments')} className={`px-4 py-2 text-sm whitespace-nowrap transition-colors ${activeTab === 'comments' ? 'text-blue-600 border-b-2 border-blue-600 bg-blue-50/50 font-medium' : 'text-gray-600 hover:bg-gray-50'}`}>Komentarze</button>
                 <button onClick={() => setActiveTab('history')} className={`px-4 py-2 text-sm whitespace-nowrap transition-colors ${activeTab === 'history' ? 'text-blue-600 border-b-2 border-blue-600 bg-blue-50/50 font-medium' : 'text-gray-600 hover:bg-gray-50'}`}>Historia</button>
                 <button onClick={() => setActiveTab('work_log')} className={`px-4 py-2 text-sm whitespace-nowrap transition-colors ${activeTab === 'work_log' ? 'text-blue-600 border-b-2 border-blue-600 bg-blue-50/50 font-medium' : 'text-gray-600 hover:bg-gray-50'}`}>Rejestr prac</button>
-                <button onClick={() => setActiveTab('approvals')} className={`px-4 py-2 text-sm whitespace-nowrap transition-colors ${activeTab === 'approvals' ? 'text-blue-600 border-b-2 border-blue-600 bg-blue-50/50 font-medium' : 'text-gray-600 hover:bg-gray-50'}`}>Zatwierdzenia</button>
               </div>
             )}
 
@@ -701,9 +752,259 @@ const TicketDetailsPage: React.FC = () => {
               </div>
             )}
 
-            {activeTab !== 'comments' && (
-              <div className="p-8 text-center text-gray-500 italic border border-gray-100 rounded-xl bg-gray-50/50">
-                Ta sekcja nie jest jeszcze dostępna.
+            {activeTab === 'logs' && (
+              <div className="space-y-1">
+                {ticketLogs.length === 0 ? (
+                  <div className="text-center text-gray-500 text-sm py-8 italic border border-gray-100 rounded-xl bg-gray-50/50">
+                    Brak logów systemowych.
+                  </div>
+                ) : (
+                  <div className="relative pl-6 border-l-2 border-gray-200 dark:border-gray-600 space-y-4">
+                    {ticketLogs.map(log => {
+                      const iconMap: Record<string, React.ReactNode> = {
+                        CREATED: <Plus className="w-3.5 h-3.5 text-green-600" />,
+                        STATUS_CHANGED: <ArrowRightLeft className="w-3.5 h-3.5 text-blue-600" />,
+                        TECHNICIAN_ASSIGNED: <UserPlus className="w-3.5 h-3.5 text-indigo-600" />,
+                        TECHNICIAN_REMOVED: <UserX className="w-3.5 h-3.5 text-red-500" />,
+                        PRIORITY_CHANGED: <AlertTriangle className="w-3.5 h-3.5 text-amber-500" />,
+                        CATEGORY_CHANGED: <FolderOpen className="w-3.5 h-3.5 text-purple-500" />,
+                        CREATOR_CHANGED: <User className="w-3.5 h-3.5 text-cyan-600" />,
+                      };
+                      const bgMap: Record<string, string> = {
+                        CREATED: 'bg-green-100 dark:bg-green-900/40',
+                        STATUS_CHANGED: 'bg-blue-100 dark:bg-blue-900/40',
+                        TECHNICIAN_ASSIGNED: 'bg-indigo-100 dark:bg-indigo-900/40',
+                        TECHNICIAN_REMOVED: 'bg-red-100 dark:bg-red-900/40',
+                        PRIORITY_CHANGED: 'bg-amber-100 dark:bg-amber-900/40',
+                        CATEGORY_CHANGED: 'bg-purple-100 dark:bg-purple-900/40',
+                        CREATOR_CHANGED: 'bg-cyan-100 dark:bg-cyan-900/40',
+                      };
+
+                      const statusLabels: Record<string, string> = {
+                        NOWE: 'Nowe', W_TOKU: 'W toku', ROZWIAZANE: 'Rozwiązane', ZAMKNIETE: 'Zamknięte',
+                        NISKI: 'Niski', NORMALNY: 'Normalny', WYSOKI: 'Wysoki',
+                      };
+
+                      const displayOld = statusLabels[log.old_value] || log.old_value;
+                      const displayNew = statusLabels[log.new_value] || log.new_value;
+
+                      return (
+                        <div key={log.id} className="relative">
+                          <div className={`absolute -left-[calc(0.75rem+5px)] top-1 w-6 h-6 rounded-full flex items-center justify-center ${bgMap[log.action] || 'bg-gray-100'}`}>
+                            {iconMap[log.action] || <Activity className="w-3.5 h-3.5 text-gray-500" />}
+                          </div>
+                          <div className="bg-gray-50 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-700 rounded-lg p-3 ml-2">
+                            <div className="flex items-center justify-between gap-2">
+                              <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                                {log.action_display}
+                              </span>
+                              <span className="text-xs text-gray-400 whitespace-nowrap">
+                                {dayjs(log.created_at).format('DD MMM YYYY, HH:mm')}
+                              </span>
+                            </div>
+                            {(log.old_value || log.new_value) && log.action !== 'CREATED' && (
+                              <div className="mt-1 text-xs text-gray-500 dark:text-gray-400 flex items-center gap-1">
+                                {displayOld && <span className="bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 px-1.5 py-0.5 rounded">{displayOld}</span>}
+                                <span>→</span>
+                                {displayNew && <span className="bg-green-50 dark:bg-green-900/30 text-green-600 dark:text-green-400 px-1.5 py-0.5 rounded">{displayNew}</span>}
+                              </div>
+                            )}
+                            {log.action === 'CREATED' && log.new_value && (
+                              <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">„{log.new_value}"</p>
+                            )}
+                            {log.user_details && (
+                              <div className="mt-1.5 flex items-center gap-1.5 text-xs text-gray-400">
+                                {log.user_details.avatar ? (
+                                  <img src={log.user_details.avatar} alt="" className="w-4 h-4 rounded-full object-cover" />
+                                ) : (
+                                  <div className="w-4 h-4 rounded-full bg-blue-100 flex items-center justify-center">
+                                    <span className="text-[8px] font-bold text-blue-600">{log.user_details.first_name?.charAt(0)}</span>
+                                  </div>
+                                )}
+                                <span>{log.user_details.first_name} {log.user_details.last_name}</span>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {activeTab === 'history' && (
+              <div className="space-y-1">
+                {(() => {
+                  type HistoryItem = { type: 'log'; data: TicketLog; date: string } | { type: 'comment'; data: Comment; date: string };
+                  const items: HistoryItem[] = [
+                    ...ticketLogs.map(l => ({ type: 'log' as const, data: l, date: l.created_at })),
+                    ...comments.map(c => ({ type: 'comment' as const, data: c, date: c.created_at })),
+                  ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+
+                  if (items.length === 0) {
+                    return (
+                      <div className="text-center text-gray-500 text-sm py-8 italic border border-gray-100 rounded-xl bg-gray-50/50">
+                        Brak historii.
+                      </div>
+                    );
+                  }
+
+                  return (
+                    <div className="relative pl-6 border-l-2 border-gray-200 dark:border-gray-600 space-y-4">
+                      {items.map((item) => {
+                        if (item.type === 'log') {
+                          const log = item.data;
+                          const statusLabels: Record<string, string> = {
+                            NOWE: 'Nowe', W_TOKU: 'W toku', ROZWIAZANE: 'Rozwiązane', ZAMKNIETE: 'Zamknięte',
+                            NISKI: 'Niski', NORMALNY: 'Normalny', WYSOKI: 'Wysoki',
+                          };
+                          const displayOld = statusLabels[log.old_value] || log.old_value;
+                          const displayNew = statusLabels[log.new_value] || log.new_value;
+                          return (
+                            <div key={`log-${log.id}`} className="relative">
+                              <div className="absolute -left-[calc(0.75rem+5px)] top-1 w-6 h-6 rounded-full flex items-center justify-center bg-blue-100 dark:bg-blue-900/40">
+                                <Activity className="w-3.5 h-3.5 text-blue-600" />
+                              </div>
+                              <div className="bg-gray-50 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-700 rounded-lg p-3 ml-2">
+                                <div className="flex items-center justify-between">
+                                  <span className="text-sm font-medium text-gray-900 dark:text-gray-100">{log.action_display}</span>
+                                  <span className="text-xs text-gray-400">{dayjs(log.created_at).format('DD MMM YYYY, HH:mm')}</span>
+                                </div>
+                                {(log.old_value || log.new_value) && log.action !== 'CREATED' && (
+                                  <div className="mt-1 text-xs text-gray-500 flex items-center gap-1">
+                                    {displayOld && <span className="bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 px-1.5 py-0.5 rounded">{displayOld}</span>}
+                                    <span>→</span>
+                                    {displayNew && <span className="bg-green-50 dark:bg-green-900/30 text-green-600 dark:text-green-400 px-1.5 py-0.5 rounded">{displayNew}</span>}
+                                  </div>
+                                )}
+                                {log.user_details && (
+                                  <p className="mt-1 text-xs text-gray-400">{log.user_details.first_name} {log.user_details.last_name}</p>
+                                )}
+                              </div>
+                            </div>
+                          );
+                        } else {
+                          const comment = item.data;
+                          const isInternal = comment.comment_type === 'INTERNAL';
+                          return (
+                            <div key={`comment-${comment.id}`} className="relative">
+                              <div className={`absolute -left-[calc(0.75rem+5px)] top-1 w-6 h-6 rounded-full flex items-center justify-center ${isInternal ? 'bg-amber-100 dark:bg-amber-900/40' : 'bg-green-100 dark:bg-green-900/40'}`}>
+                                {isInternal ? <Lock className="w-3.5 h-3.5 text-amber-600" /> : <FileText className="w-3.5 h-3.5 text-green-600" />}
+                              </div>
+                              <div className={`border rounded-lg p-3 ml-2 ${isInternal ? 'bg-amber-50/50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-800' : 'bg-gray-50 dark:bg-gray-800/50 border-gray-100 dark:border-gray-700'}`}>
+                                <div className="flex items-center justify-between">
+                                  <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                                    {isInternal ? 'Notatka wewnętrzna' : 'Komentarz'}
+                                  </span>
+                                  <span className="text-xs text-gray-400">{dayjs(comment.created_at).format('DD MMM YYYY, HH:mm')}</span>
+                                </div>
+                                <p className="mt-1 text-sm text-gray-700 dark:text-gray-300 line-clamp-2">{comment.content}</p>
+                                {comment.author_details && (
+                                  <p className="mt-1 text-xs text-gray-400">{comment.author_details.first_name} {comment.author_details.last_name}</p>
+                                )}
+                              </div>
+                            </div>
+                          );
+                        }
+                      })}
+                    </div>
+                  );
+                })()}
+              </div>
+            )}
+
+            {activeTab === 'work_log' && (
+              <div className="space-y-4">
+                {/* Formularz dodawania */}
+                {isTechnicianOrAdmin && (
+                  <div className="bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 rounded-xl p-4 space-y-3">
+                    <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 flex items-center gap-2">
+                      <FileClock className="w-4 h-4 text-blue-500" />
+                      Dodaj wpis
+                    </h4>
+                    <textarea
+                      value={newWorkLogDesc}
+                      onChange={(e) => setNewWorkLogDesc(e.target.value)}
+                      placeholder="Opis wykonanej pracy..."
+                      className="w-full border border-gray-200 rounded-lg p-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 min-h-[80px] resize-none bg-white dark:bg-gray-900 dark:border-gray-600"
+                    />
+                    <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-2">
+                        <Clock className="w-4 h-4 text-gray-400" />
+                        <input
+                          type="number"
+                          min="1"
+                          max="1440"
+                          value={newWorkLogMinutes}
+                          onChange={(e) => setNewWorkLogMinutes(e.target.value)}
+                          placeholder="Minuty"
+                          className="w-24 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-900 dark:border-gray-600"
+                        />
+                        <span className="text-xs text-gray-400">min</span>
+                      </div>
+                      <button
+                        onClick={handleAddWorkLog}
+                        disabled={isSubmittingWorkLog || !newWorkLogDesc.trim() || !newWorkLogMinutes || parseInt(newWorkLogMinutes) <= 0}
+                        className="ml-auto px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold rounded-lg transition-all shadow-sm disabled:opacity-50 flex items-center gap-1.5"
+                      >
+                        {isSubmittingWorkLog ? <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div> : <Plus className="w-4 h-4" />}
+                        Dodaj
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {/* Podsumowanie czasu */}
+                {workLogs.length > 0 && (
+                  <div className="flex items-center gap-2 px-3 py-2 bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800 rounded-lg">
+                    <Clock className="w-4 h-4 text-blue-500" />
+                    <span className="text-sm font-medium text-blue-700 dark:text-blue-300">
+                      Łączny czas: {(() => {
+                        const total = workLogs.reduce((sum, wl) => sum + wl.duration_minutes, 0);
+                        const h = Math.floor(total / 60);
+                        const m = total % 60;
+                        return h > 0 ? `${h}h ${m}min` : `${m}min`;
+                      })()}
+                    </span>
+                    <span className="text-xs text-blue-500 dark:text-blue-400">({workLogs.length} {workLogs.length === 1 ? 'wpis' : workLogs.length < 5 ? 'wpisy' : 'wpisów'})</span>
+                  </div>
+                )}
+
+                {/* Lista wpisów */}
+                {workLogs.length === 0 ? (
+                  <div className="text-center text-gray-500 text-sm py-8 italic border border-gray-100 rounded-xl bg-gray-50/50">
+                    Brak wpisów w rejestrze prac.
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {workLogs.map(wl => (
+                      <div key={wl.id} className="bg-gray-50 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-700 rounded-lg p-4">
+                        <div className="flex items-start justify-between gap-3">
+                          <p className="text-sm text-gray-800 dark:text-gray-200 flex-1">{wl.description}</p>
+                          <div className="flex items-center gap-1.5 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 px-2 py-1 rounded-md flex-shrink-0">
+                            <Clock className="w-3.5 h-3.5" />
+                            <span className="text-xs font-bold">
+                              {wl.duration_minutes >= 60 ? `${Math.floor(wl.duration_minutes / 60)}h ${wl.duration_minutes % 60}min` : `${wl.duration_minutes}min`}
+                            </span>
+                          </div>
+                        </div>
+                        <div className="mt-2 flex items-center gap-2 text-xs text-gray-400">
+                          {wl.author_details?.avatar ? (
+                            <img src={wl.author_details.avatar} alt="" className="w-4 h-4 rounded-full object-cover" />
+                          ) : (
+                            <div className="w-4 h-4 rounded-full bg-blue-100 flex items-center justify-center">
+                              <span className="text-[8px] font-bold text-blue-600">{wl.author_details?.first_name?.charAt(0)}</span>
+                            </div>
+                          )}
+                          <span>{wl.author_details?.first_name} {wl.author_details?.last_name}</span>
+                          <span>•</span>
+                          <span>{dayjs(wl.created_at).format('DD MMM YYYY, HH:mm')}</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             )}
           </div>

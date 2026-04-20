@@ -50,4 +50,26 @@ export interface Comment {
   comment_type: 'REPLY' | 'INTERNAL';
   attachments?: Attachment[];
   created_at: string;
-}
+}
+
+export interface TicketLog {
+  id: number;
+  ticket: number;
+  user: number | null;
+  user_details?: User;
+  action: 'CREATED' | 'STATUS_CHANGED' | 'TECHNICIAN_ASSIGNED' | 'TECHNICIAN_REMOVED' | 'PRIORITY_CHANGED' | 'CATEGORY_CHANGED' | 'CREATOR_CHANGED';
+  action_display: string;
+  old_value: string;
+  new_value: string;
+  created_at: string;
+}
+
+export interface WorkLog {
+  id: number;
+  ticket: number;
+  author: number;
+  author_details?: User;
+  description: string;
+  duration_minutes: number;
+  created_at: string;
+}

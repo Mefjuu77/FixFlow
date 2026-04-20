@@ -1,6 +1,6 @@
 import api from './axiosConfig';
 import { Category, TicketPayload } from '../types/ticket';
-import { Ticket, User, Comment, Attachment } from '../types';
+import { Ticket, User, Comment, Attachment, TicketLog, WorkLog } from '../types';
 
 export const ticketService = {
   getCategories: async (): Promise<Category[]> => {
@@ -68,6 +68,27 @@ export const ticketService = {
     files.forEach(f => formData.append('files', f));
     const response = await api.post<Attachment[]>(`tickets/${ticketId}/comments/${commentId}/attachments/`, formData, {
       headers: { 'Content-Type': 'multipart/form-data' }
+    });
+    return response.data;
+  },
+
+  // Pobiera logi systemowe dla zgłoszenia
+  getLogs: async (ticketId: string | number): Promise<TicketLog[]> => {
+    const response = await api.get<TicketLog[]>(`tickets/${ticketId}/logs/`);
+    return response.data;
+  },
+
+  // Pobiera wpisy rejestru prac
+  getWorkLogs: async (ticketId: string | number): Promise<WorkLog[]> => {
+    const response = await api.get<WorkLog[]>(`tickets/${ticketId}/work-logs/`);
+    return response.data;
+  },
+
+  // Dodaje wpis rejestru prac
+  addWorkLog: async (ticketId: string | number, description: string, duration_minutes: number): Promise<WorkLog> => {
+    const response = await api.post<WorkLog>(`tickets/${ticketId}/work-logs/`, {
+      description,
+      duration_minutes
     });
     return response.data;
   },
