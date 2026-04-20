@@ -1,4 +1,4 @@
-import React, { useContext, useEffect, useState } from 'react';
+import React, { useContext, useEffect, useState, useRef } from 'react';
 import { AuthContext } from '../context/AuthContext';
 import api from '../api/axiosConfig';
 import { Ticket } from '../types';
@@ -170,27 +170,59 @@ const HorizontalBar: React.FC<{ label: string; value: number; max: number; color
   const pct = max > 0 ? (value / max) * 100 : 0;
   const percentage = total && total > 0 ? Math.round((value / total) * 100) : null;
   const [isHovered, setIsHovered] = useState(false);
+  const tooltipRef = useRef<HTMLDivElement>(null);
+
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (tooltipRef.current) {
+      const rect = e.currentTarget.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      // Akceleracja sprzętowa transform zapobiega 'lagowaniu' układu (layout recalculation)
+      tooltipRef.current.style.transform = `translate3d(${x + 12}px, -50%, 0)`;
+    }
+  };
+
   return (
     <div
-      className={`flex items-center gap-3 px-2 py-1.5 rounded-lg transition-all duration-200 ${onClick ? 'cursor-pointer' : ''} ${isHovered ? 'bg-gray-50 dark:bg-gray-800/50 scale-[1.01]' : ''}`}
+      className={`flex items-center gap-3 px-2 py-1.5 rounded-lg transition-all duration-200 ${onClick ? 'cursor-pointer' : ''} ${isHovered ? 'bg-gray-50 dark:bg-gray-800/50' : ''}`}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
       onClick={onClick}
     >
       <div className="w-5 flex justify-center text-gray-400 flex-shrink-0">{icon}</div>
       <span className={`text-sm w-32 truncate font-medium transition-colors ${isHovered ? 'text-gray-900 dark:text-white' : 'text-gray-700 dark:text-gray-300'}`} title={label}>{label}</span>
-      <div className="flex-1 h-6 bg-gray-100 dark:bg-gray-700/50 rounded-md overflow-hidden relative">
+      <div
+        className="flex-1 h-6 bg-slate-100 dark:bg-slate-700 rounded-md relative flex items-center cursor-pointer"
+        onMouseMove={handleMouseMove}
+        onMouseLeave={() => { if (tooltipRef.current) tooltipRef.current.style.opacity = '0'; }}
+        onMouseEnter={(e) => {
+          if (tooltipRef.current) {
+            tooltipRef.current.style.opacity = '1';
+            handleMouseMove(e);
+          }
+        }}
+      >
         <div
-          className="h-full rounded-md flex items-center justify-end pr-2 transition-all duration-500 ease-out"
+          className="h-full rounded-md flex items-center justify-end pr-2 transition-all duration-500 ease-out pointer-events-none"
           style={{ width: `${Math.max(pct, value > 0 ? 8 : 0)}%`, backgroundColor: color, transform: isHovered ? 'scaleY(1.15)' : 'scaleY(1)', transformOrigin: 'bottom' }}
         >
           {value > 0 && (
             <span className="text-xs font-bold text-white drop-shadow-sm">{value}</span>
           )}
         </div>
+
+        {/* Tooltip ze śledzeniem kursora (bez setState dla wydajności) */}
+        {isHovered && total !== undefined && total > 0 && (
+          <div
+            ref={tooltipRef}
+            className="absolute top-1/2 left-0 bg-slate-900 dark:bg-slate-200 shadow-md rounded px-2 py-1 text-xs font-semibold text-white dark:text-slate-900 z-10 whitespace-nowrap pointer-events-none transition-opacity duration-150"
+            style={{ willChange: 'transform' }}
+          >
+            ({value}/{total} zgłoszeń)
+          </div>
+        )}
       </div>
       {percentage !== null && (
-        <span className={`text-xs font-semibold w-10 text-right transition-colors ${isHovered ? 'text-gray-900 dark:text-white' : 'text-gray-400'}`}>{percentage}%</span>
+        <span className={`text-xs font-semibold w-10 text-right transition-colors z-0 relative ${isHovered ? 'text-gray-900 dark:text-white' : 'text-gray-400'}`}>{percentage}%</span>
       )}
     </div>
   );
