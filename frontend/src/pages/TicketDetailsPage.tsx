@@ -348,43 +348,54 @@ const TicketDetailsPage: React.FC = () => {
             </span>
           </div>
           {isEditingTitle ? (
-            <div className="flex items-center gap-2 mb-6">
-              <input
-                type="text"
-                value={editTitle}
-                onChange={(e) => setEditTitle(e.target.value)}
-                className="flex-1 text-2xl font-semibold text-gray-900 border border-blue-300 rounded-lg px-3 py-1 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-900 dark:border-gray-600"
-                autoFocus
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
-                    if (editTitle.trim().length >= 5) {
-                      updateTicketField({ title: editTitle.trim() });
+            <div className="mb-6">
+              <div className="flex items-center gap-2">
+                <input
+                  type="text"
+                  value={editTitle}
+                  onChange={(e) => setEditTitle(e.target.value)}
+                  maxLength={200}
+                  className="flex-1 text-2xl font-semibold text-gray-900 border border-blue-300 rounded-lg px-3 py-1 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-900 dark:border-gray-600"
+                  autoFocus
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      const t = editTitle.trim();
+                      if (t.length >= 5 && t.length <= 200) {
+                        updateTicketField({ title: t });
+                        setIsEditingTitle(false);
+                      }
+                    } else if (e.key === 'Escape') {
                       setIsEditingTitle(false);
                     }
-                  } else if (e.key === 'Escape') {
-                    setIsEditingTitle(false);
-                  }
-                }}
-              />
-              <button
-                onClick={() => {
-                  if (editTitle.trim().length >= 5) {
-                    updateTicketField({ title: editTitle.trim() });
-                    setIsEditingTitle(false);
-                  }
-                }}
-                className="p-2 text-green-600 hover:bg-green-50 rounded-lg transition-colors"
-                title="Zapisz"
-              >
-                <Check className="w-5 h-5" />
-              </button>
-              <button
-                onClick={() => setIsEditingTitle(false)}
-                className="p-2 text-gray-400 hover:bg-gray-100 rounded-lg transition-colors"
-                title="Anuluj"
-              >
-                <X className="w-5 h-5" />
-              </button>
+                  }}
+                />
+                <button
+                  onClick={() => {
+                    const t = editTitle.trim();
+                    if (t.length >= 5 && t.length <= 200) {
+                      updateTicketField({ title: t });
+                      setIsEditingTitle(false);
+                    }
+                  }}
+                  className="p-2 text-green-600 hover:bg-green-50 rounded-lg transition-colors"
+                  title="Zapisz"
+                >
+                  <Check className="w-5 h-5" />
+                </button>
+                <button
+                  onClick={() => setIsEditingTitle(false)}
+                  className="p-2 text-gray-400 hover:bg-gray-100 rounded-lg transition-colors"
+                  title="Anuluj"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+              <div className="flex items-center justify-between mt-1 px-1">
+                {editTitle.trim().length < 5 ? (
+                  <span className="text-xs text-red-500">Min. 5 znaków (obecnie {editTitle.trim().length})</span>
+                ) : <span />}
+                <span className={`text-xs ${editTitle.length > 180 ? 'text-amber-500' : 'text-gray-400'}`}>{editTitle.length}/200</span>
+              </div>
             </div>
           ) : (
             <div className="flex items-center gap-2 mb-6 group">
