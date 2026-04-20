@@ -108,6 +108,9 @@ class TicketLog(models.Model):
         PRIORITY_CHANGED = 'PRIORITY_CHANGED', 'Zmieniono priorytet'
         CATEGORY_CHANGED = 'CATEGORY_CHANGED', 'Zmieniono kategorię'
         CREATOR_CHANGED = 'CREATOR_CHANGED', 'Zmieniono zgłaszającego'
+        ATTACHMENT_ADDED = 'ATTACHMENT_ADDED', 'Dodano załącznik'
+        TITLE_CHANGED = 'TITLE_CHANGED', 'Zmieniono tytuł'
+        DESCRIPTION_CHANGED = 'DESCRIPTION_CHANGED', 'Zmieniono opis'
 
     ticket = models.ForeignKey(Ticket, on_delete=models.CASCADE, related_name='logs')
     user = models.ForeignKey(

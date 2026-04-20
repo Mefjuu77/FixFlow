@@ -57,7 +57,7 @@ export interface TicketLog {
   ticket: number;
   user: number | null;
   user_details?: User;
-  action: 'CREATED' | 'STATUS_CHANGED' | 'TECHNICIAN_ASSIGNED' | 'TECHNICIAN_REMOVED' | 'PRIORITY_CHANGED' | 'CATEGORY_CHANGED' | 'CREATOR_CHANGED';
+  action: 'CREATED' | 'STATUS_CHANGED' | 'TECHNICIAN_ASSIGNED' | 'TECHNICIAN_REMOVED' | 'PRIORITY_CHANGED' | 'CATEGORY_CHANGED' | 'CREATOR_CHANGED' | 'ATTACHMENT_ADDED' | 'TITLE_CHANGED' | 'DESCRIPTION_CHANGED';
   action_display: string;
   old_value: string;
   new_value: string;
