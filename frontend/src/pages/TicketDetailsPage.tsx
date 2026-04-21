@@ -11,7 +11,7 @@ import {
   ArrowLeft,
   User,
   ChevronDown,
-  Cpu,
+  Monitor,
   AppWindow,
   Globe,
   KeyRound,
@@ -351,7 +351,7 @@ const TicketDetailsPage: React.FC = () => {
   const getCategoryIcon = (name: string) => {
     if (!name) return <Shapes className="w-3.5 h-3.5" />;
     const lowerName = name.toLowerCase();
-    if (lowerName.includes('sprzęt')) return <Cpu className="w-3.5 h-3.5" />;
+    if (lowerName.includes('sprzęt')) return <Monitor className="w-3.5 h-3.5" />;
     if (lowerName.includes('oprogramowanie')) return <AppWindow className="w-3.5 h-3.5" />;
     if (lowerName.includes('sieć')) return <Globe className="w-3.5 h-3.5" />;
     if (lowerName.includes('dostęp')) return <KeyRound className="w-3.5 h-3.5" />;

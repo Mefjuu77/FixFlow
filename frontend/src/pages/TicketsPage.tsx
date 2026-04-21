@@ -5,7 +5,7 @@ import api from '../api/axiosConfig';
 import { ticketService } from '../api/ticketService';
 import { Ticket, User } from '../types';
 import dayjs from 'dayjs';
-import { PlusCircle, Search, ChevronDown, ChevronUp, AlertTriangle, Minus, ArrowUp, ArrowDown, Folder, Tag, Filter, Users, UserCheck, UserMinus, Cpu, AppWindow, Globe, KeyRound, Shapes, Circle, CheckCircle2, XCircle, Loader2, ChevronsUp, Equal, ChevronsDown } from 'lucide-react';
+import { PlusCircle, Search, ChevronDown, ChevronUp, AlertTriangle, Minus, ArrowUp, ArrowDown, Folder, Tag, Filter, Users, UserCheck, UserMinus, Monitor, AppWindow, Globe, KeyRound, Shapes, Circle, CheckCircle2, XCircle, Loader2, ChevronsUp, Equal, ChevronsDown } from 'lucide-react';
 import useTitle from '../hooks/useTitle';
 
 type SortField = 'id' | 'title' | 'category_name' | 'priority' | 'creator' | 'technician' | 'status' | 'created_at';
@@ -98,7 +98,7 @@ const PRIORITY_ICONS: Record<string, React.ReactNode> = {
 
 const getCategoryIcon = (name: string) => {
   const lowerName = name.toLowerCase();
-  if (lowerName.includes('sprzęt')) return <Cpu className="w-4 h-4 text-gray-500" />;
+  if (lowerName.includes('sprzęt')) return <Monitor className="w-4 h-4 text-gray-500" />;
   if (lowerName.includes('oprogramowanie')) return <AppWindow className="w-4 h-4 text-gray-500" />;
   if (lowerName.includes('sieć')) return <Globe className="w-4 h-4 text-gray-500" />;
   if (lowerName.includes('dostęp')) return <KeyRound className="w-4 h-4 text-gray-500" />;
