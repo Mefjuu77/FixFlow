@@ -38,7 +38,8 @@ import {
   Pencil,
   Check,
   FolderOpen,
-  FileClock
+  FileClock,
+  Trash2
 } from 'lucide-react';
 
 const TicketDetailsPage: React.FC = () => {
@@ -81,6 +82,8 @@ const TicketDetailsPage: React.FC = () => {
   const [editTitle, setEditTitle] = useState('');
   const [isEditingDescription, setIsEditingDescription] = useState(false);
   const [editDescription, setEditDescription] = useState('');
+  const [attachmentToDelete, setAttachmentToDelete] = useState<{ id: number; filename: string } | null>(null);
+  const [isDeletingAttachment, setIsDeletingAttachment] = useState(false);
 
   const priorityDropdownRef = useRef<HTMLDivElement>(null);
   const categoryDropdownRef = useRef<HTMLDivElement>(null);
@@ -229,6 +232,26 @@ const TicketDetailsPage: React.FC = () => {
     }
   };
 
+  const handleDeleteAttachment = (attachmentId: number, filename: string) => {
+    setAttachmentToDelete({ id: attachmentId, filename });
+  };
+
+  const confirmDeleteAttachment = async () => {
+    if (!attachmentToDelete) return;
+    setIsDeletingAttachment(true);
+    try {
+      await ticketService.deleteAttachment(id!, attachmentToDelete.id);
+      await fetchTicket();
+      fetchLogs();
+      setAttachmentToDelete(null);
+    } catch (err) {
+      console.error('Błąd usuwania załącznika:', err);
+      alert('Błąd podczas usuwania załącznika.');
+    } finally {
+      setIsDeletingAttachment(false);
+    }
+  };
+
   const handleAddComment = async () => {
     setCommentError('');
     const trimmed = newCommentText.trim();
@@ -337,7 +360,7 @@ const TicketDetailsPage: React.FC = () => {
 
       <div className="grid grid-cols-1 lg:grid-cols-[1fr_410px] gap-8">
         {/* Lewa kolumna: Treść zgłoszenia */}
-        <div className="space-y-6 min-w-0">
+        <div className="space-y-6 min-w-0 lg:max-h-[calc(100vh-100px)] lg:overflow-y-auto lg:pl-1 lg:pr-3" style={{ scrollbarWidth: 'auto', scrollbarColor: '#94a3b8 transparent' }}>
           <div className="flex items-center gap-3 mb-2">
             <span className="text-sm font-semibold text-gray-500 hover:text-blue-600 hover:underline cursor-pointer transition-colors">Zgłoszenie #{ticket.id}</span>
             <span className={`px-2 py-0.5 rounded-md text-[10px] font-bold border uppercase tracking-wider ${statusColors[ticket.status]}`}>
@@ -562,6 +585,15 @@ const TicketDetailsPage: React.FC = () => {
                               className="group relative flex-shrink-0 w-[220px] rounded-xl overflow-hidden border border-gray-200 hover:border-blue-400 bg-gray-50 cursor-pointer transition-all hover:shadow-lg"
                               onClick={() => setLightboxUrl(att.url)}
                             >
+                              {isTechnicianOrAdmin && (
+                                <button
+                                  onClick={(e) => { e.stopPropagation(); handleDeleteAttachment(att.id, att.filename); }}
+                                  className="absolute top-2 right-2 z-10 p-1.5 bg-red-500/80 hover:bg-red-600 text-white rounded-md opacity-60 group-hover:opacity-100 transition-all shadow-md scale-95 group-hover:scale-100"
+                                  title="Usuń załącznik"
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </button>
+                              )}
                               <div className="aspect-[4/3] overflow-hidden">
                                 <img
                                   src={att.url}
@@ -583,17 +615,20 @@ const TicketDetailsPage: React.FC = () => {
                   {ticket.attachments.filter(att => !att.url?.toLowerCase().match(/\.(jpeg|jpg|gif|png|webp)$/)).length > 0 && (
                     <div className="flex flex-wrap gap-2">
                       {ticket.attachments.filter(att => !att.url?.toLowerCase().match(/\.(jpeg|jpg|gif|png|webp)$/)).map(att => (
-                        <a
-                          key={att.id}
-                          href={att.url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="flex items-center gap-2 p-2 pr-3 bg-gray-50 hover:bg-blue-50 border border-gray-200 hover:border-blue-300 rounded-lg transition-colors group"
-                        >
+                        <div key={att.id} className="flex items-center gap-2 p-2 pr-3 bg-gray-50 hover:bg-blue-50 border border-gray-200 hover:border-blue-300 rounded-lg transition-colors group">
                           <FileText className="w-4 h-4 text-gray-400" />
-                          <span className="text-sm font-medium text-gray-700 group-hover:text-blue-700 truncate max-w-[200px]">{att.filename}</span>
+                          <a href={att.url} target="_blank" rel="noopener noreferrer" className="text-sm font-medium text-gray-700 group-hover:text-blue-700 truncate max-w-[200px]">{att.filename}</a>
                           <Download className="w-3.5 h-3.5 text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity ml-1" />
-                        </a>
+                          {isTechnicianOrAdmin && (
+                            <button
+                              onClick={() => handleDeleteAttachment(att.id, att.filename)}
+                              className="p-1 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded transition-all opacity-0 group-hover:opacity-100 ml-auto"
+                              title="Usuń załącznik"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          )}
+                        </div>
                       ))}
                     </div>
                   )}
@@ -883,6 +918,7 @@ const TicketDetailsPage: React.FC = () => {
                         ATTACHMENT_ADDED: <Paperclip className="w-3.5 h-3.5 text-teal-600" />,
                         TITLE_CHANGED: <Pencil className="w-3.5 h-3.5 text-orange-500" />,
                         DESCRIPTION_CHANGED: <Pencil className="w-3.5 h-3.5 text-rose-500" />,
+                        ATTACHMENT_DELETED: <Trash2 className="w-3.5 h-3.5 text-red-500" />,
                       };
                       const bgMap: Record<string, string> = {
                         CREATED: 'bg-green-100 dark:bg-green-900/40',
@@ -895,6 +931,7 @@ const TicketDetailsPage: React.FC = () => {
                         ATTACHMENT_ADDED: 'bg-teal-100 dark:bg-teal-900/40',
                         TITLE_CHANGED: 'bg-orange-100 dark:bg-orange-900/40',
                         DESCRIPTION_CHANGED: 'bg-rose-100 dark:bg-rose-900/40',
+                        ATTACHMENT_DELETED: 'bg-red-100 dark:bg-red-900/40',
                       };
 
                       const statusLabels: Record<string, string> = {
@@ -991,6 +1028,7 @@ const TicketDetailsPage: React.FC = () => {
                             ATTACHMENT_ADDED: <Paperclip className="w-3.5 h-3.5 text-teal-600" />,
                             TITLE_CHANGED: <Pencil className="w-3.5 h-3.5 text-orange-500" />,
                             DESCRIPTION_CHANGED: <Pencil className="w-3.5 h-3.5 text-rose-500" />,
+                            ATTACHMENT_DELETED: <Trash2 className="w-3.5 h-3.5 text-red-500" />,
                           };
                           const historyBgMap: Record<string, string> = {
                             CREATED: 'bg-green-100 dark:bg-green-900/40',
@@ -1003,6 +1041,7 @@ const TicketDetailsPage: React.FC = () => {
                             ATTACHMENT_ADDED: 'bg-teal-100 dark:bg-teal-900/40',
                             TITLE_CHANGED: 'bg-orange-100 dark:bg-orange-900/40',
                             DESCRIPTION_CHANGED: 'bg-rose-100 dark:bg-rose-900/40',
+                            ATTACHMENT_DELETED: 'bg-red-100 dark:bg-red-900/40',
                           };
 
                           return (
@@ -1085,6 +1124,12 @@ const TicketDetailsPage: React.FC = () => {
                                 {log.action === 'DESCRIPTION_CHANGED' && (
                                   <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
                                     <span className="font-medium text-gray-700 dark:text-gray-300">{userName}</span> zmienił(a) opis zgłoszenia
+                                  </p>
+                                )}
+                                {log.action === 'ATTACHMENT_DELETED' && (
+                                  <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                                    <span className="font-medium text-gray-700 dark:text-gray-300">{userName}</span> usunął(a) załącznik:{' '}
+                                    <span className="bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 px-1.5 py-0.5 rounded font-medium line-through">{log.old_value}</span>
                                   </p>
                                 )}
 
@@ -1242,7 +1287,7 @@ const TicketDetailsPage: React.FC = () => {
         </div>
 
         {/* Prawa kolumna: Metadane i Status */}
-        <div className="space-y-4">
+        <div className="space-y-4 lg:sticky lg:top-6 lg:self-start">
           {/* Akcje u góry */}
           <div className="flex items-center gap-2">
             {isTechnicianOrAdmin && (
@@ -1685,6 +1730,51 @@ const TicketDetailsPage: React.FC = () => {
                 title="Zamknij"
               >
                 <X className="w-5 h-5" />
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Attachment Modal */}
+      {attachmentToDelete && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in">
+          <div className="bg-[#2A2B2D] border border-gray-700 rounded-xl shadow-2xl w-full max-w-[420px] overflow-hidden flex flex-col">
+            <div className="p-5">
+              <div className="flex items-start justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="text-red-500">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                      <path d="M12 2L22 19H2L12 2ZM11 15V17H13V15H11ZM11 10V14H13V10H11Z" />
+                    </svg>
+                  </div>
+                  <h3 className="text-xl font-semibold text-white">Czy usunąć ten załącznik?</h3>
+                </div>
+                <button
+                  onClick={() => setAttachmentToDelete(null)}
+                  className="p-1 text-gray-400 hover:text-white rounded-lg transition-colors bg-[#3A3B3D] hover:bg-[#4A4B4D] border border-gray-600"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+              <p className="mt-4 text-[15px] text-gray-300">
+                Po usunięciu nie będzie można go przywrócić.
+              </p>
+            </div>
+            <div className="p-4 flex justify-end gap-3 items-center">
+              <button
+                onClick={confirmDeleteAttachment}
+                disabled={isDeletingAttachment}
+                className="px-4 py-1.5 bg-[#FF7369] hover:bg-[#FF6359] text-[#2A2B2D] font-medium rounded-sm transition-colors flex items-center disabled:opacity-50 min-w-[60px] justify-center"
+              >
+                {isDeletingAttachment ? <div className="w-4 h-4 border-2 border-[#2A2B2D] border-t-transparent rounded-full animate-spin"></div> : 'OK'}
+              </button>
+              <button
+                onClick={() => setAttachmentToDelete(null)}
+                disabled={isDeletingAttachment}
+                className="px-4 py-1.5 text-gray-300 hover:text-white hover:bg-white/5 rounded-sm transition-colors font-medium cursor-pointer"
+              >
+                Anuluj
               </button>
             </div>
           </div>

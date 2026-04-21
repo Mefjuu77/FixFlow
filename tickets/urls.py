@@ -1,6 +1,6 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
-from .views import CategoryViewSet, TicketViewSet, CommentListCreateView, TicketAttachmentView, CommentAttachmentView, TicketLogListView, WorkLogListCreateView
+from .views import CategoryViewSet, TicketViewSet, CommentListCreateView, TicketAttachmentView, CommentAttachmentView, TicketLogListView, WorkLogListCreateView, AttachmentDeleteView
 
 router = DefaultRouter()
 router.register(r'categories', CategoryViewSet)
@@ -10,6 +10,7 @@ urlpatterns = [
     path('', include(router.urls)),
     path('tickets/<int:ticket_id>/comments/', CommentListCreateView.as_view(), name='ticket-comments'),
     path('tickets/<int:ticket_id>/attachments/', TicketAttachmentView.as_view(), name='ticket-attachments'),
+    path('tickets/<int:ticket_id>/attachments/<int:attachment_id>/', AttachmentDeleteView.as_view(), name='attachment-delete'),
     path('tickets/<int:ticket_id>/comments/<int:comment_id>/attachments/', CommentAttachmentView.as_view(), name='comment-attachments'),
     path('tickets/<int:ticket_id>/logs/', TicketLogListView.as_view(), name='ticket-logs'),
     path('tickets/<int:ticket_id>/work-logs/', WorkLogListCreateView.as_view(), name='ticket-work-logs'),
