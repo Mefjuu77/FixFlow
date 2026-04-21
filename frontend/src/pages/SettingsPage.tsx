@@ -15,7 +15,6 @@ import {
   Loader2,
   Sun,
   Moon,
-  Monitor,
   Palette,
 } from 'lucide-react';
 
@@ -139,11 +138,10 @@ const SettingsPage: React.FC = () => {
               <button
                 key={tab.id}
                 onClick={() => { setActiveTab(tab.id as any); setSuccessMsg(null); setErrorMsg(null); }}
-                className={`flex items-center gap-2.5 w-full px-4 py-2.5 rounded-xl text-sm font-medium transition-all ${
-                  activeTab === tab.id
+                className={`flex items-center gap-2.5 w-full px-4 py-2.5 rounded-xl text-sm font-medium transition-all ${activeTab === tab.id
                     ? 'bg-blue-50 text-blue-700 shadow-sm'
                     : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
-                }`}
+                  }`}
               >
                 {tab.icon}
                 {tab.label}
@@ -309,11 +307,10 @@ const SettingsPage: React.FC = () => {
                   {/* Light mode */}
                   <button
                     onClick={() => { if (themeContext?.isDark) themeContext.toggleTheme(); }}
-                    className={`relative flex flex-col items-center gap-3 p-6 rounded-2xl border-2 transition-all ${
-                      !themeContext?.isDark
+                    className={`relative flex flex-col items-center gap-3 p-6 rounded-2xl border-2 transition-all ${!themeContext?.isDark
                         ? 'border-blue-500 bg-blue-50 shadow-md'
                         : 'border-gray-200 hover:border-gray-300 hover:shadow-sm'
-                    }`}
+                      }`}
                   >
                     <div className="w-16 h-16 rounded-2xl bg-white border border-gray-200 flex items-center justify-center shadow-sm">
                       <Sun className="w-8 h-8 text-amber-500" />
@@ -332,11 +329,10 @@ const SettingsPage: React.FC = () => {
                   {/* Dark mode */}
                   <button
                     onClick={() => { if (!themeContext?.isDark) themeContext?.toggleTheme(); }}
-                    className={`relative flex flex-col items-center gap-3 p-6 rounded-2xl border-2 transition-all ${
-                      themeContext?.isDark
+                    className={`relative flex flex-col items-center gap-3 p-6 rounded-2xl border-2 transition-all ${themeContext?.isDark
                         ? 'border-blue-500 bg-blue-50 shadow-md'
                         : 'border-gray-200 hover:border-gray-300 hover:shadow-sm'
-                    }`}
+                      }`}
                   >
                     <div className="w-16 h-16 rounded-2xl bg-gray-900 border border-gray-700 flex items-center justify-center shadow-sm">
                       <Moon className="w-8 h-8 text-blue-400" />
