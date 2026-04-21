@@ -16,7 +16,6 @@ import {
   ChevronsUp,
   Equal,
   ChevronsDown,
-  ChevronRight,
   Paperclip,
   Check,
   X
