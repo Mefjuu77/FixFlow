@@ -36,6 +36,7 @@ const CreateTicketPage: React.FC = () => {
   const [error, setError] = useState('');
   const [fieldErrors, setFieldErrors] = useState<{ title?: string; description?: string }>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSuccess, setIsSuccess] = useState(false);
   const [activeDropdown, setActiveDropdown] = useState<'category' | 'priority' | null>(null);
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [attachmentErrors, setAttachmentErrors] = useState<string[]>([]);
@@ -150,7 +151,10 @@ const CreateTicketPage: React.FC = () => {
           console.error('Błąd uploadu załączników:', uploadErr);
         }
       }
-      navigate('/tickets');
+      setIsSuccess(true);
+      setTimeout(() => {
+        navigate('/tickets');
+      }, 1200);
     } catch (err: any) {
       // Próba odczytania błędów walidacji z backendu
       if (err?.response?.data) {
@@ -458,12 +462,18 @@ const CreateTicketPage: React.FC = () => {
 
           <button
             type="submit"
-            disabled={isSubmitting}
-            className="w-full flex items-center justify-center py-4 bg-blue-600 text-white font-bold rounded-xl shadow-lg shadow-blue-100 hover:bg-blue-700 active:scale-95 transition-all disabled:opacity-70"
+            disabled={isSubmitting || isSuccess}
+            className={`w-full flex items-center justify-center py-4 text-white font-bold rounded-xl shadow-lg active:scale-95 transition-all disabled:opacity-80 ${isSuccess ? 'bg-green-600 hover:bg-green-700 shadow-green-100/50 dark:shadow-none' : 'bg-blue-600 hover:bg-blue-700 shadow-blue-100 dark:shadow-none'}`}
           >
-            {isSubmitting ? (
-              <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-            ) : (
+            {isSubmitting && !isSuccess && (
+              <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+            )}
+            {isSuccess && (
+              <>
+                <Check className="w-5 h-5 mr-2" /> Sukces
+              </>
+            )}
+            {!isSubmitting && !isSuccess && (
               <>
                 <Send className="w-5 h-5 mr-2" /> Utwórz zgłoszenie
               </>

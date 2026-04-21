@@ -1307,28 +1307,28 @@ const TicketDetailsPage: React.FC = () => {
                 </button>
 
                 {isStatusMenuOpen && (
-                  <div className="absolute left-0 z-50 w-48 mt-2 bg-white border border-gray-100 rounded-xl shadow-xl py-2 animate-in fade-in zoom-in-95 duration-100">
+                  <div className="absolute left-0 z-50 w-48 mt-2 bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-600 rounded-xl shadow-xl dark:shadow-[0_10px_40px_rgba(0,0,0,0.4)] py-2 animate-in fade-in zoom-in-95 duration-100">
                     <button
                       onClick={() => openTransitionModal('NOWE')}
-                      className="w-full text-left px-4 py-2.5 hover:bg-blue-50 text-gray-700 hover:text-blue-700 transition-colors text-sm font-medium"
+                      className="w-full text-left px-4 py-2.5 hover:bg-blue-50 dark:hover:bg-gray-700/80 text-gray-700 dark:text-gray-300 hover:text-blue-700 dark:hover:text-blue-400 transition-colors text-sm font-medium"
                     >
                       Nowe
                     </button>
                     <button
                       onClick={() => openTransitionModal('W_TOKU')}
-                      className="w-full text-left px-4 py-2.5 hover:bg-blue-50 text-gray-700 hover:text-blue-700 transition-colors text-sm font-medium"
+                      className="w-full text-left px-4 py-2.5 hover:bg-blue-50 dark:hover:bg-gray-700/80 text-gray-700 dark:text-gray-300 hover:text-blue-700 dark:hover:text-blue-400 transition-colors text-sm font-medium"
                     >
                       W toku
                     </button>
                     <button
                       onClick={() => openTransitionModal('ROZWIAZANE')}
-                      className="w-full text-left px-4 py-2.5 hover:bg-blue-50 text-gray-700 hover:text-blue-700 transition-colors text-sm font-medium"
+                      className="w-full text-left px-4 py-2.5 hover:bg-blue-50 dark:hover:bg-gray-700/80 text-gray-700 dark:text-gray-300 hover:text-blue-700 dark:hover:text-blue-400 transition-colors text-sm font-medium"
                     >
                       Rozwiązane
                     </button>
                     <button
                       onClick={() => openTransitionModal('ZAMKNIETE')}
-                      className="w-full text-left px-4 py-2.5 hover:bg-red-50 text-gray-700 hover:text-red-700 transition-colors text-sm font-medium"
+                      className="w-full text-left px-4 py-2.5 hover:bg-blue-50 dark:hover:bg-gray-700/80 text-gray-700 dark:text-gray-300 hover:text-blue-700 dark:hover:text-blue-400 transition-colors text-sm font-medium"
                     >
                       Zamknięte
                     </button>
@@ -1685,20 +1685,19 @@ const TicketDetailsPage: React.FC = () => {
               <button
                 onClick={handleSubmitTransition}
                 disabled={isSubmittingTransition || isTransitionSuccess}
-                className={`px-5 py-2 text-white text-sm font-bold rounded-md shadow-sm transition-all disabled:opacity-70 flex items-center gap-2 ${
-                  isTransitionSuccess ? 'bg-green-600 hover:bg-green-700' : 'bg-blue-600 hover:bg-blue-700'
-                }`}
+                className={`px-5 py-2 text-white text-sm font-bold rounded-md shadow-sm transition-all disabled:opacity-70 flex items-center gap-2 ${isTransitionSuccess ? 'bg-green-600 hover:bg-green-700' : 'bg-blue-600 hover:bg-blue-700'
+                  }`}
               >
                 {isSubmittingTransition && !isTransitionSuccess && (
                   <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
                 )}
                 {isTransitionSuccess && <Check className="w-4 h-4" />}
-                
+
                 {isTransitionSuccess ? 'Sukces' : (
                   transitionModalConfig.targetStatus === 'W_TOKU' ? 'W toku' :
-                  transitionModalConfig.targetStatus === 'NOWE' ? 'Nowe' :
-                    transitionModalConfig.targetStatus === 'ROZWIAZANE' ? 'Rozwiązane' :
-                      transitionModalConfig.targetStatus === 'ZAMKNIETE' ? 'Zamknięte' : transitionModalConfig.targetStatus
+                    transitionModalConfig.targetStatus === 'NOWE' ? 'Nowe' :
+                      transitionModalConfig.targetStatus === 'ROZWIAZANE' ? 'Rozwiązane' :
+                        transitionModalConfig.targetStatus === 'ZAMKNIETE' ? 'Zamknięte' : transitionModalConfig.targetStatus
                 )}
               </button>
             </div>
