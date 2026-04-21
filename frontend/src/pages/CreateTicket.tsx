@@ -7,7 +7,7 @@ import {
   ArrowLeft,
   AlertCircle,
   FileText,
-  Cpu,
+  Monitor,
   AppWindow,
   Globe,
   KeyRound,
@@ -85,7 +85,7 @@ const CreateTicketPage: React.FC = () => {
 
   const getCategoryIcon = (name: string) => {
     const lowerName = name.toLowerCase();
-    if (lowerName.includes('sprzęt')) return <Cpu className="w-4 h-4" />;
+    if (lowerName.includes('sprzęt')) return <Monitor className="w-4 h-4" />;
     if (lowerName.includes('oprogramowanie')) return <AppWindow className="w-4 h-4" />;
     if (lowerName.includes('sieć')) return <Globe className="w-4 h-4" />;
     if (lowerName.includes('dostęp')) return <KeyRound className="w-4 h-4" />;

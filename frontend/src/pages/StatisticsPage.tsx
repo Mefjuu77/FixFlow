@@ -9,7 +9,7 @@ import {
   ArrowUpRight,
   Lightbulb,
   Users as UsersIcon,
-  Cpu,
+  Monitor,
   AppWindow,
   Globe,
   KeyRound,
@@ -21,7 +21,7 @@ dayjs.locale('pl');
 
 const getCategoryIcon = (name: string) => {
   const lowerName = name.toLowerCase();
-  if (lowerName.includes('sprzęt')) return <Cpu className="w-4 h-4" />;
+  if (lowerName.includes('sprzęt')) return <Monitor className="w-4 h-4" />;
   if (lowerName.includes('oprogramowanie')) return <AppWindow className="w-4 h-4" />;
   if (lowerName.includes('sieć')) return <Globe className="w-4 h-4" />;
   if (lowerName.includes('dostęp')) return <KeyRound className="w-4 h-4" />;
