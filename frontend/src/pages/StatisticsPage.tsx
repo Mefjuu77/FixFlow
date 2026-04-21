@@ -56,7 +56,7 @@ const DonutChart: React.FC<{ segments: DonutSegment[]; total: number; filterType
   let accumulated = 0;
 
   return (
-    <div className="flex items-center justify-between w-full">
+    <div className="flex items-center justify-center gap-8 w-full">
       <div className="relative flex-shrink-0" style={{ width: size + 16, height: size + 16 }}>
         <svg
           width={size + 16} height={size + 16} viewBox={`-8 -8 ${size + 16} ${size + 16}`}
@@ -125,7 +125,7 @@ const DonutChart: React.FC<{ segments: DonutSegment[]; total: number; filterType
         </div>
       </div>
 
-      <div className="space-y-2 ml-auto">
+      <div className="space-y-2">
         {segments.map((seg, i) => {
           const isActive = hovered === i;
           return (
