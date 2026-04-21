@@ -71,6 +71,7 @@ const TicketDetailsPage: React.FC = () => {
   const [transitionCommentType, setTransitionCommentType] = useState<'reply' | 'internal'>('reply');
   const [transitionCommentText, setTransitionCommentText] = useState('');
   const [isSubmittingTransition, setIsSubmittingTransition] = useState(false);
+  const [isTransitionSuccess, setIsTransitionSuccess] = useState(false);
   const [availableTechnicians, setAvailableTechnicians] = useState<UserType[]>([]);
   const [allUsers, setAllUsers] = useState<UserType[]>([]);
   const [isEditingCreator, setIsEditingCreator] = useState(false);
@@ -299,11 +300,13 @@ const TicketDetailsPage: React.FC = () => {
     setTransitionCommentType('reply');
     setTransitionCommentText('');
     setIsStatusMenuOpen(false);
+    setIsTransitionSuccess(false);
   };
 
   const handleSubmitTransition = async () => {
     if (!ticket || !transitionModalConfig.targetStatus) return;
     setIsSubmittingTransition(true);
+    setIsTransitionSuccess(false);
     try {
       const updates: Partial<Ticket> = {
         status: transitionModalConfig.targetStatus,
@@ -313,15 +316,18 @@ const TicketDetailsPage: React.FC = () => {
       const updated = await ticketService.updateTicket(ticket.id, updates);
       setTicket(updated);
 
-      // Jeśli wpisano komentarz, dodajemy go do zgłoszenia
       if (transitionCommentText.trim()) {
         const commentType = transitionCommentType === 'internal' ? 'INTERNAL' : 'REPLY';
         await ticketService.addComment(ticket.id, transitionCommentText.trim(), commentType);
-        await fetchComments(); // Odświeżamy listę komentarzy w tle
+        await fetchComments();
       }
 
-      setTransitionModalConfig({ isOpen: false, targetStatus: null });
       fetchLogs();
+      setIsTransitionSuccess(true);
+      setTimeout(() => {
+        setTransitionModalConfig({ isOpen: false, targetStatus: null });
+        setIsTransitionSuccess(false);
+      }, 1200);
     } catch (err) {
       console.error('Błąd podczas zmiany statusu/tworzenia komentarza', err);
       alert('Błąd podczas aktualizacji zgłoszenia.');
@@ -1587,7 +1593,7 @@ const TicketDetailsPage: React.FC = () => {
                       transitionModalConfig.targetStatus === 'ZAMKNIETE' ? 'Zamknięte' : transitionModalConfig.targetStatus}
               </h2>
               <button
-                onClick={() => setTransitionModalConfig({ isOpen: false, targetStatus: null })}
+                onClick={() => { setTransitionModalConfig({ isOpen: false, targetStatus: null }); setIsTransitionSuccess(false); }}
                 className="text-gray-400 hover:text-gray-600 transition-colors p-1"
               >
                 <X className="w-5 h-5" />
@@ -1670,21 +1676,30 @@ const TicketDetailsPage: React.FC = () => {
 
             <div className="px-6 py-4 bg-gray-50 border-t border-gray-100 flex items-center justify-end gap-3 rounded-b-xl">
               <button
-                onClick={() => setTransitionModalConfig({ isOpen: false, targetStatus: null })}
+                onClick={() => { setTransitionModalConfig({ isOpen: false, targetStatus: null }); setIsTransitionSuccess(false); }}
                 className="px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-800 transition-colors"
-                disabled={isSubmittingTransition}
+                disabled={isSubmittingTransition || isTransitionSuccess}
               >
                 Anuluj
               </button>
               <button
                 onClick={handleSubmitTransition}
-                disabled={isSubmittingTransition}
-                className="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold rounded-md shadow-sm transition-all disabled:opacity-70 flex items-center"
+                disabled={isSubmittingTransition || isTransitionSuccess}
+                className={`px-5 py-2 text-white text-sm font-bold rounded-md shadow-sm transition-all disabled:opacity-70 flex items-center gap-2 ${
+                  isTransitionSuccess ? 'bg-green-600 hover:bg-green-700' : 'bg-blue-600 hover:bg-blue-700'
+                }`}
               >
-                {transitionModalConfig.targetStatus === 'W_TOKU' ? 'W toku' :
+                {isSubmittingTransition && !isTransitionSuccess && (
+                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                )}
+                {isTransitionSuccess && <Check className="w-4 h-4" />}
+                
+                {isTransitionSuccess ? 'Sukces' : (
+                  transitionModalConfig.targetStatus === 'W_TOKU' ? 'W toku' :
                   transitionModalConfig.targetStatus === 'NOWE' ? 'Nowe' :
                     transitionModalConfig.targetStatus === 'ROZWIAZANE' ? 'Rozwiązane' :
-                      transitionModalConfig.targetStatus === 'ZAMKNIETE' ? 'Zamknięte' : transitionModalConfig.targetStatus}
+                      transitionModalConfig.targetStatus === 'ZAMKNIETE' ? 'Zamknięte' : transitionModalConfig.targetStatus
+                )}
               </button>
             </div>
           </div>
