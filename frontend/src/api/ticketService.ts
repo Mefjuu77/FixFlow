@@ -92,4 +92,9 @@ export const ticketService = {
     });
     return response.data;
   },
+
+  // Usuwanie załącznika
+  deleteAttachment: async (ticketId: string | number, attachmentId: number): Promise<void> => {
+    await api.delete(`tickets/${ticketId}/attachments/${attachmentId}/`);
+  },
 };

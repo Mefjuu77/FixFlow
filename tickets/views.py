@@ -281,6 +281,39 @@ class TicketAttachmentView(APIView):
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
 
+class AttachmentDeleteView(APIView):
+    """Usuwanie załącznika (tylko technik/admin)."""
+    permission_classes = [IsAuthenticated]
+
+    def delete(self, request, ticket_id, attachment_id):
+        user = request.user
+        if user.role == 'EMPLOYEE':
+            return Response({'detail': 'Brak uprawnień.'}, status=status.HTTP_403_FORBIDDEN)
+
+        try:
+            attachment = Attachment.objects.get(id=attachment_id, ticket_id=ticket_id)
+        except Attachment.DoesNotExist:
+            return Response({'detail': 'Załącznik nie istnieje.'}, status=status.HTTP_404_NOT_FOUND)
+
+        filename = attachment.filename
+        ticket = attachment.ticket
+
+        # Usuń plik z dysku
+        if attachment.file:
+            attachment.file.delete(save=False)
+
+        attachment.delete()
+
+        # Log: usunięcie załącznika
+        TicketLog.objects.create(
+            ticket=ticket,
+            user=user,
+            action=TicketLog.ActionType.ATTACHMENT_DELETED,
+            old_value=filename,
+        )
+
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
 class CommentAttachmentView(APIView):
     """
     Upload załączników do komentarza.

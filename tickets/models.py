@@ -111,6 +111,7 @@ class TicketLog(models.Model):
         ATTACHMENT_ADDED = 'ATTACHMENT_ADDED', 'Dodano załącznik'
         TITLE_CHANGED = 'TITLE_CHANGED', 'Zmieniono tytuł'
         DESCRIPTION_CHANGED = 'DESCRIPTION_CHANGED', 'Zmieniono opis'
+        ATTACHMENT_DELETED = 'ATTACHMENT_DELETED', 'Usunięto załącznik'
 
     ticket = models.ForeignKey(Ticket, on_delete=models.CASCADE, related_name='logs')
     user = models.ForeignKey(
