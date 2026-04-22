@@ -209,6 +209,7 @@ const TicketsPage: React.FC = () => {
       if (key === 'created_at') sortLegend = 'Sortuj od najstarszych';
       else if (key === 'id') sortLegend = 'Sortuj rosnąco';
       else if (key === 'priority') sortLegend = 'Sortuj od najniższego';
+      else if (key === 'status') sortLegend = 'Sortuj Nowe ➔ Zamknięte';
       else sortLegend = 'Sortuj A → Z';
     } else {
       if (key === 'created_at') {
@@ -217,6 +218,8 @@ const TicketsPage: React.FC = () => {
         sortLegend = direction === 'asc' ? 'Posortowane rosnąco' : 'Posortowane malejąco';
       } else if (key === 'priority') {
         sortLegend = direction === 'asc' ? 'Posortowane od najniższego' : 'Posortowane od najwyższego';
+      } else if (key === 'status') {
+        sortLegend = direction === 'asc' ? 'Posortowane Nowe ➔ Zamknięte' : 'Posortowane Zamknięte ➔ Nowe';
       } else {
         sortLegend = direction === 'asc' ? 'Posortowane A → Z' : 'Posortowane Z → A';
       }
