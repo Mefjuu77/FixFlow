@@ -652,13 +652,13 @@ const TicketsPage: React.FC = () => {
                     <td className="px-6 py-4 text-sm text-gray-700 dark:text-gray-300 whitespace-nowrap font-medium">
                       {ticket.creator_details ? (
                         <span className="flex items-center gap-2">
-                          {ticket.creator_details.avatar ? (
-                            <img src={ticket.creator_details.avatar} alt="" className="w-5 h-5 rounded-full object-cover flex-shrink-0" />
-                          ) : (
-                            <div className="w-5 h-5 rounded-full bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 flex items-center justify-center text-[9px] font-bold flex-shrink-0">
-                              {ticket.creator_details.first_name[0]}{ticket.creator_details.last_name[0]}
-                            </div>
-                          )}
+                          <div className="w-5 h-5 rounded-full bg-blue-600 text-white flex items-center justify-center flex-shrink-0 overflow-hidden">
+                            {ticket.creator_details.avatar ? (
+                              <img src={ticket.creator_details.avatar} alt="" className="w-full h-full object-cover" />
+                            ) : (
+                              <span className="text-[10px] font-bold uppercase">{ticket.creator_details.first_name?.charAt(0) || 'U'}</span>
+                            )}
+                          </div>
                           {ticket.creator_details.first_name} {ticket.creator_details.last_name}
                         </span>
                       ) : <span className="text-gray-400 italic">Nieznany</span>}
@@ -667,16 +667,23 @@ const TicketsPage: React.FC = () => {
                       <td className="px-6 py-4 text-sm whitespace-nowrap">
                         {ticket.technician_details ? (
                           <span className="flex items-center gap-2 text-gray-900 dark:text-gray-200 font-medium">
-                            {ticket.technician_details.avatar ? (
-                              <img src={ticket.technician_details.avatar} alt="" className="w-5 h-5 rounded-full object-cover flex-shrink-0" />
-                            ) : (
-                              <div className="w-5 h-5 rounded-full bg-indigo-100 dark:bg-indigo-900/40 text-indigo-600 dark:text-indigo-300 flex items-center justify-center text-[9px] font-bold flex-shrink-0">
-                                {ticket.technician_details.first_name[0]}{ticket.technician_details.last_name[0]}
-                              </div>
-                            )}
+                            <div className="w-5 h-5 rounded-full bg-blue-600 text-white flex items-center justify-center flex-shrink-0 overflow-hidden">
+                              {ticket.technician_details.avatar ? (
+                                <img src={ticket.technician_details.avatar} alt="" className="w-full h-full object-cover" />
+                              ) : (
+                                <span className="text-[10px] font-bold uppercase">{ticket.technician_details.first_name?.charAt(0) || 'U'}</span>
+                              )}
+                            </div>
                             {ticket.technician_details.first_name} {ticket.technician_details.last_name}
                           </span>
-                        ) : <span className="text-gray-400 italic">Nie przypisano</span>}
+                        ) : (
+                          <span className="flex items-center gap-2 text-gray-500 italic">
+                            <div className="w-5 h-5 rounded-full bg-gray-200 dark:bg-gray-700 text-gray-400 flex items-center justify-center flex-shrink-0">
+                              <UserMinus className="w-3 h-3" />
+                            </div>
+                            Nie przypisano
+                          </span>
+                        )}
                       </td>
                     )}
                     <td className="px-6 py-4 whitespace-nowrap">
