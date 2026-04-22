@@ -68,6 +68,7 @@ const TicketDetailsPage: React.FC = () => {
   const [isStatusMenuOpen, setIsStatusMenuOpen] = useState(false);
   const [transitionModalConfig, setTransitionModalConfig] = useState<{ isOpen: boolean; targetStatus: Ticket['status'] | null }>({ isOpen: false, targetStatus: null });
   const [transitionAssignee, setTransitionAssignee] = useState<number | null>(null);
+  const [isTransitionAssigneeDropdownOpen, setIsTransitionAssigneeDropdownOpen] = useState(false);
   const [transitionCommentType, setTransitionCommentType] = useState<'reply' | 'internal'>('reply');
   const [transitionCommentText, setTransitionCommentText] = useState('');
   const [isSubmittingTransition, setIsSubmittingTransition] = useState(false);
@@ -90,6 +91,7 @@ const TicketDetailsPage: React.FC = () => {
   const categoryDropdownRef = useRef<HTMLDivElement>(null);
   const creatorDropdownRef = useRef<HTMLDivElement>(null);
   const technicianDropdownRef = useRef<HTMLDivElement>(null);
+  const transitionAssigneeDropdownRef = useRef<HTMLDivElement>(null);
 
   const targetStatusLabel = transitionModalConfig.targetStatus === 'W_TOKU' ? 'W toku' :
     transitionModalConfig.targetStatus === 'NOWE' ? 'Nowe' :
@@ -120,6 +122,9 @@ const TicketDetailsPage: React.FC = () => {
       }
       if (technicianDropdownRef.current && !technicianDropdownRef.current.contains(target)) {
         setIsEditingTechnician(false);
+      }
+      if (transitionAssigneeDropdownRef.current && !transitionAssigneeDropdownRef.current.contains(target)) {
+        setIsTransitionAssigneeDropdownOpen(false);
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
@@ -1604,25 +1609,78 @@ const TicketDetailsPage: React.FC = () => {
               {/* Sekcja: Osoba przypisana */}
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-1.5">Osoba przypisana</label>
-                <div className="relative">
-                  <select
-                    value={transitionAssignee || ''}
-                    onChange={(e) => setTransitionAssignee(e.target.value ? Number(e.target.value) : null)}
-                    className="w-full md:w-1/2 appearance-none bg-white border border-blue-500 rounded-md py-2 pl-10 pr-8 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm font-medium"
+                <div className="relative w-full md:w-1/2" ref={transitionAssigneeDropdownRef}>
+                  <button
+                    type="button"
+                    onClick={() => setIsTransitionAssigneeDropdownOpen(!isTransitionAssigneeDropdownOpen)}
+                    className="w-full text-left bg-white dark:bg-gray-800 border border-blue-500 rounded-md py-2 pl-10 pr-8 text-sm text-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm font-medium flex items-center justify-between"
                   >
-                    <option value="">Nie przypisano</option>
-                    {availableTechnicians.map((tech) => (
-                      <option key={tech.id} value={tech.id}>
-                        {tech.first_name} {tech.last_name}
-                      </option>
-                    ))}
-                  </select>
-                  <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-gray-400">
-                    <User className="w-4 h-4" />
-                  </div>
-                  <div className="absolute inset-y-0 right-0 md:right-1/2 flex items-center pr-2 pointer-events-none text-gray-500">
-                    <ChevronDown className="w-4 h-4" />
-                  </div>
+                    <div className="flex items-center gap-2 truncate">
+                      {(() => {
+                        if (!transitionAssignee) return <span>Nie przypisano</span>;
+                        const t = availableTechnicians.find(tech => tech.id === transitionAssignee);
+                        if (!t) return <span>Nie przypisano</span>;
+                        return (
+                          <>
+                            <div className="w-5 h-5 rounded-full bg-blue-600 text-white flex items-center justify-center flex-shrink-0 overflow-hidden">
+                              {t.avatar ? (
+                                <img src={t.avatar} alt="" className="w-full h-full object-cover" />
+                              ) : (
+                                <span className="text-[10px] font-bold uppercase">{t.first_name?.charAt(0) || 'U'}</span>
+                              )}
+                            </div>
+                            <span className="truncate">{t.first_name} {t.last_name}</span>
+                          </>
+                        );
+                      })()}
+                    </div>
+                    <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-gray-400">
+                      <User className="w-4 h-4" />
+                    </div>
+                    <div className="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none text-gray-500">
+                      <ChevronDown className={`w-4 h-4 transition-transform ${isTransitionAssigneeDropdownOpen ? 'rotate-180' : ''}`} />
+                    </div>
+                  </button>
+
+                  {isTransitionAssigneeDropdownOpen && (
+                    <div className="absolute z-50 left-0 top-full mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-xl shadow-lg dark:shadow-[0_10px_40px_rgba(0,0,0,0.4)] py-1 w-full max-h-60 overflow-y-auto animate-in fade-in zoom-in-95 duration-100">
+                      <button
+                        type="button"
+                        onMouseDown={(e) => {
+                          e.preventDefault();
+                          setTransitionAssignee(null);
+                          setIsTransitionAssigneeDropdownOpen(false);
+                        }}
+                        className={`w-full flex items-center gap-2.5 px-3 py-2 text-sm hover:bg-blue-50 dark:hover:bg-gray-700 transition-colors ${transitionAssignee === null ? 'bg-blue-50/50 dark:bg-blue-900/40 font-semibold' : ''}`}
+                      >
+                        <div className="w-5 h-5 rounded-full bg-gray-200 dark:bg-gray-700 text-gray-400 flex items-center justify-center flex-shrink-0">
+                          <UserMinus className="w-3 h-3" />
+                        </div>
+                        <span className="font-medium text-gray-700 dark:text-gray-200 italic">Nie przypisano</span>
+                      </button>
+                      {availableTechnicians.map(t => (
+                        <button
+                          key={t.id}
+                          type="button"
+                          onMouseDown={(e) => {
+                            e.preventDefault();
+                            setTransitionAssignee(t.id);
+                            setIsTransitionAssigneeDropdownOpen(false);
+                          }}
+                          className={`w-full flex items-center gap-2.5 px-3 py-2 text-sm hover:bg-blue-50 dark:hover:bg-gray-700 transition-colors ${transitionAssignee === t.id ? 'bg-blue-50/50 dark:bg-blue-900/40 font-semibold' : ''}`}
+                        >
+                          <div className="w-5 h-5 rounded-full bg-blue-600 text-white flex items-center justify-center flex-shrink-0 overflow-hidden">
+                            {t.avatar ? (
+                              <img src={t.avatar} alt="" className="w-full h-full object-cover" />
+                            ) : (
+                              <span className="text-[10px] font-bold uppercase">{t.first_name?.charAt(0) || 'U'}</span>
+                            )}
+                          </div>
+                          <span className="font-medium text-gray-700 dark:text-gray-200">{t.first_name} {t.last_name}</span>
+                        </button>
+                      ))}
+                    </div>
+                  )}
                 </div>
                 {authContext?.user && transitionAssignee !== authContext.user.id && (
                   <button

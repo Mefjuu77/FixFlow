@@ -448,20 +448,34 @@ const TicketsPage: React.FC = () => {
             options={[
               { value: 'all', label: 'Wszystkie' },
               {
-                value: 'assigned_to_me', label: 'Moje zgłoszenia', icon: authContext?.user?.avatar ? (
-                  <img src={authContext.user.avatar} alt="" className="w-4 h-4 rounded-full object-cover" />
-                ) : (
-                  <UserCheck className="w-4 h-4 text-blue-600" />
+                value: 'assigned_to_me', label: 'Moje zgłoszenia', icon: (
+                  <div className="w-5 h-5 rounded-full bg-blue-600 text-white flex items-center justify-center flex-shrink-0 overflow-hidden">
+                    {authContext?.user?.avatar ? (
+                      <img src={authContext.user.avatar} alt="" className="w-full h-full object-cover" />
+                    ) : (
+                      <span className="text-[10px] font-bold uppercase">{authContext?.user?.first_name?.charAt(0) || 'U'}</span>
+                    )}
+                  </div>
                 )
               },
-              { value: 'unassigned', label: 'Nieprzypisane', icon: <UserMinus className="w-4 h-4 text-red-500" /> },
+              {
+                value: 'unassigned', label: 'Nie przypisano', icon: (
+                  <div className="w-5 h-5 rounded-full bg-gray-200 dark:bg-gray-700 text-gray-400 flex items-center justify-center flex-shrink-0">
+                    <UserMinus className="w-3 h-3" />
+                  </div>
+                )
+              },
               ...technicians.filter(t => t.id !== authContext?.user?.id).map((tech) => ({
                 value: String(tech.id),
                 label: `${tech.first_name} ${tech.last_name}`,
-                icon: tech.avatar ? (
-                  <img src={tech.avatar} alt="" className="w-4 h-4 rounded-full object-cover" />
-                ) : (
-                  <div className="w-4 h-4 rounded-full bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 flex items-center justify-center text-[8px] font-bold">{tech.first_name[0]}{tech.last_name[0]}</div>
+                icon: (
+                  <div className="w-5 h-5 rounded-full bg-blue-600 text-white flex items-center justify-center flex-shrink-0 overflow-hidden">
+                    {tech.avatar ? (
+                      <img src={tech.avatar} alt="" className="w-full h-full object-cover" />
+                    ) : (
+                      <span className="text-[10px] font-bold uppercase">{tech.first_name?.charAt(0) || 'U'}</span>
+                    )}
+                  </div>
                 )
               }))
             ]}
