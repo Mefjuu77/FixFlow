@@ -2,6 +2,8 @@ import React, { useEffect, useState, useContext, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import dayjs from 'dayjs';
 import 'dayjs/locale/pl';
+import relativeTime from 'dayjs/plugin/relativeTime';
+dayjs.extend(relativeTime);
 dayjs.locale('pl');
 import { ticketService } from '../api/ticketService';
 import { Ticket, User as UserType, Comment, Category, TicketLog, WorkLog } from '../types';
@@ -1568,15 +1570,37 @@ const TicketDetailsPage: React.FC = () => {
 
               <div className="grid grid-cols-[160px_1fr] items-start mt-4 pt-4 border-t border-gray-100">
                 <span className="text-sm text-gray-500 font-medium">Utworzono</span>
-                <div className="text-sm text-gray-900">
-                  {dayjs(ticket.created_at).format('DD.MM.YYYY, HH:mm')}
+                <div className="relative group/tooltip inline-block w-fit">
+                  <div className="text-sm text-gray-900 cursor-pointer">
+                    {dayjs().diff(dayjs(ticket.created_at), 'day') > 7 
+                      ? dayjs(ticket.created_at).format('D MMMM YYYY HH:mm') 
+                      : dayjs(ticket.created_at).fromNow()}
+                  </div>
+                  <div className="absolute left-full ml-3 top-1/2 -translate-y-1/2 opacity-0 group-hover/tooltip:opacity-100 pointer-events-none transition-opacity duration-200 z-50 px-2.5 py-1.5 bg-gray-800 dark:bg-gray-700 text-white text-xs font-medium rounded-md shadow-md whitespace-nowrap">
+                    {dayjs().diff(dayjs(ticket.created_at), 'day') > 7 
+                      ? dayjs(ticket.created_at).fromNow() 
+                      : dayjs(ticket.created_at).format('D MMMM YYYY HH:mm')}
+                    {/* Mały trójkącik (strzałka) na lewo od dymku */}
+                    <div className="absolute top-1/2 -translate-y-1/2 -left-1 w-2 h-2 bg-gray-800 dark:bg-gray-700 rotate-45"></div>
+                  </div>
                 </div>
               </div>
 
-              <div className="grid grid-cols-[160px_1fr] items-start">
+              <div className="grid grid-cols-[160px_1fr] items-start mt-4">
                 <span className="text-sm text-gray-500 font-medium">Zaktualizowano</span>
-                <div className="text-sm text-gray-900">
-                  {dayjs(ticket.updated_at).format('DD.MM.YYYY, HH:mm')}
+                <div className="relative group/tooltip inline-block w-fit">
+                  <div className="text-sm text-gray-900 cursor-pointer">
+                    {dayjs().diff(dayjs(ticket.updated_at), 'day') > 7 
+                      ? dayjs(ticket.updated_at).format('D MMMM YYYY HH:mm') 
+                      : dayjs(ticket.updated_at).fromNow()}
+                  </div>
+                  <div className="absolute left-full ml-3 top-1/2 -translate-y-1/2 opacity-0 group-hover/tooltip:opacity-100 pointer-events-none transition-opacity duration-200 z-50 px-2.5 py-1.5 bg-gray-800 dark:bg-gray-700 text-white text-xs font-medium rounded-md shadow-md whitespace-nowrap">
+                    {dayjs().diff(dayjs(ticket.updated_at), 'day') > 7 
+                      ? dayjs(ticket.updated_at).fromNow() 
+                      : dayjs(ticket.updated_at).format('D MMMM YYYY HH:mm')}
+                    {/* Mały trójkącik (strzałka) na lewo od dymku */}
+                    <div className="absolute top-1/2 -translate-y-1/2 -left-1 w-2 h-2 bg-gray-800 dark:bg-gray-700 rotate-45"></div>
+                  </div>
                 </div>
               </div>
 
