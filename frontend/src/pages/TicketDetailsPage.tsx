@@ -315,17 +315,22 @@ const TicketDetailsPage: React.FC = () => {
     setIsSubmittingTransition(true);
     setIsTransitionSuccess(false);
     try {
-      const updates: Partial<Ticket> = {
+      const updates: Record<string, any> = {
         status: transitionModalConfig.targetStatus,
         technician: transitionAssignee
       };
+
+      // Dołącz komentarz do PATCH — backend utworzy go razem ze zmianą statusu
+      // i wyśle jeden skonsolidowany e-mail
+      if (transitionCommentText.trim()) {
+        updates.transition_comment = transitionCommentText.trim();
+        updates.transition_comment_type = transitionCommentType === 'internal' ? 'INTERNAL' : 'REPLY';
+      }
 
       const updated = await ticketService.updateTicket(ticket.id, updates);
       setTicket(updated);
 
       if (transitionCommentText.trim()) {
-        const commentType = transitionCommentType === 'internal' ? 'INTERNAL' : 'REPLY';
-        await ticketService.addComment(ticket.id, transitionCommentText.trim(), commentType);
         await fetchComments();
       }
 

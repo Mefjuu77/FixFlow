@@ -5,7 +5,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from .models import Category, Ticket, Comment, Attachment, TicketLog, WorkLog
 from .serializers import CategorySerializer, TicketSerializer, CommentSerializer, AttachmentSerializer, TicketLogSerializer, WorkLogSerializer
-from .email import send_comment_notification, send_status_change_notification, send_ticket_created_notification, send_technician_assigned_notification
+from .email import send_ticket_created_notification, send_comment_notification, TicketEmailAccumulator
 
 class CategoryViewSet(viewsets.ModelViewSet):
     queryset = Category.objects.all()
@@ -46,8 +46,15 @@ class TicketViewSet(viewsets.ModelViewSet):
         old_title = old_ticket.title
         old_description = old_ticket.description
         
+        # Wyciągnij transition_comment zanim save() go usunie
+        transition_comment = self.request.data.get('transition_comment', '').strip()
+        transition_comment_type = self.request.data.get('transition_comment_type', 'REPLY')
+
         ticket = serializer.save()
         user = self.request.user
+
+        # Akumulator e-mail — zbiera wszystkie zmiany i wysyła 1 mail
+        accumulator = TicketEmailAccumulator(ticket, actor=user)
 
         # Log: zmiana statusu
         if old_status != ticket.status:
@@ -58,7 +65,7 @@ class TicketViewSet(viewsets.ModelViewSet):
                 old_value=old_status,
                 new_value=ticket.status,
             )
-            send_status_change_notification(ticket, old_status, ticket.status)
+            accumulator.add_status_change(old_status, ticket.status)
 
         # Log: zmiana technika
         if old_technician != ticket.technician:
@@ -70,7 +77,6 @@ class TicketViewSet(viewsets.ModelViewSet):
                     old_value=f"{old_technician.first_name} {old_technician.last_name}" if old_technician else '',
                     new_value=f"{ticket.technician.first_name} {ticket.technician.last_name}",
                 )
-                send_technician_assigned_notification(ticket, old_technician=old_technician)
             else:
                 TicketLog.objects.create(
                     ticket=ticket,
@@ -79,6 +85,7 @@ class TicketViewSet(viewsets.ModelViewSet):
                     old_value=f"{old_technician.first_name} {old_technician.last_name}" if old_technician else '',
                     new_value='',
                 )
+            accumulator.add_technician_change(old_technician, ticket.technician)
 
         # Log: zmiana priorytetu
         if old_priority != ticket.priority:
@@ -127,6 +134,19 @@ class TicketViewSet(viewsets.ModelViewSet):
                 user=user,
                 action=TicketLog.ActionType.DESCRIPTION_CHANGED,
             )
+
+        # Transition comment — komentarz wysłany razem ze zmianą statusu
+        if transition_comment:
+            comment = Comment.objects.create(
+                ticket=ticket,
+                author=user,
+                content=transition_comment,
+                comment_type=transition_comment_type if transition_comment_type in ('REPLY', 'INTERNAL') else 'REPLY',
+            )
+            accumulator.add_comment(transition_comment, comment.comment_type, user)
+
+        # Wyślij skonsolidowany e-mail
+        accumulator.flush()
 
 
 class CommentListCreateView(generics.ListCreateAPIView):
