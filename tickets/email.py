@@ -256,7 +256,6 @@ class TicketEmailAccumulator:
         # --- Buduj sekcje HTML ---
         sections_html = ''
         sections_plain = ''
-        subject_parts = []
 
         # Sekcja: zmiana statusu
         if self._status_change:
@@ -265,7 +264,6 @@ class TicketEmailAccumulator:
             new_label = STATUS_LABELS.get(new_s, new_s)
             old_color = STATUS_COLORS.get(old_s, '#6B7280')
             new_color = STATUS_COLORS.get(new_s, '#6B7280')
-            subject_parts.append(f'status: {new_label}')
 
             sections_html += (
                 f'<div style="margin:12px 0;padding:14px 18px;background-color:#F8FAFC;'
@@ -285,7 +283,6 @@ class TicketEmailAccumulator:
             old_tech, new_tech = self._technician_change
             if new_tech:
                 tech_name = f'{new_tech.first_name} {new_tech.last_name}'
-                subject_parts.append(f'przypisano: {tech_name}')
                 sections_html += (
                     f'<div style="margin:12px 0;padding:14px 18px;background-color:#F8FAFC;'
                     f'border-radius:10px;border:1px solid #E2E8F0;">'
@@ -296,7 +293,6 @@ class TicketEmailAccumulator:
                 )
                 sections_plain += f'Przypisany technik: {tech_name}\n'
             else:
-                subject_parts.append('usunięto przypisanie')
                 sections_html += (
                     f'<div style="margin:12px 0;padding:14px 18px;background-color:#F8FAFC;'
                     f'border-radius:10px;border:1px solid #E2E8F0;">'
@@ -312,7 +308,6 @@ class TicketEmailAccumulator:
             content, comment_type, author = self._comment
             if comment_type != 'INTERNAL':
                 author_name = f'{author.first_name} {author.last_name}' if author else 'System'
-                subject_parts.append('komentarz')
                 sections_html += (
                     f'<div style="margin:12px 0;padding:14px 18px;background-color:#F8FAFC;'
                     f'border-left:4px solid #2563EB;border-radius:0 8px 8px 0;">'

@@ -5,7 +5,7 @@ import api from '../api/axiosConfig';
 import { ticketService } from '../api/ticketService';
 import { Ticket, User } from '../types';
 import dayjs from 'dayjs';
-import { PlusCircle, Search, ChevronDown, ArrowUp, ArrowDown, UserCheck, UserMinus, Monitor, AppWindow, Globe, KeyRound, Shapes, Circle, CheckCircle2, XCircle, Loader2, ChevronsUp, Equal, ChevronsDown } from 'lucide-react';
+import { PlusCircle, Search, ChevronDown, ArrowUp, ArrowDown, UserMinus, Monitor, AppWindow, Globe, KeyRound, Shapes, Circle, CheckCircle2, XCircle, Loader2, ChevronsUp, Equal, ChevronsDown } from 'lucide-react';
 import useTitle from '../hooks/useTitle';
 
 type SortField = 'id' | 'title' | 'category_name' | 'priority' | 'creator' | 'technician' | 'status' | 'created_at';
