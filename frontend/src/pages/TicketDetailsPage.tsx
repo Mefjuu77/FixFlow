@@ -1581,12 +1581,12 @@ const TicketDetailsPage: React.FC = () => {
                       ? dayjs(ticket.created_at).format('D MMMM YYYY HH:mm') 
                       : dayjs(ticket.created_at).fromNow()}
                   </div>
-                  <div className="absolute left-full ml-3 top-1/2 -translate-y-1/2 opacity-0 group-hover/tooltip:opacity-100 pointer-events-none transition-opacity duration-200 z-50 px-2.5 py-1.5 bg-gray-800 dark:bg-gray-700 text-white text-xs font-medium rounded-md shadow-md whitespace-nowrap">
+                  <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 opacity-0 group-hover/tooltip:opacity-100 pointer-events-none transition-opacity duration-200 z-50 px-2.5 py-1.5 bg-gray-800 dark:bg-gray-700 text-white text-xs font-medium rounded-md shadow-md whitespace-nowrap">
                     {dayjs().diff(dayjs(ticket.created_at), 'day') > 7 
                       ? dayjs(ticket.created_at).fromNow() 
                       : dayjs(ticket.created_at).format('D MMMM YYYY HH:mm')}
-                    {/* Mały trójkącik (strzałka) na lewo od dymku */}
-                    <div className="absolute top-1/2 -translate-y-1/2 -left-1 w-2 h-2 bg-gray-800 dark:bg-gray-700 rotate-45"></div>
+                    {/* Mały trójkącik (strzałka) na dole dymku */}
+                    <div className="absolute top-full -mt-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-gray-800 dark:bg-gray-700 rotate-45"></div>
                   </div>
                 </div>
               </div>
@@ -1599,12 +1599,12 @@ const TicketDetailsPage: React.FC = () => {
                       ? dayjs(ticket.updated_at).format('D MMMM YYYY HH:mm') 
                       : dayjs(ticket.updated_at).fromNow()}
                   </div>
-                  <div className="absolute left-full ml-3 top-1/2 -translate-y-1/2 opacity-0 group-hover/tooltip:opacity-100 pointer-events-none transition-opacity duration-200 z-50 px-2.5 py-1.5 bg-gray-800 dark:bg-gray-700 text-white text-xs font-medium rounded-md shadow-md whitespace-nowrap">
+                  <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 opacity-0 group-hover/tooltip:opacity-100 pointer-events-none transition-opacity duration-200 z-50 px-2.5 py-1.5 bg-gray-800 dark:bg-gray-700 text-white text-xs font-medium rounded-md shadow-md whitespace-nowrap">
                     {dayjs().diff(dayjs(ticket.updated_at), 'day') > 7 
                       ? dayjs(ticket.updated_at).fromNow() 
                       : dayjs(ticket.updated_at).format('D MMMM YYYY HH:mm')}
-                    {/* Mały trójkącik (strzałka) na lewo od dymku */}
-                    <div className="absolute top-1/2 -translate-y-1/2 -left-1 w-2 h-2 bg-gray-800 dark:bg-gray-700 rotate-45"></div>
+                    {/* Mały trójkącik (strzałka) na dole dymku */}
+                    <div className="absolute top-full -mt-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-gray-800 dark:bg-gray-700 rotate-45"></div>
                   </div>
                 </div>
               </div>
