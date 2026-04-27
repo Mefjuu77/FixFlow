@@ -8,6 +8,7 @@ import DashboardPage from './pages/DashboardPage';
 import CreateTicketPage from './pages/CreateTicket';
 import TicketDetailsPage from './pages/TicketDetailsPage';
 import StatisticsPage from './pages/StatisticsPage';
+import ReportsPage from './pages/ReportsPage';
 import UsersPage from './pages/UsersPage';
 import SettingsPage from './pages/SettingsPage';
 import Layout from './components/layout/Layout';
@@ -44,6 +45,7 @@ const App: React.FC = () => {
           <Route path="/tickets/:id" element={<ProtectedRoute><TicketDetailsPage /></ProtectedRoute>} />
           <Route path="/create-ticket" element={<ProtectedRoute><CreateTicketPage /></ProtectedRoute>} />
           <Route path="/statistics" element={<ProtectedRoute><StatisticsPage /></ProtectedRoute>} />
+          <Route path="/reports" element={<ProtectedRoute><ReportsPage /></ProtectedRoute>} />
           <Route path="/users" element={<ProtectedRoute><UsersPage /></ProtectedRoute>} />
           <Route path="/settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
           
