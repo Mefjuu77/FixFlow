@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useContext, useCallback } from 'react';
+import React, { useState, useEffect, useContext, useCallback, useRef } from 'react';
 import { AuthContext } from '../context/AuthContext';
 import { Navigate } from 'react-router-dom';
 import api from '../api/axiosConfig';
@@ -10,7 +10,7 @@ import 'dayjs/locale/pl';
 import {
   FileBarChart, Calendar, Filter, Download, FileSpreadsheet, FileText,
   ChevronDown, Search, Loader2, CheckCircle2, ChevronsUp, Equal,
-  ChevronsDown, Circle, XCircle
+  ChevronsDown, Circle, XCircle, BarChart3, SlidersHorizontal, ArrowDownToLine, RefreshCw
 } from 'lucide-react';
 
 dayjs.locale('pl');
@@ -24,16 +24,18 @@ interface PreviewRow {
 
 type DatePreset = 'week' | 'month' | 'quarter' | 'year' | 'custom';
 
-// === Komponent MultiSelect ===
+// === Premium MultiSelect Component ===
 interface MultiSelectProps {
   label: string; icon: React.ReactNode;
   options: { value: string; label: string; icon?: React.ReactNode; color?: string }[];
   selected: string[]; onChange: (v: string[]) => void;
+  placeholder?: string;
+  position?: 'top' | 'bottom';
 }
 
-const MultiSelect: React.FC<MultiSelectProps> = ({ label, icon, options, selected, onChange }) => {
+const MultiSelect: React.FC<MultiSelectProps> = ({ label, icon, options, selected, onChange, placeholder = 'Wszystkie', position = 'bottom' }) => {
   const [open, setOpen] = useState(false);
-  const ref = React.useRef<HTMLDivElement>(null);
+  const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const handler = (e: MouseEvent) => {
@@ -48,46 +50,61 @@ const MultiSelect: React.FC<MultiSelectProps> = ({ label, icon, options, selecte
   };
 
   return (
-    <div className="relative" ref={ref}>
-      <label className="flex items-center gap-1.5 text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">
-        {icon}{label}
+    <div className="relative flex flex-col gap-1.5" ref={ref}>
+      <label className="flex items-center gap-2 text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">
+        {icon} {label}
       </label>
       <button
         type="button" onClick={() => setOpen(!open)}
-        className="w-full flex items-center justify-between px-3 py-2.5 bg-white border border-gray-200 rounded-lg text-sm text-gray-700 hover:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+        className={`w-full flex items-center justify-between px-4 py-3 bg-white/60 backdrop-blur-sm border-2 rounded-xl text-sm transition-all duration-300 shadow-sm
+          ${open ? 'border-indigo-400 ring-4 ring-indigo-500/10' : 'border-slate-200/80 hover:border-indigo-300 hover:bg-white'}
+        `}
       >
-        <span className={selected.length ? 'text-gray-900 font-medium' : 'text-gray-400'}>
-          {selected.length ? `Wybrano: ${selected.length}` : 'Wszystkie'}
+        <span className={selected.length ? 'text-indigo-900 font-bold' : 'text-slate-500 font-medium'}>
+          {selected.length ? `Wybrano (${selected.length})` : placeholder}
         </span>
-        <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform ${open ? 'rotate-180' : ''}`} />
+        <ChevronDown className={`w-4 h-4 transition-transform duration-300 ${open ? 'rotate-180 text-indigo-500' : 'text-slate-400'}`} />
       </button>
+      
       {open && (
-        <div className="absolute z-50 top-full mt-1 left-0 w-full bg-white border border-gray-200 rounded-xl shadow-lg py-1 max-h-60 overflow-y-auto animate-in fade-in zoom-in-95 duration-100">
+        <div className={`absolute z-50 left-0 w-full bg-white/95 backdrop-blur-xl border border-slate-200/80 rounded-2xl shadow-2xl py-2 max-h-64 overflow-y-auto animate-in fade-in duration-200
+          ${position === 'top' ? 'bottom-full mb-2 slide-in-from-bottom-2' : 'top-full mt-2 slide-in-from-top-2'}`}
+        >
           {selected.length > 0 && (
-            <button onClick={() => onChange([])} className="w-full text-left px-3 py-2 text-xs text-blue-600 hover:bg-blue-50 font-medium border-b border-gray-100">
-              Wyczyść filtr
-            </button>
+            <div className="px-2 pb-2 mb-2 border-b border-slate-100">
+              <button onClick={() => onChange([])} className="w-full flex items-center justify-center gap-2 px-3 py-2 text-xs font-bold text-rose-500 bg-rose-50 rounded-lg hover:bg-rose-100 transition-colors">
+                <XCircle className="w-3.5 h-3.5" /> Wyczyść filtry
+              </button>
+            </div>
           )}
-          {options.map(opt => (
-            <button key={opt.value} onClick={() => toggle(opt.value)}
-              className={`w-full flex items-center gap-2.5 px-3 py-2 text-sm hover:bg-blue-50 transition-colors ${selected.includes(opt.value) ? 'bg-blue-50/60 font-semibold' : ''}`}
-            >
-              <div className={`w-4 h-4 rounded border-2 flex items-center justify-center flex-shrink-0 transition-colors ${selected.includes(opt.value) ? 'bg-blue-600 border-blue-600' : 'border-gray-300'}`}>
-                {selected.includes(opt.value) && <svg className="w-2.5 h-2.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>}
-              </div>
-              {opt.icon}
-              <span className={opt.color || 'text-gray-700'}>{opt.label}</span>
-            </button>
-          ))}
+          <div className="px-1.5 space-y-0.5">
+            {options.map(opt => {
+              const isSelected = selected.includes(opt.value);
+              return (
+                <button key={opt.value} onClick={() => toggle(opt.value)}
+                  className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition-all duration-200
+                    ${isSelected ? 'bg-indigo-50/80' : 'hover:bg-slate-50'}`}
+                >
+                  <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center flex-shrink-0 transition-all duration-300
+                    ${isSelected ? 'bg-indigo-500 border-indigo-500 shadow-md shadow-indigo-500/30 scale-110' : 'border-slate-300 bg-white'}`}
+                  >
+                    {isSelected && <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>}
+                  </div>
+                  {opt.icon && <div className="flex-shrink-0">{opt.icon}</div>}
+                  <span className={`font-medium ${isSelected ? 'text-indigo-900' : opt.color || 'text-slate-700'}`}>{opt.label}</span>
+                </button>
+              );
+            })}
+          </div>
         </div>
       )}
     </div>
   );
 };
 
-// === Strona Raporty ===
+// === Premium Page ===
 const ReportsPage: React.FC = () => {
-  useTitle('Raporty');
+  useTitle('Raporty Eksportu');
   const authContext = useContext(AuthContext);
 
   // Dane pomocnicze
@@ -112,14 +129,12 @@ const ReportsPage: React.FC = () => {
   const [loadingPreview, setLoadingPreview] = useState(false);
   const [downloading, setDownloading] = useState(false);
 
-  // Załaduj dane pomocnicze
   useEffect(() => {
     ticketService.getCategories().then(setCategories).catch(() => {});
     ticketService.getTechnicians().then(setTechnicians).catch(() => {});
     ticketService.getUsers().then(setAllUsers).catch(() => {});
   }, []);
 
-  // Obsługa presetów dat
   useEffect(() => {
     const now = dayjs();
     switch (datePreset) {
@@ -130,7 +145,6 @@ const ReportsPage: React.FC = () => {
     }
   }, [datePreset]);
 
-  // Buduj parametry
   const buildParams = useCallback(() => {
     const p = new URLSearchParams();
     if (dateFrom) p.append('date_from', dateFrom);
@@ -143,7 +157,6 @@ const ReportsPage: React.FC = () => {
     return p;
   }, [dateFrom, dateTo, statuses, priorities, selectedCategories, selectedTechnicians, selectedCreators]);
 
-  // Podgląd
   const fetchPreview = useCallback(async () => {
     setLoadingPreview(true);
     try {
@@ -156,13 +169,11 @@ const ReportsPage: React.FC = () => {
     setLoadingPreview(false);
   }, [buildParams]);
 
-  // Auto-preview przy zmianie filtrów
   useEffect(() => {
-    const timer = setTimeout(fetchPreview, 400);
+    const timer = setTimeout(fetchPreview, 500);
     return () => clearTimeout(timer);
   }, [fetchPreview]);
 
-  // Pobierz raport
   const handleDownload = async () => {
     setDownloading(true);
     try {
@@ -194,22 +205,21 @@ const ReportsPage: React.FC = () => {
     setDownloading(false);
   };
 
-  // Guard: admin only
   if (authContext?.user?.role !== 'ADMIN') {
     return <Navigate to="/dashboard" replace />;
   }
 
   const statusOptions = [
-    { value: 'NOWE', label: 'Nowe', icon: <Circle className="w-3.5 h-3.5 text-blue-500" />, color: 'text-blue-700' },
-    { value: 'W_TOKU', label: 'W toku', icon: <Loader2 className="w-3.5 h-3.5 text-amber-500" />, color: 'text-amber-700' },
-    { value: 'ROZWIAZANE', label: 'Rozwiązane', icon: <CheckCircle2 className="w-3.5 h-3.5 text-green-500" />, color: 'text-green-700' },
-    { value: 'ZAMKNIETE', label: 'Zamknięte', icon: <XCircle className="w-3.5 h-3.5 text-gray-400" />, color: 'text-gray-600' },
+    { value: 'NOWE', label: 'Nowe', icon: <Circle className="w-4 h-4 text-blue-500 drop-shadow-sm" />, color: 'text-blue-700' },
+    { value: 'W_TOKU', label: 'W toku', icon: <Loader2 className="w-4 h-4 text-amber-500 drop-shadow-sm" />, color: 'text-amber-700' },
+    { value: 'ROZWIAZANE', label: 'Rozwiązane', icon: <CheckCircle2 className="w-4 h-4 text-emerald-500 drop-shadow-sm" />, color: 'text-emerald-700' },
+    { value: 'ZAMKNIETE', label: 'Zamknięte', icon: <XCircle className="w-4 h-4 text-slate-400 drop-shadow-sm" />, color: 'text-slate-600' },
   ];
 
   const priorityOptions = [
-    { value: 'NISKI', label: 'Niski', icon: <ChevronsDown className="w-3.5 h-3.5 text-gray-400" />, color: 'text-gray-600' },
-    { value: 'NORMALNY', label: 'Normalny', icon: <Equal className="w-3.5 h-3.5 text-blue-500" />, color: 'text-blue-600' },
-    { value: 'WYSOKI', label: 'Wysoki', icon: <ChevronsUp className="w-3.5 h-3.5 text-red-500" />, color: 'text-red-600' },
+    { value: 'NISKI', label: 'Niski', icon: <ChevronsDown className="w-4 h-4 text-slate-400" />, color: 'text-slate-600' },
+    { value: 'NORMALNY', label: 'Normalny', icon: <Equal className="w-4 h-4 text-blue-500" />, color: 'text-blue-600' },
+    { value: 'WYSOKI', label: 'Wysoki', icon: <ChevronsUp className="w-4 h-4 text-rose-500" />, color: 'text-rose-600' },
   ];
 
   const categoryOptions = categories.map(c => ({ value: String(c.id), label: c.name }));
@@ -217,173 +227,226 @@ const ReportsPage: React.FC = () => {
   const creatorOptions = allUsers.map(u => ({ value: String(u.id), label: `${u.first_name} ${u.last_name}` }));
 
   const presetButtons: { key: DatePreset; label: string }[] = [
-    { key: 'week', label: 'Tydzień' },
-    { key: 'month', label: 'Miesiąc' },
+    { key: 'week', label: '7 Dni' },
+    { key: 'month', label: '30 Dni' },
     { key: 'quarter', label: 'Kwartał' },
     { key: 'year', label: 'Rok' },
     { key: 'custom', label: 'Własny' },
   ];
 
   return (
-    <div className="max-w-7xl mx-auto">
-      {/* Header */}
-      <div className="flex items-center justify-between mb-6">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center shadow-lg shadow-blue-600/20">
-            <FileBarChart className="w-5 h-5 text-white" />
-          </div>
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">Raporty</h1>
-            <p className="text-sm text-gray-500">Kreator eksportu zgłoszeń</p>
-          </div>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-[380px_1fr] gap-6">
-        {/* === Panel filtrów === */}
-        <div className="space-y-4">
-          {/* Zakres dat */}
-          <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-4">
-            <label className="flex items-center gap-1.5 text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">
-              <Calendar className="w-3.5 h-3.5" /> Zakres dat
-            </label>
-            <div className="flex flex-wrap gap-1.5 mb-3">
-              {presetButtons.map(pb => (
-                <button key={pb.key} onClick={() => setDatePreset(pb.key)}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${datePreset === pb.key ? 'bg-blue-600 text-white shadow-sm' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
-                >{pb.label}</button>
-              ))}
+    <div className="min-h-[calc(100vh-6rem)] flex flex-col gap-8 pb-10">
+      {/* 🌟 Premium Hero Section */}
+      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900 text-white p-8 lg:p-12 shadow-2xl border border-white/10">
+        <div className="absolute top-0 right-0 -mr-20 -mt-20 w-96 h-96 rounded-full bg-indigo-500/20 blur-3xl pointer-events-none"></div>
+        <div className="absolute bottom-0 left-0 -ml-20 -mb-20 w-80 h-80 rounded-full bg-blue-500/20 blur-3xl pointer-events-none"></div>
+        
+        <div className="relative z-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+          <div className="flex items-center gap-5">
+            <div className="w-16 h-16 rounded-2xl bg-white/10 backdrop-blur-md border border-white/20 flex items-center justify-center shadow-inner">
+              <FileBarChart className="w-8 h-8 text-indigo-300 drop-shadow-md" />
             </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="text-[11px] text-gray-400 font-medium mb-1 block">Od</label>
-                <input type="date" value={dateFrom}
-                  onChange={e => { setDateFrom(e.target.value); setDatePreset('custom'); }}
-                  className="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
-                />
-              </div>
-              <div>
-                <label className="text-[11px] text-gray-400 font-medium mb-1 block">Do</label>
-                <input type="date" value={dateTo}
-                  onChange={e => { setDateTo(e.target.value); setDatePreset('custom'); }}
-                  className="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
-                />
-              </div>
+            <div>
+              <h1 className="text-3xl font-extrabold tracking-tight mb-1 bg-gradient-to-r from-white to-indigo-200 bg-clip-text text-transparent">
+                Generator Raportów
+              </h1>
+              <p className="text-indigo-200/80 font-medium text-sm md:text-base">
+                Eksportuj dane zgłoszeń do analizy z zaawansowanym filtrowaniem.
+              </p>
             </div>
           </div>
 
-          {/* Filtry */}
-          <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-4 space-y-4">
-            <div className="flex items-center gap-1.5 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-              <Filter className="w-3.5 h-3.5" /> Filtry
-            </div>
-            <MultiSelect label="Status" icon={<Circle className="w-3 h-3" />} options={statusOptions} selected={statuses} onChange={setStatuses} />
-            <MultiSelect label="Priorytet" icon={<ChevronsUp className="w-3 h-3" />} options={priorityOptions} selected={priorities} onChange={setPriorities} />
-            <MultiSelect label="Kategoria" icon={<Filter className="w-3 h-3" />} options={categoryOptions} selected={selectedCategories} onChange={setSelectedCategories} />
-            <MultiSelect label="Technik" icon={<Search className="w-3 h-3" />} options={technicianOptions} selected={selectedTechnicians} onChange={setSelectedTechnicians} />
-            <MultiSelect label="Zgłaszający" icon={<Search className="w-3 h-3" />} options={creatorOptions} selected={selectedCreators} onChange={setSelectedCreators} />
-          </div>
-
-          {/* Format + Download */}
-          <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-4">
-            <label className="flex items-center gap-1.5 text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">
-              <Download className="w-3.5 h-3.5" /> Pobieranie
-            </label>
-            <div className="flex gap-2 mb-4">
+          <div className="flex flex-col sm:flex-row items-center gap-3 bg-white/5 p-2.5 rounded-2xl backdrop-blur-md border border-white/10">
+            <div className="flex bg-slate-900/50 p-1 rounded-xl">
               <button onClick={() => setExportFormat('xlsx')}
-                className={`flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-semibold transition-all border ${exportFormat === 'xlsx' ? 'bg-green-50 border-green-300 text-green-700 ring-2 ring-green-500/20' : 'bg-white border-gray-200 text-gray-500 hover:bg-gray-50'}`}
+                className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold transition-all duration-300 ${exportFormat === 'xlsx' ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/30' : 'text-slate-300 hover:text-white hover:bg-white/10'}`}
               >
                 <FileSpreadsheet className="w-4 h-4" /> XLSX
               </button>
               <button onClick={() => setExportFormat('csv')}
-                className={`flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-semibold transition-all border ${exportFormat === 'csv' ? 'bg-blue-50 border-blue-300 text-blue-700 ring-2 ring-blue-500/20' : 'bg-white border-gray-200 text-gray-500 hover:bg-gray-50'}`}
+                className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold transition-all duration-300 ${exportFormat === 'csv' ? 'bg-blue-500 text-white shadow-lg shadow-blue-500/30' : 'text-slate-300 hover:text-white hover:bg-white/10'}`}
               >
                 <FileText className="w-4 h-4" /> CSV
               </button>
             </div>
             <button onClick={handleDownload} disabled={downloading || total === 0}
-              className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold rounded-xl shadow-lg shadow-blue-600/20 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              className="group relative flex items-center gap-2 px-6 py-3 bg-white text-indigo-950 rounded-xl font-bold transition-all hover:bg-indigo-50 hover:scale-105 active:scale-95 disabled:opacity-50 disabled:pointer-events-none overflow-hidden"
             >
-              {downloading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
-              {downloading ? 'Generowanie...' : `Pobierz raport ${exportFormat.toUpperCase()}`}
+              <div className="absolute inset-0 w-full h-full bg-gradient-to-r from-white via-indigo-100 to-white opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+              <span className="relative z-10 flex items-center gap-2">
+                {downloading ? <RefreshCw className="w-4 h-4 animate-spin" /> : <ArrowDownToLine className="w-4 h-4 group-hover:translate-y-0.5 transition-transform" />}
+                {downloading ? 'Pobieranie...' : 'Generuj Raport'}
+              </span>
             </button>
-            {total !== null && (
-              <p className="text-center text-xs text-gray-400 mt-2">
-                {total === 0 ? 'Brak zgłoszeń spełniających kryteria' : `${total} zgłoszeń w raporcie`}
-              </p>
-            )}
+          </div>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 xl:grid-cols-[380px_1fr] gap-8 items-start">
+        {/* 🎛️ Filtr Sidebar */}
+        <div className="flex flex-col gap-6">
+          <div className="bg-white rounded-3xl p-6 shadow-xl shadow-slate-200/40 border border-slate-100">
+            <div className="flex items-center gap-3 mb-6">
+              <div className="w-10 h-10 rounded-xl bg-indigo-50 flex items-center justify-center">
+                <SlidersHorizontal className="w-5 h-5 text-indigo-600" />
+              </div>
+              <h2 className="text-lg font-bold text-slate-800">Parametry Filtru</h2>
+            </div>
+
+            {/* Zakres dat z premium pill-buttons */}
+            <div className="mb-6 space-y-4">
+              <label className="flex items-center gap-2 text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">
+                <Calendar className="w-4 h-4 text-indigo-500" /> Okres
+              </label>
+              
+              <div className="flex flex-wrap gap-2 p-1 bg-slate-50 border border-slate-100 rounded-2xl">
+                {presetButtons.map(pb => (
+                  <button key={pb.key} onClick={() => setDatePreset(pb.key)}
+                    className={`flex-1 min-w-[70px] px-3 py-2 rounded-xl text-xs font-bold transition-all duration-300 
+                      ${datePreset === pb.key ? 'bg-white text-indigo-700 shadow-sm border border-slate-200/60 scale-100' : 'text-slate-500 hover:text-slate-700 hover:bg-slate-100 scale-95'}`}
+                  >
+                    {pb.label}
+                  </button>
+                ))}
+              </div>
+
+              {datePreset === 'custom' && (
+                <div className="grid grid-cols-2 gap-3 animate-in slide-in-from-top-2 duration-300">
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] text-slate-400 font-bold uppercase ml-1">Od</label>
+                    <input type="date" value={dateFrom} onChange={e => setDateFrom(e.target.value)}
+                      className="w-full px-4 py-2.5 bg-slate-50 border-2 border-slate-200/60 rounded-xl text-sm font-medium text-slate-700 focus:outline-none focus:border-indigo-400 focus:ring-4 focus:ring-indigo-500/10 transition-all"
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] text-slate-400 font-bold uppercase ml-1">Do</label>
+                    <input type="date" value={dateTo} onChange={e => setDateTo(e.target.value)}
+                      className="w-full px-4 py-2.5 bg-slate-50 border-2 border-slate-200/60 rounded-xl text-sm font-medium text-slate-700 focus:outline-none focus:border-indigo-400 focus:ring-4 focus:ring-indigo-500/10 transition-all"
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="h-px bg-gradient-to-r from-transparent via-slate-200 to-transparent my-6"></div>
+
+            <div className="space-y-5">
+              <MultiSelect label="Statusy" icon={<Filter className="w-4 h-4 text-indigo-500" />} options={statusOptions} selected={statuses} onChange={setStatuses} />
+              <MultiSelect label="Priorytety" icon={<BarChart3 className="w-4 h-4 text-indigo-500" />} options={priorityOptions} selected={priorities} onChange={setPriorities} />
+              <MultiSelect label="Kategorie" icon={<Filter className="w-4 h-4 text-indigo-500" />} options={categoryOptions} selected={selectedCategories} onChange={setSelectedCategories} />
+              <MultiSelect label="Technicy" icon={<Search className="w-4 h-4 text-indigo-500" />} options={technicianOptions} selected={selectedTechnicians} onChange={setSelectedTechnicians} position="top" />
+              <MultiSelect label="Zgłaszający" icon={<Search className="w-4 h-4 text-indigo-500" />} options={creatorOptions} selected={selectedCreators} onChange={setSelectedCreators} position="top" />
+            </div>
           </div>
         </div>
 
-        {/* === Podgląd wyników === */}
-        <div className="bg-white rounded-xl border border-gray-200 shadow-sm flex flex-col">
-          <div className="px-4 py-3 border-b border-gray-100 flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <h3 className="font-semibold text-gray-800 text-sm">Podgląd wyników</h3>
+        {/* 📊 Tabela Podglądu */}
+        <div className="bg-white rounded-3xl shadow-xl shadow-slate-200/40 border border-slate-100 flex flex-col overflow-hidden h-[calc(100vh-16rem)] min-h-[500px]">
+          <div className="px-6 py-5 border-b border-slate-100 flex items-center justify-between bg-slate-50/50 backdrop-blur-xl">
+            <div className="flex items-center gap-3">
+              <div className="relative">
+                <div className="w-2.5 h-2.5 rounded-full bg-emerald-500"></div>
+                <div className="absolute inset-0 rounded-full bg-emerald-500 animate-ping opacity-75"></div>
+              </div>
+              <h3 className="font-bold text-slate-800 text-base">Podgląd na żywo</h3>
               {total !== null && (
-                <span className="px-2 py-0.5 bg-blue-100 text-blue-700 text-xs font-bold rounded-full">{total}</span>
+                <span className="px-2.5 py-1 bg-indigo-100 text-indigo-700 text-xs font-black rounded-lg ml-2">
+                  {total} zgłoszeń
+                </span>
               )}
             </div>
-            {loadingPreview && <Loader2 className="w-4 h-4 text-blue-500 animate-spin" />}
+            {loadingPreview && (
+              <div className="flex items-center gap-2 text-indigo-500 text-xs font-bold">
+                <RefreshCw className="w-4 h-4 animate-spin" /> Odświeżanie...
+              </div>
+            )}
           </div>
 
-          <div className="flex-1 overflow-auto">
+          <div className="flex-1 overflow-auto relative">
             {preview.length === 0 && !loadingPreview ? (
-              <div className="flex flex-col items-center justify-center py-16 text-gray-400">
-                <FileBarChart className="w-12 h-12 mb-3 text-gray-300" />
-                <p className="text-sm font-medium">Brak danych do wyświetlenia</p>
-                <p className="text-xs mt-1">Zmień filtry, aby zobaczyć podgląd</p>
+              <div className="absolute inset-0 flex flex-col items-center justify-center text-slate-400">
+                <div className="w-24 h-24 mb-6 rounded-full bg-slate-50 flex items-center justify-center">
+                  <Search className="w-10 h-10 text-slate-300" />
+                </div>
+                <p className="text-lg font-bold text-slate-600">Brak dopasowań</p>
+                <p className="text-sm font-medium mt-1 text-slate-400 max-w-xs text-center">Zmień parametry filtrowania, aby zobaczyć podgląd zgłoszeń.</p>
               </div>
             ) : (
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="bg-gray-50 text-left text-xs text-gray-500 uppercase tracking-wider">
-                    <th className="px-3 py-2.5 font-semibold">#</th>
-                    <th className="px-3 py-2.5 font-semibold">Tytuł</th>
-                    <th className="px-3 py-2.5 font-semibold">Status</th>
-                    <th className="px-3 py-2.5 font-semibold">Priorytet</th>
-                    <th className="px-3 py-2.5 font-semibold">Kategoria</th>
-                    <th className="px-3 py-2.5 font-semibold">Zgłaszający</th>
-                    <th className="px-3 py-2.5 font-semibold">Technik</th>
-                    <th className="px-3 py-2.5 font-semibold">Data</th>
+              <table className="w-full text-sm text-left">
+                <thead className="bg-white sticky top-0 z-10 shadow-sm">
+                  <tr className="text-[11px] font-extrabold text-slate-400 uppercase tracking-widest">
+                    <th className="px-5 py-4 w-16">#</th>
+                    <th className="px-5 py-4">Tytuł Zgłoszenia</th>
+                    <th className="px-5 py-4 w-32">Status</th>
+                    <th className="px-5 py-4 w-32">Priorytet</th>
+                    <th className="px-5 py-4 hidden md:table-cell">Kategoria</th>
+                    <th className="px-5 py-4 hidden lg:table-cell">Technik</th>
+                    <th className="px-5 py-4 w-32">Data</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-100">
+                <tbody className="divide-y divide-slate-100/80">
                   {preview.map((row, i) => (
-                    <tr key={row.id} className={`hover:bg-blue-50/30 transition-colors ${i % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'}`}>
-                      <td className="px-3 py-2.5 text-gray-500 font-mono text-xs">{row.id}</td>
-                      <td className="px-3 py-2.5 font-medium text-gray-900 max-w-[200px] truncate">{row.title}</td>
-                      <td className="px-3 py-2.5">
-                        <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-semibold ${
-                          row.status === 'Nowe' ? 'bg-blue-100 text-blue-700' :
-                          row.status === 'W toku' ? 'bg-amber-100 text-amber-700' :
-                          row.status === 'Rozwiązane' ? 'bg-green-100 text-green-700' :
-                          'bg-gray-100 text-gray-600'
-                        }`}>{row.status}</span>
+                    <tr key={row.id} className="group hover:bg-indigo-50/40 transition-colors duration-200">
+                      <td className="px-5 py-4 text-slate-400 font-mono text-xs">{row.id}</td>
+                      <td className="px-5 py-4 font-bold text-slate-700 max-w-[200px] truncate group-hover:text-indigo-700 transition-colors">{row.title}</td>
+                      <td className="px-5 py-4">
+                        <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold border ${
+                          row.status === 'Nowe' ? 'bg-blue-50 border-blue-200 text-blue-700' :
+                          row.status === 'W toku' ? 'bg-amber-50 border-amber-200 text-amber-700' :
+                          row.status === 'Rozwiązane' ? 'bg-emerald-50 border-emerald-200 text-emerald-700' :
+                          'bg-slate-50 border-slate-200 text-slate-600'
+                        }`}>
+                          <span className={`w-1.5 h-1.5 rounded-full ${row.status === 'Nowe' ? 'bg-blue-500' : row.status === 'W toku' ? 'bg-amber-500' : row.status === 'Rozwiązane' ? 'bg-emerald-500' : 'bg-slate-400'}`}></span>
+                          {row.status}
+                        </span>
                       </td>
-                      <td className="px-3 py-2.5">
-                        <span className={`text-xs font-semibold ${
-                          row.priority === 'Wysoki' ? 'text-red-600' :
-                          row.priority === 'Normalny' ? 'text-blue-600' : 'text-gray-500'
+                      <td className="px-5 py-4">
+                        <span className={`text-xs font-bold ${
+                          row.priority === 'Wysoki' ? 'text-rose-600' :
+                          row.priority === 'Normalny' ? 'text-indigo-600' : 'text-slate-500'
                         }`}>{row.priority}</span>
                       </td>
-                      <td className="px-3 py-2.5 text-gray-600 text-xs">{row.category}</td>
-                      <td className="px-3 py-2.5 text-gray-600 text-xs">{row.creator}</td>
-                      <td className="px-3 py-2.5 text-gray-600 text-xs">{row.technician}</td>
-                      <td className="px-3 py-2.5 text-gray-400 text-xs whitespace-nowrap">{row.created_at}</td>
+                      <td className="px-5 py-4 text-slate-500 font-medium hidden md:table-cell">{row.category}</td>
+                      <td className="px-5 py-4 text-slate-500 font-medium hidden lg:table-cell">
+                        {row.technician !== 'Brak' ? (
+                          <div className="flex items-center gap-2">
+                            <div className="w-6 h-6 rounded-full bg-indigo-100 flex items-center justify-center text-[10px] font-bold text-indigo-700">
+                              {row.technician.charAt(0)}
+                            </div>
+                            {row.technician}
+                          </div>
+                        ) : (
+                          <span className="text-slate-400 italic">Nieprzypisany</span>
+                        )}
+                      </td>
+                      <td className="px-5 py-4 text-slate-400 text-xs font-medium whitespace-nowrap">{dayjs(row.created_at).format('DD MMM YYYY')}</td>
                     </tr>
                   ))}
                 </tbody>
               </table>
             )}
-            {total !== null && total > 10 && preview.length > 0 && (
-              <div className="px-4 py-3 border-t border-gray-100 text-center">
-                <p className="text-xs text-gray-400">
-                  Wyświetlono 10 z {total} zgłoszeń. Pobierz raport, aby zobaczyć wszystkie.
-                </p>
+            
+            {/* Overlay during loading */}
+            {loadingPreview && preview.length > 0 && (
+              <div className="absolute inset-0 bg-white/40 backdrop-blur-[1px] flex items-center justify-center z-20">
+                <div className="bg-white px-4 py-2 rounded-xl shadow-lg border border-slate-100 flex items-center gap-3">
+                  <RefreshCw className="w-5 h-5 text-indigo-500 animate-spin" />
+                  <span className="text-sm font-bold text-slate-700">Aktualizowanie...</span>
+                </div>
               </div>
             )}
           </div>
+
+          {total !== null && total > 10 && preview.length > 0 && (
+            <div className="px-6 py-4 border-t border-slate-100 bg-slate-50/50 flex items-center justify-between">
+              <p className="text-xs font-medium text-slate-500">
+                Pokazuję <strong className="text-slate-700">10</strong> z <strong className="text-slate-700">{total}</strong> wyników.
+              </p>
+              <p className="text-xs font-bold text-indigo-600 cursor-pointer hover:underline" onClick={handleDownload}>
+                Pobierz pełny raport →
+              </p>
+            </div>
+          )}
         </div>
       </div>
     </div>
