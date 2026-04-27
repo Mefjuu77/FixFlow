@@ -380,8 +380,9 @@ const ReportsPage: React.FC = () => {
                     <th className="px-5 py-4 w-32">Status</th>
                     <th className="px-5 py-4 w-32">Priorytet</th>
                     <th className="px-5 py-4 hidden md:table-cell">Kategoria</th>
+                    <th className="px-5 py-4 hidden lg:table-cell">Zgłaszający</th>
                     <th className="px-5 py-4 hidden lg:table-cell">Technik</th>
-                    <th className="px-5 py-4 w-32">Data</th>
+                    <th className="px-5 py-4 w-40">Data</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100/80">
@@ -408,6 +409,14 @@ const ReportsPage: React.FC = () => {
                       </td>
                       <td className="px-5 py-4 text-slate-500 font-medium hidden md:table-cell">{row.category}</td>
                       <td className="px-5 py-4 text-slate-500 font-medium hidden lg:table-cell">
+                        <div className="flex items-center gap-2">
+                          <div className="w-6 h-6 rounded-full bg-slate-100 flex items-center justify-center text-[10px] font-bold text-slate-600">
+                            {row.creator.charAt(0)}
+                          </div>
+                          {row.creator}
+                        </div>
+                      </td>
+                      <td className="px-5 py-4 text-slate-500 font-medium hidden lg:table-cell">
                         {row.technician !== 'Brak' ? (
                           <div className="flex items-center gap-2">
                             <div className="w-6 h-6 rounded-full bg-indigo-100 flex items-center justify-center text-[10px] font-bold text-indigo-700">
@@ -419,7 +428,7 @@ const ReportsPage: React.FC = () => {
                           <span className="text-slate-400 italic">Nieprzypisany</span>
                         )}
                       </td>
-                      <td className="px-5 py-4 text-slate-400 text-xs font-medium whitespace-nowrap">{dayjs(row.created_at).format('DD MMM YYYY')}</td>
+                      <td className="px-5 py-4 text-slate-400 text-xs font-medium whitespace-nowrap">{dayjs(row.created_at).format('DD MMM YYYY, HH:mm')}</td>
                     </tr>
                   ))}
                 </tbody>
