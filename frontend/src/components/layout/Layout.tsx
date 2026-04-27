@@ -2,7 +2,7 @@ import React, { useContext } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { AuthContext } from '../../context/AuthContext';
 import { ThemeContext } from '../../context/ThemeContext';
-import { LayoutDashboard, Ticket, Users, Settings, LogOut, Wrench, BarChart3, Moon, Sun } from 'lucide-react';
+import { LayoutDashboard, Ticket, Users, Settings, LogOut, Wrench, BarChart3, FileBarChart, Moon, Sun } from 'lucide-react';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -26,6 +26,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
     ] : []),
     // Dostęp do panelu użytkowników tylko dla Admina
     ...(authContext?.user?.role === 'ADMIN' ? [
+      { name: 'Raporty', path: '/reports', icon: <FileBarChart size={20} /> },
       { name: 'Użytkownicy', path: '/users', icon: <Users size={20} /> },
     ] : []),
     // Ustawienia dostępne dla wszystkich
