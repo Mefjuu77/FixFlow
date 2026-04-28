@@ -192,36 +192,42 @@ const SettingsPage: React.FC = () => {
     { id: 'profile', label: 'Mój profil', icon: <User className="w-4 h-4" /> },
     { id: 'security', label: 'Zabezpieczenia', icon: <KeyRound className="w-4 h-4" /> },
     { id: 'appearance', label: 'Wygląd', icon: <Palette className="w-4 h-4" /> },
+    { id: 'notifications', label: 'Powiadomienia', icon: <Bell className="w-4 h-4" /> },
   ];
 
-  // Technik & Admin get extra tabs
-  if (role === 'TECHNICIAN' || role === 'ADMIN') {
-    tabs.push({ id: 'notifications', label: 'Powiadomienia', icon: <Bell className="w-4 h-4" /> });
-  }
-
   return (
-    <div className="w-full max-w-4xl mx-auto space-y-6 animate-in fade-in duration-500">
+    <div className="w-full max-w-5xl mx-auto space-y-8 animate-in fade-in duration-700 pb-12">
       {/* Header */}
-      <div>
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white tracking-tight">Ustawienia</h1>
-        <p className="mt-1 text-gray-500 dark:text-gray-400">Zarządzaj swoim profilem i preferencjami konta.</p>
+      <div className="relative overflow-hidden rounded-3xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 shadow-sm">
+        <div className="absolute inset-0 bg-gradient-to-r from-blue-50/50 via-transparent to-purple-50/50 dark:from-blue-900/10 dark:to-purple-900/10" />
+        <div className="relative px-8 py-8 md:py-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+          <div>
+            <h1 className="text-3xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-gray-900 to-gray-600 dark:from-white dark:to-gray-300 tracking-tight">Ustawienia</h1>
+            <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">Dostosuj swoje preferencje, wygląd aplikacji oraz zarządzaj bezpieczeństwem.</p>
+          </div>
+        </div>
       </div>
 
       {/* Tabs & Content */}
-      <div className="flex flex-col lg:flex-row gap-6">
+      <div className="flex flex-col lg:flex-row gap-8">
         {/* Sidebar Tabs */}
-        <div className="lg:w-56 flex-shrink-0">
-          <nav className="flex lg:flex-col gap-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl p-2 shadow-sm">
+        <div className="lg:w-64 flex-shrink-0">
+          <nav className="flex lg:flex-col gap-2">
             {tabs.map((tab) => (
               <button
                 key={tab.id}
                 onClick={() => { setActiveTab(tab.id as any); setSuccessMsg(null); setErrorMsg(null); }}
-                className={`flex items-center gap-2.5 w-full px-4 py-2.5 rounded-xl text-sm font-medium transition-all ${activeTab === tab.id
-                    ? 'bg-blue-50 dark:bg-blue-500/15 text-blue-700 dark:text-blue-400 shadow-sm'
-                    : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700/50 hover:text-gray-900 dark:hover:text-gray-200'
+                className={`relative flex items-center gap-3 w-full px-4 py-3 rounded-2xl text-sm font-semibold transition-all duration-300 ${activeTab === tab.id
+                    ? 'bg-white dark:bg-gray-800 text-blue-600 dark:text-blue-400 shadow-[0_2px_10px_-3px_rgba(6,81,237,0.1)] dark:shadow-[0_2px_10px_-3px_rgba(59,130,246,0.15)] border border-blue-100 dark:border-blue-900/50'
+                    : 'text-gray-500 dark:text-gray-400 hover:bg-white/60 dark:hover:bg-gray-800/50 hover:text-gray-900 dark:hover:text-gray-200 border border-transparent'
                   }`}
               >
-                {tab.icon}
+                {activeTab === tab.id && (
+                  <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1.5 h-6 bg-blue-600 dark:bg-blue-500 rounded-r-full" />
+                )}
+                <span className={`${activeTab === tab.id ? 'opacity-100 scale-110' : 'opacity-70 scale-100'} transition-all duration-300`}>
+                  {tab.icon}
+                </span>
                 {tab.label}
               </button>
             ))}
@@ -253,97 +259,100 @@ const SettingsPage: React.FC = () => {
                 </div>
               )}
 
-              {/* Avatar + Personal Info — combined card */}
-              <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-sm overflow-hidden">
-                {/* Avatar banner */}
-                <div className="relative h-28 bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-500">
-                  <div className="absolute -bottom-12 left-6">
-                    <div className="relative group">
-                      <div className="w-24 h-24 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center overflow-hidden border-4 border-white dark:border-gray-800 shadow-xl">
-                        {avatarPreview ? (
-                          <img src={avatarPreview} alt="Avatar" className="w-full h-full object-cover" />
-                        ) : (
-                          <span className="text-white font-bold text-3xl uppercase">
+              <div className="bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700/60 rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-[0_8px_30px_rgb(0,0,0,0.1)] p-8 transition-all">
+                {/* Profile Header (Avatar + Info + Actions) */}
+                <div className="flex flex-col sm:flex-row gap-8 items-start sm:items-center">
+                  <div className="relative group flex-shrink-0">
+                    <div className="w-28 h-28 rounded-2xl bg-white dark:bg-gray-800 flex items-center justify-center overflow-hidden border-2 border-gray-100 dark:border-gray-700 shadow-lg transition-transform duration-300 group-hover:scale-[1.02]">
+                      {avatarPreview ? (
+                        <img src={avatarPreview} alt="Avatar" className="w-full h-full object-cover" />
+                      ) : (
+                        <div className="w-full h-full bg-gradient-to-br from-blue-100 to-indigo-100 dark:from-blue-900/50 dark:to-indigo-900/50 flex items-center justify-center">
+                          <span className="text-blue-600 dark:text-blue-400 font-extrabold text-4xl uppercase">
                             {user?.first_name ? user.first_name.charAt(0) : 'U'}
                           </span>
-                        )}
-                      </div>
-                      <button
-                        onClick={() => fileInputRef.current?.click()}
-                        className="absolute -bottom-1 -right-1 w-8 h-8 bg-blue-600 hover:bg-blue-700 text-white rounded-lg flex items-center justify-center shadow-md transition-all hover:scale-110 border-2 border-white dark:border-gray-800"
-                        title="Zmień zdjęcie"
-                      >
-                        <Camera className="w-3.5 h-3.5" />
-                      </button>
-                      <input
-                        ref={fileInputRef}
-                        type="file"
-                        accept="image/*"
-                        onChange={handleAvatarChange}
-                        className="hidden"
-                      />
+                        </div>
+                      )}
                     </div>
-                  </div>
-                  {/* Avatar actions — top right of banner */}
-                  <div className="absolute bottom-3 right-4 flex gap-2">
                     <button
                       onClick={() => fileInputRef.current?.click()}
-                      className="flex items-center gap-1.5 px-3 py-1.5 bg-white/20 hover:bg-white/30 backdrop-blur-sm text-white text-xs font-semibold rounded-lg transition-all"
+                      className="absolute -bottom-2 -right-2 w-9 h-9 bg-blue-600 hover:bg-blue-700 text-white rounded-xl flex items-center justify-center shadow-lg transition-all hover:scale-110 border-[3px] border-white dark:border-gray-800"
+                      title="Zmień zdjęcie"
                     >
-                      <Upload className="w-3 h-3" />
-                      {avatarPreview ? 'Zmień' : 'Dodaj zdjęcie'}
+                      <Camera className="w-4 h-4" />
                     </button>
-                    {avatarPreview && (
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept="image/*"
+                      onChange={handleAvatarChange}
+                      className="hidden"
+                    />
+                  </div>
+
+                  <div className="flex-1">
+                    <div className="flex items-center gap-3 mb-1.5">
+                      <h3 className="text-2xl font-extrabold text-gray-900 dark:text-white tracking-tight">
+                        {user?.first_name} {user?.last_name}
+                      </h3>
+                      {role && (
+                        <span className={`px-2.5 py-1 text-xs font-bold rounded-lg uppercase tracking-wider ${ROLE_COLORS[role] || 'bg-gray-100 text-gray-600'}`}>
+                          {ROLE_LABELS[role]}
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-sm font-medium text-gray-500 dark:text-gray-400 flex items-center gap-2 mb-4">
+                      <Mail className="w-4 h-4 opacity-70" />
+                      {user?.email}
+                    </p>
+                    <div className="flex items-center gap-2">
                       <button
-                        onClick={handleRemoveAvatar}
-                        className="flex items-center gap-1.5 px-3 py-1.5 bg-red-500/20 hover:bg-red-500/30 backdrop-blur-sm text-white text-xs font-semibold rounded-lg transition-all"
+                        onClick={() => fileInputRef.current?.click()}
+                        className="flex items-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-200 text-sm font-semibold rounded-xl transition-all"
                       >
-                        <Trash2 className="w-3 h-3" />
-                        Usuń
+                        <Upload className="w-4 h-4" />
+                        Zmień zdjęcie
                       </button>
-                    )}
+                      {avatarPreview && (
+                        <button
+                          onClick={handleRemoveAvatar}
+                          className="flex items-center gap-2 px-4 py-2 bg-red-50 hover:bg-red-100 dark:bg-red-900/20 dark:hover:bg-red-900/40 text-red-600 dark:text-red-400 text-sm font-semibold rounded-xl transition-all"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                          Usuń zdjęcie
+                        </button>
+                      )}
+                    </div>
                   </div>
                 </div>
 
-                {/* User info below avatar */}
-                <div className="pt-16 px-6 pb-6">
-                  <div className="flex items-center gap-3 mb-1">
-                    <h3 className="text-xl font-bold text-gray-900 dark:text-white">
-                      {user?.first_name} {user?.last_name}
-                    </h3>
-                    {role && (
-                      <span className={`px-2.5 py-0.5 text-xs font-bold rounded-lg ${ROLE_COLORS[role] || 'bg-gray-100 text-gray-600'}`}>
-                        {ROLE_LABELS[role]}
-                      </span>
-                    )}
-                  </div>
-                  <p className="text-sm text-gray-500 dark:text-gray-400 flex items-center gap-1.5">
-                    <Mail className="w-3.5 h-3.5" />
-                    {user?.email}
-                  </p>
-
                   {/* Editable fields */}
-                  <div className="mt-6 pt-6 border-t border-gray-100 dark:border-gray-700">
-                    <h4 className="text-sm font-bold text-gray-700 dark:text-gray-300 mb-4">Dane osobowe</h4>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      <div>
-                        <label className="text-xs font-bold text-gray-500 dark:text-gray-400 mb-1.5 block uppercase tracking-wider">Imię</label>
+                  <div className="mt-8 pt-8 border-t border-gray-100 dark:border-gray-700/50">
+                    <div className="flex items-center gap-2 mb-6">
+                      <div className="w-8 h-8 rounded-lg bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
+                        <User className="w-4 h-4 text-gray-500 dark:text-gray-400" />
+                      </div>
+                      <h4 className="text-base font-bold text-gray-800 dark:text-gray-200">Dane osobowe</h4>
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                      <div className="space-y-2">
+                        <label className="text-[13px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-widest">Imię</label>
                         <input
                           type="text"
                           value={firstName}
                           onChange={(e) => setFirstName(e.target.value)}
-                          className="w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-700 rounded-xl text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent focus:bg-white dark:focus:bg-gray-900 transition-all placeholder-gray-400"
-                          placeholder="Jan"
+                          className="w-full px-4 py-3 bg-gray-50/50 dark:bg-gray-900/30 border border-gray-200 dark:border-gray-700 rounded-xl text-sm font-medium text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 focus:bg-white dark:focus:bg-gray-800 transition-all placeholder-gray-400 shadow-sm"
+                          placeholder="Wpisz imię..."
                         />
                       </div>
-                      <div>
-                        <label className="text-xs font-bold text-gray-500 dark:text-gray-400 mb-1.5 block uppercase tracking-wider">Nazwisko</label>
+                      <div className="space-y-2">
+                        <label className="text-[13px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-widest">Nazwisko</label>
                         <input
                           type="text"
                           value={lastName}
                           onChange={(e) => setLastName(e.target.value)}
-                          className="w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-700 rounded-xl text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent focus:bg-white dark:focus:bg-gray-900 transition-all placeholder-gray-400"
-                          placeholder="Kowalski"
+                          className="w-full px-4 py-3 bg-gray-50/50 dark:bg-gray-900/30 border border-gray-200 dark:border-gray-700 rounded-xl text-sm font-medium text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 focus:bg-white dark:focus:bg-gray-800 transition-all placeholder-gray-400 shadow-sm"
+                          placeholder="Wpisz nazwisko..."
                         />
                       </div>
                     </div>
@@ -351,11 +360,11 @@ const SettingsPage: React.FC = () => {
 
 
                   {/* Save button — inside card */}
-                  <div className="mt-6 pt-6 border-t border-gray-100 dark:border-gray-700 flex justify-end">
+                  <div className="mt-8 pt-6 border-t border-gray-100 dark:border-gray-700/50 flex justify-end">
                     <button
                       onClick={handleSaveProfile}
                       disabled={isSaving}
-                      className="inline-flex items-center gap-2 px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl text-sm shadow-lg shadow-blue-600/20 dark:shadow-none transition-all disabled:opacity-50 hover:shadow-xl hover:shadow-blue-600/25 active:scale-[0.98]"
+                      className="inline-flex items-center gap-2 px-8 py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl text-sm shadow-[0_4px_14px_0_rgba(37,99,235,0.39)] dark:shadow-none transition-all disabled:opacity-50 hover:shadow-[0_6px_20px_rgba(37,99,235,0.23)] active:scale-[0.98]"
                     >
                       {isSaving ? (
                         <Loader2 className="w-4 h-4 animate-spin" />
@@ -366,7 +375,6 @@ const SettingsPage: React.FC = () => {
                     </button>
                   </div>
                 </div>
-              </div>
             </div>
           )}
 
@@ -392,41 +400,41 @@ const SettingsPage: React.FC = () => {
                 </div>
               )}
 
-              <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-sm p-6">
-                <div className="flex items-center gap-3 mb-1">
-                  <div className="w-10 h-10 rounded-xl bg-blue-50 dark:bg-blue-500/10 flex items-center justify-center">
-                    <KeyRound className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+              <div className="bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700/60 rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-[0_8px_30px_rgb(0,0,0,0.1)] p-8">
+                <div className="flex items-center gap-4 mb-8">
+                  <div className="w-12 h-12 rounded-2xl bg-blue-50 dark:bg-blue-500/10 flex items-center justify-center border border-blue-100 dark:border-blue-500/20">
+                    <KeyRound className="w-6 h-6 text-blue-600 dark:text-blue-400" />
                   </div>
                   <div>
-                    <h3 className="text-lg font-bold text-gray-900 dark:text-white">Zmiana hasła</h3>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">Zaktualizuj swoje hasło do konta.</p>
+                    <h3 className="text-xl font-bold text-gray-900 dark:text-white tracking-tight">Zmiana hasła</h3>
+                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">Zaktualizuj swoje hasło dostępowe do platformy FixFlow.</p>
                   </div>
                 </div>
 
-                <form onSubmit={handleChangePassword} className="mt-8 space-y-4 max-w-md">
-                  <div>
-                    <label className="text-xs font-bold text-gray-500 dark:text-gray-400 mb-1.5 block uppercase tracking-wider">Obecne hasło</label>
+                <form onSubmit={handleChangePassword} className="space-y-5 max-w-md">
+                  <div className="space-y-2">
+                    <label className="text-[13px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-widest">Obecne hasło</label>
                     <div className="relative">
                       <input
                         type={showPasswords ? "text" : "password"}
                         value={oldPassword}
                         onChange={(e) => setOldPassword(e.target.value)}
                         required
-                        className="w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-700 rounded-xl text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent focus:bg-white dark:focus:bg-gray-900 transition-all placeholder-gray-400 pr-10"
+                        className="w-full px-4 py-3 bg-gray-50/50 dark:bg-gray-900/30 border border-gray-200 dark:border-gray-700 rounded-xl text-sm font-medium text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 focus:bg-white dark:focus:bg-gray-800 transition-all placeholder-gray-400 shadow-sm pr-11"
                         placeholder="••••••••"
                       />
                       <button
                         type="button"
                         onClick={() => setShowPasswords(!showPasswords)}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                        className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
                       >
-                        {showPasswords ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                        {showPasswords ? <EyeOff className="w-4.5 h-4.5" /> : <Eye className="w-4.5 h-4.5" />}
                       </button>
                     </div>
                   </div>
                   
-                  <div>
-                    <label className="text-xs font-bold text-gray-500 dark:text-gray-400 mb-1.5 block uppercase tracking-wider">Nowe hasło</label>
+                  <div className="space-y-2">
+                    <label className="text-[13px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-widest">Nowe hasło</label>
                     <div className="relative">
                       <input
                         type={showPasswords ? "text" : "password"}
@@ -434,14 +442,14 @@ const SettingsPage: React.FC = () => {
                         onChange={(e) => setNewPassword(e.target.value)}
                         required
                         minLength={6}
-                        className="w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-700 rounded-xl text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent focus:bg-white dark:focus:bg-gray-900 transition-all placeholder-gray-400 pr-10"
+                        className="w-full px-4 py-3 bg-gray-50/50 dark:bg-gray-900/30 border border-gray-200 dark:border-gray-700 rounded-xl text-sm font-medium text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 focus:bg-white dark:focus:bg-gray-800 transition-all placeholder-gray-400 shadow-sm"
                         placeholder="••••••••"
                       />
                     </div>
                   </div>
 
-                  <div>
-                    <label className="text-xs font-bold text-gray-500 dark:text-gray-400 mb-1.5 block uppercase tracking-wider">Powtórz nowe hasło</label>
+                  <div className="space-y-2">
+                    <label className="text-[13px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-widest">Powtórz nowe hasło</label>
                     <div className="relative">
                       <input
                         type={showPasswords ? "text" : "password"}
@@ -449,7 +457,7 @@ const SettingsPage: React.FC = () => {
                         onChange={(e) => setConfirmPassword(e.target.value)}
                         required
                         minLength={6}
-                        className="w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-700 rounded-xl text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent focus:bg-white dark:focus:bg-gray-900 transition-all placeholder-gray-400 pr-10"
+                        className="w-full px-4 py-3 bg-gray-50/50 dark:bg-gray-900/30 border border-gray-200 dark:border-gray-700 rounded-xl text-sm font-medium text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 focus:bg-white dark:focus:bg-gray-800 transition-all placeholder-gray-400 shadow-sm"
                         placeholder="••••••••"
                       />
                     </div>
@@ -477,11 +485,18 @@ const SettingsPage: React.FC = () => {
           {/* ===== APPEARANCE TAB ===== */}
           {activeTab === 'appearance' && (
             <div className="space-y-6">
-              <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-sm p-6">
-                <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-1">Motyw aplikacji</h3>
-                <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">Wybierz preferowany motyw kolorystyczny interfejsu.</p>
+              <div className="bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700/60 rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-[0_8px_30px_rgb(0,0,0,0.1)] p-8">
+                <div className="flex items-center gap-4 mb-8">
+                  <div className="w-12 h-12 rounded-2xl bg-blue-50 dark:bg-blue-500/10 flex items-center justify-center border border-blue-100 dark:border-blue-500/20">
+                    <Palette className="w-6 h-6 text-blue-600 dark:text-blue-400" />
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-bold text-gray-900 dark:text-white tracking-tight">Motyw aplikacji</h3>
+                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">Wybierz preferowany motyw kolorystyczny interfejsu.</p>
+                  </div>
+                </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                   {/* Light mode */}
                   <button
                     onClick={() => { if (themeContext?.isDark) themeContext.toggleTheme(); }}
@@ -532,27 +547,36 @@ const SettingsPage: React.FC = () => {
 
           {/* ===== NOTIFICATIONS TAB (Technik / Admin) ===== */}
           {activeTab === 'notifications' && (
-            <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-sm p-6">
-              <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-1">Powiadomienia</h3>
-              <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">Zarządzaj swoimi preferencjami powiadomień.</p>
-
-              <div className="space-y-3">
-                <div 
-                  onClick={() => handleTogglePreference('notify_new_ticket', notifyNewTicket)}
-                  className={`flex items-center justify-between p-4 rounded-xl border transition-colors cursor-pointer ${
-                    notifyNewTicket 
-                      ? 'bg-blue-50/50 dark:bg-blue-900/10 border-blue-200 dark:border-blue-800/50' 
-                      : 'bg-gray-50 dark:bg-gray-900/30 border-gray-100 dark:border-gray-700/50 hover:border-gray-200 dark:hover:border-gray-600'
-                  }`}
-                >
-                  <div>
-                    <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">Nowe zgłoszenia</p>
-                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Otrzymuj e-mail gdy zostanie utworzone nowe zgłoszenie.</p>
+              <div className="bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700/60 rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-[0_8px_30px_rgb(0,0,0,0.1)] p-8">
+                <div className="flex items-center gap-4 mb-8">
+                  <div className="w-12 h-12 rounded-2xl bg-blue-50 dark:bg-blue-500/10 flex items-center justify-center border border-blue-100 dark:border-blue-500/20">
+                    <Bell className="w-6 h-6 text-blue-600 dark:text-blue-400" />
                   </div>
-                  <div className={`w-11 h-6 rounded-full relative shadow-inner flex-shrink-0 ml-4 transition-colors duration-300 ${notifyNewTicket ? 'bg-blue-600' : 'bg-gray-300 dark:bg-gray-600'}`}>
-                    <div className={`absolute top-0.5 w-5 h-5 bg-white rounded-full shadow-sm transition-transform duration-300 ${notifyNewTicket ? 'right-0.5' : 'left-0.5'}`} />
+                  <div>
+                    <h3 className="text-xl font-bold text-gray-900 dark:text-white tracking-tight">Powiadomienia</h3>
+                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">Zarządzaj swoimi preferencjami powiadomień.</p>
                   </div>
                 </div>
+
+                <div className="space-y-4">
+                {role !== 'EMPLOYEE' && (
+                  <div 
+                    onClick={() => handleTogglePreference('notify_new_ticket', notifyNewTicket)}
+                    className={`flex items-center justify-between p-4 rounded-xl border transition-colors cursor-pointer ${
+                      notifyNewTicket 
+                        ? 'bg-blue-50/50 dark:bg-blue-900/10 border-blue-200 dark:border-blue-800/50' 
+                        : 'bg-gray-50 dark:bg-gray-900/30 border-gray-100 dark:border-gray-700/50 hover:border-gray-200 dark:hover:border-gray-600'
+                    }`}
+                  >
+                    <div>
+                      <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">Nowe zgłoszenia</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Otrzymuj e-mail gdy zostanie utworzone nowe zgłoszenie.</p>
+                    </div>
+                    <div className={`w-11 h-6 rounded-full relative shadow-inner flex-shrink-0 ml-4 transition-colors duration-300 ${notifyNewTicket ? 'bg-blue-600' : 'bg-gray-300 dark:bg-gray-600'}`}>
+                      <div className={`absolute top-0.5 w-5 h-5 bg-white rounded-full shadow-sm transition-transform duration-300 ${notifyNewTicket ? 'right-0.5' : 'left-0.5'}`} />
+                    </div>
+                  </div>
+                )}
 
                 <div 
                   onClick={() => handleTogglePreference('notify_ticket_comment', notifyComment)}

@@ -9,7 +9,6 @@ import {
   AlertCircle,
   Plus,
   ArrowUpRight,
-  TrendingUp,
   Ticket as TicketIcon,
   Users,
   AlertTriangle,

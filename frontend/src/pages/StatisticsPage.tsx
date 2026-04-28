@@ -9,6 +9,7 @@ import {
   ArrowUpRight,
   Lightbulb,
   Users as UsersIcon,
+  UserMinus,
 } from 'lucide-react';
 import dayjs from 'dayjs';
 import { getCategoryIcon } from '../utils/ticketConstants';
@@ -405,14 +406,14 @@ const StatisticsPage: React.FC = () => {
             <p className="text-xs text-gray-500 mb-5">Rozkład aktywnych zgłoszeń w zespole.</p>
             <div className="space-y-3">
               {unassignedCount > 0 && (
-                <HorizontalBar label="Nie przypisano" value={unassignedCount} max={maxWorkload} color="#f87171" total={activeTickets.length} icon={<UsersIcon className="w-4 h-4 text-gray-400" />} onClick={() => navigate('/tickets?assignment=unassigned')} />
+                <HorizontalBar label="Nie przypisano" value={unassignedCount} max={maxWorkload} color="#f87171" total={activeTickets.length} icon={<UserMinus className="w-4 h-4 text-gray-400" />} onClick={() => navigate('/tickets?assignment=unassigned')} />
               )}
               {workloadEntries.map(([name, data]) => (
                 <HorizontalBar key={name} label={name} value={data.count} max={maxWorkload} color="#6366f1" total={activeTickets.length} icon={
                   data.avatar ? (
                     <img src={data.avatar} alt="" className="w-5 h-5 rounded-full object-cover" />
                   ) : (
-                    <div className="w-5 h-5 rounded-full bg-indigo-100 flex items-center justify-center"><span className="text-[10px] font-bold text-indigo-600">{name.charAt(0)}</span></div>
+                    <div className="w-5 h-5 rounded-full bg-blue-600 flex items-center justify-center"><span className="text-[10px] font-bold text-white uppercase">{name.charAt(0)}</span></div>
                   )
                 } onClick={() => navigate(`/tickets?assignment=${data.techId}`)} />
               ))}
@@ -552,14 +553,14 @@ const StatisticsPage: React.FC = () => {
 
             <div className="space-y-3">
               {unassignedCount > 0 && (
-                <HorizontalBar label="Nie przypisano" value={unassignedCount} max={maxWorkload} color="#f87171" total={activeTickets.length} icon={<UsersIcon className="w-4 h-4 text-gray-400" />} onClick={() => navigate('/tickets?assignment=unassigned')} />
+                <HorizontalBar label="Nie przypisano" value={unassignedCount} max={maxWorkload} color="#f87171" total={activeTickets.length} icon={<UserMinus className="w-4 h-4 text-gray-400" />} onClick={() => navigate('/tickets?assignment=unassigned')} />
               )}
               {workloadEntries.map(([name, data]) => (
                 <HorizontalBar key={name} label={name} value={data.count} max={maxWorkload} color="#6366f1" total={activeTickets.length} icon={
                   data.avatar ? (
                     <img src={data.avatar} alt="" className="w-5 h-5 rounded-full object-cover" />
                   ) : (
-                    <div className="w-5 h-5 rounded-full bg-indigo-100 flex items-center justify-center"><span className="text-[10px] font-bold text-indigo-600">{name.charAt(0)}</span></div>
+                    <div className="w-5 h-5 rounded-full bg-blue-600 flex items-center justify-center"><span className="text-[10px] font-bold text-white uppercase">{name.charAt(0)}</span></div>
                   )
                 } onClick={() => navigate(`/tickets?assignment=${data.techId}`)} />
               ))}
