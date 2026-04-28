@@ -61,10 +61,10 @@ const CalendarDropdown = (props: any) => {
       <button
         type="button"
         onClick={() => setOpen(!open)}
-        className="flex items-center gap-1 px-2.5 py-1 bg-slate-50 border border-slate-200 rounded-lg text-sm font-semibold text-slate-700 hover:border-indigo-400 hover:bg-indigo-50 transition-all cursor-pointer capitalize"
+        className="flex items-center gap-1 px-2.5 py-1 bg-white border border-slate-200 rounded-lg text-sm font-bold text-slate-700 hover:border-indigo-400 hover:text-indigo-600 hover:shadow-sm active:scale-95 transition-all cursor-pointer capitalize"
       >
         <span className="capitalize">{label}</span>
-        <ChevronDown className={`w-3.5 h-3.5 text-indigo-500 transition-transform duration-200 ${open ? 'rotate-180' : ''}`} />
+        <ChevronDown className={`w-3.5 h-3.5 text-indigo-500 transition-transform duration-300 ${open ? 'rotate-180' : ''}`} />
       </button>
       {open && (
         <div className={`absolute z-[60] mt-1 ${name === 'years' ? 'right-0' : 'left-0'} bg-white rounded-xl shadow-2xl border border-slate-200/80 py-1 max-h-52 overflow-y-auto min-w-[120px]`}>
