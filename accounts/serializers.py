@@ -6,7 +6,8 @@ User = get_user_model()
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ('id', 'email', 'role', 'first_name', 'last_name', 'avatar')
+        fields = ('id', 'email', 'role', 'first_name', 'last_name', 'avatar', 
+                  'notify_new_ticket', 'notify_ticket_comment', 'notify_ticket_status_change')
 
 class UserCreateSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True, min_length=6)
@@ -45,4 +46,15 @@ class ProfileUpdateSerializer(serializers.ModelSerializer):
     """
     class Meta:
         model = User
-        fields = ('first_name', 'last_name', 'avatar')
+        fields = ('first_name', 'last_name', 'avatar',
+                  'notify_new_ticket', 'notify_ticket_comment', 'notify_ticket_status_change')
+
+class ChangePasswordSerializer(serializers.Serializer):
+    old_password = serializers.CharField(required=True)
+    new_password = serializers.CharField(required=True, min_length=6)
+
+    def validate_old_password(self, value):
+        user = self.context['request'].user
+        if not user.check_password(value):
+            raise serializers.ValidationError("Obecne hasło jest nieprawidłowe.")
+        return value

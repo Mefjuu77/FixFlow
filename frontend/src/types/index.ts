@@ -5,6 +5,9 @@ export interface User {
   first_name: string;
   last_name: string;
   avatar?: string | null;
+  notify_new_ticket?: boolean;
+  notify_ticket_comment?: boolean;
+  notify_ticket_status_change?: boolean;
 }
 
 export interface Category {

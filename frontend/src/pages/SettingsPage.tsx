@@ -8,7 +8,6 @@ import {
   Save,
   User,
   Bell,
-  Shield,
   CheckCircle,
   AlertTriangle,
   X,
@@ -19,6 +18,9 @@ import {
   Mail,
   Trash2,
   Upload,
+  KeyRound,
+  Eye,
+  EyeOff,
 } from 'lucide-react';
 
 const ROLE_LABELS: Record<string, string> = {
@@ -41,7 +43,7 @@ const SettingsPage: React.FC = () => {
   const role = user?.role;
 
   // Tabs
-  const [activeTab, setActiveTab] = useState<'profile' | 'appearance' | 'notifications'>('profile');
+  const [activeTab, setActiveTab] = useState<'profile' | 'security' | 'appearance' | 'notifications'>('profile');
 
   // Profile form state
   const [firstName, setFirstName] = useState(user?.first_name || '');
@@ -49,6 +51,20 @@ const SettingsPage: React.FC = () => {
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(user?.avatar || null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Security form state
+  const [oldPassword, setOldPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [showPasswords, setShowPasswords] = useState(false);
+  const [isChangingPassword, setIsChangingPassword] = useState(false);
+  const [passwordSuccessMsg, setPasswordSuccessMsg] = useState<string | null>(null);
+  const [passwordErrorMsg, setPasswordErrorMsg] = useState<string | null>(null);
+
+  // Notifications state
+  const [notifyNewTicket, setNotifyNewTicket] = useState(user?.notify_new_ticket ?? true);
+  const [notifyComment, setNotifyComment] = useState(user?.notify_ticket_comment ?? true);
+  const [notifyStatus, setNotifyStatus] = useState(user?.notify_ticket_status_change ?? true);
 
   // Status messages
   const [isSaving, setIsSaving] = useState(false);
@@ -120,8 +136,61 @@ const SettingsPage: React.FC = () => {
     }
   };
 
+  const handleChangePassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setPasswordSuccessMsg(null);
+    setPasswordErrorMsg(null);
+
+    if (newPassword !== confirmPassword) {
+      setPasswordErrorMsg('Nowe hasła nie są identyczne.');
+      return;
+    }
+
+    if (newPassword.length < 6) {
+      setPasswordErrorMsg('Hasło musi mieć co najmniej 6 znaków.');
+      return;
+    }
+
+    setIsChangingPassword(true);
+    try {
+      await api.post('users/change-password/', {
+        old_password: oldPassword,
+        new_password: newPassword,
+      });
+      setPasswordSuccessMsg('Hasło zostało pomyślnie zmienione.');
+      setOldPassword('');
+      setNewPassword('');
+      setConfirmPassword('');
+    } catch (err: any) {
+      if (err.response?.data) {
+        const messages = Object.values(err.response.data).flat().join(' ');
+        setPasswordErrorMsg(messages || 'Nie udało się zmienić hasła.');
+      } else {
+        setPasswordErrorMsg('Wystąpił błąd podczas zmiany hasła.');
+      }
+    } finally {
+      setIsChangingPassword(false);
+    }
+  };
+
+  const handleTogglePreference = async (field: 'notify_new_ticket' | 'notify_ticket_comment' | 'notify_ticket_status_change', currentValue: boolean) => {
+    const newValue = !currentValue;
+    try {
+      await api.patch('users/me/', { [field]: newValue });
+      
+      if (field === 'notify_new_ticket') setNotifyNewTicket(newValue);
+      if (field === 'notify_ticket_comment') setNotifyComment(newValue);
+      if (field === 'notify_ticket_status_change') setNotifyStatus(newValue);
+      
+      await authContext?.refreshUser();
+    } catch (err) {
+      console.error('Błąd aktualizacji preferencji:', err);
+    }
+  };
+
   const tabs: { id: string; label: string; icon: React.ReactNode }[] = [
     { id: 'profile', label: 'Mój profil', icon: <User className="w-4 h-4" /> },
+    { id: 'security', label: 'Zabezpieczenia', icon: <KeyRound className="w-4 h-4" /> },
     { id: 'appearance', label: 'Wygląd', icon: <Palette className="w-4 h-4" /> },
   ];
 
@@ -301,6 +370,110 @@ const SettingsPage: React.FC = () => {
             </div>
           )}
 
+          {/* ===== SECURITY TAB ===== */}
+          {activeTab === 'security' && (
+            <div className="space-y-6">
+              {passwordSuccessMsg && (
+                <div className="flex items-center gap-3 p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-xl text-sm text-green-800 dark:text-green-300 animate-in fade-in duration-200">
+                  <CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0" />
+                  <span className="font-medium">{passwordSuccessMsg}</span>
+                  <button onClick={() => setPasswordSuccessMsg(null)} className="ml-auto p-1 hover:bg-green-100 dark:hover:bg-green-800/50 rounded-lg transition-colors">
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+              )}
+              {passwordErrorMsg && (
+                <div className="flex items-center gap-3 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl text-sm text-red-800 dark:text-red-300 animate-in fade-in duration-200">
+                  <AlertTriangle className="w-5 h-5 text-red-500 flex-shrink-0" />
+                  <span className="font-medium">{passwordErrorMsg}</span>
+                  <button onClick={() => setPasswordErrorMsg(null)} className="ml-auto p-1 hover:bg-red-100 dark:hover:bg-red-800/50 rounded-lg transition-colors">
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+              )}
+
+              <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-sm p-6">
+                <div className="flex items-center gap-3 mb-1">
+                  <div className="w-10 h-10 rounded-xl bg-blue-50 dark:bg-blue-500/10 flex items-center justify-center">
+                    <KeyRound className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-bold text-gray-900 dark:text-white">Zmiana hasła</h3>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">Zaktualizuj swoje hasło do konta.</p>
+                  </div>
+                </div>
+
+                <form onSubmit={handleChangePassword} className="mt-8 space-y-4 max-w-md">
+                  <div>
+                    <label className="text-xs font-bold text-gray-500 dark:text-gray-400 mb-1.5 block uppercase tracking-wider">Obecne hasło</label>
+                    <div className="relative">
+                      <input
+                        type={showPasswords ? "text" : "password"}
+                        value={oldPassword}
+                        onChange={(e) => setOldPassword(e.target.value)}
+                        required
+                        className="w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-700 rounded-xl text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent focus:bg-white dark:focus:bg-gray-900 transition-all placeholder-gray-400 pr-10"
+                        placeholder="••••••••"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPasswords(!showPasswords)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                      >
+                        {showPasswords ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                      </button>
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <label className="text-xs font-bold text-gray-500 dark:text-gray-400 mb-1.5 block uppercase tracking-wider">Nowe hasło</label>
+                    <div className="relative">
+                      <input
+                        type={showPasswords ? "text" : "password"}
+                        value={newPassword}
+                        onChange={(e) => setNewPassword(e.target.value)}
+                        required
+                        minLength={6}
+                        className="w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-700 rounded-xl text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent focus:bg-white dark:focus:bg-gray-900 transition-all placeholder-gray-400 pr-10"
+                        placeholder="••••••••"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="text-xs font-bold text-gray-500 dark:text-gray-400 mb-1.5 block uppercase tracking-wider">Powtórz nowe hasło</label>
+                    <div className="relative">
+                      <input
+                        type={showPasswords ? "text" : "password"}
+                        value={confirmPassword}
+                        onChange={(e) => setConfirmPassword(e.target.value)}
+                        required
+                        minLength={6}
+                        className="w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-700 rounded-xl text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent focus:bg-white dark:focus:bg-gray-900 transition-all placeholder-gray-400 pr-10"
+                        placeholder="••••••••"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="pt-4">
+                    <button
+                      type="submit"
+                      disabled={isChangingPassword || !oldPassword || !newPassword || !confirmPassword}
+                      className="inline-flex items-center gap-2 px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl text-sm shadow-lg shadow-blue-600/20 dark:shadow-none transition-all disabled:opacity-50 hover:shadow-xl hover:shadow-blue-600/25 active:scale-[0.98]"
+                    >
+                      {isChangingPassword ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <Save className="w-4 h-4" />
+                      )}
+                      {isChangingPassword ? 'Zmienianie...' : 'Zmień hasło'}
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          )}
+
           {/* ===== APPEARANCE TAB ===== */}
           {activeTab === 'appearance' && (
             <div className="space-y-6">
@@ -364,27 +537,55 @@ const SettingsPage: React.FC = () => {
               <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">Zarządzaj swoimi preferencjami powiadomień.</p>
 
               <div className="space-y-3">
-                {[
-                  { title: 'Powiadomienia e-mail o nowych zgłoszeniach', desc: 'Otrzymuj e-mail gdy zostanie utworzone nowe zgłoszenie.' },
-                  { title: 'Powiadomienia o komentarzach', desc: 'Otrzymuj e-mail gdy ktoś skomentuje Twoje zgłoszenie.' },
-                  { title: 'Powiadomienia o zmianie statusu', desc: 'Otrzymuj e-mail gdy zmieni się status Twojego zgłoszenia.' },
-                ].map((item, i) => (
-                  <div key={i} className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-900/30 rounded-xl border border-gray-100 dark:border-gray-700/50 hover:border-gray-200 dark:hover:border-gray-600 transition-colors">
-                    <div>
-                      <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">{item.title}</p>
-                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{item.desc}</p>
-                    </div>
-                    <div className="w-11 h-6 bg-blue-600 rounded-full relative cursor-pointer shadow-inner flex-shrink-0 ml-4">
-                      <div className="absolute right-0.5 top-0.5 w-5 h-5 bg-white rounded-full shadow-sm transition-transform" />
-                    </div>
+                <div 
+                  onClick={() => handleTogglePreference('notify_new_ticket', notifyNewTicket)}
+                  className={`flex items-center justify-between p-4 rounded-xl border transition-colors cursor-pointer ${
+                    notifyNewTicket 
+                      ? 'bg-blue-50/50 dark:bg-blue-900/10 border-blue-200 dark:border-blue-800/50' 
+                      : 'bg-gray-50 dark:bg-gray-900/30 border-gray-100 dark:border-gray-700/50 hover:border-gray-200 dark:hover:border-gray-600'
+                  }`}
+                >
+                  <div>
+                    <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">Nowe zgłoszenia</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Otrzymuj e-mail gdy zostanie utworzone nowe zgłoszenie.</p>
                   </div>
-                ))}
-              </div>
+                  <div className={`w-11 h-6 rounded-full relative shadow-inner flex-shrink-0 ml-4 transition-colors duration-300 ${notifyNewTicket ? 'bg-blue-600' : 'bg-gray-300 dark:bg-gray-600'}`}>
+                    <div className={`absolute top-0.5 w-5 h-5 bg-white rounded-full shadow-sm transition-transform duration-300 ${notifyNewTicket ? 'right-0.5' : 'left-0.5'}`} />
+                  </div>
+                </div>
 
-              <div className="mt-6 p-4 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-xl">
-                <div className="flex items-center gap-2 text-sm text-amber-800 dark:text-amber-300 font-medium">
-                  <AlertTriangle className="w-4 h-4 text-amber-500 flex-shrink-0" />
-                  Ta sekcja jest w trakcie rozwoju. Ustawienia powiadomień zostaną uruchomione wkrótce.
+                <div 
+                  onClick={() => handleTogglePreference('notify_ticket_comment', notifyComment)}
+                  className={`flex items-center justify-between p-4 rounded-xl border transition-colors cursor-pointer ${
+                    notifyComment 
+                      ? 'bg-blue-50/50 dark:bg-blue-900/10 border-blue-200 dark:border-blue-800/50' 
+                      : 'bg-gray-50 dark:bg-gray-900/30 border-gray-100 dark:border-gray-700/50 hover:border-gray-200 dark:hover:border-gray-600'
+                  }`}
+                >
+                  <div>
+                    <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">Komentarze</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Otrzymuj e-mail gdy ktoś skomentuje Twoje zgłoszenie.</p>
+                  </div>
+                  <div className={`w-11 h-6 rounded-full relative shadow-inner flex-shrink-0 ml-4 transition-colors duration-300 ${notifyComment ? 'bg-blue-600' : 'bg-gray-300 dark:bg-gray-600'}`}>
+                    <div className={`absolute top-0.5 w-5 h-5 bg-white rounded-full shadow-sm transition-transform duration-300 ${notifyComment ? 'right-0.5' : 'left-0.5'}`} />
+                  </div>
+                </div>
+
+                <div 
+                  onClick={() => handleTogglePreference('notify_ticket_status_change', notifyStatus)}
+                  className={`flex items-center justify-between p-4 rounded-xl border transition-colors cursor-pointer ${
+                    notifyStatus 
+                      ? 'bg-blue-50/50 dark:bg-blue-900/10 border-blue-200 dark:border-blue-800/50' 
+                      : 'bg-gray-50 dark:bg-gray-900/30 border-gray-100 dark:border-gray-700/50 hover:border-gray-200 dark:hover:border-gray-600'
+                  }`}
+                >
+                  <div>
+                    <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">Zmiana statusu</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Otrzymuj e-mail gdy zmieni się status Twojego zgłoszenia.</p>
+                  </div>
+                  <div className={`w-11 h-6 rounded-full relative shadow-inner flex-shrink-0 ml-4 transition-colors duration-300 ${notifyStatus ? 'bg-blue-600' : 'bg-gray-300 dark:bg-gray-600'}`}>
+                    <div className={`absolute top-0.5 w-5 h-5 bg-white rounded-full shadow-sm transition-transform duration-300 ${notifyStatus ? 'right-0.5' : 'left-0.5'}`} />
+                  </div>
                 </div>
               </div>
             </div>

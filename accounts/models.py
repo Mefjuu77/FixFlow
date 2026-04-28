@@ -23,6 +23,11 @@ class CustomUser(AbstractUser):
         blank=True,
         verbose_name=_('Zdjęcie profilowe')
     )
+    
+    # Preferencje powiadomień
+    notify_new_ticket = models.BooleanField(default=True, verbose_name=_('Powiadamiaj o nowych zgłoszeniach'))
+    notify_ticket_comment = models.BooleanField(default=True, verbose_name=_('Powiadamiaj o komentarzach'))
+    notify_ticket_status_change = models.BooleanField(default=True, verbose_name=_('Powiadamiaj o zmianie statusu'))
 
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = []
