@@ -102,6 +102,12 @@ class ReportExportView(APIView):
             preview_tickets = qs[:10]
             rows = []
             for t in preview_tickets:
+                creator_avatar = None
+                if t.creator and hasattr(t.creator, 'avatar') and t.creator.avatar:
+                    creator_avatar = request.build_absolute_uri(t.creator.avatar.url)
+                tech_avatar = None
+                if t.technician and hasattr(t.technician, 'avatar') and t.technician.avatar:
+                    tech_avatar = request.build_absolute_uri(t.technician.avatar.url)
                 rows.append({
                     'id': t.id,
                     'title': t.title,
@@ -109,7 +115,9 @@ class ReportExportView(APIView):
                     'priority': t.get_priority_display(),
                     'category': t.category.name if t.category else '',
                     'creator': f'{t.creator.first_name} {t.creator.last_name}'.strip() if t.creator else '',
+                    'creator_avatar': creator_avatar,
                     'technician': f'{t.technician.first_name} {t.technician.last_name}'.strip() if t.technician else 'Brak',
+                    'technician_avatar': tech_avatar,
                     'created_at': t.created_at.strftime('%Y-%m-%d %H:%M') if t.created_at else '',
                     'comments_count': getattr(t, 'comments_count', 0),
                     'work_minutes': getattr(t, 'work_minutes', 0) or 0,

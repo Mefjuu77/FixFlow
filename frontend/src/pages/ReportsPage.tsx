@@ -7,11 +7,14 @@ import { User, Category } from '../types';
 import useTitle from '../hooks/useTitle';
 import dayjs from 'dayjs';
 import 'dayjs/locale/pl';
+import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
+import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
+import { DateCalendar } from '@mui/x-date-pickers/DateCalendar';
 import {
   FileBarChart, Calendar, Filter, Download, FileSpreadsheet, FileText,
   ChevronDown, Search, Loader2, CheckCircle2, ChevronsUp, Equal,
   ChevronsDown, Circle, XCircle, BarChart3, SlidersHorizontal, ArrowDownToLine, RefreshCw,
-  Activity, Zap, Tags, UserCheck, User as UserIcon,
+  Activity, Zap, Tags, UserCheck, User as UserIcon, UserMinus, AlertTriangle,
   Monitor, AppWindow, Globe, KeyRound, Shapes
 } from 'lucide-react';
 
@@ -20,7 +23,8 @@ dayjs.locale('pl');
 // === Typy ===
 interface PreviewRow {
   id: number; title: string; status: string; priority: string;
-  category: string; creator: string; technician: string;
+  category: string; creator: string; creator_avatar?: string | null;
+  technician: string; technician_avatar?: string | null;
   created_at: string; comments_count: number; work_minutes: number;
 }
 
@@ -127,6 +131,8 @@ const ReportsPage: React.FC = () => {
   const [datePreset, setDatePreset] = useState<DatePreset>('month');
   const [dateFrom, setDateFrom] = useState(dayjs().subtract(1, 'month').format('YYYY-MM-DD'));
   const [dateTo, setDateTo] = useState(dayjs().format('YYYY-MM-DD'));
+  const [showFromCal, setShowFromCal] = useState(false);
+  const [showToCal, setShowToCal] = useState(false);
   const [statuses, setStatuses] = useState<string[]>([]);
   const [priorities, setPriorities] = useState<string[]>([]);
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
@@ -222,7 +228,7 @@ const ReportsPage: React.FC = () => {
 
   const statusOptions = [
     { value: 'NOWE', label: 'Nowe', icon: <Circle className="w-4 h-4 text-blue-600 stroke-[2.5]" />, color: 'text-blue-700' },
-    { value: 'W_TOKU', label: 'W toku', icon: <Circle className="w-4 h-4 text-amber-500 stroke-[2.5]" />, color: 'text-amber-700' },
+    { value: 'W_TOKU', label: 'W toku', icon: <Loader2 className="w-4 h-4 text-amber-500 stroke-[2.5]" />, color: 'text-amber-700' },
     { value: 'ROZWIAZANE', label: 'Rozwiązane', icon: <CheckCircle2 className="w-4 h-4 text-green-600 stroke-[2.5]" />, color: 'text-emerald-700' },
     { value: 'ZAMKNIETE', label: 'Zamknięte', icon: <XCircle className="w-4 h-4 text-gray-500 stroke-[2.5]" />, color: 'text-slate-600' },
   ];
@@ -280,7 +286,7 @@ const ReportsPage: React.FC = () => {
               <FileText className="w-4 h-4" /> CSV
             </button>
           </div>
-          <button onClick={handleDownload} disabled={downloading || total === 0}
+          <button onClick={handleDownload} disabled={downloading || total === 0 || (dateFrom > dateTo)}
             className="flex items-center justify-center gap-2 py-2.5 bg-blue-600 text-white rounded-xl text-sm font-bold transition-all hover:bg-blue-700 active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none shadow-lg shadow-blue-600/20 w-[220px] shrink-0"
           >
             {downloading ? <RefreshCw className="w-4 h-4 animate-spin" /> : <ArrowDownToLine className="w-4 h-4" />}
@@ -310,21 +316,84 @@ const ReportsPage: React.FC = () => {
             </div>
 
             <div className="grid grid-cols-2 gap-3 mt-4">
-              <div className="space-y-1">
-                <label className="text-[10px] text-indigo-500/70 font-extrabold uppercase ml-1 tracking-wider">Od</label>
-                <input type="date" value={dateFrom} 
-                  onChange={e => { setDateFrom(e.target.value); setDatePreset('custom'); }}
-                  className="w-full px-3 py-2.5 bg-white border border-slate-200/80 hover:border-indigo-300 rounded-xl text-sm font-semibold text-slate-700 shadow-sm focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition-all cursor-pointer"
-                />
+              <div className="space-y-1 relative">
+                <label className="flex items-center gap-1 text-[10px] text-indigo-500/70 font-extrabold uppercase ml-1 tracking-wider">
+                  <Calendar className="w-3 h-3" /> Od
+                </label>
+                <button
+                  type="button"
+                  onClick={() => { setShowFromCal(!showFromCal); setShowToCal(false); }}
+                  className="w-full px-3 py-2.5 bg-white border-2 border-slate-200/80 hover:border-indigo-300 rounded-xl text-sm font-semibold text-slate-700 shadow-sm focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition-all cursor-pointer text-left"
+                >
+                  {dateFrom ? dayjs(dateFrom).format('DD.MM.YYYY') : 'Wybierz dat\u0119'}
+                </button>
+                {showFromCal && (
+                  <>
+                    <div className="fixed inset-0 z-40" onClick={() => setShowFromCal(false)} />
+                    <div className="absolute z-50 mt-1 left-0 bg-white rounded-2xl shadow-2xl border border-slate-200/80 overflow-hidden">
+                      <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="pl">
+                        <DateCalendar
+                          value={dateFrom ? dayjs(dateFrom) : null}
+                          onChange={(val) => { if (val) { setDateFrom(val.format('YYYY-MM-DD')); setDatePreset('custom'); setShowFromCal(false); } }}
+                          minDate={dayjs('2020-01-01')}
+                          maxDate={dayjs().add(1, 'year').endOf('year')}
+                          sx={{
+                            '.MuiPickersCalendarHeader-label': { fontWeight: 700, textTransform: 'capitalize' },
+                            '.MuiPickersDay-root': { borderRadius: '8px', fontWeight: 500, '&.Mui-selected': { backgroundColor: '#6366f1', '&:hover': { backgroundColor: '#4f46e5' } } },
+                            '.MuiPickersDay-today': { border: '2px solid #6366f1 !important' },
+                            '.MuiPickersYear-yearButton.Mui-selected': { backgroundColor: '#6366f1' },
+                            '.MuiPickersMonth-monthButton.Mui-selected': { backgroundColor: '#6366f1' },
+                          }}
+                        />
+                      </LocalizationProvider>
+                    </div>
+                  </>
+                )}
+                {dateFrom && <p className="text-[10px] text-slate-400 font-medium ml-1 mt-0.5">{dayjs(dateFrom).format('DD MMMM YYYY')}</p>}
               </div>
-              <div className="space-y-1">
-                <label className="text-[10px] text-indigo-500/70 font-extrabold uppercase ml-1 tracking-wider">Do</label>
-                <input type="date" value={dateTo} 
-                  onChange={e => { setDateTo(e.target.value); setDatePreset('custom'); }}
-                  className="w-full px-3 py-2.5 bg-white border border-slate-200/80 hover:border-indigo-300 rounded-xl text-sm font-semibold text-slate-700 shadow-sm focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition-all cursor-pointer"
-                />
+              <div className="space-y-1 relative">
+                <label className="flex items-center gap-1 text-[10px] text-indigo-500/70 font-extrabold uppercase ml-1 tracking-wider">
+                  <Calendar className="w-3 h-3" /> Do
+                </label>
+                <button
+                  type="button"
+                  onClick={() => { setShowToCal(!showToCal); setShowFromCal(false); }}
+                  className="w-full px-3 py-2.5 bg-white border-2 border-slate-200/80 hover:border-indigo-300 rounded-xl text-sm font-semibold text-slate-700 shadow-sm focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition-all cursor-pointer text-left"
+                >
+                  {dateTo ? dayjs(dateTo).format('DD.MM.YYYY') : 'Wybierz dat\u0119'}
+                </button>
+                {showToCal && (
+                  <>
+                    <div className="fixed inset-0 z-40" onClick={() => setShowToCal(false)} />
+                    <div className="absolute z-50 mt-1 right-0 bg-white rounded-2xl shadow-2xl border border-slate-200/80 overflow-hidden">
+                      <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="pl">
+                        <DateCalendar
+                          value={dateTo ? dayjs(dateTo) : null}
+                          onChange={(val) => { if (val) { setDateTo(val.format('YYYY-MM-DD')); setDatePreset('custom'); setShowToCal(false); } }}
+                          minDate={dayjs('2020-01-01')}
+                          maxDate={dayjs().add(1, 'year').endOf('year')}
+                          sx={{
+                            '.MuiPickersCalendarHeader-label': { fontWeight: 700, textTransform: 'capitalize' },
+                            '.MuiPickersDay-root': { borderRadius: '8px', fontWeight: 500, '&.Mui-selected': { backgroundColor: '#6366f1', '&:hover': { backgroundColor: '#4f46e5' } } },
+                            '.MuiPickersDay-today': { border: '2px solid #6366f1 !important' },
+                            '.MuiPickersYear-yearButton.Mui-selected': { backgroundColor: '#6366f1' },
+                            '.MuiPickersMonth-monthButton.Mui-selected': { backgroundColor: '#6366f1' },
+                          }}
+                        />
+                      </LocalizationProvider>
+                    </div>
+                  </>
+                )}
+                {dateTo && <p className="text-[10px] text-slate-400 font-medium ml-1 mt-0.5">{dayjs(dateTo).format('DD MMMM YYYY')}</p>}
               </div>
             </div>
+
+            {dateFrom && dateTo && dateFrom > dateTo && (
+              <div className="flex items-center gap-2 mt-3 px-3 py-2 bg-rose-50 border border-rose-200 rounded-xl text-xs font-semibold text-rose-600 animate-in fade-in duration-200">
+                <AlertTriangle className="w-4 h-4 shrink-0" />
+                Data &quot;Od&quot; nie może być późniejsza niż data &quot;Do&quot;
+              </div>
+            )}
           </div>
 
           {/* Karta: Filtry */}
@@ -333,7 +402,7 @@ const ReportsPage: React.FC = () => {
               <label className="flex items-center gap-2 text-xs font-bold text-slate-500 uppercase tracking-wider">
                 <Filter className="w-4 h-4 text-slate-400" /> Filtry
               </label>
-              <button 
+              <button
                 onClick={() => {
                   setStatuses([]);
                   setPriorities([]);
@@ -384,7 +453,7 @@ const ReportsPage: React.FC = () => {
                   <Search className="w-10 h-10 text-slate-300" />
                 </div>
                 <p className="text-lg font-bold text-slate-600">Brak dopasowań</p>
-                <p className="text-sm font-medium mt-1 text-slate-400 max-w-xs text-center">Zmień parametry filtrowania, aby zobaczyć podgląd zgłoszeń.</p>
+                <p className="text-sm font-medium mt-1 text-slate-400 max-w-xs text-center">Zmień parametry filtrowania, aby zobaczyć podgląd wyników.</p>
               </div>
             ) : (
               <table className="w-full text-sm text-left">
@@ -408,13 +477,17 @@ const ReportsPage: React.FC = () => {
                       <td className="px-5 py-4 text-slate-500 font-medium hidden md:table-cell">{row.category}</td>
                       <td className="px-5 py-4">
                         <span className={`text-xs font-bold ${row.priority === 'Wysoki' ? 'text-rose-600' :
-                            row.priority === 'Normalny' ? 'text-indigo-600' : 'text-slate-500'
+                          row.priority === 'Normalny' ? 'text-indigo-600' : 'text-slate-500'
                           }`}>{row.priority}</span>
                       </td>
                       <td className="px-5 py-4 text-slate-500 font-medium hidden lg:table-cell">
                         <div className="flex items-center gap-2">
-                          <div className="w-6 h-6 rounded-full bg-slate-100 flex items-center justify-center text-[10px] font-bold text-slate-600">
-                            {row.creator.charAt(0)}
+                          <div className="w-6 h-6 rounded-full bg-blue-600 text-white flex items-center justify-center flex-shrink-0 overflow-hidden">
+                            {row.creator_avatar ? (
+                              <img src={row.creator_avatar} alt="" className="w-full h-full object-cover" />
+                            ) : (
+                              <span className="text-[10px] font-bold uppercase">{row.creator.charAt(0)}</span>
+                            )}
                           </div>
                           {row.creator}
                         </div>
@@ -422,20 +495,29 @@ const ReportsPage: React.FC = () => {
                       <td className="px-5 py-4 text-slate-500 font-medium hidden lg:table-cell">
                         {row.technician !== 'Brak' ? (
                           <div className="flex items-center gap-2">
-                            <div className="w-6 h-6 rounded-full bg-indigo-100 flex items-center justify-center text-[10px] font-bold text-indigo-700">
-                              {row.technician.charAt(0)}
+                            <div className="w-6 h-6 rounded-full bg-blue-600 text-white flex items-center justify-center flex-shrink-0 overflow-hidden">
+                              {row.technician_avatar ? (
+                                <img src={row.technician_avatar} alt="" className="w-full h-full object-cover" />
+                              ) : (
+                                <span className="text-[10px] font-bold uppercase">{row.technician.charAt(0)}</span>
+                              )}
                             </div>
                             {row.technician}
                           </div>
                         ) : (
-                          <span className="text-slate-400 italic">Nieprzypisany</span>
+                          <span className="flex items-center gap-2 text-slate-400 italic">
+                            <div className="w-6 h-6 rounded-full bg-gray-200 text-gray-400 flex items-center justify-center flex-shrink-0">
+                              <UserMinus className="w-3 h-3" />
+                            </div>
+                            Nie przypisano
+                          </span>
                         )}
                       </td>
                       <td className="px-5 py-4">
                         <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold border ${row.status === 'Nowe' ? 'bg-blue-50 border-blue-200 text-blue-700' :
-                            row.status === 'W toku' ? 'bg-amber-50 border-amber-200 text-amber-700' :
-                              row.status === 'Rozwiązane' ? 'bg-emerald-50 border-emerald-200 text-emerald-700' :
-                                'bg-slate-50 border-slate-200 text-slate-600'
+                          row.status === 'W toku' ? 'bg-amber-50 border-amber-200 text-amber-700' :
+                            row.status === 'Rozwiązane' ? 'bg-emerald-50 border-emerald-200 text-emerald-700' :
+                              'bg-slate-50 border-slate-200 text-slate-600'
                           }`}>
                           <span className={`w-1.5 h-1.5 rounded-full ${row.status === 'Nowe' ? 'bg-blue-500' : row.status === 'W toku' ? 'bg-amber-500' : row.status === 'Rozwiązane' ? 'bg-emerald-500' : 'bg-slate-400'}`}></span>
                           {row.status}
