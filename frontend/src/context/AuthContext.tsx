@@ -71,7 +71,16 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     await fetchCurrentUser();
   };
 
-  const logout = () => {
+  const logout = async () => {
+    // Blacklistuj refresh token na serwerze
+    const refreshToken = localStorage.getItem('refresh_token');
+    if (refreshToken) {
+      try {
+        await api.post('users/logout/', { refresh: refreshToken });
+      } catch {
+        // Kontynuuj logout nawet jeśli serwer nie odpowiedział
+      }
+    }
     localStorage.removeItem('access_token');
     localStorage.removeItem('refresh_token');
     setUser(null);

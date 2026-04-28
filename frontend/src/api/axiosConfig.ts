@@ -38,12 +38,18 @@ const refreshAccessToken = async (): Promise<string> => {
   const refreshToken = localStorage.getItem('refresh_token');
   if (!refreshToken) throw new Error('Brak refresh tokena');
 
-  const response = await axios.post('http://127.0.0.1:8000/api/token/refresh/', {
+  const response = await axios.post('http://127.0.0.1:8000/api/users/refresh/', {
     refresh: refreshToken,
   });
 
   const newAccessToken = response.data.access;
   localStorage.setItem('access_token', newAccessToken);
+
+  // Po rotacji serwer zwraca nowy refresh token
+  if (response.data.refresh) {
+    localStorage.setItem('refresh_token', response.data.refresh);
+  }
+
   return newAccessToken;
 };
 

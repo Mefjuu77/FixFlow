@@ -24,10 +24,10 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/6.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-z$r-#7(8%)8x=21-67obdm1laak7#xv!y&b%51c=-%u499x=#m'
+SECRET_KEY = os.getenv('DJANGO_SECRET_KEY', 'fallback-dev-key-change-me')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.getenv('DJANGO_DEBUG', 'False') == 'True'
 
 ALLOWED_HOSTS = []
 
@@ -44,6 +44,7 @@ INSTALLED_APPS = [
     
     # Third-party apps
     'rest_framework',
+    'rest_framework_simplejwt.token_blacklist',
     'corsheaders',
     
     # Local apps
@@ -91,11 +92,11 @@ WSGI_APPLICATION = 'config.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'fixflow',            # Nazwa bazy danych
-        'USER': 'postgres',           # Twój użytkownik PostgreSQL
-        'PASSWORD': '***REMOVED***',    # Twoje hasło do PostgreSQL
-        'HOST': 'localhost',          # Adres hosta
-        'PORT': '5432',               # Domyślny port
+        'NAME': os.getenv('DB_NAME', 'fixflow'),
+        'USER': os.getenv('DB_USER', 'postgres'),
+        'PASSWORD': os.getenv('DB_PASSWORD', ''),
+        'HOST': os.getenv('DB_HOST', 'localhost'),
+        'PORT': os.getenv('DB_PORT', '5432'),
     }
 }
 
@@ -145,6 +146,9 @@ REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework_simplejwt.authentication.JWTAuthentication',
     ),
+    'DEFAULT_PERMISSION_CLASSES': (
+        'rest_framework.permissions.IsAuthenticated',
+    ),
     'DEFAULT_PARSER_CLASSES': (
         'rest_framework.parsers.JSONParser',
         'rest_framework.parsers.MultiPartParser',
@@ -156,14 +160,17 @@ REST_FRAMEWORK = {
 from datetime import timedelta
 
 SIMPLE_JWT = {
-    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=60),
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=30),
     'REFRESH_TOKEN_LIFETIME': timedelta(days=7),
+    'ROTATE_REFRESH_TOKENS': True,
+    'BLACKLIST_AFTER_ROTATION': True,
 }
 
 # CORS settings
 CORS_ALLOWED_ORIGINS = [
-    "http://localhost:5173",
-    "http://127.0.0.1:5173",
+    origin.strip()
+    for origin in os.getenv('CORS_ALLOWED_ORIGINS', 'http://localhost:5173').split(',')
+    if origin.strip()
 ]
 
 # Konfiguracja e-mail – Gmail SMTP

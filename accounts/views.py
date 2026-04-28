@@ -1,8 +1,10 @@
 from rest_framework.views import APIView
 from rest_framework import generics, status
 from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated, BasePermission
+from rest_framework.permissions import IsAuthenticated, AllowAny, BasePermission
 from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
+from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework_simplejwt.exceptions import TokenError
 from .serializers import UserSerializer, UserCreateSerializer, UserUpdateSerializer, ProfileUpdateSerializer
 from .models import CustomUser
 
@@ -43,10 +45,43 @@ class CurrentUserView(APIView):
 class UserListView(generics.ListAPIView):
     """
     Zwraca listę wszystkich użytkowników w systemie.
+    Dostępne tylko dla techników i administratorów.
     """
     serializer_class = UserSerializer
     permission_classes = [IsAuthenticated]
     queryset = CustomUser.objects.all()
+
+    def get_queryset(self):
+        user = self.request.user
+        if user.role == 'EMPLOYEE':
+            # Pracownik widzi tylko siebie
+            return CustomUser.objects.filter(id=user.id)
+        return CustomUser.objects.all()
+
+
+class LogoutView(APIView):
+    """
+    POST /api/users/logout/
+    Blacklistuje refresh token po stronie serwera.
+    """
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        try:
+            refresh_token = request.data.get('refresh')
+            if not refresh_token:
+                return Response(
+                    {'detail': 'Refresh token jest wymagany.'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            token = RefreshToken(refresh_token)
+            token.blacklist()
+            return Response({'detail': 'Wylogowano pomyślnie.'}, status=status.HTTP_200_OK)
+        except TokenError:
+            return Response(
+                {'detail': 'Token jest nieprawidłowy lub już wygasł.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
 
 class UserCreateView(generics.CreateAPIView):
     """
