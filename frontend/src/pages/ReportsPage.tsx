@@ -26,7 +26,7 @@ type DatePreset = 'week' | 'month' | 'quarter' | 'year' | 'custom';
 
 // === Premium MultiSelect Component ===
 interface MultiSelectProps {
-  label: string; icon: React.ReactNode;
+  label: string; icon?: React.ReactNode;
   options: { value: string; label: string; icon?: React.ReactNode; color?: string }[];
   selected: string[]; onChange: (v: string[]) => void;
   placeholder?: string;
@@ -52,7 +52,7 @@ const MultiSelect: React.FC<MultiSelectProps> = ({ label, icon, options, selecte
   return (
     <div className="relative flex flex-col gap-1.5" ref={ref}>
       <label className="flex items-center gap-2 text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">
-        {icon} {label}
+        {icon && icon} {label}
       </label>
       <button
         type="button" onClick={() => setOpen(!open)}
@@ -262,7 +262,7 @@ const ReportsPage: React.FC = () => {
             </button>
           </div>
           <button onClick={handleDownload} disabled={downloading || total === 0}
-            className="flex items-center justify-center gap-2 py-2.5 bg-blue-600 text-white rounded-xl text-sm font-bold transition-all hover:bg-blue-700 active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none shadow-lg shadow-blue-600/20 w-[220px]"
+            className="flex items-center justify-center gap-2 py-2.5 bg-blue-600 text-white rounded-xl text-sm font-bold transition-all hover:bg-blue-700 active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none shadow-lg shadow-blue-600/20 w-[220px] shrink-0"
           >
             {downloading ? <RefreshCw className="w-4 h-4 animate-spin" /> : <ArrowDownToLine className="w-4 h-4" />}
             {downloading ? 'Pobieranie...' : `Pobierz raport ${exportFormat.toUpperCase()}`}
@@ -331,11 +331,11 @@ const ReportsPage: React.FC = () => {
             </div>
 
             <div className="space-y-4">
-              <MultiSelect label="Status" icon={<Activity className="w-3.5 h-3.5 text-slate-400" />} options={statusOptions} selected={statuses} onChange={setStatuses} />
-              <MultiSelect label="Priorytet" icon={<Zap className="w-3.5 h-3.5 text-slate-400" />} options={priorityOptions} selected={priorities} onChange={setPriorities} />
-              <MultiSelect label="Kategoria" icon={<Tags className="w-3.5 h-3.5 text-slate-400" />} options={categoryOptions} selected={selectedCategories} onChange={setSelectedCategories} />
-              <MultiSelect label="Technik" icon={<UserCheck className="w-3.5 h-3.5 text-slate-400" />} options={technicianOptions} selected={selectedTechnicians} onChange={setSelectedTechnicians} position="top" />
-              <MultiSelect label="Zgłaszający" icon={<UserIcon className="w-3.5 h-3.5 text-slate-400" />} options={creatorOptions} selected={selectedCreators} onChange={setSelectedCreators} position="top" />
+              <MultiSelect label="Status" options={statusOptions} selected={statuses} onChange={setStatuses} />
+              <MultiSelect label="Priorytet" options={priorityOptions} selected={priorities} onChange={setPriorities} />
+              <MultiSelect label="Kategoria" options={categoryOptions} selected={selectedCategories} onChange={setSelectedCategories} />
+              <MultiSelect label="Technik" options={technicianOptions} selected={selectedTechnicians} onChange={setSelectedTechnicians} position="top" />
+              <MultiSelect label="Zgłaszający" options={creatorOptions} selected={selectedCreators} onChange={setSelectedCreators} position="top" />
             </div>
           </div>
         </div>
