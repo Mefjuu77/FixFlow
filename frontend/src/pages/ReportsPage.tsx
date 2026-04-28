@@ -287,14 +287,14 @@ const ReportsPage: React.FC = () => {
   const technicianOptions = technicians.map(t => ({
     value: String(t.id),
     label: `${t.first_name} ${t.last_name}`,
-    icon: <div className="w-5 h-5 rounded-full bg-indigo-100 flex items-center justify-center text-[9px] font-bold text-indigo-700 overflow-hidden">
+    icon: <div className="w-5 h-5 rounded-full bg-blue-600 flex items-center justify-center text-[9px] font-bold text-white overflow-hidden">
       {t.avatar ? <img src={t.avatar} alt="" className="w-full h-full object-cover" /> : t.first_name.charAt(0)}
     </div>
   }));
   const creatorOptions = allUsers.map(u => ({
     value: String(u.id),
     label: `${u.first_name} ${u.last_name}`,
-    icon: <div className="w-5 h-5 rounded-full bg-slate-100 flex items-center justify-center text-[9px] font-bold text-slate-600 overflow-hidden">
+    icon: <div className="w-5 h-5 rounded-full bg-blue-600 flex items-center justify-center text-[9px] font-bold text-white overflow-hidden">
       {u.avatar ? <img src={u.avatar} alt="" className="w-full h-full object-cover" /> : u.first_name.charAt(0)}
     </div>
   }));
@@ -579,7 +579,7 @@ const ReportsPage: React.FC = () => {
                         <span className={`px-2.5 py-1 inline-flex text-xs leading-5 font-bold rounded-lg ${row.status === 'Nowe' ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300' :
                           row.status === 'W toku' ? 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300' :
                             row.status === 'Rozwiązane' ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300' :
-                              'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300'
+                              'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300'
                           }`}>
                           {row.status}
                         </span>

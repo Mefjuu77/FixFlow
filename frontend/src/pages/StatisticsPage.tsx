@@ -8,7 +8,6 @@ import {
   AlertTriangle,
   ArrowUpRight,
   Lightbulb,
-  Users as UsersIcon,
   UserMinus,
 } from 'lucide-react';
 import dayjs from 'dayjs';

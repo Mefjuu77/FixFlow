@@ -219,7 +219,7 @@ const SettingsPage: React.FC = () => {
                 onClick={() => { setActiveTab(tab.id as any); setSuccessMsg(null); setErrorMsg(null); }}
                 className={`relative flex items-center gap-3 w-full px-4 py-3 rounded-2xl text-sm font-semibold transition-all duration-300 ${activeTab === tab.id
                     ? 'bg-white dark:bg-gray-800 text-blue-600 dark:text-blue-400 shadow-[0_2px_10px_-3px_rgba(6,81,237,0.1)] dark:shadow-[0_2px_10px_-3px_rgba(59,130,246,0.15)] border border-blue-100 dark:border-blue-900/50'
-                    : 'text-gray-500 dark:text-gray-400 hover:bg-white/60 dark:hover:bg-gray-800/50 hover:text-gray-900 dark:hover:text-gray-200 border border-transparent'
+                    : 'text-gray-500 dark:text-gray-400 bg-white/40 dark:bg-gray-800/20 hover:bg-white/80 dark:hover:bg-gray-800/60 hover:text-gray-900 dark:hover:text-gray-200 border border-gray-200/60 dark:border-gray-700/50 hover:border-gray-300/60'
                   }`}
               >
                 {activeTab === tab.id && (
@@ -573,7 +573,7 @@ const SettingsPage: React.FC = () => {
                       <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Otrzymuj e-mail gdy zostanie utworzone nowe zgłoszenie.</p>
                     </div>
                     <div className={`w-11 h-6 rounded-full relative shadow-inner flex-shrink-0 ml-4 transition-colors duration-300 ${notifyNewTicket ? 'bg-blue-600' : 'bg-gray-300 dark:bg-gray-600'}`}>
-                      <div className={`absolute top-0.5 w-5 h-5 bg-white rounded-full shadow-sm transition-transform duration-300 ${notifyNewTicket ? 'right-0.5' : 'left-0.5'}`} />
+                      <div className={`absolute left-0.5 top-0.5 w-5 h-5 bg-white rounded-full shadow-sm transition-transform duration-300 ease-in-out ${notifyNewTicket ? 'translate-x-5' : 'translate-x-0'}`} />
                     </div>
                   </div>
                 )}
@@ -591,7 +591,7 @@ const SettingsPage: React.FC = () => {
                     <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Otrzymuj e-mail gdy ktoś skomentuje Twoje zgłoszenie.</p>
                   </div>
                   <div className={`w-11 h-6 rounded-full relative shadow-inner flex-shrink-0 ml-4 transition-colors duration-300 ${notifyComment ? 'bg-blue-600' : 'bg-gray-300 dark:bg-gray-600'}`}>
-                    <div className={`absolute top-0.5 w-5 h-5 bg-white rounded-full shadow-sm transition-transform duration-300 ${notifyComment ? 'right-0.5' : 'left-0.5'}`} />
+                    <div className={`absolute left-0.5 top-0.5 w-5 h-5 bg-white rounded-full shadow-sm transition-transform duration-300 ease-in-out ${notifyComment ? 'translate-x-5' : 'translate-x-0'}`} />
                   </div>
                 </div>
 
@@ -608,7 +608,7 @@ const SettingsPage: React.FC = () => {
                     <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Otrzymuj e-mail gdy zmieni się status Twojego zgłoszenia.</p>
                   </div>
                   <div className={`w-11 h-6 rounded-full relative shadow-inner flex-shrink-0 ml-4 transition-colors duration-300 ${notifyStatus ? 'bg-blue-600' : 'bg-gray-300 dark:bg-gray-600'}`}>
-                    <div className={`absolute top-0.5 w-5 h-5 bg-white rounded-full shadow-sm transition-transform duration-300 ${notifyStatus ? 'right-0.5' : 'left-0.5'}`} />
+                    <div className={`absolute left-0.5 top-0.5 w-5 h-5 bg-white rounded-full shadow-sm transition-transform duration-300 ease-in-out ${notifyStatus ? 'translate-x-5' : 'translate-x-0'}`} />
                   </div>
                 </div>
               </div>

@@ -26,17 +26,17 @@ export const STATUS_LABELS: Record<string, string> = {
 };
 
 export const STATUS_STYLES: Record<string, string> = {
-  NOWE: 'bg-blue-100 text-blue-800',
-  W_TOKU: 'bg-amber-100 text-amber-800',
-  ROZWIAZANE: 'bg-green-100 text-green-800',
-  ZAMKNIETE: 'bg-gray-100 text-gray-700',
+  NOWE: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300',
+  W_TOKU: 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300',
+  ROZWIAZANE: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300',
+  ZAMKNIETE: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300',
 };
 
 export const STATUS_ICONS: Record<string, React.ReactNode> = {
   NOWE: <Circle className="w-4 h-4 text-blue-600 stroke-[2.5]" />,
   W_TOKU: <Loader2 className="w-4 h-4 text-amber-500 stroke-[2.5]" />,
   ROZWIAZANE: <CheckCircle2 className="w-4 h-4 text-green-600 stroke-[2.5]" />,
-  ZAMKNIETE: <XCircle className="w-4 h-4 text-gray-500 stroke-[2.5]" />,
+  ZAMKNIETE: <XCircle className="w-4 h-4 text-emerald-500 stroke-[2.5]" />,
 };
 
 // ==================== Priorytety ====================
