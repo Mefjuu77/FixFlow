@@ -120,7 +120,7 @@ const MultiSelect: React.FC<MultiSelectProps> = ({ label, icon, options, selecte
 
   return (
     <div className="relative flex flex-col gap-1.5" ref={ref}>
-      <label className="flex items-center gap-2 text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">
+      <label className="flex items-center gap-2 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider ml-1">
         {icon && icon} {label}
       </label>
       <button
@@ -129,10 +129,10 @@ const MultiSelect: React.FC<MultiSelectProps> = ({ label, icon, options, selecte
           ${open ? 'border-indigo-400 dark:border-indigo-500 ring-4 ring-indigo-500/10' : 'border-slate-200/80 dark:border-slate-700 hover:border-indigo-300 dark:hover:border-indigo-500 hover:bg-white dark:hover:bg-slate-800'}
         `}
       >
-        <span className={selected.length ? 'text-indigo-900 font-bold' : 'text-slate-500 font-medium'}>
+        <span className={selected.length ? 'text-indigo-900 dark:text-indigo-300 font-bold' : 'text-slate-500 dark:text-slate-300 font-medium'}>
           {selected.length ? `Wybrano (${selected.length})` : placeholder}
         </span>
-        <ChevronDown className={`w-4 h-4 transition-transform duration-300 ${open ? 'rotate-180 text-indigo-500' : 'text-slate-400'}`} />
+        <ChevronDown className={`w-4 h-4 transition-transform duration-300 ${open ? 'rotate-180 text-indigo-500 dark:text-indigo-400' : 'text-slate-400 dark:text-slate-300'}`} />
       </button>
 
       {open && (
@@ -288,21 +288,25 @@ const ReportsPage: React.FC = () => {
   ];
 
   const priorityOptions = [
-    { value: 'WYSOKI', label: 'Wysoki', icon: <ChevronsUp className="w-4 h-4 text-red-500" />, color: 'text-rose-600' },
-    { value: 'NORMALNY', label: 'Normalny', icon: <Equal className="w-4 h-4 text-blue-500" />, color: 'text-blue-600' },
-    { value: 'NISKI', label: 'Niski', icon: <ChevronsDown className="w-4 h-4 text-gray-400" />, color: 'text-slate-600' },
+    { value: 'WYSOKI', label: 'Wysoki', icon: <ChevronsUp className="w-4 h-4 text-red-500" /> },
+    { value: 'NORMALNY', label: 'Normalny', icon: <Equal className="w-4 h-4 text-blue-500" /> },
+    { value: 'NISKI', label: 'Niski', icon: <ChevronsDown className="w-4 h-4 text-gray-400" /> },
   ];
 
   const categoryOptions = categories.map(c => ({ value: String(c.id), label: c.name, icon: getCategoryIcon(c.name) }));
   const technicianOptions = technicians.map(t => ({
     value: String(t.id),
     label: `${t.first_name} ${t.last_name}`,
-    icon: <div className="w-5 h-5 rounded-full bg-indigo-100 flex items-center justify-center text-[9px] font-bold text-indigo-700">{t.first_name.charAt(0)}</div>
+    icon: <div className="w-5 h-5 rounded-full bg-indigo-100 flex items-center justify-center text-[9px] font-bold text-indigo-700 overflow-hidden">
+      {t.avatar ? <img src={t.avatar} alt="" className="w-full h-full object-cover" /> : t.first_name.charAt(0)}
+    </div>
   }));
   const creatorOptions = allUsers.map(u => ({
     value: String(u.id),
     label: `${u.first_name} ${u.last_name}`,
-    icon: <div className="w-5 h-5 rounded-full bg-slate-100 flex items-center justify-center text-[9px] font-bold text-slate-600">{u.first_name.charAt(0)}</div>
+    icon: <div className="w-5 h-5 rounded-full bg-slate-100 flex items-center justify-center text-[9px] font-bold text-slate-600 overflow-hidden">
+      {u.avatar ? <img src={u.avatar} alt="" className="w-full h-full object-cover" /> : u.first_name.charAt(0)}
+    </div>
   }));
 
   const presetButtons: { key: DatePreset; label: string }[] = [
@@ -534,11 +538,19 @@ const ReportsPage: React.FC = () => {
                     <tr key={row.id} className="group hover:bg-indigo-50/40 dark:hover:bg-indigo-500/5 transition-colors duration-200">
                       <td className="px-5 py-4 text-slate-400 font-mono text-xs">{row.id}</td>
                       <td className="px-5 py-4 font-bold text-slate-700 dark:text-slate-300 max-w-[200px] truncate group-hover:text-indigo-700 dark:group-hover:text-indigo-400 transition-colors">{row.title}</td>
-                      <td className="px-5 py-4 text-slate-500 dark:text-slate-400 font-medium hidden md:table-cell">{row.category}</td>
-                      <td className="px-5 py-4">
-                        <span className={`text-xs font-bold ${row.priority === 'Wysoki' ? 'text-rose-600' :
-                          row.priority === 'Normalny' ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-500 dark:text-slate-400'
-                          }`}>{row.priority}</span>
+                      <td className="px-5 py-4 text-slate-500 dark:text-slate-400 font-medium hidden md:table-cell">
+                        <span className="flex items-center gap-1.5 font-medium">
+                          {getCategoryIcon(row.category || '')}
+                          {row.category || '—'}
+                        </span>
+                      </td>
+                      <td className="px-5 py-4 whitespace-nowrap">
+                        <span className="flex items-center gap-1.5 text-sm font-medium">
+                          {row.priority === 'Wysoki' ? <ChevronsUp className="w-4 h-4 text-red-500" /> : row.priority === 'Normalny' ? <Equal className="w-4 h-4 text-blue-500" /> : <ChevronsDown className="w-4 h-4 text-gray-400" />}
+                          <span className={row.priority === 'Wysoki' ? 'text-red-600' : row.priority === 'Normalny' ? 'text-blue-600' : 'text-gray-500'}>
+                            {row.priority}
+                          </span>
+                        </span>
                       </td>
                       <td className="px-5 py-4 text-slate-500 dark:text-slate-400 font-medium hidden lg:table-cell">
                         <div className="flex items-center gap-2">
@@ -573,13 +585,12 @@ const ReportsPage: React.FC = () => {
                           </span>
                         )}
                       </td>
-                      <td className="px-5 py-4">
-                        <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold border ${row.status === 'Nowe' ? 'bg-blue-50 border-blue-200 text-blue-700' :
-                          row.status === 'W toku' ? 'bg-amber-50 border-amber-200 text-amber-700' :
-                            row.status === 'Rozwiązane' ? 'bg-emerald-50 border-emerald-200 text-emerald-700' :
-                              'bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300'
+                      <td className="px-5 py-4 whitespace-nowrap">
+                        <span className={`px-2.5 py-1 inline-flex text-xs leading-5 font-bold rounded-lg ${row.status === 'Nowe' ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300' :
+                          row.status === 'W toku' ? 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300' :
+                            row.status === 'Rozwiązane' ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300' :
+                              'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300'
                           }`}>
-                          <span className={`w-1.5 h-1.5 rounded-full ${row.status === 'Nowe' ? 'bg-blue-500' : row.status === 'W toku' ? 'bg-amber-500' : row.status === 'Rozwiązane' ? 'bg-emerald-500' : 'bg-slate-400'}`}></span>
                           {row.status}
                         </span>
                       </td>

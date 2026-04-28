@@ -5,8 +5,11 @@ import api from '../api/axiosConfig';
 import { ticketService } from '../api/ticketService';
 import { Ticket, User } from '../types';
 import dayjs from 'dayjs';
+import 'dayjs/locale/pl';
 import { PlusCircle, Search, ChevronDown, ArrowUp, ArrowDown, UserMinus, Monitor, AppWindow, Globe, KeyRound, Shapes, Circle, CheckCircle2, XCircle, Loader2, ChevronsUp, Equal, ChevronsDown } from 'lucide-react';
 import useTitle from '../hooks/useTitle';
+
+dayjs.locale('pl');
 
 type SortField = 'id' | 'title' | 'category_name' | 'priority' | 'creator' | 'technician' | 'status' | 'created_at';
 
@@ -695,7 +698,7 @@ const TicketsPage: React.FC = () => {
                       </span>
                     </td>
                     <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
-                      {dayjs(ticket.created_at).format('DD.MM.YYYY HH:mm')}
+                      {dayjs(ticket.created_at).format('DD MMM YYYY, HH:mm')}
                     </td>
                   </tr>
                 ))

@@ -11,7 +11,7 @@ const LoginPage: React.FC = () => {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  
+
   const authContext = useContext(AuthContext);
   const navigate = useNavigate();
   const location = useLocation();
@@ -65,7 +65,7 @@ const LoginPage: React.FC = () => {
               </div>
               <h1 className="text-3xl font-extrabold tracking-tight text-gray-900">FixFlow</h1>
             </div>
-            
+
             {error && (
               <div className="flex items-center p-4 mb-6 text-sm text-red-800 border border-red-100 bg-red-50 rounded-xl animate-shake">
                 <AlertCircle className="w-5 h-5 mr-3 flex-shrink-0" />
@@ -84,13 +84,13 @@ const LoginPage: React.FC = () => {
                     type="email"
                     required
                     className="w-full py-3 pl-12 pr-4 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all text-gray-900 placeholder-gray-400"
-                    placeholder="test@fixflow.com"
+                    placeholder="test@fixflow.pl"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                   />
                 </div>
               </div>
-              
+
               <div className="space-y-1">
                 <div className="flex items-center justify-between ml-1">
                   <label className="text-sm font-semibold text-gray-700">Hasło</label>
@@ -132,7 +132,7 @@ const LoginPage: React.FC = () => {
               </button>
             </form>
           </div>
-          
+
           <div className="px-8 py-4 text-center bg-gray-50 border-t border-gray-100">
             <p className="text-sm text-gray-600">
               Nie masz konta? <span className="font-bold text-blue-600 cursor-pointer hover:underline">Skontaktuj się z IT</span>

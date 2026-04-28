@@ -45,6 +45,25 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   }, []);
 
+  // Synchronizacja sesji między kartami przeglądarki
+  useEffect(() => {
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'access_token') {
+        if (!e.newValue) {
+          // Token usunięty w innej karcie → wyloguj
+          setUser(null);
+          setIsAuthenticated(false);
+          setIsLoading(false);
+        } else if (e.newValue !== e.oldValue) {
+          // Token zmieniony w innej karcie (inny użytkownik) → odśwież dane
+          fetchCurrentUser();
+        }
+      }
+    };
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
+  }, []);
+
   const login = async (accessToken: string, refreshToken: string) => {
     localStorage.setItem('access_token', accessToken);
     localStorage.setItem('refresh_token', refreshToken);
