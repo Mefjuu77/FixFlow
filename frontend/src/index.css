@@ -354,21 +354,41 @@ html.dark ::-webkit-scrollbar-thumb:hover {
   transform: translateY(-1px);
 }
 
+.dark .rdp-root .rdp-button_previous:hover,
+.dark .rdp-root .rdp-button_next:hover {
+  background: rgba(99, 102, 241, 0.15);
+}
+
 .rdp-root .rdp-button_previous:active,
 .rdp-root .rdp-button_next:active {
   transform: scale(0.85);
   background: #e0e7ff;
 }
 
+.dark .rdp-root .rdp-button_previous:active,
+.dark .rdp-root .rdp-button_next:active {
+  background: rgba(99, 102, 241, 0.25);
+}
+
 .rdp-root .rdp-day button {
   border-radius: 8px;
   font-weight: 500;
   transition: all 0.2s ease;
+  color: #334155;
+}
+
+.dark .rdp-root .rdp-day button {
+  color: #cbd5e1;
 }
 
 .rdp-root .rdp-day button:hover {
   background: #e0e7ff;
   color: #4338ca;
+}
+
+.dark .rdp-root .rdp-day button:hover {
+  background: rgba(99, 102, 241, 0.15);
+  color: #818cf8;
 }
 
 .rdp-root .rdp-day button:active {
@@ -388,6 +408,15 @@ html.dark ::-webkit-scrollbar-thumb:hover {
 }
 
 .rdp-root .rdp-selected .rdp-day_button:hover {
+  background: #4f46e5;
+}
+
+.dark .rdp-root .rdp-selected .rdp-day_button {
+  background: #6366f1;
+  color: #fff;
+}
+
+.dark .rdp-root .rdp-selected .rdp-day_button:hover {
   background: #4f46e5;
 }
 
