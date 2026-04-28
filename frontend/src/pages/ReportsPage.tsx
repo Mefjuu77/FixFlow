@@ -10,7 +10,9 @@ import 'dayjs/locale/pl';
 import {
   FileBarChart, Calendar, Filter, Download, FileSpreadsheet, FileText,
   ChevronDown, Search, Loader2, CheckCircle2, ChevronsUp, Equal,
-  ChevronsDown, Circle, XCircle, BarChart3, SlidersHorizontal, ArrowDownToLine, RefreshCw, Activity, Zap, Tags, UserCheck, User as UserIcon
+  ChevronsDown, Circle, XCircle, BarChart3, SlidersHorizontal, ArrowDownToLine, RefreshCw,
+  Activity, Zap, Tags, UserCheck, User as UserIcon,
+  Monitor, AppWindow, Globe, KeyRound, Shapes
 } from 'lucide-react';
 
 dayjs.locale('pl');
@@ -23,6 +25,15 @@ interface PreviewRow {
 }
 
 type DatePreset = 'week' | 'month' | 'quarter' | 'year' | 'custom';
+
+const getCategoryIcon = (name: string) => {
+  const lowerName = name.toLowerCase();
+  if (lowerName.includes('sprzęt')) return <Monitor className="w-4 h-4 text-gray-500" />;
+  if (lowerName.includes('oprogramowanie')) return <AppWindow className="w-4 h-4 text-gray-500" />;
+  if (lowerName.includes('sieć')) return <Globe className="w-4 h-4 text-gray-500" />;
+  if (lowerName.includes('dostęp')) return <KeyRound className="w-4 h-4 text-gray-500" />;
+  return <Shapes className="w-4 h-4 text-gray-500" />;
+};
 
 // === Premium MultiSelect Component ===
 interface MultiSelectProps {
@@ -210,21 +221,29 @@ const ReportsPage: React.FC = () => {
   }
 
   const statusOptions = [
-    { value: 'NOWE', label: 'Nowe', icon: <Circle className="w-4 h-4 text-blue-500 drop-shadow-sm" />, color: 'text-blue-700' },
-    { value: 'W_TOKU', label: 'W toku', icon: <Loader2 className="w-4 h-4 text-amber-500 drop-shadow-sm" />, color: 'text-amber-700' },
-    { value: 'ROZWIAZANE', label: 'Rozwiązane', icon: <CheckCircle2 className="w-4 h-4 text-emerald-500 drop-shadow-sm" />, color: 'text-emerald-700' },
-    { value: 'ZAMKNIETE', label: 'Zamknięte', icon: <XCircle className="w-4 h-4 text-slate-400 drop-shadow-sm" />, color: 'text-slate-600' },
+    { value: 'NOWE', label: 'Nowe', icon: <Circle className="w-4 h-4 text-blue-600 stroke-[2.5]" />, color: 'text-blue-700' },
+    { value: 'W_TOKU', label: 'W toku', icon: <Circle className="w-4 h-4 text-amber-500 stroke-[2.5]" />, color: 'text-amber-700' },
+    { value: 'ROZWIAZANE', label: 'Rozwiązane', icon: <CheckCircle2 className="w-4 h-4 text-green-600 stroke-[2.5]" />, color: 'text-emerald-700' },
+    { value: 'ZAMKNIETE', label: 'Zamknięte', icon: <XCircle className="w-4 h-4 text-gray-500 stroke-[2.5]" />, color: 'text-slate-600' },
   ];
 
   const priorityOptions = [
-    { value: 'NISKI', label: 'Niski', icon: <ChevronsDown className="w-4 h-4 text-slate-400" />, color: 'text-slate-600' },
+    { value: 'WYSOKI', label: 'Wysoki', icon: <ChevronsUp className="w-4 h-4 text-red-500" />, color: 'text-rose-600' },
     { value: 'NORMALNY', label: 'Normalny', icon: <Equal className="w-4 h-4 text-blue-500" />, color: 'text-blue-600' },
-    { value: 'WYSOKI', label: 'Wysoki', icon: <ChevronsUp className="w-4 h-4 text-rose-500" />, color: 'text-rose-600' },
+    { value: 'NISKI', label: 'Niski', icon: <ChevronsDown className="w-4 h-4 text-gray-400" />, color: 'text-slate-600' },
   ];
 
-  const categoryOptions = categories.map(c => ({ value: String(c.id), label: c.name }));
-  const technicianOptions = technicians.map(t => ({ value: String(t.id), label: `${t.first_name} ${t.last_name}` }));
-  const creatorOptions = allUsers.map(u => ({ value: String(u.id), label: `${u.first_name} ${u.last_name}` }));
+  const categoryOptions = categories.map(c => ({ value: String(c.id), label: c.name, icon: getCategoryIcon(c.name) }));
+  const technicianOptions = technicians.map(t => ({
+    value: String(t.id),
+    label: `${t.first_name} ${t.last_name}`,
+    icon: <div className="w-5 h-5 rounded-full bg-indigo-100 flex items-center justify-center text-[9px] font-bold text-indigo-700">{t.first_name.charAt(0)}</div>
+  }));
+  const creatorOptions = allUsers.map(u => ({
+    value: String(u.id),
+    label: `${u.first_name} ${u.last_name}`,
+    icon: <div className="w-5 h-5 rounded-full bg-slate-100 flex items-center justify-center text-[9px] font-bold text-slate-600">{u.first_name.charAt(0)}</div>
+  }));
 
   const presetButtons: { key: DatePreset; label: string }[] = [
     { key: 'week', label: '7 Dni' },
@@ -251,12 +270,12 @@ const ReportsPage: React.FC = () => {
         <div className="flex flex-col sm:flex-row items-center gap-3">
           <div className="flex gap-2">
             <button onClick={() => setExportFormat('xlsx')}
-              className={`flex items-center justify-center gap-2 px-4 py-2 rounded-xl text-sm font-bold transition-all duration-200 border-2 ${exportFormat === 'xlsx' ? 'bg-emerald-50 border-emerald-400 text-emerald-700 shadow-sm' : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300 hover:bg-slate-50'}`}
+              className={`flex items-center justify-center gap-2 px-4 py-2 rounded-xl text-sm font-bold transition-all duration-200 border-2 ${exportFormat === 'xlsx' ? 'bg-emerald-50 border-emerald-400 text-emerald-700 shadow-sm' : 'bg-white border-slate-200 text-slate-500 hover:border-emerald-300 hover:bg-emerald-50/50 hover:text-emerald-600'}`}
             >
               <FileSpreadsheet className="w-4 h-4" /> XLSX
             </button>
             <button onClick={() => setExportFormat('csv')}
-              className={`flex items-center justify-center gap-2 px-4 py-2 rounded-xl text-sm font-bold transition-all duration-200 border-2 ${exportFormat === 'csv' ? 'bg-indigo-50 border-indigo-400 text-indigo-700 shadow-sm' : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300 hover:bg-slate-50'}`}
+              className={`flex items-center justify-center gap-2 px-4 py-2 rounded-xl text-sm font-bold transition-all duration-200 border-2 ${exportFormat === 'csv' ? 'bg-indigo-50 border-indigo-400 text-indigo-700 shadow-sm' : 'bg-white border-slate-200 text-slate-500 hover:border-indigo-300 hover:bg-indigo-50/50 hover:text-indigo-600'}`}
             >
               <FileText className="w-4 h-4" /> CSV
             </button>
@@ -331,11 +350,11 @@ const ReportsPage: React.FC = () => {
             </div>
 
             <div className="space-y-4">
-              <MultiSelect label="Status" options={statusOptions} selected={statuses} onChange={setStatuses} />
-              <MultiSelect label="Priorytet" options={priorityOptions} selected={priorities} onChange={setPriorities} />
               <MultiSelect label="Kategoria" options={categoryOptions} selected={selectedCategories} onChange={setSelectedCategories} />
+              <MultiSelect label="Priorytet" options={priorityOptions} selected={priorities} onChange={setPriorities} />
+              <MultiSelect label="Zgłaszający" options={creatorOptions} selected={selectedCreators} onChange={setSelectedCreators} />
               <MultiSelect label="Technik" options={technicianOptions} selected={selectedTechnicians} onChange={setSelectedTechnicians} position="top" />
-              <MultiSelect label="Zgłaszający" options={creatorOptions} selected={selectedCreators} onChange={setSelectedCreators} position="top" />
+              <MultiSelect label="Status" options={statusOptions} selected={statuses} onChange={setStatuses} position="top" />
             </div>
           </div>
         </div>
@@ -372,13 +391,13 @@ const ReportsPage: React.FC = () => {
                 <thead className="bg-white sticky top-0 z-10 shadow-sm">
                   <tr className="text-[11px] font-extrabold text-slate-400 uppercase tracking-widest">
                     <th className="px-5 py-4 w-16">#</th>
-                    <th className="px-5 py-4">Tytuł Zgłoszenia</th>
-                    <th className="px-5 py-4 w-32">Status</th>
-                    <th className="px-5 py-4 w-32">Priorytet</th>
+                    <th className="px-5 py-4">Tytuł</th>
                     <th className="px-5 py-4 hidden md:table-cell">Kategoria</th>
+                    <th className="px-5 py-4 w-32">Priorytet</th>
                     <th className="px-5 py-4 hidden lg:table-cell">Zgłaszający</th>
                     <th className="px-5 py-4 hidden lg:table-cell">Technik</th>
-                    <th className="px-5 py-4 w-40">Data</th>
+                    <th className="px-5 py-4 w-32">Status</th>
+                    <th className="px-5 py-4 w-40">Utworzono</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100/80">
@@ -386,22 +405,12 @@ const ReportsPage: React.FC = () => {
                     <tr key={row.id} className="group hover:bg-indigo-50/40 transition-colors duration-200">
                       <td className="px-5 py-4 text-slate-400 font-mono text-xs">{row.id}</td>
                       <td className="px-5 py-4 font-bold text-slate-700 max-w-[200px] truncate group-hover:text-indigo-700 transition-colors">{row.title}</td>
-                      <td className="px-5 py-4">
-                        <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold border ${row.status === 'Nowe' ? 'bg-blue-50 border-blue-200 text-blue-700' :
-                            row.status === 'W toku' ? 'bg-amber-50 border-amber-200 text-amber-700' :
-                              row.status === 'Rozwiązane' ? 'bg-emerald-50 border-emerald-200 text-emerald-700' :
-                                'bg-slate-50 border-slate-200 text-slate-600'
-                          }`}>
-                          <span className={`w-1.5 h-1.5 rounded-full ${row.status === 'Nowe' ? 'bg-blue-500' : row.status === 'W toku' ? 'bg-amber-500' : row.status === 'Rozwiązane' ? 'bg-emerald-500' : 'bg-slate-400'}`}></span>
-                          {row.status}
-                        </span>
-                      </td>
+                      <td className="px-5 py-4 text-slate-500 font-medium hidden md:table-cell">{row.category}</td>
                       <td className="px-5 py-4">
                         <span className={`text-xs font-bold ${row.priority === 'Wysoki' ? 'text-rose-600' :
                             row.priority === 'Normalny' ? 'text-indigo-600' : 'text-slate-500'
                           }`}>{row.priority}</span>
                       </td>
-                      <td className="px-5 py-4 text-slate-500 font-medium hidden md:table-cell">{row.category}</td>
                       <td className="px-5 py-4 text-slate-500 font-medium hidden lg:table-cell">
                         <div className="flex items-center gap-2">
                           <div className="w-6 h-6 rounded-full bg-slate-100 flex items-center justify-center text-[10px] font-bold text-slate-600">
@@ -421,6 +430,16 @@ const ReportsPage: React.FC = () => {
                         ) : (
                           <span className="text-slate-400 italic">Nieprzypisany</span>
                         )}
+                      </td>
+                      <td className="px-5 py-4">
+                        <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold border ${row.status === 'Nowe' ? 'bg-blue-50 border-blue-200 text-blue-700' :
+                            row.status === 'W toku' ? 'bg-amber-50 border-amber-200 text-amber-700' :
+                              row.status === 'Rozwiązane' ? 'bg-emerald-50 border-emerald-200 text-emerald-700' :
+                                'bg-slate-50 border-slate-200 text-slate-600'
+                          }`}>
+                          <span className={`w-1.5 h-1.5 rounded-full ${row.status === 'Nowe' ? 'bg-blue-500' : row.status === 'W toku' ? 'bg-amber-500' : row.status === 'Rozwiązane' ? 'bg-emerald-500' : 'bg-slate-400'}`}></span>
+                          {row.status}
+                        </span>
                       </td>
                       <td className="px-5 py-4 text-slate-400 text-xs font-medium whitespace-nowrap">{dayjs(row.created_at).format('DD MMM YYYY, HH:mm')}</td>
                     </tr>
