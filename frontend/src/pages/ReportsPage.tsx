@@ -262,7 +262,7 @@ const ReportsPage: React.FC = () => {
             </button>
           </div>
           <button onClick={handleDownload} disabled={downloading || total === 0}
-            className="flex items-center justify-center gap-2 px-6 py-2.5 bg-blue-600 text-white rounded-xl text-sm font-bold transition-all hover:bg-blue-700 active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none shadow-lg shadow-blue-600/20"
+            className="flex items-center justify-center gap-2 py-2.5 bg-blue-600 text-white rounded-xl text-sm font-bold transition-all hover:bg-blue-700 active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none shadow-lg shadow-blue-600/20 w-[220px]"
           >
             {downloading ? <RefreshCw className="w-4 h-4 animate-spin" /> : <ArrowDownToLine className="w-4 h-4" />}
             {downloading ? 'Pobieranie...' : `Pobierz raport ${exportFormat.toUpperCase()}`}
@@ -322,9 +322,10 @@ const ReportsPage: React.FC = () => {
                   setSelectedTechnicians([]);
                   setSelectedCreators([]);
                 }}
-                className="text-xs font-semibold text-slate-400 hover:text-indigo-600 transition-colors"
-                title="Wyczyść tylko te filtry"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-slate-600 bg-slate-100 hover:bg-rose-50 hover:text-rose-600 hover:border-rose-200 transition-all border border-slate-200/60 shadow-sm"
+                title="Wyczyść wszystkie filtry"
               >
+                <RefreshCw className="w-3.5 h-3.5" />
                 Resetuj
               </button>
             </div>
@@ -333,8 +334,8 @@ const ReportsPage: React.FC = () => {
               <MultiSelect label="Status" icon={<Activity className="w-3.5 h-3.5 text-slate-400" />} options={statusOptions} selected={statuses} onChange={setStatuses} />
               <MultiSelect label="Priorytet" icon={<Zap className="w-3.5 h-3.5 text-slate-400" />} options={priorityOptions} selected={priorities} onChange={setPriorities} />
               <MultiSelect label="Kategoria" icon={<Tags className="w-3.5 h-3.5 text-slate-400" />} options={categoryOptions} selected={selectedCategories} onChange={setSelectedCategories} />
-              <MultiSelect label="Technik" icon={<UserCheck className="w-3.5 h-3.5 text-slate-400" />} options={technicianOptions} selected={selectedTechnicians} onChange={setSelectedTechnicians} />
-              <MultiSelect label="Zgłaszający" icon={<UserIcon className="w-3.5 h-3.5 text-slate-400" />} options={creatorOptions} selected={selectedCreators} onChange={setSelectedCreators} />
+              <MultiSelect label="Technik" icon={<UserCheck className="w-3.5 h-3.5 text-slate-400" />} options={technicianOptions} selected={selectedTechnicians} onChange={setSelectedTechnicians} position="top" />
+              <MultiSelect label="Zgłaszający" icon={<UserIcon className="w-3.5 h-3.5 text-slate-400" />} options={creatorOptions} selected={selectedCreators} onChange={setSelectedCreators} position="top" />
             </div>
           </div>
         </div>
@@ -343,11 +344,7 @@ const ReportsPage: React.FC = () => {
         <div className="bg-white rounded-3xl shadow-xl shadow-slate-200/40 border border-slate-100 flex flex-col overflow-hidden h-[calc(100vh-16rem)] min-h-[500px]">
           <div className="px-6 py-5 border-b border-slate-100 flex items-center justify-between bg-slate-50/50 backdrop-blur-xl">
             <div className="flex items-center gap-3">
-              <div className="relative">
-                <div className="w-2.5 h-2.5 rounded-full bg-emerald-500"></div>
-                <div className="absolute inset-0 rounded-full bg-emerald-500 animate-ping opacity-75"></div>
-              </div>
-              <h3 className="font-bold text-slate-800 text-base">Podgląd na żywo</h3>
+              <h3 className="font-bold text-slate-800 text-base">Podgląd wyników</h3>
               {total !== null && (
                 <span className="px-2.5 py-1 bg-indigo-100 text-indigo-700 text-xs font-black rounded-lg ml-2">
                   {total} zgłoszeń
