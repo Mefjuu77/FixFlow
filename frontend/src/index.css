@@ -398,7 +398,10 @@ html.dark ::-webkit-scrollbar-thumb:hover {
 .rdp-root .rdp-today:not(.rdp-selected) .rdp-day_button {
   font-weight: 800;
   color: #6366f1;
-  border: 2px solid #6366f1;
+}
+
+.dark .rdp-root .rdp-today:not(.rdp-selected) .rdp-day_button {
+  color: #818cf8;
 }
 
 .rdp-root .rdp-selected .rdp-day_button {
@@ -476,4 +479,35 @@ html.dark ::-webkit-scrollbar-thumb:hover {
 /* Calendar popup responsiveness */
 .calendar-popup {
   max-width: calc(100vw - 2rem);
+}
+
+/* ---- react-day-picker range & other date modifiers ---- */
+.rdp-other-date .rdp-day_button {
+  background-color: #f1f5f9;
+  border: 1.5px dashed #94a3b8;
+  color: #64748b;
+  font-weight: 700;
+}
+
+.rdp-other-date .rdp-day_button:hover {
+  background-color: #e2e8f0;
+}
+
+.dark .rdp-root .rdp-other-date .rdp-day_button {
+  background-color: #1e293b;
+  border: 1.5px dashed #475569;
+  color: #94a3b8;
+}
+
+.dark .rdp-root .rdp-other-date .rdp-day_button:hover {
+  background-color: #334155;
+}
+
+.rdp-in-range .rdp-day_button {
+  background-color: #f8fafc;
+  border-radius: 4px;
+}
+
+.dark .rdp-root .rdp-in-range .rdp-day_button {
+  background-color: #0f172a;
 }

@@ -394,6 +394,14 @@ const ReportsPage: React.FC = () => {
                         startMonth={new Date(2020, 0)}
                         endMonth={new Date(new Date().getFullYear() + 1, 11)}
                         components={calendarComponents}
+                        modifiers={{
+                          other: dateTo ? new Date(dateTo) : undefined,
+                          inRange: (dateFrom && dateTo) ? { after: new Date(dateFrom), before: new Date(dateTo) } : undefined
+                        }}
+                        modifiersClassNames={{
+                          other: 'rdp-other-date',
+                          inRange: 'rdp-in-range'
+                        }}
                       />
                     </div>
                   </>
@@ -424,6 +432,14 @@ const ReportsPage: React.FC = () => {
                         startMonth={new Date(2020, 0)}
                         endMonth={new Date(new Date().getFullYear() + 1, 11)}
                         components={calendarComponents}
+                        modifiers={{
+                          other: dateFrom ? new Date(dateFrom) : undefined,
+                          inRange: (dateFrom && dateTo) ? { after: new Date(dateFrom), before: new Date(dateTo) } : undefined
+                        }}
+                        modifiersClassNames={{
+                          other: 'rdp-other-date',
+                          inRange: 'rdp-in-range'
+                        }}
                       />
                     </div>
                   </>
