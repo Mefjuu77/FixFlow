@@ -7,9 +7,9 @@ import { User, Category } from '../types';
 import useTitle from '../hooks/useTitle';
 import dayjs from 'dayjs';
 import 'dayjs/locale/pl';
-import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
-import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
-import { DateCalendar } from '@mui/x-date-pickers/DateCalendar';
+import { DayPicker } from 'react-day-picker';
+import 'react-day-picker/src/style.css';
+import { pl } from 'date-fns/locale/pl';
 import {
   FileBarChart, Calendar, Filter, Download, FileSpreadsheet, FileText,
   ChevronDown, Search, Loader2, CheckCircle2, ChevronsUp, Equal,
@@ -38,6 +38,60 @@ const getCategoryIcon = (name: string) => {
   if (lowerName.includes('dostęp')) return <KeyRound className="w-4 h-4 text-gray-500" />;
   return <Shapes className="w-4 h-4 text-gray-500" />;
 };
+
+// === Custom Calendar Dropdown (replaces ugly native <select>) ===
+const CalendarDropdown = (props: any) => {
+  const { value, onChange, options, className, name } = props;
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, []);
+
+  const selectedOption = options?.find((o: any) => String(o.value) === String(value));
+  const label = selectedOption?.label || '';
+
+  return (
+    <div ref={ref} className="relative inline-block">
+      <button
+        type="button"
+        onClick={() => setOpen(!open)}
+        className="flex items-center gap-1 px-2.5 py-1 bg-slate-50 border border-slate-200 rounded-lg text-sm font-semibold text-slate-700 hover:border-indigo-400 hover:bg-indigo-50 transition-all cursor-pointer capitalize"
+      >
+        <span className="capitalize">{label}</span>
+        <ChevronDown className={`w-3.5 h-3.5 text-indigo-500 transition-transform duration-200 ${open ? 'rotate-180' : ''}`} />
+      </button>
+      {open && (
+        <div className={`absolute z-[60] mt-1 ${name === 'years' ? 'right-0' : 'left-0'} bg-white rounded-xl shadow-2xl border border-slate-200/80 py-1 max-h-52 overflow-y-auto min-w-[120px]`}>
+          {options?.map((opt: any) => (
+            <button
+              key={opt.value}
+              type="button"
+              onClick={() => {
+                onChange?.({ target: { value: String(opt.value) } } as any);
+                setOpen(false);
+              }}
+              className={`w-full text-left px-3 py-1.5 text-sm font-medium transition-colors capitalize
+                ${String(opt.value) === String(value)
+                  ? 'bg-indigo-50 text-indigo-700 font-bold'
+                  : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                }`}
+            >
+              {opt.label}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
+const calendarComponents = { Dropdown: CalendarDropdown };
 
 // === Premium MultiSelect Component ===
 interface MultiSelectProps {
@@ -325,27 +379,22 @@ const ReportsPage: React.FC = () => {
                   onClick={() => { setShowFromCal(!showFromCal); setShowToCal(false); }}
                   className="w-full px-3 py-2.5 bg-white border-2 border-slate-200/80 hover:border-indigo-300 rounded-xl text-sm font-semibold text-slate-700 shadow-sm focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition-all cursor-pointer text-left"
                 >
-                  {dateFrom ? dayjs(dateFrom).format('DD.MM.YYYY') : 'Wybierz dat\u0119'}
+                  {dateFrom ? dayjs(dateFrom).format('DD.MM.YYYY') : 'Wybierz datę'}
                 </button>
                 {showFromCal && (
                   <>
                     <div className="fixed inset-0 z-40" onClick={() => setShowFromCal(false)} />
-                    <div className="absolute z-50 mt-1 left-0 bg-white rounded-2xl shadow-2xl border border-slate-200/80 overflow-hidden">
-                      <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="pl">
-                        <DateCalendar
-                          value={dateFrom ? dayjs(dateFrom) : null}
-                          onChange={(val) => { if (val) { setDateFrom(val.format('YYYY-MM-DD')); setDatePreset('custom'); setShowFromCal(false); } }}
-                          minDate={dayjs('2020-01-01')}
-                          maxDate={dayjs().add(1, 'year').endOf('year')}
-                          sx={{
-                            '.MuiPickersCalendarHeader-label': { fontWeight: 700, textTransform: 'capitalize' },
-                            '.MuiPickersDay-root': { borderRadius: '8px', fontWeight: 500, '&.Mui-selected': { backgroundColor: '#6366f1', '&:hover': { backgroundColor: '#4f46e5' } } },
-                            '.MuiPickersDay-today': { border: '2px solid #6366f1 !important' },
-                            '.MuiPickersYear-yearButton.Mui-selected': { backgroundColor: '#6366f1' },
-                            '.MuiPickersMonth-monthButton.Mui-selected': { backgroundColor: '#6366f1' },
-                          }}
-                        />
-                      </LocalizationProvider>
+                    <div className="absolute z-50 mt-1 left-0 bg-white rounded-2xl shadow-2xl border border-slate-200/80 p-3">
+                      <DayPicker
+                        mode="single"
+                        selected={dateFrom ? new Date(dateFrom) : undefined}
+                        onSelect={(date) => { if (date) { setDateFrom(dayjs(date).format('YYYY-MM-DD')); setDatePreset('custom'); setShowFromCal(false); } }}
+                        locale={pl}
+                        captionLayout="dropdown"
+                        startMonth={new Date(2020, 0)}
+                        endMonth={new Date(new Date().getFullYear() + 1, 11)}
+                        components={calendarComponents}
+                      />
                     </div>
                   </>
                 )}
@@ -360,27 +409,22 @@ const ReportsPage: React.FC = () => {
                   onClick={() => { setShowToCal(!showToCal); setShowFromCal(false); }}
                   className="w-full px-3 py-2.5 bg-white border-2 border-slate-200/80 hover:border-indigo-300 rounded-xl text-sm font-semibold text-slate-700 shadow-sm focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition-all cursor-pointer text-left"
                 >
-                  {dateTo ? dayjs(dateTo).format('DD.MM.YYYY') : 'Wybierz dat\u0119'}
+                  {dateTo ? dayjs(dateTo).format('DD.MM.YYYY') : 'Wybierz datę'}
                 </button>
                 {showToCal && (
                   <>
                     <div className="fixed inset-0 z-40" onClick={() => setShowToCal(false)} />
-                    <div className="absolute z-50 mt-1 right-0 bg-white rounded-2xl shadow-2xl border border-slate-200/80 overflow-hidden">
-                      <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="pl">
-                        <DateCalendar
-                          value={dateTo ? dayjs(dateTo) : null}
-                          onChange={(val) => { if (val) { setDateTo(val.format('YYYY-MM-DD')); setDatePreset('custom'); setShowToCal(false); } }}
-                          minDate={dayjs('2020-01-01')}
-                          maxDate={dayjs().add(1, 'year').endOf('year')}
-                          sx={{
-                            '.MuiPickersCalendarHeader-label': { fontWeight: 700, textTransform: 'capitalize' },
-                            '.MuiPickersDay-root': { borderRadius: '8px', fontWeight: 500, '&.Mui-selected': { backgroundColor: '#6366f1', '&:hover': { backgroundColor: '#4f46e5' } } },
-                            '.MuiPickersDay-today': { border: '2px solid #6366f1 !important' },
-                            '.MuiPickersYear-yearButton.Mui-selected': { backgroundColor: '#6366f1' },
-                            '.MuiPickersMonth-monthButton.Mui-selected': { backgroundColor: '#6366f1' },
-                          }}
-                        />
-                      </LocalizationProvider>
+                    <div className="absolute z-50 mt-1 right-0 bg-white rounded-2xl shadow-2xl border border-slate-200/80 p-3">
+                      <DayPicker
+                        mode="single"
+                        selected={dateTo ? new Date(dateTo) : undefined}
+                        onSelect={(date) => { if (date) { setDateTo(dayjs(date).format('YYYY-MM-DD')); setDatePreset('custom'); setShowToCal(false); } }}
+                        locale={pl}
+                        captionLayout="dropdown"
+                        startMonth={new Date(2020, 0)}
+                        endMonth={new Date(new Date().getFullYear() + 1, 11)}
+                        components={calendarComponents}
+                      />
                     </div>
                   </>
                 )}
