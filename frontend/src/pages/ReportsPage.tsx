@@ -10,7 +10,7 @@ import 'dayjs/locale/pl';
 import {
   FileBarChart, Calendar, Filter, Download, FileSpreadsheet, FileText,
   ChevronDown, Search, Loader2, CheckCircle2, ChevronsUp, Equal,
-  ChevronsDown, Circle, XCircle, BarChart3, SlidersHorizontal, ArrowDownToLine, RefreshCw
+  ChevronsDown, Circle, XCircle, BarChart3, SlidersHorizontal, ArrowDownToLine, RefreshCw, Activity, Zap, Tags, UserCheck, User as UserIcon
 } from 'lucide-react';
 
 dayjs.locale('pl');
@@ -65,7 +65,7 @@ const MultiSelect: React.FC<MultiSelectProps> = ({ label, icon, options, selecte
         </span>
         <ChevronDown className={`w-4 h-4 transition-transform duration-300 ${open ? 'rotate-180 text-indigo-500' : 'text-slate-400'}`} />
       </button>
-      
+
       {open && (
         <div className={`absolute z-50 left-0 w-full bg-white/95 backdrop-blur-xl border border-slate-200/80 rounded-2xl shadow-2xl py-2 max-h-64 overflow-y-auto animate-in fade-in duration-200
           ${position === 'top' ? 'bottom-full mb-2 slide-in-from-bottom-2' : 'top-full mt-2 slide-in-from-top-2'}`}
@@ -73,7 +73,7 @@ const MultiSelect: React.FC<MultiSelectProps> = ({ label, icon, options, selecte
           {selected.length > 0 && (
             <div className="px-2 pb-2 mb-2 border-b border-slate-100">
               <button onClick={() => onChange([])} className="w-full flex items-center justify-center gap-2 px-3 py-2 text-xs font-bold text-rose-500 bg-rose-50 rounded-lg hover:bg-rose-100 transition-colors">
-                <XCircle className="w-3.5 h-3.5" /> Wyczyść filtry
+                <XCircle className="w-3.5 h-3.5" /> Wyczyść
               </button>
             </div>
           )}
@@ -104,7 +104,7 @@ const MultiSelect: React.FC<MultiSelectProps> = ({ label, icon, options, selecte
 
 // === Premium Page ===
 const ReportsPage: React.FC = () => {
-  useTitle('Raporty Eksportu');
+  useTitle('Raporty');
   const authContext = useContext(AuthContext);
 
   // Dane pomocnicze
@@ -130,9 +130,9 @@ const ReportsPage: React.FC = () => {
   const [downloading, setDownloading] = useState(false);
 
   useEffect(() => {
-    ticketService.getCategories().then(setCategories).catch(() => {});
-    ticketService.getTechnicians().then(setTechnicians).catch(() => {});
-    ticketService.getUsers().then(setAllUsers).catch(() => {});
+    ticketService.getCategories().then(setCategories).catch(() => { });
+    ticketService.getTechnicians().then(setTechnicians).catch(() => { });
+    ticketService.getUsers().then(setAllUsers).catch(() => { });
   }, []);
 
   useEffect(() => {
@@ -236,106 +236,105 @@ const ReportsPage: React.FC = () => {
 
   return (
     <div className="min-h-[calc(100vh-6rem)] flex flex-col gap-8 pb-10">
-      {/* 🌟 Premium Hero Section */}
-      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900 text-white p-8 lg:p-12 shadow-2xl border border-white/10">
-        <div className="absolute top-0 right-0 -mr-20 -mt-20 w-96 h-96 rounded-full bg-indigo-500/20 blur-3xl pointer-events-none"></div>
-        <div className="absolute bottom-0 left-0 -ml-20 -mb-20 w-80 h-80 rounded-full bg-blue-500/20 blur-3xl pointer-events-none"></div>
-        
-        <div className="relative z-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
-          <div className="flex items-center gap-5">
-            <div className="w-16 h-16 rounded-2xl bg-white/10 backdrop-blur-md border border-white/20 flex items-center justify-center shadow-inner">
-              <FileBarChart className="w-8 h-8 text-indigo-300 drop-shadow-md" />
-            </div>
-            <div>
-              <h1 className="text-3xl font-extrabold tracking-tight mb-1 bg-gradient-to-r from-white to-indigo-200 bg-clip-text text-transparent">
-                Generator Raportów
-              </h1>
-              <p className="text-indigo-200/80 font-medium text-sm md:text-base">
-                Eksportuj dane zgłoszeń do analizy z zaawansowanym filtrowaniem.
-              </p>
-            </div>
+      {/* Nowy prosty nagłówek z pobieraniem w prawym górnym rogu */}
+      <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+        <div className="flex items-center gap-4">
+          <div className="w-12 h-12 rounded-2xl bg-indigo-600 flex items-center justify-center shadow-lg shadow-indigo-600/20">
+            <FileBarChart className="w-6 h-6 text-white" />
           </div>
+          <div>
+            <h1 className="text-2xl font-extrabold text-slate-800 tracking-tight">Raporty</h1>
+            <p className="text-slate-500 text-sm font-medium">Kreator eksportu zgłoszeń</p>
+          </div>
+        </div>
 
-          <div className="flex flex-col sm:flex-row items-center gap-3 bg-white/5 p-2.5 rounded-2xl backdrop-blur-md border border-white/10">
-            <div className="flex bg-slate-900/50 p-1 rounded-xl">
-              <button onClick={() => setExportFormat('xlsx')}
-                className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold transition-all duration-300 ${exportFormat === 'xlsx' ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/30' : 'text-slate-300 hover:text-white hover:bg-white/10'}`}
-              >
-                <FileSpreadsheet className="w-4 h-4" /> XLSX
-              </button>
-              <button onClick={() => setExportFormat('csv')}
-                className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold transition-all duration-300 ${exportFormat === 'csv' ? 'bg-blue-500 text-white shadow-lg shadow-blue-500/30' : 'text-slate-300 hover:text-white hover:bg-white/10'}`}
-              >
-                <FileText className="w-4 h-4" /> CSV
-              </button>
-            </div>
-            <button onClick={handleDownload} disabled={downloading || total === 0}
-              className="group relative flex items-center gap-2 px-6 py-3 bg-white text-indigo-950 rounded-xl font-bold transition-all hover:bg-indigo-50 hover:scale-105 active:scale-95 disabled:opacity-50 disabled:pointer-events-none overflow-hidden"
+        <div className="flex flex-col sm:flex-row items-center gap-3">
+          <div className="flex gap-2">
+            <button onClick={() => setExportFormat('xlsx')}
+              className={`flex items-center justify-center gap-2 px-4 py-2 rounded-xl text-sm font-bold transition-all duration-200 border-2 ${exportFormat === 'xlsx' ? 'bg-emerald-50 border-emerald-400 text-emerald-700 shadow-sm' : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300 hover:bg-slate-50'}`}
             >
-              <div className="absolute inset-0 w-full h-full bg-gradient-to-r from-white via-indigo-100 to-white opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-              <span className="relative z-10 flex items-center gap-2">
-                {downloading ? <RefreshCw className="w-4 h-4 animate-spin" /> : <ArrowDownToLine className="w-4 h-4 group-hover:translate-y-0.5 transition-transform" />}
-                {downloading ? 'Pobieranie...' : 'Generuj Raport'}
-              </span>
+              <FileSpreadsheet className="w-4 h-4" /> XLSX
+            </button>
+            <button onClick={() => setExportFormat('csv')}
+              className={`flex items-center justify-center gap-2 px-4 py-2 rounded-xl text-sm font-bold transition-all duration-200 border-2 ${exportFormat === 'csv' ? 'bg-indigo-50 border-indigo-400 text-indigo-700 shadow-sm' : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300 hover:bg-slate-50'}`}
+            >
+              <FileText className="w-4 h-4" /> CSV
             </button>
           </div>
+          <button onClick={handleDownload} disabled={downloading || total === 0}
+            className="flex items-center justify-center gap-2 px-6 py-2.5 bg-blue-600 text-white rounded-xl text-sm font-bold transition-all hover:bg-blue-700 active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none shadow-lg shadow-blue-600/20"
+          >
+            {downloading ? <RefreshCw className="w-4 h-4 animate-spin" /> : <ArrowDownToLine className="w-4 h-4" />}
+            {downloading ? 'Pobieranie...' : `Pobierz raport ${exportFormat.toUpperCase()}`}
+          </button>
         </div>
       </div>
 
       <div className="grid grid-cols-1 xl:grid-cols-[380px_1fr] gap-8 items-start">
         {/* 🎛️ Filtr Sidebar */}
         <div className="flex flex-col gap-6">
-          <div className="bg-white rounded-3xl p-6 shadow-xl shadow-slate-200/40 border border-slate-100">
-            <div className="flex items-center gap-3 mb-6">
-              <div className="w-10 h-10 rounded-xl bg-indigo-50 flex items-center justify-center">
-                <SlidersHorizontal className="w-5 h-5 text-indigo-600" />
-              </div>
-              <h2 className="text-lg font-bold text-slate-800">Parametry Filtru</h2>
+          {/* Karta: Zakres Dat */}
+          <div className="bg-white rounded-3xl p-5 shadow-sm border border-slate-200/60">
+            <label className="flex items-center gap-2 mb-4 text-xs font-bold text-slate-500 uppercase tracking-wider">
+              <Calendar className="w-4 h-4 text-slate-400" /> Zakres Dat
+            </label>
+
+            <div className="flex gap-1 p-1 bg-slate-50 border border-slate-100 rounded-xl overflow-x-auto hide-scrollbar mb-4">
+              {presetButtons.map(pb => (
+                <button key={pb.key} onClick={() => setDatePreset(pb.key)}
+                  className={`flex-1 px-2 py-1.5 rounded-lg text-xs font-bold transition-all duration-200 whitespace-nowrap
+                    ${datePreset === pb.key ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/20' : 'text-slate-500 hover:text-slate-700 hover:bg-slate-200/50'}`}
+                >
+                  {pb.label}
+                </button>
+              ))}
             </div>
 
-            {/* Zakres dat z premium pill-buttons */}
-            <div className="mb-6 space-y-4">
-              <label className="flex items-center gap-2 text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">
-                <Calendar className="w-4 h-4 text-indigo-500" /> Okres
+            <div className="grid grid-cols-2 gap-3 mt-4">
+              <div className="space-y-1">
+                <label className="text-[10px] text-indigo-500/70 font-extrabold uppercase ml-1 tracking-wider">Od</label>
+                <input type="date" value={dateFrom} 
+                  onChange={e => { setDateFrom(e.target.value); setDatePreset('custom'); }}
+                  className="w-full px-3 py-2.5 bg-white border border-slate-200/80 hover:border-indigo-300 rounded-xl text-sm font-semibold text-slate-700 shadow-sm focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition-all cursor-pointer"
+                />
+              </div>
+              <div className="space-y-1">
+                <label className="text-[10px] text-indigo-500/70 font-extrabold uppercase ml-1 tracking-wider">Do</label>
+                <input type="date" value={dateTo} 
+                  onChange={e => { setDateTo(e.target.value); setDatePreset('custom'); }}
+                  className="w-full px-3 py-2.5 bg-white border border-slate-200/80 hover:border-indigo-300 rounded-xl text-sm font-semibold text-slate-700 shadow-sm focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition-all cursor-pointer"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Karta: Filtry */}
+          <div className="bg-white rounded-3xl p-5 shadow-sm border border-slate-200/60">
+            <div className="flex items-center justify-between mb-5">
+              <label className="flex items-center gap-2 text-xs font-bold text-slate-500 uppercase tracking-wider">
+                <Filter className="w-4 h-4 text-slate-400" /> Filtry
               </label>
-              
-              <div className="flex flex-wrap gap-2 p-1 bg-slate-50 border border-slate-100 rounded-2xl">
-                {presetButtons.map(pb => (
-                  <button key={pb.key} onClick={() => setDatePreset(pb.key)}
-                    className={`flex-1 min-w-[70px] px-3 py-2 rounded-xl text-xs font-bold transition-all duration-300 
-                      ${datePreset === pb.key ? 'bg-white text-indigo-700 shadow-sm border border-slate-200/60 scale-100' : 'text-slate-500 hover:text-slate-700 hover:bg-slate-100 scale-95'}`}
-                  >
-                    {pb.label}
-                  </button>
-                ))}
-              </div>
-
-              {datePreset === 'custom' && (
-                <div className="grid grid-cols-2 gap-3 animate-in slide-in-from-top-2 duration-300">
-                  <div className="space-y-1.5">
-                    <label className="text-[10px] text-slate-400 font-bold uppercase ml-1">Od</label>
-                    <input type="date" value={dateFrom} onChange={e => setDateFrom(e.target.value)}
-                      className="w-full px-4 py-2.5 bg-slate-50 border-2 border-slate-200/60 rounded-xl text-sm font-medium text-slate-700 focus:outline-none focus:border-indigo-400 focus:ring-4 focus:ring-indigo-500/10 transition-all"
-                    />
-                  </div>
-                  <div className="space-y-1.5">
-                    <label className="text-[10px] text-slate-400 font-bold uppercase ml-1">Do</label>
-                    <input type="date" value={dateTo} onChange={e => setDateTo(e.target.value)}
-                      className="w-full px-4 py-2.5 bg-slate-50 border-2 border-slate-200/60 rounded-xl text-sm font-medium text-slate-700 focus:outline-none focus:border-indigo-400 focus:ring-4 focus:ring-indigo-500/10 transition-all"
-                    />
-                  </div>
-                </div>
-              )}
+              <button 
+                onClick={() => {
+                  setStatuses([]);
+                  setPriorities([]);
+                  setSelectedCategories([]);
+                  setSelectedTechnicians([]);
+                  setSelectedCreators([]);
+                }}
+                className="text-xs font-semibold text-slate-400 hover:text-indigo-600 transition-colors"
+                title="Wyczyść tylko te filtry"
+              >
+                Resetuj
+              </button>
             </div>
 
-            <div className="h-px bg-gradient-to-r from-transparent via-slate-200 to-transparent my-6"></div>
-
-            <div className="space-y-5">
-              <MultiSelect label="Statusy" icon={<Filter className="w-4 h-4 text-indigo-500" />} options={statusOptions} selected={statuses} onChange={setStatuses} />
-              <MultiSelect label="Priorytety" icon={<BarChart3 className="w-4 h-4 text-indigo-500" />} options={priorityOptions} selected={priorities} onChange={setPriorities} />
-              <MultiSelect label="Kategorie" icon={<Filter className="w-4 h-4 text-indigo-500" />} options={categoryOptions} selected={selectedCategories} onChange={setSelectedCategories} />
-              <MultiSelect label="Technicy" icon={<Search className="w-4 h-4 text-indigo-500" />} options={technicianOptions} selected={selectedTechnicians} onChange={setSelectedTechnicians} position="top" />
-              <MultiSelect label="Zgłaszający" icon={<Search className="w-4 h-4 text-indigo-500" />} options={creatorOptions} selected={selectedCreators} onChange={setSelectedCreators} position="top" />
+            <div className="space-y-4">
+              <MultiSelect label="Status" icon={<Activity className="w-3.5 h-3.5 text-slate-400" />} options={statusOptions} selected={statuses} onChange={setStatuses} />
+              <MultiSelect label="Priorytet" icon={<Zap className="w-3.5 h-3.5 text-slate-400" />} options={priorityOptions} selected={priorities} onChange={setPriorities} />
+              <MultiSelect label="Kategoria" icon={<Tags className="w-3.5 h-3.5 text-slate-400" />} options={categoryOptions} selected={selectedCategories} onChange={setSelectedCategories} />
+              <MultiSelect label="Technik" icon={<UserCheck className="w-3.5 h-3.5 text-slate-400" />} options={technicianOptions} selected={selectedTechnicians} onChange={setSelectedTechnicians} />
+              <MultiSelect label="Zgłaszający" icon={<UserIcon className="w-3.5 h-3.5 text-slate-400" />} options={creatorOptions} selected={selectedCreators} onChange={setSelectedCreators} />
             </div>
           </div>
         </div>
@@ -391,21 +390,19 @@ const ReportsPage: React.FC = () => {
                       <td className="px-5 py-4 text-slate-400 font-mono text-xs">{row.id}</td>
                       <td className="px-5 py-4 font-bold text-slate-700 max-w-[200px] truncate group-hover:text-indigo-700 transition-colors">{row.title}</td>
                       <td className="px-5 py-4">
-                        <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold border ${
-                          row.status === 'Nowe' ? 'bg-blue-50 border-blue-200 text-blue-700' :
-                          row.status === 'W toku' ? 'bg-amber-50 border-amber-200 text-amber-700' :
-                          row.status === 'Rozwiązane' ? 'bg-emerald-50 border-emerald-200 text-emerald-700' :
-                          'bg-slate-50 border-slate-200 text-slate-600'
-                        }`}>
+                        <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold border ${row.status === 'Nowe' ? 'bg-blue-50 border-blue-200 text-blue-700' :
+                            row.status === 'W toku' ? 'bg-amber-50 border-amber-200 text-amber-700' :
+                              row.status === 'Rozwiązane' ? 'bg-emerald-50 border-emerald-200 text-emerald-700' :
+                                'bg-slate-50 border-slate-200 text-slate-600'
+                          }`}>
                           <span className={`w-1.5 h-1.5 rounded-full ${row.status === 'Nowe' ? 'bg-blue-500' : row.status === 'W toku' ? 'bg-amber-500' : row.status === 'Rozwiązane' ? 'bg-emerald-500' : 'bg-slate-400'}`}></span>
                           {row.status}
                         </span>
                       </td>
                       <td className="px-5 py-4">
-                        <span className={`text-xs font-bold ${
-                          row.priority === 'Wysoki' ? 'text-rose-600' :
-                          row.priority === 'Normalny' ? 'text-indigo-600' : 'text-slate-500'
-                        }`}>{row.priority}</span>
+                        <span className={`text-xs font-bold ${row.priority === 'Wysoki' ? 'text-rose-600' :
+                            row.priority === 'Normalny' ? 'text-indigo-600' : 'text-slate-500'
+                          }`}>{row.priority}</span>
                       </td>
                       <td className="px-5 py-4 text-slate-500 font-medium hidden md:table-cell">{row.category}</td>
                       <td className="px-5 py-4 text-slate-500 font-medium hidden lg:table-cell">
@@ -434,7 +431,7 @@ const ReportsPage: React.FC = () => {
                 </tbody>
               </table>
             )}
-            
+
             {/* Overlay during loading */}
             {loadingPreview && preview.length > 0 && (
               <div className="absolute inset-0 bg-white/40 backdrop-blur-[1px] flex items-center justify-center z-20">
