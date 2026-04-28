@@ -324,21 +324,115 @@ html.dark ::-webkit-scrollbar-thumb:hover {
   display: none;
 }
 
-/* ---- MUI DateCalendar custom overrides ---- */
-.MuiDateCalendar-root {
-  max-height: 320px !important;
+/* ---- react-day-picker custom theme ---- */
+.rdp-root {
+  --rdp-accent-color: #6366f1;
+  --rdp-accent-background-color: #eef2ff;
+  --rdp-day_button-border-radius: 8px;
+  --rdp-selected-font: 700 0.875rem/1 inherit;
+  font-family: inherit;
 }
 
-.MuiPickersCalendarHeader-label {
-  font-weight: 700 !important;
-  text-transform: capitalize !important;
-  cursor: pointer !important;
+.rdp-root .rdp-caption_label {
+  font-weight: 700;
+  font-size: 0.9rem;
+  text-transform: capitalize;
 }
 
-.MuiPickersArrowSwitcher-button {
-  color: #6366f1 !important;
+.rdp-root .rdp-button_previous,
+.rdp-root .rdp-button_next {
+  color: #6366f1;
+  border-radius: 8px;
+  width: 28px;
+  height: 28px;
 }
 
-.MuiPickersArrowSwitcher-button:hover {
-  background: rgba(99, 102, 241, 0.08) !important;
+.rdp-root .rdp-button_previous:hover,
+.rdp-root .rdp-button_next:hover {
+  background: #eef2ff;
+}
+
+.rdp-root .rdp-day button {
+  border-radius: 8px;
+  font-weight: 500;
+  transition: all 0.15s ease;
+}
+
+.rdp-root .rdp-day button:hover {
+  background: #e0e7ff;
+  color: #4338ca;
+}
+
+.rdp-root .rdp-today:not(.rdp-selected) .rdp-day_button {
+  font-weight: 800;
+  color: #6366f1;
+  border: 2px solid #6366f1;
+}
+
+.rdp-root .rdp-selected .rdp-day_button {
+  background: #6366f1;
+  color: #fff;
+  font-weight: 700;
+}
+
+.rdp-root .rdp-selected .rdp-day_button:hover {
+  background: #4f46e5;
+}
+
+.rdp-root .rdp-weekday {
+  color: #94a3b8;
+  font-weight: 600;
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.rdp-root .rdp-dropdowns {
+  gap: 6px;
+  display: flex;
+  align-items: center;
+}
+
+.rdp-root .rdp-dropdowns select {
+  font-weight: 600;
+  font-size: 0.82rem;
+  color: #334155;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 5px 28px 5px 10px;
+  cursor: pointer;
+  background-color: #f8fafc;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236366f1' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 8px center;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  text-transform: capitalize;
+  transition: all 0.2s ease;
+  line-height: 1.4;
+}
+
+.rdp-root .rdp-dropdowns select:hover {
+  border-color: #6366f1;
+  background-color: #eef2ff;
+  box-shadow: 0 1px 3px rgba(99, 102, 241, 0.12);
+}
+
+.rdp-root .rdp-dropdowns select:focus {
+  outline: none;
+  border-color: #6366f1;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
+  background-color: #fff;
+}
+
+.rdp-root .rdp-dropdowns select option {
+  font-weight: 500;
+  text-transform: capitalize;
+  padding: 4px;
+}
+
+/* Calendar popup responsiveness */
+.calendar-popup {
+  max-width: calc(100vw - 2rem);
 }
