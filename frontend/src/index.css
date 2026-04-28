@@ -345,22 +345,34 @@ html.dark ::-webkit-scrollbar-thumb:hover {
   border-radius: 8px;
   width: 28px;
   height: 28px;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .rdp-root .rdp-button_previous:hover,
 .rdp-root .rdp-button_next:hover {
   background: #eef2ff;
+  transform: translateY(-1px);
+}
+
+.rdp-root .rdp-button_previous:active,
+.rdp-root .rdp-button_next:active {
+  transform: scale(0.85);
+  background: #e0e7ff;
 }
 
 .rdp-root .rdp-day button {
   border-radius: 8px;
   font-weight: 500;
-  transition: all 0.15s ease;
+  transition: all 0.2s ease;
 }
 
 .rdp-root .rdp-day button:hover {
   background: #e0e7ff;
   color: #4338ca;
+}
+
+.rdp-root .rdp-day button:active {
+  transform: scale(0.9);
 }
 
 .rdp-root .rdp-today:not(.rdp-selected) .rdp-day_button {
