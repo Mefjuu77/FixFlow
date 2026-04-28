@@ -1,10 +1,8 @@
 import React, { useEffect, useState, useContext, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import dayjs from 'dayjs';
-import 'dayjs/locale/pl';
 import relativeTime from 'dayjs/plugin/relativeTime';
 dayjs.extend(relativeTime);
-dayjs.locale('pl');
 import { ticketService } from '../api/ticketService';
 import { Ticket, User as UserType, Comment, Category, TicketLog, WorkLog } from '../types';
 import { AuthContext } from '../context/AuthContext';
@@ -13,11 +11,6 @@ import {
   ArrowLeft,
   User,
   ChevronDown,
-  Monitor,
-  AppWindow,
-  Globe,
-  KeyRound,
-  Shapes,
   AlertTriangle,
   Lock,
   ChevronsUp,
@@ -43,6 +36,7 @@ import {
   FileClock,
   Trash2
 } from 'lucide-react';
+import { getCategoryIcon } from '../utils/ticketConstants';
 
 const TicketDetailsPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -360,15 +354,7 @@ const TicketDetailsPage: React.FC = () => {
 
   const isTechnicianOrAdmin = authContext?.user?.role === 'TECHNICIAN' || authContext?.user?.role === 'ADMIN';
 
-  const getCategoryIcon = (name: string) => {
-    if (!name) return <Shapes className="w-3.5 h-3.5" />;
-    const lowerName = name.toLowerCase();
-    if (lowerName.includes('sprzęt')) return <Monitor className="w-3.5 h-3.5" />;
-    if (lowerName.includes('oprogramowanie')) return <AppWindow className="w-3.5 h-3.5" />;
-    if (lowerName.includes('sieć')) return <Globe className="w-3.5 h-3.5" />;
-    if (lowerName.includes('dostęp')) return <KeyRound className="w-3.5 h-3.5" />;
-    return <Shapes className="w-3.5 h-3.5" />;
-  };
+
 
   return (
     <div className="w-full pb-12 animate-in fade-in duration-500">

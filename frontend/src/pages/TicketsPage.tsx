@@ -5,11 +5,9 @@ import api from '../api/axiosConfig';
 import { ticketService } from '../api/ticketService';
 import { Ticket, User } from '../types';
 import dayjs from 'dayjs';
-import 'dayjs/locale/pl';
-import { PlusCircle, Search, ChevronDown, ArrowUp, ArrowDown, UserMinus, Monitor, AppWindow, Globe, KeyRound, Shapes, Circle, CheckCircle2, XCircle, Loader2, ChevronsUp, Equal, ChevronsDown } from 'lucide-react';
+import { PlusCircle, Search, ChevronDown, ArrowUp, ArrowDown, UserMinus, Circle, CheckCircle2, XCircle, Loader2 } from 'lucide-react';
 import useTitle from '../hooks/useTitle';
-
-dayjs.locale('pl');
+import { getCategoryIcon, STATUS_LABELS, STATUS_STYLES, PRIORITY_LABELS, PRIORITY_ICONS } from '../utils/ticketConstants';
 
 type SortField = 'id' | 'title' | 'category_name' | 'priority' | 'creator' | 'technician' | 'status' | 'created_at';
 
@@ -73,40 +71,7 @@ const CustomDropdown: React.FC<CustomDropdownProps> = ({ value, onChange, option
   );
 };
 
-const STATUS_LABELS: Record<string, string> = {
-  NOWE: 'Nowe',
-  W_TOKU: 'W toku',
-  ROZWIAZANE: 'Rozwiązane',
-  ZAMKNIETE: 'Zamknięte',
-};
 
-const STATUS_STYLES: Record<string, string> = {
-  NOWE: 'bg-blue-100 text-blue-800',
-  W_TOKU: 'bg-amber-100 text-amber-800',
-  ROZWIAZANE: 'bg-green-100 text-green-800',
-  ZAMKNIETE: 'bg-gray-100 text-gray-700',
-};
-
-const PRIORITY_LABELS: Record<string, string> = {
-  NISKI: 'Niski',
-  NORMALNY: 'Normalny',
-  WYSOKI: 'Wysoki',
-};
-
-const PRIORITY_ICONS: Record<string, React.ReactNode> = {
-  WYSOKI: <ChevronsUp className="w-4 h-4 text-red-500" />,
-  NORMALNY: <Equal className="w-4 h-4 text-blue-500" />,
-  NISKI: <ChevronsDown className="w-4 h-4 text-gray-400" />,
-};
-
-const getCategoryIcon = (name: string) => {
-  const lowerName = name.toLowerCase();
-  if (lowerName.includes('sprzęt')) return <Monitor className="w-4 h-4 text-gray-500" />;
-  if (lowerName.includes('oprogramowanie')) return <AppWindow className="w-4 h-4 text-gray-500" />;
-  if (lowerName.includes('sieć')) return <Globe className="w-4 h-4 text-gray-500" />;
-  if (lowerName.includes('dostęp')) return <KeyRound className="w-4 h-4 text-gray-500" />;
-  return <Shapes className="w-4 h-4 text-gray-500" />;
-};
 
 const TicketsPage: React.FC = () => {
   useTitle('Zgłoszenia');
@@ -437,9 +402,9 @@ const TicketsPage: React.FC = () => {
             placeholder="Priorytet"
             options={[
               { value: 'all', label: 'Wszystkie' },
-              { value: 'WYSOKI', label: 'Wysoki', icon: <ChevronsUp className="w-4 h-4 text-red-500" /> },
-              { value: 'NORMALNY', label: 'Normalny', icon: <Equal className="w-4 h-4 text-blue-500" /> },
-              { value: 'NISKI', label: 'Niski', icon: <ChevronsDown className="w-4 h-4 text-gray-400" /> }
+              { value: 'WYSOKI', label: 'Wysoki', icon: PRIORITY_ICONS['WYSOKI'] },
+              { value: 'NORMALNY', label: 'Normalny', icon: PRIORITY_ICONS['NORMALNY'] },
+              { value: 'NISKI', label: 'Niski', icon: PRIORITY_ICONS['NISKI'] }
             ]}
             className="w-36 sm:w-44"
           />

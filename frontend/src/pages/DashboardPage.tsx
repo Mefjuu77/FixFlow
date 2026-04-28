@@ -19,11 +19,9 @@ import { Link } from 'react-router-dom';
 import dayjs from 'dayjs';
 import useTitle from '../hooks/useTitle';
 import relativeTime from 'dayjs/plugin/relativeTime';
-import 'dayjs/locale/pl';
 
-// Konfiguracja dayjs do obsługi czasu relatywnego po polsku
+// Plugin do obsługi czasu relatywnego (np. "2 godziny temu")
 dayjs.extend(relativeTime);
-dayjs.locale('pl');
 
 const DashboardPage: React.FC = () => {
   useTitle('Panel główny');

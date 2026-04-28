@@ -7,11 +7,6 @@ import {
   ArrowLeft,
   AlertCircle,
   FileText,
-  Monitor,
-  AppWindow,
-  Globe,
-  KeyRound,
-  Shapes,
   ChevronDown,
   ChevronsUp,
   Equal,
@@ -21,6 +16,7 @@ import {
   X
 } from 'lucide-react';
 import useTitle from '../hooks/useTitle';
+import { getCategoryIcon } from '../utils/ticketConstants';
 
 const CreateTicketPage: React.FC = () => {
   useTitle('Nowe zgłoszenie');
@@ -82,14 +78,7 @@ const CreateTicketPage: React.FC = () => {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const getCategoryIcon = (name: string) => {
-    const lowerName = name.toLowerCase();
-    if (lowerName.includes('sprzęt')) return <Monitor className="w-4 h-4" />;
-    if (lowerName.includes('oprogramowanie')) return <AppWindow className="w-4 h-4" />;
-    if (lowerName.includes('sieć')) return <Globe className="w-4 h-4" />;
-    if (lowerName.includes('dostęp')) return <KeyRound className="w-4 h-4" />;
-    return <Shapes className="w-4 h-4" />;
-  };
+
 
   const priorityOptions = [
     { value: 'WYSOKI', label: 'Wysoki', icon: <ChevronsUp className="w-4 h-4 text-red-500" />, color: 'text-red-600' },

@@ -1,0 +1,60 @@
+import React from 'react';
+import {
+  Monitor, AppWindow, Globe, KeyRound, Shapes,
+  ChevronsUp, Equal, ChevronsDown,
+  Circle, CheckCircle2, XCircle, Loader2,
+} from 'lucide-react';
+
+// ==================== Kategorie ====================
+
+export const getCategoryIcon = (name: string, size = 'w-4 h-4') => {
+  const lowerName = (name || '').toLowerCase();
+  if (lowerName.includes('sprzęt')) return <Monitor className={`${size} text-gray-500`} />;
+  if (lowerName.includes('oprogramowanie')) return <AppWindow className={`${size} text-gray-500`} />;
+  if (lowerName.includes('sieć')) return <Globe className={`${size} text-gray-500`} />;
+  if (lowerName.includes('dostęp')) return <KeyRound className={`${size} text-gray-500`} />;
+  return <Shapes className={`${size} text-gray-500`} />;
+};
+
+// ==================== Statusy ====================
+
+export const STATUS_LABELS: Record<string, string> = {
+  NOWE: 'Nowe',
+  W_TOKU: 'W toku',
+  ROZWIAZANE: 'Rozwiązane',
+  ZAMKNIETE: 'Zamknięte',
+};
+
+export const STATUS_STYLES: Record<string, string> = {
+  NOWE: 'bg-blue-100 text-blue-800',
+  W_TOKU: 'bg-amber-100 text-amber-800',
+  ROZWIAZANE: 'bg-green-100 text-green-800',
+  ZAMKNIETE: 'bg-gray-100 text-gray-700',
+};
+
+export const STATUS_ICONS: Record<string, React.ReactNode> = {
+  NOWE: <Circle className="w-4 h-4 text-blue-600 stroke-[2.5]" />,
+  W_TOKU: <Loader2 className="w-4 h-4 text-amber-500 stroke-[2.5]" />,
+  ROZWIAZANE: <CheckCircle2 className="w-4 h-4 text-green-600 stroke-[2.5]" />,
+  ZAMKNIETE: <XCircle className="w-4 h-4 text-gray-500 stroke-[2.5]" />,
+};
+
+// ==================== Priorytety ====================
+
+export const PRIORITY_LABELS: Record<string, string> = {
+  NISKI: 'Niski',
+  NORMALNY: 'Normalny',
+  WYSOKI: 'Wysoki',
+};
+
+export const PRIORITY_ICONS: Record<string, React.ReactNode> = {
+  WYSOKI: <ChevronsUp className="w-4 h-4 text-red-500" />,
+  NORMALNY: <Equal className="w-4 h-4 text-blue-500" />,
+  NISKI: <ChevronsDown className="w-4 h-4 text-gray-400" />,
+};
+
+export const PRIORITY_COLORS: Record<string, string> = {
+  WYSOKI: 'text-red-600',
+  NORMALNY: 'text-blue-600',
+  NISKI: 'text-gray-500',
+};

@@ -6,7 +6,6 @@ import { ticketService } from '../api/ticketService';
 import { User, Category } from '../types';
 import useTitle from '../hooks/useTitle';
 import dayjs from 'dayjs';
-import 'dayjs/locale/pl';
 import { DayPicker } from 'react-day-picker';
 import 'react-day-picker/src/style.css';
 import { pl } from 'date-fns/locale/pl';
@@ -14,11 +13,9 @@ import {
   FileBarChart, Calendar, Filter, FileSpreadsheet, FileText,
   ChevronDown, Search, Loader2, CheckCircle2, ChevronsUp, Equal,
   ChevronsDown, Circle, XCircle, ArrowDownToLine, RefreshCw,
-  UserMinus, AlertTriangle,
-  Monitor, AppWindow, Globe, KeyRound, Shapes
+  UserMinus, AlertTriangle
 } from 'lucide-react';
-
-dayjs.locale('pl');
+import { getCategoryIcon } from '../utils/ticketConstants';
 
 // === Typy ===
 interface PreviewRow {
@@ -30,14 +27,7 @@ interface PreviewRow {
 
 type DatePreset = 'week' | 'month' | 'quarter' | 'year' | 'custom';
 
-const getCategoryIcon = (name: string) => {
-  const lowerName = name.toLowerCase();
-  if (lowerName.includes('sprzęt')) return <Monitor className="w-4 h-4 text-gray-500" />;
-  if (lowerName.includes('oprogramowanie')) return <AppWindow className="w-4 h-4 text-gray-500" />;
-  if (lowerName.includes('sieć')) return <Globe className="w-4 h-4 text-gray-500" />;
-  if (lowerName.includes('dostęp')) return <KeyRound className="w-4 h-4 text-gray-500" />;
-  return <Shapes className="w-4 h-4 text-gray-500" />;
-};
+
 
 // === Custom Calendar Dropdown (replaces ugly native <select>) ===
 const CalendarDropdown = (props: any) => {
