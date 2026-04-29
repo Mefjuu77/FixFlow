@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import api from '../api/axiosConfig';
 import { User } from '../types';
 import useTitle from '../hooks/useTitle';
@@ -73,7 +74,18 @@ const UsersPage: React.FC = () => {
     }
   };
 
-  useEffect(() => { fetchUsers(); }, []);
+  const location = useLocation();
+
+  useEffect(() => { 
+    fetchUsers(); 
+    // Sprawdzamy czy przekazano state wymuszający otwarcie modala (np. z Palety Komend)
+    if (location.state?.openCreateModal) {
+      // Z opóźnieniem by upewnić się, że komponent się w pełni zamontował
+      setTimeout(() => openCreateModal(), 100);
+      // Czyścimy state, by modal nie otwierał się po każdym refreshu
+      window.history.replaceState({}, document.title);
+    }
+  }, [location.state]);
 
   const filteredUsers = users.filter(u => {
     const q = searchQuery.toLowerCase();

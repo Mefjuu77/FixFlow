@@ -2,7 +2,8 @@ import React, { useContext } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { AuthContext } from '../../context/AuthContext';
 import { ThemeContext } from '../../context/ThemeContext';
-import { LayoutDashboard, Ticket, Users, Settings, LogOut, Wrench, BarChart3, FileBarChart, Moon, Sun } from 'lucide-react';
+import CommandPalette from '../CommandPalette';
+import { LayoutDashboard, Ticket, Users, Settings, LogOut, Wrench, BarChart3, FileBarChart, Moon, Sun, Search } from 'lucide-react';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -46,6 +47,21 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
         <div className="flex items-center justify-center h-20 border-b border-gray-800">
           <Wrench className="w-8 h-8 mr-3 text-blue-400" />
           <h1 className="text-2xl font-bold">FixFlow</h1>
+        </div>
+
+        {/* Command Palette Trigger */}
+        <div className="px-4 mt-4">
+          <button
+            onClick={() => {
+              // Dispatch Ctrl+K event to open CommandPalette
+              window.dispatchEvent(new KeyboardEvent('keydown', { key: 'k', ctrlKey: true }));
+            }}
+            className="w-full flex items-center gap-3 px-3 py-2.5 text-sm text-gray-400 bg-gray-800/50 hover:bg-gray-800 border border-gray-700/50 hover:border-gray-600 rounded-xl transition-all group"
+          >
+            <Search className="w-4 h-4 text-gray-500 group-hover:text-gray-300 transition-colors" />
+            <span className="flex-1 text-left text-gray-500 group-hover:text-gray-300 transition-colors">Szukaj...</span>
+            <kbd className="px-1.5 py-0.5 text-[10px] font-bold text-gray-500 bg-gray-700 border border-gray-600 rounded">⌘K</kbd>
+          </button>
         </div>
 
         <div className="flex-1 overflow-y-auto">
@@ -114,6 +130,9 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
           {children}
         </main>
       </div>
+
+      {/* Command Palette (globalny overlay) */}
+      <CommandPalette />
     </div>
   );
 };

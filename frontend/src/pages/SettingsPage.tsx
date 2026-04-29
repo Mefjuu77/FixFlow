@@ -1,4 +1,5 @@
-import React, { useContext, useState, useRef } from 'react';
+import React, { useContext, useState, useRef, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
 import { ThemeContext } from '../context/ThemeContext';
 import useTitle from '../hooks/useTitle';
@@ -35,15 +36,37 @@ const ROLE_COLORS: Record<string, string> = {
   ADMIN: 'bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-400',
 };
 
+const validTabs = ['profile', 'security', 'appearance', 'notifications'] as const;
+type SettingsTab = typeof validTabs[number];
+
 const SettingsPage: React.FC = () => {
   useTitle('Ustawienia');
   const authContext = useContext(AuthContext);
   const themeContext = useContext(ThemeContext);
   const user = authContext?.user;
   const role = user?.role;
+  const [searchParams, setSearchParams] = useSearchParams();
 
-  // Tabs
-  const [activeTab, setActiveTab] = useState<'profile' | 'security' | 'appearance' | 'notifications'>('profile');
+  // Tabs — read initial tab from URL ?tab=security etc.
+  const initialTab = (() => {
+    const param = searchParams.get('tab');
+    if (param && validTabs.includes(param as SettingsTab)) return param as SettingsTab;
+    return 'profile';
+  })();
+  const [activeTab, setActiveTab] = useState<SettingsTab>(initialTab);
+
+  // Zmiana aktywnej zakładki, jeśli zmieni się parametr w URL (np. kliknięcie z Palety Komend)
+  useEffect(() => {
+    const param = searchParams.get('tab');
+    if (param && validTabs.includes(param as SettingsTab) && param !== activeTab) {
+      setActiveTab(param as SettingsTab);
+    }
+  }, [searchParams]);
+
+  const handleTabChange = (tabId: SettingsTab) => {
+    setActiveTab(tabId);
+    setSearchParams({ tab: tabId });
+  };
 
   // Profile form state
   const [firstName, setFirstName] = useState(user?.first_name || '');
@@ -216,7 +239,7 @@ const SettingsPage: React.FC = () => {
             {tabs.map((tab) => (
               <button
                 key={tab.id}
-                onClick={() => { setActiveTab(tab.id as any); setSuccessMsg(null); setErrorMsg(null); }}
+                onClick={() => { handleTabChange(tab.id as SettingsTab); setSuccessMsg(null); setErrorMsg(null); }}
                 className={`relative flex items-center gap-3 w-full px-4 py-3 rounded-2xl text-sm font-semibold transition-all duration-300 ${activeTab === tab.id
                     ? 'bg-white dark:bg-gray-800 text-blue-600 dark:text-blue-400 shadow-[0_2px_10px_-3px_rgba(6,81,237,0.1)] dark:shadow-[0_2px_10px_-3px_rgba(59,130,246,0.15)] border border-blue-100 dark:border-blue-900/50'
                     : 'text-gray-500 dark:text-gray-400 bg-white/40 dark:bg-gray-800/20 hover:bg-white/80 dark:hover:bg-gray-800/60 hover:text-gray-900 dark:hover:text-gray-200 border border-gray-200/60 dark:border-gray-700/50 hover:border-gray-300/60'
