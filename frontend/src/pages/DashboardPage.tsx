@@ -11,8 +11,7 @@ import {
   ArrowUpRight,
   Ticket as TicketIcon,
   Users,
-  AlertTriangle,
-  User
+  AlertTriangle
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import dayjs from 'dayjs';
@@ -313,7 +312,9 @@ const DashboardPage: React.FC = () => {
                             {ticket.creator_details?.avatar ? (
                               <img src={ticket.creator_details.avatar} alt="Avatar" className="w-4 h-4 rounded-full mr-1.5 object-cover" />
                             ) : (
-                              <User className="w-3.5 h-3.5 mr-1.5 opacity-70" />
+                              <div className="w-4 h-4 rounded-full bg-blue-600 text-white flex items-center justify-center mr-1.5 flex-shrink-0">
+                                <span className="text-[9px] font-bold uppercase">{ticket.creator_details?.first_name?.charAt(0) || 'U'}</span>
+                              </div>
                             )}
                             {ticket.creator_details ? `${ticket.creator_details.first_name} ${ticket.creator_details.last_name}` : 'Nieznany'}
                           </span>
@@ -519,7 +520,9 @@ const DashboardPage: React.FC = () => {
                             {ticket.creator_details?.avatar ? (
                               <img src={ticket.creator_details.avatar} alt="Avatar" className="w-4 h-4 rounded-full mr-1.5 object-cover" />
                             ) : (
-                              <User className="w-3.5 h-3.5 mr-1.5 opacity-70" />
+                              <div className="w-4 h-4 rounded-full bg-blue-600 text-white flex items-center justify-center mr-1.5 flex-shrink-0">
+                                <span className="text-[9px] font-bold uppercase">{ticket.creator_details?.first_name?.charAt(0) || 'U'}</span>
+                              </div>
                             )}
                             {ticket.creator_details ? `${ticket.creator_details.first_name} ${ticket.creator_details.last_name}` : 'Nieznany'}
                           </span>
