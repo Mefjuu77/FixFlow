@@ -373,7 +373,7 @@ const TicketsPage: React.FC = () => {
             { value: 'NOWE', label: `Nowe (${statusCounts.NOWE})`, icon: <Circle className="w-4 h-4 text-blue-600 dark:text-blue-400 stroke-[2.5]" /> },
             { value: 'W_TOKU', label: `W toku (${statusCounts.W_TOKU})`, icon: <Circle className="w-4 h-4 text-amber-500 dark:text-amber-400 stroke-[2.5]" /> },
             { value: 'ROZWIAZANE', label: `Rozwiązane (${statusCounts.ROZWIAZANE})`, icon: <CheckCircle2 className="w-4 h-4 text-green-600 dark:text-green-400 stroke-[2.5]" /> },
-            { value: 'ZAMKNIETE', label: `Zamknięte (${statusCounts.ZAMKNIETE})`, icon: <XCircle className="w-4 h-4 text-emerald-500 dark:text-emerald-400 stroke-[2.5]" /> }
+            { value: 'ZAMKNIETE', label: `Zamknięte (${statusCounts.ZAMKNIETE})`, icon: <XCircle className="w-4 h-4 text-teal-500 dark:text-teal-400 stroke-[2.5]" /> }
           ]}
           className="w-36 sm:w-44"
         />

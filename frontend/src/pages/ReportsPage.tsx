@@ -274,7 +274,7 @@ const ReportsPage: React.FC = () => {
     { value: 'NOWE', label: 'Nowe', icon: <Circle className="w-4 h-4 text-blue-600 stroke-[2.5]" />, color: 'text-blue-700' },
     { value: 'W_TOKU', label: 'W toku', icon: <Loader2 className="w-4 h-4 text-amber-500 stroke-[2.5]" />, color: 'text-amber-700' },
     { value: 'ROZWIAZANE', label: 'Rozwiązane', icon: <CheckCircle2 className="w-4 h-4 text-green-600 stroke-[2.5]" />, color: 'text-emerald-700' },
-    { value: 'ZAMKNIETE', label: 'Zamknięte', icon: <XCircle className="w-4 h-4 text-gray-500 stroke-[2.5]" />, color: 'text-slate-600' },
+    { value: 'ZAMKNIETE', label: 'Zamknięte', icon: <XCircle className="w-4 h-4 text-teal-500 stroke-[2.5]" />, color: 'text-teal-800 dark:text-teal-300' },
   ];
 
   const priorityOptions = [
@@ -579,7 +579,7 @@ const ReportsPage: React.FC = () => {
                         <span className={`px-2.5 py-1 inline-flex text-xs leading-5 font-bold rounded-lg ${row.status === 'Nowe' ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300' :
                           row.status === 'W toku' ? 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300' :
                             row.status === 'Rozwiązane' ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300' :
-                              'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300'
+                              'bg-teal-100 text-teal-800 dark:bg-teal-900/30 dark:text-teal-300'
                           }`}>
                           {row.status}
                         </span>
