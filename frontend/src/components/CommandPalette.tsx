@@ -253,12 +253,12 @@ const CommandPalette: React.FC = () => {
 
       {/* Modal */}
       <div
-        className="relative w-full max-w-xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-2xl dark:shadow-[0_25px_60px_rgba(0,0,0,0.6)] overflow-hidden animate-in fade-in zoom-in-95 duration-200"
+        className="relative w-full max-w-2xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-2xl dark:shadow-[0_25px_60px_rgba(0,0,0,0.6)] overflow-hidden animate-in fade-in zoom-in-95 duration-200"
         onClick={e => e.stopPropagation()}
       >
         {/* Search input */}
-        <div className="flex items-center gap-3 px-5 py-4 command-palette-divider bg-transparent">
-          <Search className="w-5 h-5 text-gray-400 dark:text-gray-400 flex-shrink-0" />
+        <div className="flex items-center gap-4 px-6 py-5 command-palette-divider bg-transparent">
+          <Search className="w-6 h-6 text-gray-400 dark:text-gray-400 flex-shrink-0" />
           <input
             ref={inputRef}
             type="text"
@@ -266,26 +266,23 @@ const CommandPalette: React.FC = () => {
             onChange={e => setQuery(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder="Wpisz komendę lub wyszukaj zgłoszenie..."
-            className="flex-1 text-sm text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 bg-transparent border-0 ring-0 focus:ring-0 focus:outline-none shadow-none command-palette-input"
+            className="flex-1 text-base text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 bg-transparent border-0 ring-0 focus:ring-0 focus:outline-none shadow-none command-palette-input"
           />
-          <kbd className="hidden sm:inline-flex items-center px-2 py-0.5 text-[10px] font-bold text-gray-400 dark:text-gray-500 bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-md uppercase tracking-wider">
-            ESC
-          </kbd>
         </div>
 
         {/* Results */}
-        <div ref={listRef} className="max-h-[340px] overflow-y-auto py-2" style={{ scrollbarWidth: 'thin' }}>
+        <div ref={listRef} className="max-h-[400px] overflow-y-auto py-3" style={{ scrollbarWidth: 'thin' }}>
           {filteredResults.length === 0 ? (
-            <div className="px-5 py-10 text-center">
-              <Search className="w-8 h-8 text-gray-300 dark:text-gray-600 mx-auto mb-3" />
+            <div className="px-6 py-12 text-center">
+              <Search className="w-10 h-10 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
               <p className="text-sm text-gray-500 dark:text-gray-400 font-medium">Brak wyników dla „{query}"</p>
               <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">Spróbuj wpisać nazwę strony, numer zgłoszenia lub akcję</p>
             </div>
           ) : (
             Array.from(grouped.entries()).map(([group, items]) => (
               <div key={group}>
-                <div className="px-5 pt-3 pb-1.5">
-                  <span className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider">{group}</span>
+                <div className="px-6 pt-4 pb-2">
+                  <span className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider">{group}</span>
                 </div>
                 {items.map((item) => {
                   globalIndex++;
@@ -299,13 +296,13 @@ const CommandPalette: React.FC = () => {
                       onPointerMove={() => {
                         if (activeIndex !== idx) setActiveIndex(idx);
                       }}
-                      className={`w-full flex items-center gap-3 px-5 py-2.5 text-left ${
+                      className={`w-full flex items-center gap-4 px-6 py-3 text-left ${
                         isActive
                           ? 'bg-blue-50 dark:bg-blue-600/20 text-blue-700 dark:text-blue-200'
                           : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800/80'
                       }`}
                     >
-                      <div className={`flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center ${
+                      <div className={`flex-shrink-0 w-10 h-10 rounded-xl flex items-center justify-center ${
                         isActive
                           ? 'bg-blue-100 dark:bg-blue-500/20 text-blue-600 dark:text-blue-300'
                           : 'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400'
@@ -313,15 +310,15 @@ const CommandPalette: React.FC = () => {
                         {item.icon}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className={`text-sm font-medium truncate ${isActive ? 'text-blue-700 dark:text-blue-300' : ''}`}>
+                        <p className={`text-base font-medium truncate ${isActive ? 'text-blue-700 dark:text-blue-300' : ''}`}>
                           {item.label}
                         </p>
                         {item.sublabel && (
-                          <p className="text-xs text-gray-400 dark:text-gray-500 truncate">{item.sublabel}</p>
+                          <p className="text-sm text-gray-400 dark:text-gray-500 truncate">{item.sublabel}</p>
                         )}
                       </div>
                       {isActive && (
-                        <ArrowRight className="w-4 h-4 text-blue-400 dark:text-blue-400 flex-shrink-0" />
+                        <ArrowRight className="w-5 h-5 text-blue-400 dark:text-blue-400 flex-shrink-0" />
                       )}
                     </button>
                   );
@@ -332,21 +329,21 @@ const CommandPalette: React.FC = () => {
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-between px-5 py-2.5 border-t border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-900/50">
-          <div className="flex items-center gap-3 text-[11px] text-gray-400 dark:text-gray-500">
-            <span className="flex items-center gap-1">
-              <kbd className="px-1.5 py-0.5 bg-gray-200 dark:bg-gray-700 rounded text-[10px] font-bold">↑</kbd>
-              <kbd className="px-1.5 py-0.5 bg-gray-200 dark:bg-gray-700 rounded text-[10px] font-bold">↓</kbd>
-              nawiguj
+        <div className="flex items-center justify-start px-6 py-4 border-t border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-900/50">
+          <div className="flex items-center gap-6 text-sm text-gray-500 dark:text-gray-400">
+            <span className="flex items-center gap-2">
+              <kbd className="px-2 py-1 bg-gray-200 dark:bg-gray-700 rounded-md text-xs font-bold shadow-sm">↑</kbd>
+              <kbd className="px-2 py-1 bg-gray-200 dark:bg-gray-700 rounded-md text-xs font-bold shadow-sm">↓</kbd>
+              <span className="font-medium ml-1">nawiguj</span>
             </span>
-            <span className="flex items-center gap-1">
-              <kbd className="px-1.5 py-0.5 bg-gray-200 dark:bg-gray-700 rounded text-[10px] font-bold">↵</kbd>
-              wybierz
+            <span className="flex items-center gap-2">
+              <kbd className="px-2 py-1 bg-gray-200 dark:bg-gray-700 rounded-md text-xs font-bold shadow-sm">↵</kbd>
+              <span className="font-medium ml-1">wybierz</span>
             </span>
-          </div>
-          <div className="flex items-center gap-1.5 text-[11px] text-gray-400 dark:text-gray-500">
-            <Command className="w-3 h-3" />
-            <span className="font-medium">FixFlow</span>
+            <span className="flex items-center gap-2 hidden sm:flex">
+              <kbd className="px-2 py-1 bg-gray-200 dark:bg-gray-700 rounded-md text-xs font-bold shadow-sm tracking-wider">ESC</kbd>
+              <span className="font-medium ml-1">zamknij</span>
+            </span>
           </div>
         </div>
       </div>
