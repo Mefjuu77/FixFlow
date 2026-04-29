@@ -252,6 +252,14 @@ html.dark .border-violet-200 {
   border-color: rgba(139, 92, 246, 0.6) !important;
 }
 
+html.dark .border-teal-200 {
+  border-color: rgba(20, 184, 166, 0.6) !important;
+}
+
+html.dark .border-teal-100 {
+  border-color: rgba(20, 184, 166, 0.3) !important;
+}
+
 /* ---- Badge / tag backgrounds ---- */
 html.dark .bg-blue-100 {
   background-color: rgba(59, 130, 246, 0.2) !important;
