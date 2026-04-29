@@ -98,7 +98,6 @@ const CommandPalette: React.FC = () => {
       items.push(
         { id: 'nav-reports', label: 'Raporty', icon: <FileBarChart className="w-4 h-4" />, action: () => runAndClose(() => navigate('/reports')), group: 'Nawigacja', keywords: 'eksport pdf csv' },
         { id: 'nav-users', label: 'Użytkownicy', icon: <Users className="w-4 h-4" />, action: () => runAndClose(() => navigate('/users')), group: 'Nawigacja', keywords: 'pracownicy technicy administracja' },
-        { id: 'action-add-user', label: 'Dodaj nowego użytkownika', icon: <UserPlus className="w-4 h-4" />, action: () => runAndClose(() => navigate('/users', { state: { openCreateModal: true } })), group: 'Akcje', keywords: 'dodaj utwórz stwórz pracownika technika admina nowy uzytkownik user' },
       );
     }
 
@@ -118,6 +117,7 @@ const CommandPalette: React.FC = () => {
     // ========== AKCJE ==========
     items.push(
       { id: 'action-create-ticket', label: 'Nowe zgłoszenie', icon: <PlusCircle className="w-4 h-4" />, action: () => runAndClose(() => navigate('/create-ticket')), group: 'Akcje', keywords: 'utwórz stwórz dodaj nowy ticket zgłoś create' },
+      { id: 'action-my-tickets', label: 'Moje zgłoszenia', icon: <ClipboardList className="w-4 h-4" />, action: () => runAndClose(() => navigate('/tickets')), group: 'Akcje', keywords: 'moje zgłoszenia przypisane do mnie my tickets assigned' },
     );
 
     if (isAdmin) {
@@ -134,14 +134,6 @@ const CommandPalette: React.FC = () => {
         action: () => runAndClose(() => themeContext?.toggleTheme()),
         group: 'Akcje',
         keywords: 'dark mode tryb ciemny jasny theme motyw switch'
-      },
-      {
-        id: 'action-my-tickets',
-        label: 'Moje zgłoszenia',
-        icon: <ClipboardList className="w-4 h-4" />,
-        action: () => runAndClose(() => navigate('/tickets')),
-        group: 'Akcje',
-        keywords: 'moje zgłoszenia przypisane do mnie my tickets assigned'
       },
       {
         id: 'action-logout',

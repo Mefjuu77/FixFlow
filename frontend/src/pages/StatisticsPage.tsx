@@ -486,9 +486,9 @@ const StatisticsPage: React.FC = () => {
             <p className="text-sm font-medium text-gray-500">Rozwiązane</p>
             <p className="text-3xl font-extrabold text-green-600 mt-1">{totalResolved}</p>
           </div>
-          <div className="bg-white border border-gray-200 rounded-2xl p-5 shadow-sm">
+          <div className="bg-white border border-teal-100 rounded-2xl p-5 shadow-sm">
             <p className="text-sm font-medium text-gray-500">Zamknięte</p>
-            <p className="text-3xl font-extrabold text-gray-600 mt-1">{totalClosed}</p>
+            <p className="text-3xl font-extrabold text-teal-600 mt-1">{totalClosed}</p>
           </div>
         </div>
 

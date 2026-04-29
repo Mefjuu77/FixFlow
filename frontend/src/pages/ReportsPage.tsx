@@ -475,7 +475,7 @@ const ReportsPage: React.FC = () => {
             <div className="space-y-4">
               <MultiSelect label="Kategoria" options={categoryOptions} selected={selectedCategories} onChange={setSelectedCategories} />
               <MultiSelect label="Priorytet" options={priorityOptions} selected={priorities} onChange={setPriorities} />
-              <MultiSelect label="Zgłaszający" options={creatorOptions} selected={selectedCreators} onChange={setSelectedCreators} />
+              <MultiSelect label="Zgłaszający" options={creatorOptions} selected={selectedCreators} onChange={setSelectedCreators} position="top" />
               <MultiSelect label="Technik" options={technicianOptions} selected={selectedTechnicians} onChange={setSelectedTechnicians} position="top" />
               <MultiSelect label="Status" options={statusOptions} selected={statuses} onChange={setStatuses} position="top" />
             </div>

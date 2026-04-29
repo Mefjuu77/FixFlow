@@ -647,9 +647,6 @@ const TicketDetailsPage: React.FC = () => {
 
             {isTechnicianOrAdmin && (
               <div className="flex border-b border-gray-200 mb-4 custom-scrollbar overflow-x-auto">
-                {authContext?.user?.role === 'ADMIN' && (
-                  <button onClick={() => setActiveTab('logs')} className={`px-4 py-2 text-sm whitespace-nowrap transition-colors ${activeTab === 'logs' ? 'text-blue-600 border-b-2 border-blue-600 bg-blue-50/50 font-medium' : 'text-gray-600 hover:bg-gray-50'}`}>Logi</button>
-                )}
                 <button onClick={() => setActiveTab('comments')} className={`px-4 py-2 text-sm whitespace-nowrap transition-colors ${activeTab === 'comments' ? 'text-blue-600 border-b-2 border-blue-600 bg-blue-50/50 font-medium' : 'text-gray-600 hover:bg-gray-50'}`}>Komentarze</button>
                 <button onClick={() => setActiveTab('history')} className={`px-4 py-2 text-sm whitespace-nowrap transition-colors ${activeTab === 'history' ? 'text-blue-600 border-b-2 border-blue-600 bg-blue-50/50 font-medium' : 'text-gray-600 hover:bg-gray-50'}`}>Historia</button>
                 <button onClick={() => setActiveTab('work_log')} className={`px-4 py-2 text-sm whitespace-nowrap transition-colors ${activeTab === 'work_log' ? 'text-blue-600 border-b-2 border-blue-600 bg-blue-50/50 font-medium' : 'text-gray-600 hover:bg-gray-50'}`}>Rejestr prac</button>
@@ -994,10 +991,11 @@ const TicketDetailsPage: React.FC = () => {
             {activeTab === 'history' && (
               <div className="space-y-1">
                 {(() => {
-                  type HistoryItem = { type: 'log'; data: TicketLog; date: string } | { type: 'comment'; data: Comment; date: string };
+                  type HistoryItem = { type: 'log'; data: TicketLog; date: string } | { type: 'comment'; data: Comment; date: string } | { type: 'worklog'; data: WorkLog; date: string };
                   const items: HistoryItem[] = [
                     ...ticketLogs.map(l => ({ type: 'log' as const, data: l, date: l.created_at })),
                     ...comments.map(c => ({ type: 'comment' as const, data: c, date: c.created_at })),
+                    ...workLogs.map(w => ({ type: 'worklog' as const, data: w, date: w.created_at })),
                   ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
                   if (items.length === 0) {
@@ -1153,7 +1151,7 @@ const TicketDetailsPage: React.FC = () => {
                               </div>
                             </div>
                           );
-                        } else {
+                        } else if (item.type === 'comment') {
                           const comment = item.data;
                           const isInternal = comment.comment_type === 'INTERNAL';
                           const commentAuthor = comment.author_details ? `${comment.author_details.first_name} ${comment.author_details.last_name}` : '';
@@ -1185,7 +1183,43 @@ const TicketDetailsPage: React.FC = () => {
                               </div>
                             </div>
                           );
+                        } else if (item.type === 'worklog') {
+                          const wl = item.data;
+                          const wlAuthor = wl.author_details ? `${wl.author_details.first_name} ${wl.author_details.last_name}` : 'Nieznany';
+                          const hours = Math.floor(wl.duration_minutes / 60);
+                          const mins = wl.duration_minutes % 60;
+                          const durationStr = hours > 0 ? `${hours}h ${mins}min` : `${mins}min`;
+                          return (
+                            <div key={`worklog-${wl.id}`} className="relative">
+                              <div className="absolute -left-[calc(0.75rem+5px)] top-1 w-6 h-6 rounded-full flex items-center justify-center bg-violet-100 dark:bg-violet-900/40">
+                                <Clock className="w-3.5 h-3.5 text-violet-600" />
+                              </div>
+                              <div className="bg-violet-50/50 dark:bg-violet-900/20 border border-violet-200 dark:border-violet-800 rounded-lg p-3 ml-2">
+                                <div className="flex items-center justify-between">
+                                  <span className="text-sm font-medium text-gray-900 dark:text-gray-100">Rejestr prac</span>
+                                  <span className="text-xs text-gray-400">{dayjs(wl.created_at).format('DD MMM YYYY, HH:mm')}</span>
+                                </div>
+                                <p className="mt-1 text-sm text-gray-700 dark:text-gray-300 line-clamp-2">{wl.description}</p>
+                                <div className="mt-1.5 flex items-center justify-between">
+                                  <div className="flex items-center gap-1.5 text-xs text-gray-400">
+                                    {wl.author_details?.avatar ? (
+                                      <img src={wl.author_details.avatar} alt="" className="w-4 h-4 rounded-full object-cover" />
+                                    ) : (
+                                      <div className="w-4 h-4 rounded-full bg-violet-100 flex items-center justify-center">
+                                        <span className="text-[8px] font-bold text-violet-600">{wl.author_details?.first_name?.charAt(0)}</span>
+                                      </div>
+                                    )}
+                                    <span>{wlAuthor}</span>
+                                  </div>
+                                  <span className="text-xs font-semibold text-violet-600 dark:text-violet-400 bg-violet-100 dark:bg-violet-900/40 px-2 py-0.5 rounded-full">
+                                    ⏱ {durationStr}
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+                          );
                         }
+                        return null;
                       })}
                     </div>
                   );
