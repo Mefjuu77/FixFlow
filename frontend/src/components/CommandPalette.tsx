@@ -44,8 +44,11 @@ const CommandPalette: React.FC = () => {
   // Otwieranie / zamykanie palety
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
-        e.preventDefault();
+      const isInputActive = ['INPUT', 'TEXTAREA'].includes(document.activeElement?.tagName || '');
+      
+      if ((e.key === '/' && !isInputActive) || ((e.ctrlKey || e.metaKey) && e.key === 'k')) {
+        if (e.key === '/') e.preventDefault(); // Prevent typing the slash
+        if (e.key === 'k') e.preventDefault();
         setIsOpen(prev => !prev);
       }
       if (e.key === 'Escape') {

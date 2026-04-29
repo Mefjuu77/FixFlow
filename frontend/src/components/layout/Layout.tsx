@@ -53,14 +53,14 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
         <div className="px-4 mt-4">
           <button
             onClick={() => {
-              // Dispatch Ctrl+K event to open CommandPalette
-              window.dispatchEvent(new KeyboardEvent('keydown', { key: 'k', ctrlKey: true }));
+              // Dispatch event to open CommandPalette
+              window.dispatchEvent(new KeyboardEvent('keydown', { key: '/', ctrlKey: false }));
             }}
             className="w-full flex items-center gap-3 px-3 py-2.5 text-sm text-gray-400 bg-gray-800/50 hover:bg-gray-800 border border-gray-700/50 hover:border-gray-600 rounded-xl transition-all group"
           >
             <Search className="w-4 h-4 text-gray-500 group-hover:text-gray-300 transition-colors" />
             <span className="flex-1 text-left text-gray-500 group-hover:text-gray-300 transition-colors">Szukaj...</span>
-            <kbd className="px-1.5 py-0.5 text-[10px] font-bold text-gray-500 bg-gray-700 border border-gray-600 rounded">⌘K</kbd>
+            <kbd className="px-2 py-0.5 text-[11px] font-bold text-gray-500 bg-gray-700 border border-gray-600 rounded">/</kbd>
           </button>
         </div>
 
