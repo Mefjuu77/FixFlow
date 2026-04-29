@@ -41,9 +41,10 @@ class TicketSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'title', 'description', 'status', 'priority', 
             'category', 'category_name', 'creator', 'creator_details', 
-            'technician', 'technician_details', 'attachments', 'created_at', 'updated_at'
+            'technician', 'technician_details', 'attachments', 
+            'resolved_at', 'created_at', 'updated_at'
         ]
-        read_only_fields = ('created_at', 'updated_at')
+        read_only_fields = ('created_at', 'updated_at', 'resolved_at')
 
     def validate_title(self, value):
         cleaned = value.strip()

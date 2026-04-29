@@ -11,6 +11,7 @@ import StatisticsPage from './pages/StatisticsPage';
 import ReportsPage from './pages/ReportsPage';
 import UsersPage from './pages/UsersPage';
 import SettingsPage from './pages/SettingsPage';
+import ResolutionActionPage from './pages/ResolutionActionPage';
 import Layout from './components/layout/Layout';
 
 // Komponent chroniący ścieżki
@@ -39,6 +40,7 @@ const App: React.FC = () => {
       <Router>
         <Routes>
           <Route path="/login" element={<LoginPage />} />
+          <Route path="/resolution/:result" element={<ResolutionActionPage />} />
           
           <Route path="/dashboard" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
           <Route path="/tickets" element={<ProtectedRoute><TicketsPage /></ProtectedRoute>} />

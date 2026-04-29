@@ -6,6 +6,8 @@ import time
 logger = logging.getLogger(__name__)
 
 FRONTEND_URL = getattr(settings, 'FIXFLOW_FRONTEND_URL', 'http://localhost:5173')
+BACKEND_URL = 'http://127.0.0.1:8000'  # URL backendu do linków tokenowych
+AUTO_CLOSE_DAYS = getattr(settings, 'FIXFLOW_AUTO_CLOSE_DAYS', 7)
 
 # ============================================================
 # Kolory statusów i priorytetów
@@ -328,10 +330,33 @@ class TicketEmailAccumulator:
         if ticket.creator and ticket.creator.email:
             greeting = f'Witaj {ticket.creator.first_name},'
             body = f'W Twoim zgłoszeniu <strong>#{ticket.id}</strong> dokonano zmian.'
+
+            # Dodaj przyciski akceptacji/odrzucenia gdy status zmienił się na ROZWIAZANE
+            resolution_buttons_html = ''
+            if self._status_change and self._status_change[1] == 'ROZWIAZANE' and ticket.resolution_token:
+                accept_url = f'{BACKEND_URL}/api/tickets/resolve/{ticket.resolution_token}/accept/'
+                reject_url = f'{BACKEND_URL}/api/tickets/resolve/{ticket.resolution_token}/reject/'
+                resolution_buttons_html = f'''
+                <div style="margin:20px 0;padding:20px;background-color:#F0FDF4;border:1px solid #BBF7D0;border-radius:12px;text-align:center;">
+                    <div style="font-size:14px;color:#166534;font-weight:600;margin-bottom:6px;">Czy rozwiązanie jest poprawne?</div>
+                    <div style="font-size:13px;color:#4B5563;margin-bottom:16px;">Jeśli nie zareagujesz w ciągu {AUTO_CLOSE_DAYS} dni, zgłoszenie zostanie automatycznie zamknięte.</div>
+                    <table width="100%" cellpadding="0" cellspacing="0" border="0">
+                        <tr>
+                            <td align="center" style="padding:0 6px;">
+                                <a href="{accept_url}" style="display:inline-block;padding:12px 28px;background-color:#16A34A;color:#ffffff;font-size:14px;font-weight:700;text-decoration:none;border-radius:8px;">✓ Akceptuję rozwiązanie</a>
+                            </td>
+                            <td align="center" style="padding:0 6px;">
+                                <a href="{reject_url}" style="display:inline-block;padding:12px 28px;background-color:#DC2626;color:#ffffff;font-size:14px;font-weight:700;text-decoration:none;border-radius:8px;">✗ To nie rozwiązuje problemu</a>
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+                '''
+
             html = _build_html_email(
                 title='Aktualizacja zgłoszenia',
                 greeting=greeting,
-                body_html=body + sections_html,
+                body_html=body + sections_html + resolution_buttons_html,
                 ticket=ticket,
                 accent_color=STATUS_COLORS.get(ticket.status, '#2563EB'),
             )
@@ -719,3 +744,83 @@ def send_comment_notification(comment):
             f'[FixFlow] #{ticket.id}: {ticket.title}',
             plain, html, ticket, [ticket.technician.email]
         )
+
+
+# ============================================================
+# 5. PONOWNE OTWARCIE ZGŁOSZENIA
+# ============================================================
+
+def send_reopened_notification(ticket, actor=None):
+    """
+    Zgłoszenie zostało ponownie otwarte (klient odrzucił rozwiązanie).
+    → Mail do TECHNIKA.
+    """
+    if not ticket.technician or not ticket.technician.email:
+        return
+
+    actor_name = f'{actor.first_name} {actor.last_name}' if actor else 'Klient (z linku e-mail)'
+
+    plain = (
+        f'Witaj {ticket.technician.first_name},\n\n'
+        f'Zgłoszenie #{ticket.id} ("{ticket.title}") zostało ponownie otwarte.\n\n'
+        f'Klient odrzucił rozwiązanie. Sprawa wymaga dalszej pracy.\n\n'
+        f'Zaloguj się do FixFlow, aby sprawdzić szczegóły.'
+    )
+    html = _build_html_email(
+        title='Zgłoszenie ponownie otwarte',
+        greeting=f'Witaj {ticket.technician.first_name},',
+        body_html=(
+            f'Zgłoszenie <strong>#{ticket.id}</strong> zostało <strong>ponownie otwarte</strong>.'
+            f'<br><br>'
+            f'<div style="margin:12px 0;padding:14px 18px;background-color:#FEF2F2;'
+            f'border-radius:10px;border:1px solid #FECACA;">'
+            f'<div style="font-size:11px;color:#94A3B8;font-weight:600;text-transform:uppercase;'
+            f'letter-spacing:0.5px;margin-bottom:6px;">Odrzucone przez</div>'
+            f'<span style="font-size:14px;font-weight:700;color:#DC2626;">{actor_name}</span>'
+            f'</div>'
+            f'Sprawa wymaga dalszej pracy. Status został zmieniony na <strong>W toku</strong>.'
+        ),
+        ticket=ticket,
+        accent_color='#DC2626',
+    )
+    _send_threaded_email(
+        f'[FixFlow] #{ticket.id}: {ticket.title}',
+        plain, html, ticket, [ticket.technician.email]
+    )
+
+
+# ============================================================
+# 6. AUTO-ZAMKNIĘCIE ZGŁOSZENIA
+# ============================================================
+
+def send_auto_closed_notification(ticket):
+    """
+    Zgłoszenie zostało automatycznie zamknięte po upływie czasu weryfikacji.
+    → Mail do ZGŁASZAJĄCEGO.
+    """
+    if not ticket.creator or not ticket.creator.email:
+        return
+
+    plain = (
+        f'Witaj {ticket.creator.first_name},\n\n'
+        f'Twoje zgłoszenie #{ticket.id} ("{ticket.title}") zostało automatycznie zamknięte,\n'
+        f'ponieważ nie otrzymaliśmy odpowiedzi w wyznaczonym terminie.\n\n'
+        f'Jeśli problem nadal występuje, możesz utworzyć nowe zgłoszenie w panelu FixFlow.'
+    )
+    html = _build_html_email(
+        title='Zgłoszenie automatycznie zamknięte',
+        greeting=f'Witaj {ticket.creator.first_name},',
+        body_html=(
+            f'Twoje zgłoszenie <strong>#{ticket.id}</strong> zostało '
+            f'<strong>automatycznie zamknięte</strong>, ponieważ nie otrzymaliśmy '
+            f'odpowiedzi w wyznaczonym terminie ({AUTO_CLOSE_DAYS} dni).'
+            f'<br><br>'
+            f'Jeśli problem nadal występuje, możesz utworzyć nowe zgłoszenie w panelu FixFlow.'
+        ),
+        ticket=ticket,
+        accent_color='#6B7280',
+    )
+    _send_threaded_email(
+        f'[FixFlow] #{ticket.id}: {ticket.title}',
+        plain, html, ticket, [ticket.creator.email]
+    )

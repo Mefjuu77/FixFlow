@@ -103,7 +103,7 @@ api.interceptors.response.use(
 // Proaktywne odświeżanie tokena co 14 minut (token JWT wygasa po ~60min)
 const TOKEN_REFRESH_INTERVAL = 14 * 60 * 1000; // 14 minut
 
-setInterval(async () => {
+const refreshIntervalId = setInterval(async () => {
   const refreshToken = localStorage.getItem('refresh_token');
   if (refreshToken) {
     try {
@@ -114,5 +114,12 @@ setInterval(async () => {
     }
   }
 }, TOKEN_REFRESH_INTERVAL);
+
+// Czyszczenie interwału przy Vite HMR, aby uniknąć tworzenia duplikatów
+if (import.meta.hot) {
+  import.meta.hot.dispose(() => {
+    clearInterval(refreshIntervalId);
+  });
+}
 
 export default api;

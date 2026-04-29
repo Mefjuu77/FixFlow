@@ -1,5 +1,8 @@
+import secrets
+
 from django.db import models
 from django.conf import settings
+from django.utils import timezone
 
 class Category(models.Model):
     name = models.CharField(max_length=100)
@@ -46,6 +49,18 @@ class Ticket(models.Model):
     )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    resolved_at = models.DateTimeField(null=True, blank=True, help_text='Data przejścia w status Rozwiązane')
+    resolution_token = models.CharField(max_length=64, blank=True, default='', help_text='Token do akcji akceptacji/odrzucenia z e-maila')
+
+    def generate_resolution_token(self):
+        """Generuje unikalny token i ustawia resolved_at."""
+        self.resolution_token = secrets.token_urlsafe(48)
+        self.resolved_at = timezone.now()
+
+    def clear_resolution(self):
+        """Czyści dane rozwiązania (przy ponownym otwarciu)."""
+        self.resolution_token = ''
+        self.resolved_at = None
 
     def __str__(self):
         return f"[{self.id}] {self.title}"
@@ -112,6 +127,8 @@ class TicketLog(models.Model):
         TITLE_CHANGED = 'TITLE_CHANGED', 'Zmieniono tytuł'
         DESCRIPTION_CHANGED = 'DESCRIPTION_CHANGED', 'Zmieniono opis'
         ATTACHMENT_DELETED = 'ATTACHMENT_DELETED', 'Usunięto załącznik'
+        AUTO_CLOSED = 'AUTO_CLOSED', 'Automatycznie zamknięto'
+        REOPENED = 'REOPENED', 'Ponownie otwarto'
 
     ticket = models.ForeignKey(Ticket, on_delete=models.CASCADE, related_name='logs')
     user = models.ForeignKey(

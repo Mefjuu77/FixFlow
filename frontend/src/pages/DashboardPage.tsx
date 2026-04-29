@@ -17,6 +17,7 @@ import { Link } from 'react-router-dom';
 import dayjs from 'dayjs';
 import useTitle from '../hooks/useTitle';
 import relativeTime from 'dayjs/plugin/relativeTime';
+import UserAvatar from '../components/UserAvatar';
 
 // Plugin do obsługi czasu relatywnego (np. "2 godziny temu")
 dayjs.extend(relativeTime);
@@ -309,13 +310,7 @@ const DashboardPage: React.FC = () => {
                         </div>
                         <div className="flex flex-wrap items-center gap-4 text-xs font-medium text-gray-500 dark:text-gray-400 mt-2">
                           <span className="flex items-center">
-                            {ticket.creator_details?.avatar ? (
-                              <img src={ticket.creator_details.avatar} alt="Avatar" className="w-4 h-4 rounded-full mr-1.5 object-cover" />
-                            ) : (
-                              <div className="w-4 h-4 rounded-full bg-blue-600 text-white flex items-center justify-center mr-1.5 flex-shrink-0">
-                                <span className="text-[9px] font-bold uppercase">{ticket.creator_details?.first_name?.charAt(0) || 'U'}</span>
-                              </div>
-                            )}
+                            <UserAvatar avatar={ticket.creator_details?.avatar} name={ticket.creator_details?.first_name || 'U'} size="xs" className="mr-1.5" />
                             {ticket.creator_details ? `${ticket.creator_details.first_name} ${ticket.creator_details.last_name}` : 'Nieznany'}
                           </span>
                           <span className="flex items-center">
@@ -517,13 +512,7 @@ const DashboardPage: React.FC = () => {
                         </div>
                         <div className="flex flex-wrap items-center gap-4 text-xs font-medium text-gray-500 dark:text-gray-400 mt-2">
                           <span className="flex items-center">
-                            {ticket.creator_details?.avatar ? (
-                              <img src={ticket.creator_details.avatar} alt="Avatar" className="w-4 h-4 rounded-full mr-1.5 object-cover" />
-                            ) : (
-                              <div className="w-4 h-4 rounded-full bg-blue-600 text-white flex items-center justify-center mr-1.5 flex-shrink-0">
-                                <span className="text-[9px] font-bold uppercase">{ticket.creator_details?.first_name?.charAt(0) || 'U'}</span>
-                              </div>
-                            )}
+                            <UserAvatar avatar={ticket.creator_details?.avatar} name={ticket.creator_details?.first_name || 'U'} size="xs" className="mr-1.5" />
                             {ticket.creator_details ? `${ticket.creator_details.first_name} ${ticket.creator_details.last_name}` : 'Nieznany'}
                           </span>
                           <span className="flex items-center">

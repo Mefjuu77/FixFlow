@@ -1,13 +1,16 @@
 import os
 
+from django.conf import settings as django_settings
+from django.shortcuts import redirect
+from django.utils import timezone
 from rest_framework import viewsets, generics, status
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.exceptions import PermissionDenied
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from .models import Category, Ticket, Comment, Attachment, TicketLog, WorkLog
 from .serializers import CategorySerializer, TicketSerializer, CommentSerializer, AttachmentSerializer, TicketLogSerializer, WorkLogSerializer
-from .email import send_ticket_created_notification, send_comment_notification, TicketEmailAccumulator
+from .email import send_ticket_created_notification, send_comment_notification, TicketEmailAccumulator, send_reopened_notification
 
 # === Stałe i helpery do walidacji uploadów ===
 MAX_FILE_SIZE = 5 * 1024 * 1024          # 5 MB
@@ -99,6 +102,15 @@ class TicketViewSet(viewsets.ModelViewSet):
                 new_value=ticket.status,
             )
             accumulator.add_status_change(old_status, ticket.status)
+
+            # Ustawienie resolved_at i tokenu przy przejściu na ROZWIAZANE
+            if ticket.status == Ticket.Status.RESOLVED:
+                ticket.generate_resolution_token()
+                ticket.save(update_fields=['resolved_at', 'resolution_token'])
+            # Wyczyszczenie resolved_at przy wyjściu ze statusu ROZWIAZANE
+            elif old_status == Ticket.Status.RESOLVED:
+                ticket.clear_resolution()
+                ticket.save(update_fields=['resolved_at', 'resolution_token'])
 
         # Log: zmiana technika
         if old_technician != ticket.technician:
@@ -225,6 +237,21 @@ class CommentListCreateView(generics.ListCreateAPIView):
 
         comment = serializer.save(author=user, ticket=ticket)
         send_comment_notification(comment)
+
+        # Auto-reopen: klient dodaje komentarz do ticketu ROZWIAZANE → wróć do W_TOKU
+        if user.role == 'EMPLOYEE' and ticket.status == Ticket.Status.RESOLVED:
+            old_status = ticket.status
+            ticket.status = Ticket.Status.IN_PROGRESS
+            ticket.clear_resolution()
+            ticket.save(update_fields=['status', 'resolved_at', 'resolution_token'])
+            TicketLog.objects.create(
+                ticket=ticket,
+                user=user,
+                action=TicketLog.ActionType.REOPENED,
+                old_value=old_status,
+                new_value=ticket.status,
+            )
+            send_reopened_notification(ticket, user)
 
 
 class TicketLogListView(generics.ListAPIView):
@@ -397,3 +424,56 @@ class CommentAttachmentView(APIView):
 
         serializer = AttachmentSerializer(created, many=True, context={'request': request})
         return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+
+class TicketResolutionActionView(APIView):
+    """
+    Obsługuje akcje z linków e-mailowych (akceptacja/odrzucenie rozwiązania).
+    Nie wymaga logowania — token jest sekretem.
+    GET /api/tickets/resolve/<token>/accept/
+    GET /api/tickets/resolve/<token>/reject/
+    """
+    permission_classes = [AllowAny]
+    authentication_classes = []  # Brak wymagania tokenu JWT
+
+    def get(self, request, token, action):
+        frontend_url = getattr(django_settings, 'FIXFLOW_FRONTEND_URL', 'http://localhost:5173')
+
+        try:
+            ticket = Ticket.objects.get(resolution_token=token)
+        except Ticket.DoesNotExist:
+            return redirect(f'{frontend_url}/resolution/invalid')
+
+        if ticket.status != Ticket.Status.RESOLVED:
+            return redirect(f'{frontend_url}/resolution/already-processed')
+
+        if action == 'accept':
+            old_status = ticket.status
+            ticket.status = Ticket.Status.CLOSED
+            ticket.clear_resolution()
+            ticket.save(update_fields=['status', 'resolved_at', 'resolution_token'])
+            TicketLog.objects.create(
+                ticket=ticket,
+                user=None,
+                action=TicketLog.ActionType.STATUS_CHANGED,
+                old_value=old_status,
+                new_value=ticket.status,
+            )
+            return redirect(f'{frontend_url}/resolution/accepted')
+
+        elif action == 'reject':
+            old_status = ticket.status
+            ticket.status = Ticket.Status.IN_PROGRESS
+            ticket.clear_resolution()
+            ticket.save(update_fields=['status', 'resolved_at', 'resolution_token'])
+            TicketLog.objects.create(
+                ticket=ticket,
+                user=None,
+                action=TicketLog.ActionType.REOPENED,
+                old_value=old_status,
+                new_value=ticket.status,
+            )
+            send_reopened_notification(ticket, actor=None)
+            return redirect(f'{frontend_url}/resolution/rejected')
+
+        return redirect(f'{frontend_url}/resolution/invalid')

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useContext, useRef } from 'react';
+import React, { useState, useEffect, useContext, useRef, useMemo } from 'react';
 import { Link, useSearchParams, useLocation } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
 import api from '../api/axiosConfig';
@@ -123,48 +123,95 @@ const TicketsPage: React.FC = () => {
     }
   };
 
+  // ---------- Logika filtrowania i sortowania (memoizowana) ----------
+  const filteredTickets = useMemo(() => {
+    let result = tickets.filter(t => {
+      const q = searchQuery.toLowerCase();
+      const matchTitle = t.title.toLowerCase().includes(q);
+      const matchId = t.id.toString().includes(q);
+      const matchCreator = t.creator_details && `${t.creator_details.first_name} ${t.creator_details.last_name}`.toLowerCase().includes(q);
+      const matchTechnician = t.technician_details && `${t.technician_details.first_name} ${t.technician_details.last_name}`.toLowerCase().includes(q);
+      return matchTitle || matchId || matchCreator || matchTechnician;
+    });
+
+    // Wspólne filtry dla wszystkich
+    if (statusFilter !== 'all') {
+      result = result.filter(t => t.status === statusFilter);
+    }
+    if (categoryFilter !== 'all') {
+      result = result.filter(t => t.category_name === categoryFilter);
+    }
+
+    // Filtry tylko dla technika i admina
+    if (isAdmin || isTechnician) {
+      if (priorityFilter !== 'all') {
+        result = result.filter(t => t.priority === priorityFilter);
+      }
+      if (assignmentFilter === 'unassigned') {
+        result = result.filter(t => t.technician === null);
+      } else if (assignmentFilter === 'assigned_to_me') {
+        result = result.filter(t => t.technician === authContext?.user?.id);
+      } else if (assignmentFilter !== 'all') {
+        const techId = Number(assignmentFilter);
+        if (!isNaN(techId)) {
+          result = result.filter(t => t.technician === techId);
+        }
+      }
+    }
+
+    // Sortowanie
+    return [...result].sort((a, b) => {
+      let aValue: any = a.id;
+      let bValue: any = b.id;
+
+      switch (sortConfig.key) {
+        case 'id':
+          aValue = a.id;
+          bValue = b.id;
+          break;
+        case 'title':
+          aValue = a.title.toLowerCase();
+          bValue = b.title.toLowerCase();
+          break;
+        case 'category_name':
+          aValue = a.category_name?.toLowerCase() || '';
+          bValue = b.category_name?.toLowerCase() || '';
+          break;
+        case 'priority':
+          const priorityOrder = { 'WYSOKI': 3, 'NORMALNY': 2, 'NISKI': 1 };
+          aValue = priorityOrder[a.priority as keyof typeof priorityOrder] || 0;
+          bValue = priorityOrder[b.priority as keyof typeof priorityOrder] || 0;
+          break;
+        case 'creator':
+          aValue = a.creator_details ? `${a.creator_details.first_name} ${a.creator_details.last_name}`.toLowerCase() : '';
+          bValue = b.creator_details ? `${b.creator_details.first_name} ${b.creator_details.last_name}`.toLowerCase() : '';
+          break;
+        case 'technician':
+          aValue = a.technician_details ? `${a.technician_details.first_name} ${a.technician_details.last_name}`.toLowerCase() : '';
+          bValue = b.technician_details ? `${b.technician_details.first_name} ${b.technician_details.last_name}`.toLowerCase() : '';
+          break;
+        case 'status':
+          aValue = a.status.toLowerCase();
+          bValue = b.status.toLowerCase();
+          break;
+        case 'created_at':
+          aValue = new Date(a.created_at).getTime();
+          bValue = new Date(b.created_at).getTime();
+          break;
+      }
+
+      if (aValue < bValue) return sortConfig.direction === 'asc' ? -1 : 1;
+      if (aValue > bValue) return sortConfig.direction === 'asc' ? 1 : -1;
+      return 0;
+    });
+  }, [tickets, searchQuery, statusFilter, categoryFilter, priorityFilter, assignmentFilter, sortConfig, isAdmin, isTechnician, authContext?.user?.id]);
+
   if (loading) return (
     <div className="flex items-center justify-center h-full">
       <div className="w-10 h-10 border-4 border-blue-600 border-t-transparent rounded-full animate-spin" />
     </div>
   );
   if (error) return <div className="p-4 text-red-700 bg-red-100 rounded-xl">{error}</div>;
-
-  // ---------- Logika filtrowania ----------
-  let filteredTickets = tickets.filter(t => {
-    const q = searchQuery.toLowerCase();
-    const matchTitle = t.title.toLowerCase().includes(q);
-    const matchId = t.id.toString().includes(q);
-    const matchCreator = t.creator_details && `${t.creator_details.first_name} ${t.creator_details.last_name}`.toLowerCase().includes(q);
-    const matchTechnician = t.technician_details && `${t.technician_details.first_name} ${t.technician_details.last_name}`.toLowerCase().includes(q);
-    
-    return matchTitle || matchId || matchCreator || matchTechnician;
-  });
-
-  // Wspólne filtry dla wszystkich
-  if (statusFilter !== 'all') {
-    filteredTickets = filteredTickets.filter(t => t.status === statusFilter);
-  }
-  if (categoryFilter !== 'all') {
-    filteredTickets = filteredTickets.filter(t => t.category_name === categoryFilter);
-  }
-
-  // Filtry tylko dla technika i admina
-  if (isAdmin || isTechnician) {
-    if (priorityFilter !== 'all') {
-      filteredTickets = filteredTickets.filter(t => t.priority === priorityFilter);
-    }
-    if (assignmentFilter === 'unassigned') {
-      filteredTickets = filteredTickets.filter(t => t.technician === null);
-    } else if (assignmentFilter === 'assigned_to_me') {
-      filteredTickets = filteredTickets.filter(t => t.technician === authContext?.user?.id);
-    } else if (assignmentFilter !== 'all') {
-      const techId = Number(assignmentFilter);
-      if (!isNaN(techId)) {
-        filteredTickets = filteredTickets.filter(t => t.technician === techId);
-      }
-    }
-  }
 
   // ---------- Logika Sortowania ----------
   const handleSort = (key: SortField) => {
@@ -276,51 +323,6 @@ const TicketsPage: React.FC = () => {
       </th>
     );
   };
-
-  filteredTickets = [...filteredTickets].sort((a, b) => {
-    let aValue: any = a.id;
-    let bValue: any = b.id;
-
-    switch (sortConfig.key) {
-      case 'id':
-        aValue = a.id;
-        bValue = b.id;
-        break;
-      case 'title':
-        aValue = a.title.toLowerCase();
-        bValue = b.title.toLowerCase();
-        break;
-      case 'category_name':
-        aValue = a.category_name?.toLowerCase() || '';
-        bValue = b.category_name?.toLowerCase() || '';
-        break;
-      case 'priority':
-        const priorityOrder = { 'WYSOKI': 3, 'NORMALNY': 2, 'NISKI': 1 };
-        aValue = priorityOrder[a.priority as keyof typeof priorityOrder] || 0;
-        bValue = priorityOrder[b.priority as keyof typeof priorityOrder] || 0;
-        break;
-      case 'creator':
-        aValue = a.creator_details ? `${a.creator_details.first_name} ${a.creator_details.last_name}`.toLowerCase() : '';
-        bValue = b.creator_details ? `${b.creator_details.first_name} ${b.creator_details.last_name}`.toLowerCase() : '';
-        break;
-      case 'technician':
-        aValue = a.technician_details ? `${a.technician_details.first_name} ${a.technician_details.last_name}`.toLowerCase() : '';
-        bValue = b.technician_details ? `${b.technician_details.first_name} ${b.technician_details.last_name}`.toLowerCase() : '';
-        break;
-      case 'status':
-        aValue = a.status.toLowerCase();
-        bValue = b.status.toLowerCase();
-        break;
-      case 'created_at':
-        aValue = new Date(a.created_at).getTime();
-        bValue = new Date(b.created_at).getTime();
-        break;
-    }
-
-    if (aValue < bValue) return sortConfig.direction === 'asc' ? -1 : 1;
-    if (aValue > bValue) return sortConfig.direction === 'asc' ? 1 : -1;
-    return 0;
-  });
 
   // Unikalne kategorie z zgloszen
   const categories = [...new Set(tickets.map(t => t.category_name).filter(Boolean))];

@@ -16,6 +16,7 @@ import {
   UserMinus, AlertTriangle
 } from 'lucide-react';
 import { getCategoryIcon } from '../utils/ticketConstants';
+import UserAvatar from '../components/UserAvatar';
 
 // === Typy ===
 interface PreviewRow {
@@ -544,26 +545,14 @@ const ReportsPage: React.FC = () => {
                       </td>
                       <td className="px-5 py-4 text-slate-500 dark:text-slate-400 font-medium hidden lg:table-cell">
                         <div className="flex items-center gap-2">
-                          <div className="w-6 h-6 rounded-full bg-blue-600 text-white flex items-center justify-center flex-shrink-0 overflow-hidden">
-                            {row.creator_avatar ? (
-                              <img src={row.creator_avatar} alt="" className="w-full h-full object-cover" />
-                            ) : (
-                              <span className="text-[10px] font-bold uppercase">{row.creator.charAt(0)}</span>
-                            )}
-                          </div>
+                          <UserAvatar avatar={row.creator_avatar} name={row.creator} size="md" />
                           {row.creator}
                         </div>
                       </td>
                       <td className="px-5 py-4 text-slate-500 dark:text-slate-400 font-medium hidden lg:table-cell">
                         {row.technician !== 'Brak' ? (
                           <div className="flex items-center gap-2">
-                            <div className="w-6 h-6 rounded-full bg-blue-600 text-white flex items-center justify-center flex-shrink-0 overflow-hidden">
-                              {row.technician_avatar ? (
-                                <img src={row.technician_avatar} alt="" className="w-full h-full object-cover" />
-                              ) : (
-                                <span className="text-[10px] font-bold uppercase">{row.technician.charAt(0)}</span>
-                              )}
-                            </div>
+                            <UserAvatar avatar={row.technician_avatar} name={row.technician} size="md" />
                             {row.technician}
                           </div>
                         ) : (

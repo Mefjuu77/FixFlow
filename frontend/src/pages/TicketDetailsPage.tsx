@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useContext, useRef } from 'react';
+import React, { useEffect, useState, useContext, useRef, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
@@ -127,6 +127,43 @@ const TicketDetailsPage: React.FC = () => {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+  const fetchTicket = useCallback(async () => {
+    try {
+      const data = await ticketService.getTicket(id!);
+      setTicket(data);
+    } catch (err) {
+      setError('Nie udało się pobrać szczegółów zgłoszenia.');
+    } finally {
+      setLoading(false);
+    }
+  }, [id]);
+
+  const fetchComments = useCallback(async () => {
+    try {
+      const data = await ticketService.getComments(id!);
+      setComments(data);
+    } catch (err) {
+      console.error('Błąd pobierania komentarzy:', err);
+    }
+  }, [id]);
+
+  const fetchLogs = useCallback(async () => {
+    try {
+      const data = await ticketService.getLogs(id!);
+      setTicketLogs(data);
+    } catch (err) {
+      console.error('Błąd pobierania logów:', err);
+    }
+  }, [id]);
+
+  const fetchWorkLogs = useCallback(async () => {
+    try {
+      const data = await ticketService.getWorkLogs(id!);
+      setWorkLogs(data);
+    } catch (err) {
+      console.error('Błąd pobierania rejestru prac:', err);
+    }
+  }, [id]);
 
   useEffect(() => {
     if (id) {
@@ -138,34 +175,7 @@ const TicketDetailsPage: React.FC = () => {
     fetchTechnicians();
     fetchAllUsers();
     fetchCategories();
-  }, [id]);
-
-  const fetchComments = async () => {
-    try {
-      const data = await ticketService.getComments(id!);
-      setComments(data);
-    } catch (err) {
-      console.error('Błąd pobierania komentarzy:', err);
-    }
-  };
-
-  const fetchLogs = async () => {
-    try {
-      const data = await ticketService.getLogs(id!);
-      setTicketLogs(data);
-    } catch (err) {
-      console.error('Błąd pobierania logów:', err);
-    }
-  };
-
-  const fetchWorkLogs = async () => {
-    try {
-      const data = await ticketService.getWorkLogs(id!);
-      setWorkLogs(data);
-    } catch (err) {
-      console.error('Błąd pobierania rejestru prac:', err);
-    }
-  };
+  }, [id, fetchTicket, fetchComments, fetchLogs, fetchWorkLogs]);
 
   const handleAddWorkLog = async () => {
     const trimmed = newWorkLogDesc.trim();
@@ -208,17 +218,6 @@ const TicketDetailsPage: React.FC = () => {
       setCategories(cats);
     } catch (err) {
       console.error('Błąd pobierania kategorii:', err);
-    }
-  };
-
-  const fetchTicket = async () => {
-    try {
-      const data = await ticketService.getTicket(id!);
-      setTicket(data);
-    } catch (err) {
-      setError('Nie udało się pobrać szczegółów zgłoszenia.');
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -281,6 +280,7 @@ const TicketDetailsPage: React.FC = () => {
 
       setNewCommentText('');
       setNewCommentFiles([]);
+      await fetchTicket();
       await fetchComments();
       fetchLogs();
     } catch (err: any) {
@@ -361,6 +361,81 @@ const TicketDetailsPage: React.FC = () => {
       <button onClick={() => navigate(-1)} className="flex items-center text-gray-500 hover:text-blue-600 font-semibold mb-6 transition-colors">
         <ArrowLeft className="w-4 h-4 mr-1" /> Wstecz
       </button>
+
+      {/* Baner weryfikacji rozwiązania dla klienta */}
+      {ticket.status === 'ROZWIAZANE' && authContext?.user?.role === 'EMPLOYEE' && ticket.resolved_at && (() => {
+        const resolvedDate = new Date(ticket.resolved_at);
+        const autoCloseDate = new Date(resolvedDate.getTime() + 7 * 24 * 60 * 60 * 1000);
+        const now = new Date();
+        const daysLeft = Math.max(0, Math.ceil((autoCloseDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)));
+
+        return (
+          <div className="mb-6 p-5 bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-2xl shadow-sm">
+            <div className="flex items-start gap-3">
+              <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center flex-shrink-0 mt-0.5">
+                <Check className="w-5 h-5 text-green-600" />
+              </div>
+              <div className="flex-1">
+                <h3 className="text-base font-bold text-green-800 mb-1">Zgłoszenie oznaczone jako rozwiązane</h3>
+                <p className="text-sm text-green-700 mb-3">
+                  Technik oznaczył Twoje zgłoszenie jako rozwiązane. Sprawdź, czy problem został naprawiony.
+                  {daysLeft > 0 && (
+                    <span className="font-semibold"> Masz jeszcze {daysLeft} {daysLeft === 1 ? 'dzień' : daysLeft < 5 ? 'dni' : 'dni'} na weryfikację.</span>
+                  )}
+                  {daysLeft === 0 && (
+                    <span className="font-semibold text-amber-700"> Czas weryfikacji upływa dzisiaj!</span>
+                  )}
+                </p>
+                <div className="flex items-center gap-3">
+                  <button
+                    onClick={async () => {
+                      try {
+                        await ticketService.updateTicket(ticket.id, { status: 'ZAMKNIETE' as any });
+                        fetchTicket();
+                        fetchLogs();
+                      } catch (err) {
+                        console.error('Błąd akceptacji rozwiązania:', err);
+                      }
+                    }}
+                    className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-sm font-semibold rounded-lg transition-colors flex items-center gap-1.5"
+                  >
+                    <Check className="w-4 h-4" />
+                    Akceptuję rozwiązanie
+                  </button>
+                  <button
+                    onClick={async () => {
+                      try {
+                        await ticketService.updateTicket(ticket.id, { status: 'W_TOKU' as any });
+                        fetchTicket();
+                        fetchLogs();
+                      } catch (err) {
+                        console.error('Błąd ponownego otwarcia zgłoszenia:', err);
+                      }
+                    }}
+                    className="px-4 py-2 bg-white hover:bg-red-50 text-red-600 border border-red-200 text-sm font-semibold rounded-lg transition-colors flex items-center gap-1.5"
+                  >
+                    <X className="w-4 h-4" />
+                    To nie rozwiązuje problemu
+                  </button>
+                </div>
+              </div>
+            </div>
+            {/* Pasek postępu czasu */}
+            <div className="mt-4 ml-[52px]">
+              <div className="flex items-center justify-between text-xs text-green-600 mb-1">
+                <span>Czas weryfikacji</span>
+                <span>{daysLeft} / 7 dni</span>
+              </div>
+              <div className="w-full bg-green-200 rounded-full h-1.5">
+                <div
+                  className="bg-green-500 h-1.5 rounded-full transition-all duration-500"
+                  style={{ width: `${Math.max(5, (daysLeft / 7) * 100)}%` }}
+                />
+              </div>
+            </div>
+          </div>
+        );
+      })()}
 
       <div className="grid grid-cols-1 lg:grid-cols-[1fr_410px] gap-8">
         {/* Lewa kolumna: Treść zgłoszenia */}
@@ -444,18 +519,18 @@ const TicketDetailsPage: React.FC = () => {
             <div className={`flex items-center gap-3 p-4 rounded-xl border mb-2 ${ticket.status === 'NOWE' ? 'bg-blue-50 border-blue-200' :
               ticket.status === 'W_TOKU' ? 'bg-amber-50 border-amber-200' :
                 ticket.status === 'ROZWIAZANE' ? 'bg-green-50 border-green-200' :
-                  'bg-gray-50 border-gray-200'
+                  'bg-teal-50 border-teal-200'
               }`}>
               <div className={`w-3 h-3 rounded-full flex-shrink-0 ${ticket.status === 'NOWE' ? 'bg-blue-500' :
                 ticket.status === 'W_TOKU' ? 'bg-amber-500 animate-pulse' :
                   ticket.status === 'ROZWIAZANE' ? 'bg-green-500' :
-                    'bg-gray-400'
+                    'bg-teal-500'
                 }`} />
               <div>
                 <p className={`text-sm font-bold ${ticket.status === 'NOWE' ? 'text-blue-800' :
                   ticket.status === 'W_TOKU' ? 'text-amber-800' :
                     ticket.status === 'ROZWIAZANE' ? 'text-green-800' :
-                      'text-gray-700'
+                      'text-teal-800'
                   }`}>
                   Status: {ticket.status === 'W_TOKU' ? 'W toku' :
                     ticket.status === 'NOWE' ? 'Nowe' :
@@ -465,11 +540,11 @@ const TicketDetailsPage: React.FC = () => {
                 <p className={`text-xs mt-0.5 ${ticket.status === 'NOWE' ? 'text-blue-600' :
                   ticket.status === 'W_TOKU' ? 'text-amber-600' :
                     ticket.status === 'ROZWIAZANE' ? 'text-green-600' :
-                      'text-gray-500'
+                      'text-teal-600'
                   }`}>
                   {ticket.status === 'NOWE' ? 'Twoje zgłoszenie oczekuje na rozpatrzenie.' :
                     ticket.status === 'W_TOKU' ? 'Twoje zgłoszenie jest w trakcie realizacji.' :
-                      ticket.status === 'ROZWIAZANE' ? 'Zgłodzenie zostało rozwiązane.' :
+                      ticket.status === 'ROZWIAZANE' ? 'Zgłoszenie zostało rozwiązane.' :
                         'Zgłoszenie zostało zamknięte.'}
                 </p>
               </div>
@@ -1597,13 +1672,13 @@ const TicketDetailsPage: React.FC = () => {
                 <span className="text-sm text-gray-500 font-medium">Utworzono</span>
                 <div className="relative group/tooltip inline-block w-fit">
                   <div className="text-sm text-gray-900 cursor-pointer">
-                    {dayjs().diff(dayjs(ticket.created_at), 'day') > 7 
-                      ? dayjs(ticket.created_at).format('D MMMM YYYY HH:mm') 
+                    {dayjs().diff(dayjs(ticket.created_at), 'day') > 7
+                      ? dayjs(ticket.created_at).format('D MMMM YYYY HH:mm')
                       : dayjs(ticket.created_at).fromNow()}
                   </div>
                   <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 opacity-0 group-hover/tooltip:opacity-100 pointer-events-none transition-opacity duration-200 z-50 px-2.5 py-1.5 bg-gray-800 dark:bg-gray-700 text-white text-xs font-medium rounded-md shadow-md whitespace-nowrap">
-                    {dayjs().diff(dayjs(ticket.created_at), 'day') > 7 
-                      ? dayjs(ticket.created_at).fromNow() 
+                    {dayjs().diff(dayjs(ticket.created_at), 'day') > 7
+                      ? dayjs(ticket.created_at).fromNow()
                       : dayjs(ticket.created_at).format('D MMMM YYYY HH:mm')}
                     {/* Mały trójkącik (strzałka) na dole dymku */}
                     <div className="absolute top-full -mt-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-gray-800 dark:bg-gray-700 rotate-45"></div>
@@ -1615,13 +1690,13 @@ const TicketDetailsPage: React.FC = () => {
                 <span className="text-sm text-gray-500 font-medium">Zaktualizowano</span>
                 <div className="relative group/tooltip inline-block w-fit">
                   <div className="text-sm text-gray-900 cursor-pointer">
-                    {dayjs().diff(dayjs(ticket.updated_at), 'day') > 7 
-                      ? dayjs(ticket.updated_at).format('D MMMM YYYY HH:mm') 
+                    {dayjs().diff(dayjs(ticket.updated_at), 'day') > 7
+                      ? dayjs(ticket.updated_at).format('D MMMM YYYY HH:mm')
                       : dayjs(ticket.updated_at).fromNow()}
                   </div>
                   <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 opacity-0 group-hover/tooltip:opacity-100 pointer-events-none transition-opacity duration-200 z-50 px-2.5 py-1.5 bg-gray-800 dark:bg-gray-700 text-white text-xs font-medium rounded-md shadow-md whitespace-nowrap">
-                    {dayjs().diff(dayjs(ticket.updated_at), 'day') > 7 
-                      ? dayjs(ticket.updated_at).fromNow() 
+                    {dayjs().diff(dayjs(ticket.updated_at), 'day') > 7
+                      ? dayjs(ticket.updated_at).fromNow()
                       : dayjs(ticket.updated_at).format('D MMMM YYYY HH:mm')}
                     {/* Mały trójkącik (strzałka) na dole dymku */}
                     <div className="absolute top-full -mt-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-gray-800 dark:bg-gray-700 rotate-45"></div>
