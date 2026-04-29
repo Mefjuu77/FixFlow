@@ -7,8 +7,11 @@ import { Ticket } from '../types';
 import {
   Search, LayoutDashboard, Ticket as TicketIcon, BarChart3, FileBarChart,
   Users, Settings, PlusCircle, LogOut, Moon, Sun, ArrowRight,
-  Hash, Command, KeyRound, Bell, Palette, UserPlus
+  Hash, Command, KeyRound, Bell, Palette, UserPlus,
+  ClipboardList,
 } from 'lucide-react';
+
+const GROUP_ORDER = ['Nawigacja', 'Ustawienia', 'Akcje', 'Zgłoszenia'];
 
 interface CommandItem {
   id: string;
@@ -36,6 +39,7 @@ const CommandPalette: React.FC = () => {
   const role = authContext?.user?.role;
   const isAdmin = role === 'ADMIN';
   const isTechnician = role === 'TECHNICIAN';
+  const isEmployee = role === 'EMPLOYEE';
 
   // Otwieranie / zamykanie palety
   useEffect(() => {
@@ -98,23 +102,46 @@ const CommandPalette: React.FC = () => {
       );
     }
 
+    // ========== USTAWIENIA ==========
     items.push(
-      { id: 'nav-settings', label: 'Ustawienia (Ogólne)', icon: <Settings className="w-4 h-4" />, action: () => runAndClose(() => navigate('/settings')), group: 'Nawigacja', keywords: 'profil konto ustawienia' },
-      { id: 'nav-settings-security', label: 'Zmień hasło (Zabezpieczenia)', icon: <KeyRound className="w-4 h-4" />, action: () => runAndClose(() => navigate('/settings?tab=security')), group: 'Nawigacja', keywords: 'hasło zmiana hasła bezpieczeństwo security password' },
-      { id: 'nav-settings-notifications', label: 'Ustawienia powiadomień', icon: <Bell className="w-4 h-4" />, action: () => runAndClose(() => navigate('/settings?tab=notifications')), group: 'Nawigacja', keywords: 'powiadomienia alerty maile notifications' },
-      { id: 'nav-settings-appearance', label: 'Wygląd aplikacji', icon: <Palette className="w-4 h-4" />, action: () => runAndClose(() => navigate('/settings?tab=appearance')), group: 'Nawigacja', keywords: 'wygląd motyw kolory interfejs appearance' },
+      { id: 'nav-settings', label: 'Mój profil', icon: <Settings className="w-4 h-4" />, action: () => runAndClose(() => navigate('/settings')), group: 'Ustawienia', keywords: 'profil konto ustawienia moje dane' },
+      { id: 'nav-settings-security', label: 'Zmień hasło', icon: <KeyRound className="w-4 h-4" />, action: () => runAndClose(() => navigate('/settings?tab=security')), group: 'Ustawienia', keywords: 'hasło zmiana hasła bezpieczeństwo security password' },
+      { id: 'nav-settings-notifications', label: 'Powiadomienia', icon: <Bell className="w-4 h-4" />, action: () => runAndClose(() => navigate('/settings?tab=notifications')), group: 'Ustawienia', keywords: 'powiadomienia alerty maile notifications' },
     );
 
-    // Akcje
+    if (!isEmployee) {
+      items.push(
+        { id: 'nav-settings-appearance', label: 'Wygląd aplikacji', icon: <Palette className="w-4 h-4" />, action: () => runAndClose(() => navigate('/settings?tab=appearance')), group: 'Ustawienia', keywords: 'wygląd motyw kolory interfejs appearance' },
+      );
+    }
+
+    // ========== AKCJE ==========
     items.push(
-      { id: 'nav-create', label: 'Nowe zgłoszenie', icon: <PlusCircle className="w-4 h-4" />, action: () => runAndClose(() => navigate('/create-ticket')), group: 'Akcje', keywords: 'utwórz stwórz dodaj nowy ticket zgłoś' },
+      { id: 'action-create-ticket', label: 'Nowe zgłoszenie', icon: <PlusCircle className="w-4 h-4" />, action: () => runAndClose(() => navigate('/create-ticket')), group: 'Akcje', keywords: 'utwórz stwórz dodaj nowy ticket zgłoś create' },
+    );
+
+    if (isAdmin) {
+      items.push(
+        { id: 'action-add-user', label: 'Dodaj użytkownika', icon: <UserPlus className="w-4 h-4" />, action: () => runAndClose(() => navigate('/users', { state: { openCreateModal: true } })), group: 'Akcje', keywords: 'dodaj utwórz stwórz pracownika technika admina nowy uzytkownik user create' },
+      );
+    }
+
+    items.push(
       {
         id: 'action-theme',
         label: themeContext?.isDark ? 'Włącz jasny motyw' : 'Włącz ciemny motyw',
         icon: themeContext?.isDark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />,
         action: () => runAndClose(() => themeContext?.toggleTheme()),
         group: 'Akcje',
-        keywords: 'dark mode tryb ciemny jasny theme motyw'
+        keywords: 'dark mode tryb ciemny jasny theme motyw switch'
+      },
+      {
+        id: 'action-my-tickets',
+        label: 'Moje zgłoszenia',
+        icon: <ClipboardList className="w-4 h-4" />,
+        action: () => runAndClose(() => navigate('/tickets')),
+        group: 'Akcje',
+        keywords: 'moje zgłoszenia przypisane do mnie my tickets assigned'
       },
       {
         id: 'action-logout',
@@ -122,7 +149,7 @@ const CommandPalette: React.FC = () => {
         icon: <LogOut className="w-4 h-4" />,
         action: () => runAndClose(() => authContext?.logout()),
         group: 'Akcje',
-        keywords: 'logout wylogowanie wyjście'
+        keywords: 'logout wylogowanie wyjście zakończ sesję'
       },
     );
 
@@ -160,7 +187,7 @@ const CommandPalette: React.FC = () => {
     return [...filteredCommands, ...filteredTickets];
   }, [query, commands, tickets, navigate, runAndClose]);
 
-  // Grupowanie
+  // Grupowanie z zachowaniem stałej kolejności
   const grouped = useMemo(() => {
     const map = new Map<string, CommandItem[]>();
     filteredResults.forEach(item => {
@@ -168,7 +195,18 @@ const CommandPalette: React.FC = () => {
       arr.push(item);
       map.set(item.group, arr);
     });
-    return map;
+
+    // Sortuj grupy wg stałej kolejności
+    const sorted = new Map<string, CommandItem[]>();
+    GROUP_ORDER.forEach(g => {
+      if (map.has(g)) sorted.set(g, map.get(g)!);
+    });
+    // Dorzuć ewentualne nieznane grupy na koniec
+    map.forEach((v, k) => {
+      if (!sorted.has(k)) sorted.set(k, v);
+    });
+
+    return sorted;
   }, [filteredResults]);
 
   // Keyboard navigation
@@ -251,14 +289,16 @@ const CommandPalette: React.FC = () => {
                       key={item.id}
                       data-index={idx}
                       onClick={item.action}
-                      onMouseEnter={() => setActiveIndex(idx)}
-                      className={`w-full flex items-center gap-3 px-5 py-2.5 text-left transition-colors duration-75 ${
+                      onPointerMove={() => {
+                        if (activeIndex !== idx) setActiveIndex(idx);
+                      }}
+                      className={`w-full flex items-center gap-3 px-5 py-2.5 text-left ${
                         isActive
                           ? 'bg-blue-50 dark:bg-blue-600/20 text-blue-700 dark:text-blue-200'
                           : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800/80'
                       }`}
                     >
-                      <div className={`flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center transition-colors ${
+                      <div className={`flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center ${
                         isActive
                           ? 'bg-blue-100 dark:bg-blue-500/20 text-blue-600 dark:text-blue-300'
                           : 'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400'
@@ -274,7 +314,7 @@ const CommandPalette: React.FC = () => {
                         )}
                       </div>
                       {isActive && (
-                        <ArrowRight className="w-4 h-4 text-blue-400 dark:text-blue-400 flex-shrink-0 animate-in fade-in duration-100" />
+                        <ArrowRight className="w-4 h-4 text-blue-400 dark:text-blue-400 flex-shrink-0" />
                       )}
                     </button>
                   );
