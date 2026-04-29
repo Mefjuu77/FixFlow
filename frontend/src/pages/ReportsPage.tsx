@@ -513,7 +513,7 @@ const ReportsPage: React.FC = () => {
               <table className="w-full text-sm text-left">
                 <thead className="bg-white dark:bg-slate-800 sticky top-0 z-10 shadow-sm dark:shadow-slate-900/50">
                   <tr className="text-[11px] font-extrabold text-slate-400 uppercase tracking-widest">
-                    <th className="px-5 py-4 w-16">#</th>
+                    <th className="px-5 py-4 w-16">ID</th>
                     <th className="px-5 py-4">Tytuł</th>
                     <th className="px-5 py-4 hidden md:table-cell">Kategoria</th>
                     <th className="px-5 py-4 w-32">Priorytet</th>

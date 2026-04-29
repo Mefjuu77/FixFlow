@@ -131,11 +131,15 @@ const TicketsPage: React.FC = () => {
   if (error) return <div className="p-4 text-red-700 bg-red-100 rounded-xl">{error}</div>;
 
   // ---------- Logika filtrowania ----------
-  let filteredTickets = tickets.filter(t =>
-    t.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    t.id.toString().includes(searchQuery) ||
-    (t.creator_details && `${t.creator_details.first_name} ${t.creator_details.last_name}`.toLowerCase().includes(searchQuery.toLowerCase()))
-  );
+  let filteredTickets = tickets.filter(t => {
+    const q = searchQuery.toLowerCase();
+    const matchTitle = t.title.toLowerCase().includes(q);
+    const matchId = t.id.toString().includes(q);
+    const matchCreator = t.creator_details && `${t.creator_details.first_name} ${t.creator_details.last_name}`.toLowerCase().includes(q);
+    const matchTechnician = t.technician_details && `${t.technician_details.first_name} ${t.technician_details.last_name}`.toLowerCase().includes(q);
+    
+    return matchTitle || matchId || matchCreator || matchTechnician;
+  });
 
   // Wspólne filtry dla wszystkich
   if (statusFilter !== 'all') {
