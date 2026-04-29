@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useContext, useRef } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
+import { Link, useSearchParams, useLocation } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
 import api from '../api/axiosConfig';
 import { ticketService } from '../api/ticketService';
@@ -78,7 +78,9 @@ const TicketsPage: React.FC = () => {
   const authContext = useContext(AuthContext);
   const [searchParams] = useSearchParams();
   const [tickets, setTickets] = useState<Ticket[]>([]);
-  const [searchQuery, setSearchQuery] = useState('');
+  const location = useLocation();
+  const state = location.state as { searchQuery?: string } | null;
+  const [searchQuery, setSearchQuery] = useState(state?.searchQuery || '');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 

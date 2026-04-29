@@ -168,12 +168,13 @@ const CommandPalette: React.FC = () => {
     );
 
     // Wyszukiwanie w ticketach
-    const filteredTickets: CommandItem[] = tickets
-      .filter(t =>
+    const matchedTickets = tickets.filter(t =>
         t.id.toString().includes(q) ||
         t.title.toLowerCase().includes(q) ||
         (t.creator_details && `${t.creator_details.first_name} ${t.creator_details.last_name}`.toLowerCase().includes(q))
-      )
+    );
+
+    const filteredTickets: CommandItem[] = matchedTickets
       .slice(0, 5)
       .map(t => ({
         id: `ticket-${t.id}`,
@@ -183,6 +184,17 @@ const CommandPalette: React.FC = () => {
         action: () => runAndClose(() => navigate(`/tickets/${t.id}`)),
         group: 'Zgłoszenia',
       }));
+
+    if (matchedTickets.length > 5) {
+      filteredTickets.push({
+        id: 'action-more-tickets',
+        label: `Pokaż wszystkie zgłoszenia (${matchedTickets.length})`,
+        sublabel: `Wyszukaj "${query}" na pełnej liście zgłoszeń`,
+        icon: <Search className="w-4 h-4 text-blue-500" />,
+        action: () => runAndClose(() => navigate('/tickets', { state: { searchQuery: query } })),
+        group: 'Zgłoszenia',
+      });
+    }
 
     return [...filteredCommands, ...filteredTickets];
   }, [query, commands, tickets, navigate, runAndClose]);
