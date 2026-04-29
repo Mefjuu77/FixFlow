@@ -39,7 +39,7 @@ const CustomDropdown: React.FC<CustomDropdownProps> = ({ value, onChange, option
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
-        className={`flex items-center justify-between pl-3 pr-3 py-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-sm font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700/50 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all ${className}`}
+        className={`flex items-center justify-between pl-3 pr-3 py-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-sm font-semibold text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700/50 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all ${className}`}
       >
         <span className="flex items-center gap-2 truncate text-inherit">
           {selected?.value === 'all' ? placeholder : (
@@ -62,7 +62,7 @@ const CustomDropdown: React.FC<CustomDropdownProps> = ({ value, onChange, option
               className={`flex items-center w-full gap-2 px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-blue-50 dark:hover:bg-gray-700 transition-colors ${value === opt.value ? 'bg-blue-50/50 dark:bg-blue-900/30 font-semibold text-blue-700 dark:text-blue-400' : ''}`}
             >
               {opt.icon}
-              <span className="truncate">{opt.label}</span>
+              <span className="truncate font-medium">{opt.label}</span>
             </button>
           ))}
         </div>

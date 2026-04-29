@@ -313,7 +313,7 @@ const SettingsPage: React.FC = () => {
                     />
                   </div>
 
-                  <div className="flex-1">
+                  <div className="flex-1 flex flex-col items-start">
                     <div className="flex items-center gap-3 mb-1.5">
                       <h3 className="text-2xl font-extrabold text-gray-900 dark:text-white tracking-tight">
                         {user?.first_name} {user?.last_name}
@@ -328,7 +328,7 @@ const SettingsPage: React.FC = () => {
                       <Mail className="w-4 h-4 opacity-70" />
                       {user?.email}
                     </p>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center justify-start gap-3 w-full">
                       <button
                         onClick={() => fileInputRef.current?.click()}
                         className="flex items-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-200 text-sm font-semibold rounded-xl transition-all"
