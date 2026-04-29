@@ -212,8 +212,8 @@ const CommandPalette: React.FC = () => {
         onClick={e => e.stopPropagation()}
       >
         {/* Search input */}
-        <div className="flex items-center gap-4 px-5 py-5 border-b border-gray-100 dark:border-gray-800 bg-transparent">
-          <Search className="w-6 h-6 text-gray-400 dark:text-gray-400 flex-shrink-0" />
+        <div className="flex items-center gap-3 px-5 py-4 command-palette-divider bg-transparent">
+          <Search className="w-5 h-5 text-gray-400 dark:text-gray-400 flex-shrink-0" />
           <input
             ref={inputRef}
             type="text"
@@ -221,10 +221,9 @@ const CommandPalette: React.FC = () => {
             onChange={e => setQuery(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder="Wpisz komendę lub wyszukaj zgłoszenie..."
-            className="flex-1 text-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 bg-transparent !bg-transparent border-0 border-none ring-0 focus:ring-0 focus:outline-none shadow-none"
-            style={{ backgroundColor: 'transparent' }}
+            className="flex-1 text-sm text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 bg-transparent border-0 ring-0 focus:ring-0 focus:outline-none shadow-none command-palette-input"
           />
-          <kbd className="hidden sm:inline-flex items-center px-2.5 py-1 text-[10px] font-bold text-gray-400 dark:text-gray-500 bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-md uppercase tracking-wider">
+          <kbd className="hidden sm:inline-flex items-center px-2 py-0.5 text-[10px] font-bold text-gray-400 dark:text-gray-500 bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-md uppercase tracking-wider">
             ESC
           </kbd>
         </div>

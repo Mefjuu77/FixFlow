@@ -130,6 +130,18 @@ html.dark select {
   border-color: #334155 !important;
 }
 
+html.dark .command-palette-input {
+  background-color: transparent !important;
+}
+
+.command-palette-divider {
+  border-bottom: 1px solid #e5e7eb;
+}
+
+html.dark .command-palette-divider {
+  border-bottom: 1px solid #475569 !important;
+}
+
 html.dark input::placeholder,
 html.dark textarea::placeholder {
   color: #94a3b8 !important;
