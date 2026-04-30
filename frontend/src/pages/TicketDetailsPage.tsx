@@ -2,7 +2,9 @@ import React, { useEffect, useState, useContext, useRef, useCallback } from 'rea
 import { useParams, useNavigate } from 'react-router-dom';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
+import 'dayjs/locale/pl';
 dayjs.extend(relativeTime);
+dayjs.locale('pl');
 import { ticketService } from '../api/ticketService';
 import { Ticket, User as UserType, Comment, Category, TicketLog, WorkLog } from '../types';
 import { AuthContext } from '../context/AuthContext';
@@ -34,7 +36,9 @@ import {
   Check,
   FolderOpen,
   FileClock,
-  Trash2
+  Trash2,
+  MoreHorizontal,
+  Link2
 } from 'lucide-react';
 import { getCategoryIcon } from '../utils/ticketConstants';
 
@@ -61,7 +65,9 @@ const TicketDetailsPage: React.FC = () => {
   const authContext = useContext(AuthContext);
   const navigate = useNavigate();
   const statusMenuRef = useRef<HTMLDivElement>(null);
+  const moreMenuRef = useRef<HTMLDivElement>(null);
   const [isStatusMenuOpen, setIsStatusMenuOpen] = useState(false);
+  const [isMoreMenuOpen, setIsMoreMenuOpen] = useState(false);
   const [transitionModalConfig, setTransitionModalConfig] = useState<{ isOpen: boolean; targetStatus: Ticket['status'] | null }>({ isOpen: false, targetStatus: null });
   const [transitionAssignee, setTransitionAssignee] = useState<number | null>(null);
   const [isTransitionAssigneeDropdownOpen, setIsTransitionAssigneeDropdownOpen] = useState(false);
@@ -84,6 +90,7 @@ const TicketDetailsPage: React.FC = () => {
   const [isDeletingAttachment, setIsDeletingAttachment] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [isDeletingTicket, setIsDeletingTicket] = useState(false);
+  const [showToast, setShowToast] = useState(false);
 
   const priorityDropdownRef = useRef<HTMLDivElement>(null);
   const categoryDropdownRef = useRef<HTMLDivElement>(null);
@@ -108,6 +115,9 @@ const TicketDetailsPage: React.FC = () => {
       const target = event.target as Node;
       if (statusMenuRef.current && !statusMenuRef.current.contains(target)) {
         setIsStatusMenuOpen(false);
+      }
+      if (moreMenuRef.current && !moreMenuRef.current.contains(target)) {
+        setIsMoreMenuOpen(false);
       }
       if (priorityDropdownRef.current && !priorityDropdownRef.current.contains(target)) {
         setIsEditingPriority(false);
@@ -772,7 +782,7 @@ const TicketDetailsPage: React.FC = () => {
                             <div className="flex justify-between items-start mb-2">
                               <span className="font-semibold text-gray-900 text-sm">{comment.author_details?.first_name} {comment.author_details?.last_name}</span>
                               <span className="text-xs text-gray-500">
-                                {new Date(comment.created_at).toLocaleString()}
+                                {dayjs(comment.created_at).format('DD MMM YYYY, HH:mm')}
                               </span>
                             </div>
                             {isInternal && (
@@ -1374,15 +1384,44 @@ const TicketDetailsPage: React.FC = () => {
                 )}
               </div>
             )}
-            {isAdmin && (
-              <button
-                onClick={() => setShowDeleteModal(true)}
-                className="inline-flex items-center px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-bold rounded-xl text-sm shadow-lg shadow-red-200 transition-all border-none focus:outline-none"
-                title="Usuń zgłoszenie"
-              >
-                <Trash2 className="w-4 h-4 mr-2" />
-                Usuń
-              </button>
+            {isTechnicianOrAdmin && (
+              <div className="relative" ref={moreMenuRef}>
+                <button
+                  onClick={() => setIsMoreMenuOpen(!isMoreMenuOpen)}
+                  className="inline-flex items-center justify-center w-9 h-9 bg-white border border-gray-200 hover:border-gray-300 hover:bg-gray-50 text-gray-500 rounded-xl shadow-sm transition-all focus:outline-none"
+                  title="Więcej akcji"
+                >
+                  <MoreHorizontal className="w-5 h-5" />
+                </button>
+                {isMoreMenuOpen && (
+                  <div className="absolute right-0 z-50 w-48 mt-2 bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-600 rounded-xl shadow-xl dark:shadow-[0_10px_40px_rgba(0,0,0,0.4)] py-2 animate-in fade-in zoom-in-95 duration-100 overflow-hidden">
+                    <button
+                      onClick={() => {
+                        setIsMoreMenuOpen(false);
+                        navigator.clipboard.writeText(window.location.href);
+                        setShowToast(true);
+                        setTimeout(() => setShowToast(false), 3000);
+                      }}
+                      className="w-full text-left px-4 py-2.5 hover:bg-gray-50 dark:hover:bg-gray-700/80 text-gray-700 dark:text-gray-300 transition-colors text-sm font-medium flex items-center gap-2 border-b border-gray-100 dark:border-gray-700"
+                    >
+                      <Link2 className="w-4 h-4" />
+                      Skopiuj link
+                    </button>
+                    {isAdmin && (
+                      <button
+                        onClick={() => {
+                          setIsMoreMenuOpen(false);
+                          setShowDeleteModal(true);
+                        }}
+                        className="w-full text-left px-4 py-2.5 hover:bg-red-50 dark:hover:bg-red-900/20 text-red-600 dark:text-red-400 transition-colors text-sm font-medium flex items-center gap-2"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                        Usuń zgłoszenie
+                      </button>
+                    )}
+                  </div>
+                )}
+              </div>
             )}
           </div>
 
@@ -1946,6 +1985,18 @@ const TicketDetailsPage: React.FC = () => {
                 Usuń
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Toast Notification */}
+      {showToast && (
+        <div className="fixed top-6 left-1/2 -translate-x-1/2 z-[200] animate-in fade-in slide-in-from-top-8 zoom-in-95 duration-500 ease-out">
+          <div className="bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-100 border border-gray-200/60 dark:border-gray-700 px-4 py-3 rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.12)] dark:shadow-[0_8px_30px_rgb(0,0,0,0.4)] flex items-center gap-3">
+            <div className="w-8 h-8 rounded-full bg-green-100 dark:bg-green-500/20 flex items-center justify-center flex-shrink-0">
+              <Check className="w-4 h-4 text-green-600 dark:text-green-400" />
+            </div>
+            <p className="text-sm font-semibold">Link do zgłoszenia został skopiowany</p>
           </div>
         </div>
       )}
