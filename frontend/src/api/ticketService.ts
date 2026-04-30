@@ -97,4 +97,9 @@ export const ticketService = {
   deleteAttachment: async (ticketId: string | number, attachmentId: number): Promise<void> => {
     await api.delete(`tickets/${ticketId}/attachments/${attachmentId}/`);
   },
+
+  // Usuwanie zgłoszenia
+  deleteTicket: async (ticketId: string | number): Promise<void> => {
+    await api.delete(`tickets/${ticketId}/`);
+  },
 };

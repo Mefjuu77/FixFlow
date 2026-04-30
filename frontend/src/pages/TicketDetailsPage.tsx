@@ -82,6 +82,8 @@ const TicketDetailsPage: React.FC = () => {
   const [editDescription, setEditDescription] = useState('');
   const [attachmentToDelete, setAttachmentToDelete] = useState<{ id: number; filename: string } | null>(null);
   const [isDeletingAttachment, setIsDeletingAttachment] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [isDeletingTicket, setIsDeletingTicket] = useState(false);
 
   const priorityDropdownRef = useRef<HTMLDivElement>(null);
   const categoryDropdownRef = useRef<HTMLDivElement>(null);
@@ -342,6 +344,21 @@ const TicketDetailsPage: React.FC = () => {
     }
   };
 
+  const handleDeleteTicket = async () => {
+    if (!ticket) return;
+    setIsDeletingTicket(true);
+    try {
+      await ticketService.deleteTicket(ticket.id);
+      navigate('/tickets');
+    } catch (err) {
+      console.error('Błąd usuwania zgłoszenia:', err);
+      alert('Nie udało się usunąć zgłoszenia.');
+    } finally {
+      setIsDeletingTicket(false);
+      setShowDeleteModal(false);
+    }
+  };
+
   if (loading) return <div className="flex justify-center mt-20"><div className="animate-spin w-10 h-10 border-4 border-blue-600 border-t-transparent rounded-full"></div></div>;
   if (error || !ticket) return <div className="p-4 bg-red-50 text-red-700 rounded-xl m-6">{error || 'Zgłoszenie nie istnieje.'}</div>;
 
@@ -353,6 +370,7 @@ const TicketDetailsPage: React.FC = () => {
   };
 
   const isTechnicianOrAdmin = authContext?.user?.role === 'TECHNICIAN' || authContext?.user?.role === 'ADMIN';
+  const isAdmin = authContext?.user?.role === 'ADMIN';
 
 
 
@@ -440,14 +458,16 @@ const TicketDetailsPage: React.FC = () => {
       <div className="grid grid-cols-1 lg:grid-cols-[1fr_410px] gap-8">
         {/* Lewa kolumna: Treść zgłoszenia */}
         <div className="space-y-6 min-w-0 lg:max-h-[calc(100vh-100px)] lg:overflow-y-auto lg:pl-1 lg:pr-3" style={{ scrollbarWidth: 'auto', scrollbarColor: '#94a3b8 transparent' }}>
-          <div className="flex items-center gap-3 mb-2">
-            <span className="text-sm font-semibold text-gray-500 hover:text-blue-600 hover:underline cursor-pointer transition-colors">Zgłoszenie #{ticket.id}</span>
-            <span className={`px-2 py-0.5 rounded-md text-[10px] font-bold border uppercase tracking-wider ${statusColors[ticket.status]}`}>
-              {ticket.status === 'W_TOKU' ? 'W toku' :
-                ticket.status === 'NOWE' ? 'Nowe' :
-                  ticket.status === 'ROZWIAZANE' ? 'Rozwiązane' :
-                    ticket.status === 'ZAMKNIETE' ? 'Zamknięte' : ticket.status}
-            </span>
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center gap-3">
+              <span className="text-sm font-semibold text-gray-500 hover:text-blue-600 hover:underline cursor-pointer transition-colors">Zgłoszenie #{ticket.id}</span>
+              <span className={`px-2 py-0.5 rounded-md text-[10px] font-bold border uppercase tracking-wider ${statusColors[ticket.status]}`}>
+                {ticket.status === 'W_TOKU' ? 'W toku' :
+                  ticket.status === 'NOWE' ? 'Nowe' :
+                    ticket.status === 'ROZWIAZANE' ? 'Rozwiązane' :
+                      ticket.status === 'ZAMKNIETE' ? 'Zamknięte' : ticket.status}
+              </span>
+            </div>
           </div>
           {isEditingTitle ? (
             <div className="mb-6">
@@ -1354,6 +1374,16 @@ const TicketDetailsPage: React.FC = () => {
                 )}
               </div>
             )}
+            {isAdmin && (
+              <button
+                onClick={() => setShowDeleteModal(true)}
+                className="inline-flex items-center px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-bold rounded-xl text-sm shadow-lg shadow-red-200 transition-all border-none focus:outline-none"
+                title="Usuń zgłoszenie"
+              >
+                <Trash2 className="w-4 h-4 mr-2" />
+                Usuń
+              </button>
+            )}
           </div>
 
           {/* Stała zakładka: Szczegóły */}
@@ -1882,6 +1912,38 @@ const TicketDetailsPage: React.FC = () => {
                 className="px-4 py-1.5 text-gray-300 hover:text-white hover:bg-white/5 rounded-sm transition-colors font-medium cursor-pointer"
               >
                 Anuluj
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ========== Modal: Potwierdzenie usunięcia zgłoszenia ========== */}
+      {showDeleteModal && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 animate-in fade-in duration-200">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm mx-4 p-6 text-center">
+            <div className="w-14 h-14 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <Trash2 className="w-7 h-7 text-red-600" />
+            </div>
+            <h3 className="text-lg font-bold text-gray-900 mb-1">Usunąć zgłoszenie?</h3>
+            <p className="text-sm text-gray-500 mb-6">
+              Czy na pewno chcesz usunąć zgłoszenie <span className="font-semibold text-gray-700">#{ticket.id}</span>?
+              <br />Tej operacji nie można cofnąć.
+            </p>
+            <div className="flex gap-3 justify-center">
+              <button
+                onClick={() => setShowDeleteModal(false)}
+                className="px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-100 rounded-xl transition-colors"
+              >
+                Anuluj
+              </button>
+              <button
+                onClick={handleDeleteTicket}
+                disabled={isDeletingTicket}
+                className="px-5 py-2 text-sm font-bold text-white bg-red-600 hover:bg-red-700 rounded-xl shadow-sm transition-all disabled:opacity-50 flex items-center"
+              >
+                {isDeletingTicket && <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />}
+                Usuń
               </button>
             </div>
           </div>
