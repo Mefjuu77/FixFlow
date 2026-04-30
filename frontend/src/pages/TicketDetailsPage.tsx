@@ -398,20 +398,20 @@ const TicketDetailsPage: React.FC = () => {
         const daysLeft = Math.max(0, Math.ceil((autoCloseDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)));
 
         return (
-          <div className="mb-6 p-5 bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-2xl shadow-sm">
+          <div className="mb-6 p-5 bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/10 dark:to-emerald-900/10 border border-green-200 dark:border-green-900/30 rounded-2xl shadow-sm">
             <div className="flex items-start gap-3">
-              <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center flex-shrink-0 mt-0.5">
-                <Check className="w-5 h-5 text-green-600" />
+              <div className="w-10 h-10 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center flex-shrink-0 mt-0.5">
+                <Check className="w-5 h-5 text-green-600 dark:text-green-400" />
               </div>
               <div className="flex-1">
-                <h3 className="text-base font-bold text-green-800 mb-1">Zgłoszenie oznaczone jako rozwiązane</h3>
-                <p className="text-sm text-green-700 mb-3">
+                <h3 className="text-base font-bold text-green-800 dark:text-green-400 mb-1">Zgłoszenie oznaczone jako rozwiązane</h3>
+                <p className="text-sm text-green-700 dark:text-green-300/80 mb-3">
                   Technik oznaczył Twoje zgłoszenie jako rozwiązane. Sprawdź, czy problem został naprawiony.
                   {daysLeft > 0 && (
-                    <span className="font-semibold"> Masz jeszcze {daysLeft} {daysLeft === 1 ? 'dzień' : daysLeft < 5 ? 'dni' : 'dni'} na weryfikację.</span>
+                    <span className="font-semibold text-green-800 dark:text-green-300"> Masz jeszcze {daysLeft} {daysLeft === 1 ? 'dzień' : daysLeft < 5 ? 'dni' : 'dni'} na weryfikację.</span>
                   )}
                   {daysLeft === 0 && (
-                    <span className="font-semibold text-amber-700"> Czas weryfikacji upływa dzisiaj!</span>
+                    <span className="font-semibold text-amber-600 dark:text-amber-500"> Czas weryfikacji upływa dzisiaj!</span>
                   )}
                 </p>
                 <div className="flex items-center gap-3">
@@ -440,7 +440,7 @@ const TicketDetailsPage: React.FC = () => {
                         console.error('Błąd ponownego otwarcia zgłoszenia:', err);
                       }
                     }}
-                    className="px-4 py-2 bg-white hover:bg-red-50 text-red-600 border border-red-200 text-sm font-semibold rounded-lg transition-colors flex items-center gap-1.5"
+                    className="px-4 py-2 bg-white dark:bg-gray-800 hover:bg-red-50 dark:hover:bg-red-900/20 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-800/50 text-sm font-semibold rounded-lg transition-colors flex items-center gap-1.5"
                   >
                     <X className="w-4 h-4" />
                     To nie rozwiązuje problemu
@@ -449,14 +449,14 @@ const TicketDetailsPage: React.FC = () => {
               </div>
             </div>
             {/* Pasek postępu czasu */}
-            <div className="mt-4 ml-[52px]">
-              <div className="flex items-center justify-between text-xs text-green-600 mb-1">
-                <span>Czas weryfikacji</span>
-                <span>{daysLeft} / 7 dni</span>
+            <div className="mt-4 ml-[52px] max-w-sm">
+              <div className="flex items-center justify-between text-[11px] text-green-700 dark:text-green-500/80 mb-1.5">
+                <span className="font-medium">Czas na weryfikację</span>
+                <span className="font-bold">{daysLeft} z 7 dni</span>
               </div>
-              <div className="w-full bg-green-200 rounded-full h-1.5">
+              <div className="w-full bg-green-200 dark:bg-green-900/40 rounded-full h-1.5">
                 <div
-                  className="bg-green-500 h-1.5 rounded-full transition-all duration-500"
+                  className="bg-green-500 dark:bg-green-500/80 h-1.5 rounded-full transition-all duration-500"
                   style={{ width: `${Math.max(5, (daysLeft / 7) * 100)}%` }}
                 />
               </div>
