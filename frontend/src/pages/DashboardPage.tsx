@@ -19,6 +19,14 @@ import useTitle from '../hooks/useTitle';
 import relativeTime from 'dayjs/plugin/relativeTime';
 import UserAvatar from '../components/UserAvatar';
 
+const formatTicketCount = (count: number) => {
+  if (count === 1) return 'Masz 1 otwarte zgłoszenie';
+  if ([2, 3, 4].includes(count % 10) && ![12, 13, 14].includes(count % 100)) {
+    return `Masz ${count} otwarte zgłoszenia`;
+  }
+  return `Masz ${count} otwartych zgłoszeń`;
+};
+
 // Plugin do obsługi czasu relatywnego (np. "2 godziny temu")
 dayjs.extend(relativeTime);
 
@@ -225,7 +233,7 @@ const DashboardPage: React.FC = () => {
               Witaj, {authContext?.user?.first_name}! 👋
             </h1>
             <p className="text-gray-300 text-lg max-w-lg font-medium">
-              Masz {myOpen.length} otwartych zgłoszeń. Pula nieprzypisanych czeka!
+              {formatTicketCount(myOpen.length)}. Pula nieprzypisanych czeka!
             </p>
           </div>
           <div className="relative z-10 flex flex-col sm:flex-row gap-3">
@@ -233,7 +241,7 @@ const DashboardPage: React.FC = () => {
               to="/tickets"
               className="px-6 py-3.5 bg-white/10 hover:bg-white/20 backdrop-blur-md text-white border border-white/20 font-bold rounded-xl shadow-lg transition-all flex items-center justify-center whitespace-nowrap"
             >
-              Moja praca
+              Moje zgłoszenia
             </Link>
             <Link
               to="/create-ticket"

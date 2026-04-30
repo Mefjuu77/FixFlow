@@ -7,7 +7,7 @@ import { Ticket } from '../types';
 import {
   Search, LayoutDashboard, Ticket as TicketIcon, BarChart3, FileBarChart,
   Users, Settings, PlusCircle, LogOut, Moon, Sun, ArrowRight,
-  Hash, Command, KeyRound, Bell, Palette, UserPlus,
+  Hash, KeyRound, Bell, Palette, UserPlus,
   ClipboardList,
 } from 'lucide-react';
 
@@ -45,7 +45,7 @@ const CommandPalette: React.FC = () => {
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       const isInputActive = ['INPUT', 'TEXTAREA'].includes(document.activeElement?.tagName || '');
-      
+
       if ((e.key === '/' && !isInputActive) || ((e.ctrlKey || e.metaKey) && e.key === 'k')) {
         if (e.key === '/') e.preventDefault(); // Prevent typing the slash
         if (e.key === 'k') e.preventDefault();
@@ -164,9 +164,9 @@ const CommandPalette: React.FC = () => {
 
     // Wyszukiwanie w ticketach
     const matchedTickets = tickets.filter(t =>
-        t.id.toString().includes(q) ||
-        t.title.toLowerCase().includes(q) ||
-        (t.creator_details && `${t.creator_details.first_name} ${t.creator_details.last_name}`.toLowerCase().includes(q))
+      t.id.toString().includes(q) ||
+      t.title.toLowerCase().includes(q) ||
+      (t.creator_details && `${t.creator_details.first_name} ${t.creator_details.last_name}`.toLowerCase().includes(q))
     );
 
     const filteredTickets: CommandItem[] = matchedTickets
@@ -296,17 +296,15 @@ const CommandPalette: React.FC = () => {
                       onPointerMove={() => {
                         if (activeIndex !== idx) setActiveIndex(idx);
                       }}
-                      className={`w-full flex items-center gap-4 px-6 py-3 text-left ${
-                        isActive
+                      className={`w-full flex items-center gap-4 px-6 py-3 text-left ${isActive
                           ? 'bg-blue-50 dark:bg-blue-600/20 text-blue-700 dark:text-blue-200'
                           : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800/80'
-                      }`}
+                        }`}
                     >
-                      <div className={`flex-shrink-0 w-10 h-10 rounded-xl flex items-center justify-center ${
-                        isActive
+                      <div className={`flex-shrink-0 w-10 h-10 rounded-xl flex items-center justify-center ${isActive
                           ? 'bg-blue-100 dark:bg-blue-500/20 text-blue-600 dark:text-blue-300'
                           : 'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400'
-                      }`}>
+                        }`}>
                         {item.icon}
                       </div>
                       <div className="flex-1 min-w-0">
