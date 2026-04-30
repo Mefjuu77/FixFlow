@@ -5,7 +5,7 @@ import api from '../api/axiosConfig';
 import { ticketService } from '../api/ticketService';
 import { Ticket, User } from '../types';
 import dayjs from 'dayjs';
-import { PlusCircle, Search, ChevronDown, ArrowUp, ArrowDown, UserMinus, Circle, CheckCircle2, XCircle, Loader2 } from 'lucide-react';
+import { PlusCircle, Search, ChevronDown, ArrowUp, ArrowDown, UserMinus, Circle, CheckCircle2, XCircle, Loader2, Trash2 } from 'lucide-react';
 import useTitle from '../hooks/useTitle';
 import { getCategoryIcon, STATUS_LABELS, STATUS_STYLES, PRIORITY_LABELS, PRIORITY_ICONS } from '../utils/ticketConstants';
 import UserAvatar from '../components/UserAvatar';
@@ -97,6 +97,9 @@ const TicketsPage: React.FC = () => {
   const [bulkStatus, setBulkStatus] = useState<string>('');
   const [bulkAssignee, setBulkAssignee] = useState<string>('');
   const [bulkSuccessMessage, setBulkSuccessMessage] = useState<string>('');
+  
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [isDeletingBulk, setIsDeletingBulk] = useState(false);
 
   const [technicians, setTechnicians] = useState<User[]>([]);
 
@@ -294,6 +297,27 @@ const TicketsPage: React.FC = () => {
       alert('Wystąpił błąd podczas masowej aktualizacji.');
     } finally {
       setIsBulkSubmitting(false);
+    }
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedTicketIds.length === 0) return;
+    setIsDeletingBulk(true);
+    try {
+      await Promise.all(selectedTicketIds.map(id => ticketService.deleteTicket(id)));
+      
+      const response = await api.get('tickets/');
+      setTickets(response.data);
+      
+      setSelectedTicketIds([]);
+      setShowDeleteModal(false);
+      setBulkSuccessMessage('Usunięto wybrane zgłoszenia.');
+      setTimeout(() => setBulkSuccessMessage(''), 4000);
+    } catch (err) {
+      console.error('Błąd usuwania zgłoszeń', err);
+      alert('Wystąpił błąd podczas usuwania zgłoszeń.');
+    } finally {
+      setIsDeletingBulk(false);
     }
   };
 
@@ -540,6 +564,17 @@ const TicketsPage: React.FC = () => {
                             ? 'Sukces!'
                             : 'Zastosuj'}
                       </button>
+
+                      {isAdmin && (
+                        <button
+                          onClick={() => setShowDeleteModal(true)}
+                          className="px-4 py-2 text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 bg-red-50 dark:bg-red-900/30 hover:bg-red-100 dark:hover:bg-red-900/50 rounded-xl font-bold flex items-center gap-2 transition-colors ml-2 shadow-sm border border-red-100 dark:border-red-800"
+                          title="Usuń wybrane zgłoszenia"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                          Usuń
+                        </button>
+                      )}
                     </div>
                   </th>
                 </tr>
@@ -673,6 +708,38 @@ const TicketsPage: React.FC = () => {
           </table>
         </div>
       </div>
+
+      {/* ========== Modal: Potwierdzenie usunięcia masowego ========== */}
+      {showDeleteModal && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 animate-in fade-in duration-200">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-sm mx-4 p-6 text-center">
+            <div className="w-14 h-14 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
+              <Trash2 className="w-7 h-7 text-red-600 dark:text-red-400" />
+            </div>
+            <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100 mb-1">Usunąć zgłoszenia?</h3>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">
+              Czy na pewno chcesz usunąć <span className="font-semibold text-gray-700 dark:text-gray-300">{selectedTicketIds.length}</span> wybranych zgłoszeń?
+              <br />Tej operacji nie można cofnąć.
+            </p>
+            <div className="flex gap-3 justify-center">
+              <button
+                onClick={() => setShowDeleteModal(false)}
+                className="px-4 py-2 text-sm font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-xl transition-colors"
+              >
+                Anuluj
+              </button>
+              <button
+                onClick={handleBulkDelete}
+                disabled={isDeletingBulk}
+                className="px-5 py-2 text-sm font-bold text-white bg-red-600 hover:bg-red-700 rounded-xl shadow-sm transition-all disabled:opacity-50 flex items-center"
+              >
+                {isDeletingBulk && <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />}
+                Usuń
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
