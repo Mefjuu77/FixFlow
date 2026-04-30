@@ -8,6 +8,7 @@ import dayjs from 'dayjs';
 import { PlusCircle, Search, ChevronDown, ArrowUp, ArrowDown, UserMinus, Circle, CheckCircle2, XCircle, Loader2 } from 'lucide-react';
 import useTitle from '../hooks/useTitle';
 import { getCategoryIcon, STATUS_LABELS, STATUS_STYLES, PRIORITY_LABELS, PRIORITY_ICONS } from '../utils/ticketConstants';
+import UserAvatar from '../components/UserAvatar';
 
 type SortField = 'id' | 'title' | 'category_name' | 'priority' | 'creator' | 'technician' | 'status' | 'created_at';
 
@@ -497,20 +498,12 @@ const TicketsPage: React.FC = () => {
                             {
                               value: 'me',
                               label: 'Przypisz do mnie',
-                              icon: authContext?.user?.avatar ? (
-                                <img src={authContext.user.avatar} alt="" className="w-5 h-5 rounded-full object-cover mr-1" />
-                              ) : (
-                                <div className="w-5 h-5 rounded-full bg-blue-100 dark:bg-blue-900/60 text-blue-700 dark:text-blue-300 flex items-center justify-center text-[10px] mr-1">Ty</div>
-                              )
+                              icon: <UserAvatar avatar={authContext?.user?.avatar} name={authContext?.user?.first_name || 'U'} size="xs" className="mr-1" />
                             },
                             ...technicians.filter(t => t.id !== authContext?.user?.id).map((tech) => ({
                               value: String(tech.id),
                               label: `${tech.first_name} ${tech.last_name}`,
-                              icon: tech.avatar ? (
-                                <img src={tech.avatar} alt="" className="w-5 h-5 rounded-full object-cover mr-1" />
-                              ) : (
-                                <div className="w-5 h-5 rounded-full bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 flex items-center justify-center text-[10px] mr-1">{tech.first_name[0]}{tech.last_name[0]}</div>
-                              )
+                              icon: <UserAvatar avatar={tech.avatar} name={`${tech.first_name} ${tech.last_name}`} size="xs" className="mr-1" />
                             }))
                           ]}
                         />
@@ -523,9 +516,9 @@ const TicketsPage: React.FC = () => {
                         placeholder="Zmień status..."
                         options={[
                           { value: 'NOWE', label: 'Nowe', icon: <Circle className="w-4 h-4 text-blue-600 dark:text-blue-400 stroke-[2.5]" /> },
-                          { value: 'W_TOKU', label: 'W toku', icon: <Circle className="w-4 h-4 text-amber-500 dark:text-amber-400 stroke-[2.5]" /> },
+                          { value: 'W_TOKU', label: 'W toku', icon: <Loader2 className="w-4 h-4 text-amber-500 dark:text-amber-400 stroke-[2.5]" /> },
                           { value: 'ROZWIAZANE', label: 'Rozwiązane', icon: <CheckCircle2 className="w-4 h-4 text-green-600 dark:text-green-400 stroke-[2.5]" /> },
-                          { value: 'ZAMKNIETE', label: 'Zamknięte', icon: <XCircle className="w-4 h-4 text-gray-500 dark:text-gray-400 stroke-[2.5]" /> },
+                          { value: 'ZAMKNIETE', label: 'Zamknięte', icon: <XCircle className="w-4 h-4 text-teal-500 dark:text-teal-400 stroke-[2.5]" /> },
                         ]}
                       />
 
