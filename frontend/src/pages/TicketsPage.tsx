@@ -97,6 +97,7 @@ const TicketsPage: React.FC = () => {
   const [bulkStatus, setBulkStatus] = useState<string>('');
   const [bulkAssignee, setBulkAssignee] = useState<string>('');
   const [bulkSuccessMessage, setBulkSuccessMessage] = useState<string>('');
+  const [bulkDeleteSuccessMessage, setBulkDeleteSuccessMessage] = useState(false);
   
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [isDeletingBulk, setIsDeletingBulk] = useState(false);
@@ -309,10 +310,12 @@ const TicketsPage: React.FC = () => {
       const response = await api.get('tickets/');
       setTickets(response.data);
       
-      setSelectedTicketIds([]);
       setShowDeleteModal(false);
-      setBulkSuccessMessage('Usunięto wybrane zgłoszenia.');
-      setTimeout(() => setBulkSuccessMessage(''), 4000);
+      setBulkDeleteSuccessMessage(true);
+      setTimeout(() => {
+        setBulkDeleteSuccessMessage(false);
+        setSelectedTicketIds([]);
+      }, 3000);
     } catch (err) {
       console.error('Błąd usuwania zgłoszeń', err);
       alert('Wystąpił błąd podczas usuwania zgłoszeń.');
@@ -567,12 +570,26 @@ const TicketsPage: React.FC = () => {
 
                       {isAdmin && (
                         <button
-                          onClick={() => setShowDeleteModal(true)}
-                          className="px-4 py-2 text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 bg-red-50 dark:bg-red-900/30 hover:bg-red-100 dark:hover:bg-red-900/50 rounded-xl font-bold flex items-center gap-2 transition-colors ml-2 shadow-sm border border-red-100 dark:border-red-800"
+                          onClick={() => !bulkDeleteSuccessMessage && setShowDeleteModal(true)}
+                          disabled={bulkDeleteSuccessMessage}
+                          className={`px-5 py-2 rounded-xl text-sm font-bold flex items-center gap-2 transition-colors ml-2 shadow-sm ${
+                            bulkDeleteSuccessMessage
+                              ? 'bg-green-500 hover:bg-green-600 text-white shadow-green-200 dark:shadow-none pointer-events-none'
+                              : 'text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 bg-red-50 dark:bg-red-900/30 hover:bg-red-100 dark:hover:bg-red-900/50'
+                          }`}
                           title="Usuń wybrane zgłoszenia"
                         >
-                          <Trash2 className="w-4 h-4" />
-                          Usuń
+                          {bulkDeleteSuccessMessage ? (
+                            <>
+                              <CheckCircle2 className="w-4 h-4 flex-shrink-0" />
+                              Usunięto
+                            </>
+                          ) : (
+                            <>
+                              <Trash2 className="w-4 h-4" />
+                              Usuń
+                            </>
+                          )}
                         </button>
                       )}
                     </div>
