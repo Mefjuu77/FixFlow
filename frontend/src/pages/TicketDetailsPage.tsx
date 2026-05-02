@@ -38,7 +38,8 @@ import {
   FileClock,
   Trash2,
   MoreHorizontal,
-  Link2
+  Link2,
+  Loader2
 } from 'lucide-react';
 import { getCategoryIcon } from '../utils/ticketConstants';
 
@@ -91,6 +92,11 @@ const TicketDetailsPage: React.FC = () => {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [isDeletingTicket, setIsDeletingTicket] = useState(false);
   const [showToast, setShowToast] = useState(false);
+  
+  const [isAcceptingResolution, setIsAcceptingResolution] = useState(false);
+  const [resolutionAccepted, setResolutionAccepted] = useState(false);
+  const [isRejectingResolution, setIsRejectingResolution] = useState(false);
+  const [resolutionRejected, setResolutionRejected] = useState(false);
 
   const priorityDropdownRef = useRef<HTMLDivElement>(null);
   const categoryDropdownRef = useRef<HTMLDivElement>(null);
@@ -417,33 +423,71 @@ const TicketDetailsPage: React.FC = () => {
                 <div className="flex items-center gap-3">
                   <button
                     onClick={async () => {
+                      if (isAcceptingResolution || isRejectingResolution) return;
+                      setIsAcceptingResolution(true);
                       try {
                         await ticketService.updateTicket(ticket.id, { status: 'ZAMKNIETE' as any });
-                        fetchTicket();
-                        fetchLogs();
+                        setIsAcceptingResolution(false);
+                        setResolutionAccepted(true);
+                        setTimeout(() => {
+                          fetchTicket();
+                          fetchLogs();
+                          setResolutionAccepted(false);
+                        }, 1500);
                       } catch (err) {
                         console.error('Błąd akceptacji rozwiązania:', err);
+                        setIsAcceptingResolution(false);
                       }
                     }}
-                    className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-sm font-semibold rounded-lg transition-colors flex items-center gap-1.5"
+                    disabled={isAcceptingResolution || isRejectingResolution || resolutionAccepted || resolutionRejected}
+                    className={`px-4 py-2 text-sm font-semibold rounded-lg transition-colors flex items-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed ${
+                      resolutionAccepted
+                        ? 'bg-green-700 text-white shadow-sm pointer-events-none'
+                        : 'bg-green-600 hover:bg-green-700 text-white shadow-sm'
+                    }`}
                   >
-                    <Check className="w-4 h-4" />
-                    Akceptuję rozwiązanie
+                    {isAcceptingResolution ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : resolutionAccepted ? (
+                      <Check className="w-4 h-4" />
+                    ) : (
+                      <Check className="w-4 h-4" />
+                    )}
+                    {isAcceptingResolution ? 'Przetwarzanie...' : resolutionAccepted ? 'Zaakceptowano!' : 'Akceptuję rozwiązanie'}
                   </button>
                   <button
                     onClick={async () => {
+                      if (isAcceptingResolution || isRejectingResolution) return;
+                      setIsRejectingResolution(true);
                       try {
                         await ticketService.updateTicket(ticket.id, { status: 'W_TOKU' as any });
-                        fetchTicket();
-                        fetchLogs();
+                        setIsRejectingResolution(false);
+                        setResolutionRejected(true);
+                        setTimeout(() => {
+                          fetchTicket();
+                          fetchLogs();
+                          setResolutionRejected(false);
+                        }, 1500);
                       } catch (err) {
                         console.error('Błąd ponownego otwarcia zgłoszenia:', err);
+                        setIsRejectingResolution(false);
                       }
                     }}
-                    className="px-4 py-2 bg-white dark:bg-gray-800 hover:bg-red-50 dark:hover:bg-red-900/20 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-800/50 text-sm font-semibold rounded-lg transition-colors flex items-center gap-1.5"
+                    disabled={isAcceptingResolution || isRejectingResolution || resolutionAccepted || resolutionRejected}
+                    className={`px-4 py-2 text-sm font-semibold rounded-lg transition-colors flex items-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed ${
+                      resolutionRejected
+                        ? 'bg-red-500 text-white shadow-sm border-transparent pointer-events-none'
+                        : 'bg-white dark:bg-gray-800 hover:bg-red-50 dark:hover:bg-red-900/20 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-800/50 shadow-sm'
+                    }`}
                   >
-                    <X className="w-4 h-4" />
-                    To nie rozwiązuje problemu
+                    {isRejectingResolution ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : resolutionRejected ? (
+                      <Check className="w-4 h-4" />
+                    ) : (
+                      <X className="w-4 h-4" />
+                    )}
+                    {isRejectingResolution ? 'Przetwarzanie...' : resolutionRejected ? 'Sukces!' : 'To nie rozwiązuje problemu'}
                   </button>
                 </div>
               </div>

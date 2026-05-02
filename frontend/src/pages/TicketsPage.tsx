@@ -364,6 +364,16 @@ const TicketsPage: React.FC = () => {
     ZAMKNIETE: tickets.filter(t => t.status === 'ZAMKNIETE').length,
   };
 
+  const getTicketPlural = (count: number) => {
+    if (count === 1) return 'wybrane zgłoszenie';
+    const lastDigit = count % 10;
+    const lastTwoDigits = count % 100;
+    if (lastDigit >= 2 && lastDigit <= 4 && (lastTwoDigits < 10 || lastTwoDigits >= 20)) {
+      return 'wybrane zgłoszenia';
+    }
+    return 'wybranych zgłoszeń';
+  };
+
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
       {/* Header */}
@@ -735,7 +745,7 @@ const TicketsPage: React.FC = () => {
             </div>
             <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100 mb-1">Usunąć zgłoszenia?</h3>
             <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">
-              Czy na pewno chcesz usunąć <span className="font-semibold text-gray-700 dark:text-gray-300">{selectedTicketIds.length}</span> wybranych zgłoszeń?
+              Czy na pewno chcesz usunąć <span className="font-semibold text-gray-700 dark:text-gray-300">{selectedTicketIds.length}</span> {getTicketPlural(selectedTicketIds.length)}?
               <br />Tej operacji nie można cofnąć.
             </p>
             <div className="flex gap-3 justify-center">
