@@ -667,8 +667,8 @@ const DashboardPage: React.FC = () => {
                     return {
                       type: 'PURPLE', icon: Paperclip, tab: 'Zgłoszenia',
                       text: isMultiple
-                        ? (<span>Dodano {log.new_value} do <strong>#{ticketId}</strong></span>)
-                        : (<span>Dodano załącznik do <strong>#{ticketId}</strong>{log.new_value ? `: ${log.new_value}` : ''}</span>),
+                        ? (<span>{userName} dodał(a) {log.new_value} do <strong>#{ticketId}</strong></span>)
+                        : (<span>{userName} dodał(a) załącznik do <strong>#{ticketId}</strong>{log.new_value ? `: ${log.new_value}` : ''}</span>),
                       unread: false,
                     };
                   }
@@ -693,18 +693,20 @@ const DashboardPage: React.FC = () => {
                 }
               };
 
-              // Filtruj: ukryj ATTACHMENT_ADDED jeśli tuż po CREATED dla tego samego ticketu
-              const createdTicketIds = new Set(
+              // Filtruj: ukryj ATTACHMENT_ADDED jeśli tuż po CREATED lub COMMENT_ADDED dla tego samego ticketu
+              const parentEvents = new Set(
                 activityLogs
-                  .filter(l => l.action === 'CREATED')
+                  .filter(l => ['CREATED', 'COMMENT_ADDED'].includes(l.action))
                   .map(l => l.ticket)
               );
 
               const filteredLogs = activityLogs.filter(log => {
-                if (log.action === 'ATTACHMENT_ADDED' && createdTicketIds.has(log.ticket)) {
-                  const createdLog = activityLogs.find(l => l.action === 'CREATED' && l.ticket === log.ticket);
-                  if (createdLog) {
-                    const diff = Math.abs(dayjs(log.created_at).diff(dayjs(createdLog.created_at), 'second'));
+                if (log.action === 'ATTACHMENT_ADDED' && parentEvents.has(log.ticket)) {
+                  const parentLog = activityLogs.find(
+                    l => ['CREATED', 'COMMENT_ADDED'].includes(l.action) && l.ticket === log.ticket
+                  );
+                  if (parentLog) {
+                    const diff = Math.abs(dayjs(log.created_at).diff(dayjs(parentLog.created_at), 'second'));
                     if (diff < 60) return false;
                   }
                 }
@@ -729,7 +731,7 @@ const DashboardPage: React.FC = () => {
               const filteredActivities = activityTab === 'Wszystkie' ? activities : activities.filter(a => a.tab === activityTab);
 
               return (
-                <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-3xl shadow-sm flex flex-col h-[500px]">
+                <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-3xl shadow-sm flex flex-col h-[580px]">
                   <div className="p-5 border-b border-gray-100 dark:border-gray-700/50">
                     <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-4">
                       Ostatnia aktywność
@@ -778,9 +780,6 @@ const DashboardPage: React.FC = () => {
 
                           return (
                             <Link to={activity.link} key={activity.id} className="flex items-center px-4 py-3 rounded-2xl hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors group relative">
-                              {activity.unread && (
-                                <div className="absolute top-4 right-4 w-2 h-2 rounded-full bg-red-500 shadow-sm shadow-red-500/40"></div>
-                              )}
                               <div className={`w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 mr-4 transition-transform group-hover:scale-105 ${bgClass} ${colorClass}`}>
                                 <Icon className="w-4 h-4" />
                               </div>

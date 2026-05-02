@@ -287,7 +287,7 @@ class GlobalActivityLogView(generics.ListAPIView):
         user = self.request.user
         if user.role == 'EMPLOYEE':
             return TicketLog.objects.none()
-        return TicketLog.objects.all().order_by('-created_at')[:15]
+        return TicketLog.objects.all().order_by('-created_at')[:20]
 
 
 class WorkLogListCreateView(generics.ListCreateAPIView):
