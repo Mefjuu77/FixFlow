@@ -171,7 +171,7 @@ const DashboardPage: React.FC = () => {
   if (isTechnician) {
     const myId = authContext?.user?.id;
     const myTickets = tickets.filter(t => t.technician === myId);
-    
+
     const myOpen = myTickets.filter(t => !['ROZWIAZANE', 'ZAMKNIETE'].includes(t.status));
     const myInProgress = myTickets.filter(t => t.status === 'W_TOKU');
     const unassignedTickets = tickets.filter(t => t.technician === null && !['ROZWIAZANE', 'ZAMKNIETE'].includes(t.status));
@@ -353,11 +353,10 @@ const DashboardPage: React.FC = () => {
                   <Link to={`/tickets/${ticket.id}`} key={ticket.id} className="block p-4 border border-gray-100 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-800/50 rounded-2xl hover:border-blue-200 dark:hover:border-blue-500/50 hover:bg-white dark:hover:bg-gray-800 hover:shadow-md transition-all group">
                     <p className="text-sm font-bold text-gray-800 dark:text-gray-100 truncate mb-2 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">#{ticket.id} {ticket.title}</p>
                     <div className="flex items-center justify-between">
-                      <span className={`px-2.5 py-1 text-[10px] font-extrabold uppercase tracking-wider rounded-lg ${
-                        ticket.status === 'NOWE' ? 'bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-400' :
-                        ticket.status === 'W_TOKU' ? 'bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-400' :
-                        ticket.status === 'ROZWIAZANE' ? 'bg-green-100 text-green-700 dark:bg-green-500/20 dark:text-green-400' :
-                        'bg-teal-100 text-teal-800 dark:bg-teal-900/30 dark:text-teal-400'
+                      <span className={`px-2.5 py-1 text-[10px] font-extrabold uppercase tracking-wider rounded-lg ${ticket.status === 'NOWE' ? 'bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-400' :
+                          ticket.status === 'W_TOKU' ? 'bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-400' :
+                            ticket.status === 'ROZWIAZANE' ? 'bg-green-100 text-green-700 dark:bg-green-500/20 dark:text-green-400' :
+                              'bg-teal-100 text-teal-800 dark:bg-teal-900/30 dark:text-teal-400'
                         }`}>
                         {ticket.status === 'W_TOKU' ? 'W TOKU' :
                           ticket.status === 'NOWE' ? 'NOWE' :
@@ -556,8 +555,8 @@ const DashboardPage: React.FC = () => {
                     <p className="text-sm font-bold text-gray-800 dark:text-gray-100 truncate mb-2 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">#{ticket.id} {ticket.title}</p>
                     <div className="flex items-center justify-between">
                       <span className={`px-2.5 py-1 text-[10px] font-extrabold uppercase tracking-wider rounded-lg ${ticket.status === 'NOWE' ? 'bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-400' :
-                          ticket.status === 'W_TOKU' ? 'bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-400' :
-                            'bg-green-100 text-green-700 dark:bg-green-500/20 dark:text-green-400'
+                        ticket.status === 'W_TOKU' ? 'bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-400' :
+                          'bg-green-100 text-green-700 dark:bg-green-500/20 dark:text-green-400'
                         }`}>
                         {ticket.status === 'W_TOKU' ? 'W TOKU' :
                           ticket.status === 'NOWE' ? 'NOWE' :

@@ -377,7 +377,7 @@ const StatisticsPage: React.FC = () => {
               </Link>
             </div>
             <p className="text-xs text-gray-500 mb-5">Otwarte zgłoszenia według kategorii.</p>
-            <div className="space-y-3">
+            <div className="space-y-1 overflow-y-auto pr-1" style={{ maxHeight: '260px', scrollbarWidth: 'auto', scrollbarColor: '#cbd5e1 transparent' }}>
               {categorySorted.length === 0 ? (
                 <p className="text-sm text-gray-500 italic text-center py-6">Brak otwartych zgłoszeń.</p>
               ) : (
@@ -403,7 +403,7 @@ const StatisticsPage: React.FC = () => {
               <h3 className="font-bold text-gray-900">Obciążenie zespołu</h3>
             </div>
             <p className="text-xs text-gray-500 mb-5">Rozkład aktywnych zgłoszeń w zespole.</p>
-            <div className="space-y-3">
+            <div className="space-y-1 overflow-y-auto pr-1" style={{ maxHeight: '260px', scrollbarWidth: 'thin', scrollbarColor: '#cbd5e1 transparent' }}>
               {unassignedCount > 0 && (
                 <HorizontalBar label="Nie przypisano" value={unassignedCount} max={maxWorkload} color="#f87171" total={activeTickets.length} icon={<UserMinus className="w-4 h-4 text-gray-400" />} onClick={() => navigate('/tickets?assignment=unassigned')} />
               )}
@@ -516,7 +516,7 @@ const StatisticsPage: React.FC = () => {
               </Link>
             </div>
             <p className="text-xs text-gray-500 mb-5">Otwarte zgłoszenia według kategorii.</p>
-            <div className="space-y-3">
+            <div className="space-y-1 overflow-y-auto pr-1" style={{ maxHeight: '260px', scrollbarWidth: 'thin', scrollbarColor: '#cbd5e1 transparent' }}>
               {categorySorted.length === 0 ? (
                 <p className="text-sm text-gray-500 italic text-center py-6">Brak otwartych zgłoszeń.</p>
               ) : (
@@ -550,7 +550,7 @@ const StatisticsPage: React.FC = () => {
               </div>
             </div>
 
-            <div className="space-y-3">
+            <div className="space-y-1 overflow-y-auto pr-1" style={{ maxHeight: '260px', scrollbarWidth: 'thin', scrollbarColor: '#cbd5e1 transparent' }}>
               {unassignedCount > 0 && (
                 <HorizontalBar label="Nie przypisano" value={unassignedCount} max={maxWorkload} color="#f87171" total={activeTickets.length} icon={<UserMinus className="w-4 h-4 text-gray-400" />} onClick={() => navigate('/tickets?assignment=unassigned')} />
               )}

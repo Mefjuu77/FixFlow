@@ -5,7 +5,7 @@ import { ThemeContext } from '../context/ThemeContext';
 import api from '../api/axiosConfig';
 import { Ticket } from '../types';
 import {
-  Search, LayoutDashboard, Ticket as TicketIcon, BarChart3, FileBarChart,
+  Search, LayoutGrid, BarChart2, FileText,
   Users, Settings, PlusCircle, LogOut, Moon, Sun, ArrowRight,
   Hash, KeyRound, Bell, Palette, UserPlus,
   ClipboardList,
@@ -87,19 +87,19 @@ const CommandPalette: React.FC = () => {
 
     // Nawigacja
     items.push(
-      { id: 'nav-dashboard', label: 'Panel główny', icon: <LayoutDashboard className="w-4 h-4" />, action: () => runAndClose(() => navigate('/dashboard')), group: 'Nawigacja', keywords: 'dashboard strona główna home' },
-      { id: 'nav-tickets', label: 'Zgłoszenia', icon: <TicketIcon className="w-4 h-4" />, action: () => runAndClose(() => navigate('/tickets')), group: 'Nawigacja', keywords: 'tickety lista' },
+      { id: 'nav-dashboard', label: 'Panel główny', icon: <LayoutGrid className="w-4 h-4" />, action: () => runAndClose(() => navigate('/dashboard')), group: 'Nawigacja', keywords: 'dashboard strona główna home' },
+      { id: 'nav-tickets', label: 'Zgłoszenia', icon: <ClipboardList className="w-4 h-4" />, action: () => runAndClose(() => navigate('/tickets')), group: 'Nawigacja', keywords: 'tickety lista' },
     );
 
     if (isAdmin || isTechnician) {
       items.push(
-        { id: 'nav-stats', label: 'Statystyki', icon: <BarChart3 className="w-4 h-4" />, action: () => runAndClose(() => navigate('/statistics')), group: 'Nawigacja', keywords: 'wykresy analityka dane' },
+        { id: 'nav-stats', label: 'Statystyki', icon: <BarChart2 className="w-4 h-4" />, action: () => runAndClose(() => navigate('/statistics')), group: 'Nawigacja', keywords: 'wykresy analityka dane' },
       );
     }
 
     if (isAdmin) {
       items.push(
-        { id: 'nav-reports', label: 'Raporty', icon: <FileBarChart className="w-4 h-4" />, action: () => runAndClose(() => navigate('/reports')), group: 'Nawigacja', keywords: 'eksport pdf csv' },
+        { id: 'nav-reports', label: 'Raporty', icon: <FileText className="w-4 h-4" />, action: () => runAndClose(() => navigate('/reports')), group: 'Nawigacja', keywords: 'eksport pdf csv' },
         { id: 'nav-users', label: 'Użytkownicy', icon: <Users className="w-4 h-4" />, action: () => runAndClose(() => navigate('/users')), group: 'Nawigacja', keywords: 'pracownicy technicy administracja' },
       );
     }

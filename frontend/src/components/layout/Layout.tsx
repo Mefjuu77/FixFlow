@@ -3,7 +3,19 @@ import { Link, useLocation } from 'react-router-dom';
 import { AuthContext } from '../../context/AuthContext';
 import { ThemeContext } from '../../context/ThemeContext';
 import CommandPalette from '../CommandPalette';
-import { LayoutDashboard, Ticket, Users, Settings, LogOut, Wrench, BarChart3, FileBarChart, Moon, Sun, Search } from 'lucide-react';
+import {
+  LayoutGrid,
+  ClipboardList,
+  Users,
+  Settings,
+  LogOut,
+  Wrench,
+  BarChart2,
+  FileText,
+  Moon,
+  Sun,
+  Search
+} from 'lucide-react';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -18,20 +30,37 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
     authContext?.logout();
   };
 
-  const navItems = [
-    { name: 'Panel główny', path: '/dashboard', icon: <LayoutDashboard size={20} /> },
-    { name: 'Zgłoszenia', path: '/tickets', icon: <Ticket size={20} /> },
-    // Statystyki dostępne dla Technika i Admina
-    ...(authContext?.user?.role === 'ADMIN' || authContext?.user?.role === 'TECHNICIAN' ? [
-      { name: 'Statystyki', path: '/statistics', icon: <BarChart3 size={20} /> }
-    ] : []),
-    // Dostęp do panelu użytkowników tylko dla Admina
-    ...(authContext?.user?.role === 'ADMIN' ? [
-      { name: 'Raporty', path: '/reports', icon: <FileBarChart size={20} /> },
-      { name: 'Użytkownicy', path: '/users', icon: <Users size={20} /> },
-    ] : []),
-    // Ustawienia dostępne dla wszystkich
-    { name: 'Ustawienia', path: '/settings', icon: <Settings size={20} /> }
+  const role = authContext?.user?.role;
+  const isAdmin = role === 'ADMIN';
+  const isTechOrAdmin = role === 'ADMIN' || role === 'TECHNICIAN';
+
+  const navSections = [
+    {
+      label: 'GŁÓWNE',
+      items: [
+        { name: 'Panel główny', path: '/dashboard', icon: <LayoutGrid size={20} strokeWidth={1.75} /> },
+        { name: 'Zgłoszenia', path: '/tickets', icon: <ClipboardList size={20} strokeWidth={1.75} /> },
+      ],
+    },
+    ...(isTechOrAdmin ? [{
+      label: 'ANALITYKA',
+      items: [
+        { name: 'Statystyki', path: '/statistics', icon: <BarChart2 size={20} strokeWidth={1.75} /> },
+        ...(isAdmin ? [{ name: 'Raporty', path: '/reports', icon: <FileText size={20} strokeWidth={1.75} /> }] : []),
+      ],
+    }] : []),
+    ...(isAdmin ? [{
+      label: 'ZARZĄDZANIE',
+      items: [
+        { name: 'Użytkownicy', path: '/users', icon: <Users size={20} strokeWidth={1.75} /> },
+      ],
+    }] : []),
+    {
+      label: 'KONFIGURACJA',
+      items: [
+        { name: 'Ustawienia', path: '/settings', icon: <Settings size={20} strokeWidth={1.75} /> },
+      ],
+    },
   ];
 
   const roleNames: Record<string, string> = {
@@ -65,23 +94,35 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
         </div>
 
         <div className="flex-1 overflow-y-auto">
-          <nav className="px-4 mt-6 space-y-2">
-            {navItems.map((item) => {
-              const isActive = location.pathname.includes(item.path);
-              return (
-                <Link
-                  key={item.name}
-                  to={item.path}
-                  className={`flex items-center px-4 py-3 transition-colors rounded-lg ${isActive
-                      ? 'bg-blue-600 text-white'
-                      : 'text-gray-400 hover:bg-gray-800 hover:text-white'
-                    }`}
-                >
-                  {item.icon}
-                  <span className="ml-3 font-medium">{item.name}</span>
-                </Link>
-              );
-            })}
+          <nav className="px-4 mt-5 space-y-6">
+            {navSections.map((section) => (
+              <div key={section.label}>
+                <p className="px-2 mb-2 text-[10.5px] font-semibold tracking-widest text-gray-500 uppercase select-none">
+                  {section.label}
+                </p>
+                <div className="space-y-0.5">
+                  {section.items.map((item) => {
+                    const isActive = location.pathname === item.path || location.pathname.startsWith(item.path + '/');
+                    return (
+                      <Link
+                        key={item.name}
+                        to={item.path}
+                        className={`flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-150 font-medium text-sm ${
+                          isActive
+                            ? 'bg-blue-600 text-white shadow-sm shadow-blue-900/30'
+                            : 'text-gray-400 hover:bg-gray-800 hover:text-gray-100'
+                        }`}
+                      >
+                        <span className={isActive ? 'text-white' : 'text-gray-500'}>
+                          {item.icon}
+                        </span>
+                        {item.name}
+                      </Link>
+                    );
+                  })}
+                </div>
+              </div>
+            ))}
           </nav>
         </div>
 
