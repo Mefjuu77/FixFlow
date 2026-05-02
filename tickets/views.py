@@ -238,6 +238,14 @@ class CommentListCreateView(generics.ListCreateAPIView):
         comment = serializer.save(author=user, ticket=ticket)
         send_comment_notification(comment)
 
+        # Log: dodanie komentarza
+        TicketLog.objects.create(
+            ticket=ticket,
+            user=user,
+            action=TicketLog.ActionType.COMMENT_ADDED,
+            new_value=comment_type,
+        )
+
         # Auto-reopen: klient dodaje komentarz do ticketu ROZWIAZANE → wróć do W_TOKU
         if user.role == 'EMPLOYEE' and ticket.status == Ticket.Status.RESOLVED:
             old_status = ticket.status
@@ -270,6 +278,18 @@ class TicketLogListView(generics.ListAPIView):
         return TicketLog.objects.filter(ticket_id=ticket_id)
 
 
+class GlobalActivityLogView(generics.ListAPIView):
+    """Globalny feed aktywności — najnowsze logi ze wszystkich zgłoszeń."""
+    serializer_class = TicketLogSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        user = self.request.user
+        if user.role == 'EMPLOYEE':
+            return TicketLog.objects.none()
+        return TicketLog.objects.all().order_by('-created_at')[:15]
+
+
 class WorkLogListCreateView(generics.ListCreateAPIView):
     """Lista i tworzenie wpisów rejestru prac dla danego zgłoszenia."""
     serializer_class = WorkLogSerializer
@@ -299,6 +319,14 @@ class WorkLogListCreateView(generics.ListCreateAPIView):
             raise ValidationError('Zgłoszenie nie istnieje.')
 
         serializer.save(author=user, ticket=ticket)
+
+        # Log: rejestracja czasu pracy
+        TicketLog.objects.create(
+            ticket=ticket,
+            user=user,
+            action=TicketLog.ActionType.WORK_LOGGED,
+            new_value=f'{serializer.instance.duration_minutes} min',
+        )
 
 
 class TicketAttachmentView(APIView):
@@ -337,13 +365,18 @@ class TicketAttachmentView(APIView):
                 uploaded_by=request.user,
             )
             created.append(attachment)
-            # Log: dodanie załącznika
-            TicketLog.objects.create(
-                ticket=ticket,
-                user=request.user,
-                action=TicketLog.ActionType.ATTACHMENT_ADDED,
-                new_value=f.name,
-            )
+
+        # Log: dodanie załączników (jeden zbiorczy wpis)
+        if len(created) == 1:
+            log_value = created[0].filename
+        else:
+            log_value = f'{len(created)} załączników'
+        TicketLog.objects.create(
+            ticket=ticket,
+            user=request.user,
+            action=TicketLog.ActionType.ATTACHMENT_ADDED,
+            new_value=log_value,
+        )
 
         serializer = AttachmentSerializer(created, many=True, context={'request': request})
         return Response(serializer.data, status=status.HTTP_201_CREATED)
@@ -414,13 +447,18 @@ class CommentAttachmentView(APIView):
                 uploaded_by=request.user,
             )
             created.append(attachment)
-            # Log: dodanie załącznika (z komentarza)
-            TicketLog.objects.create(
-                ticket=ticket,
-                user=request.user,
-                action=TicketLog.ActionType.ATTACHMENT_ADDED,
-                new_value=f.name,
-            )
+
+        # Log: dodanie załączników (jeden zbiorczy wpis)
+        if len(created) == 1:
+            log_value = created[0].filename
+        else:
+            log_value = f'{len(created)} załączników'
+        TicketLog.objects.create(
+            ticket=ticket,
+            user=request.user,
+            action=TicketLog.ActionType.ATTACHMENT_ADDED,
+            new_value=log_value,
+        )
 
         serializer = AttachmentSerializer(created, many=True, context={'request': request})
         return Response(serializer.data, status=status.HTTP_201_CREATED)

@@ -129,6 +129,8 @@ class TicketLog(models.Model):
         ATTACHMENT_DELETED = 'ATTACHMENT_DELETED', 'Usunięto załącznik'
         AUTO_CLOSED = 'AUTO_CLOSED', 'Automatycznie zamknięto'
         REOPENED = 'REOPENED', 'Ponownie otwarto'
+        COMMENT_ADDED = 'COMMENT_ADDED', 'Dodano komentarz'
+        WORK_LOGGED = 'WORK_LOGGED', 'Zarejestrowano czas pracy'
 
     ticket = models.ForeignKey(Ticket, on_delete=models.CASCADE, related_name='logs')
     user = models.ForeignKey(

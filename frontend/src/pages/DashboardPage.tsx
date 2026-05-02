@@ -11,7 +11,12 @@ import {
   ArrowUpRight,
   Ticket as TicketIcon,
   Users,
-  AlertTriangle
+  AlertTriangle,
+  MessageSquare,
+  FileText,
+  Paperclip,
+  Timer,
+  Activity
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import dayjs from 'dayjs';
@@ -30,11 +35,28 @@ const formatTicketCount = (count: number) => {
 // Plugin do obsługi czasu relatywnego (np. "2 godziny temu")
 dayjs.extend(relativeTime);
 
+const formatActivityTime = (dateStr: string) => {
+  const date = dayjs(dateStr);
+  const now = dayjs();
+  const diffMinutes = now.diff(date, 'minute');
+  const diffHours = now.diff(date, 'hour');
+
+  if (diffMinutes < 60) return `${Math.max(1, diffMinutes)} min temu`;
+  if (diffHours < 24 && date.isSame(now, 'day')) return `${diffHours} godz. temu`;
+  if (date.isSame(now.subtract(1, 'day'), 'day')) return `wczoraj`;
+  
+  const plMonths = ['sty', 'lut', 'mar', 'kwi', 'maj', 'cze', 'lip', 'sie', 'wrz', 'paź', 'lis', 'gru'];
+  const plDays = ['Nie', 'Pon', 'Wto', 'Śro', 'Czw', 'Pią', 'Sob'];
+  return `${plDays[date.day()]}, ${date.date()} ${plMonths[date.month()]}`;
+};
+
 const DashboardPage: React.FC = () => {
   useTitle('Panel główny');
   const authContext = useContext(AuthContext);
   const [tickets, setTickets] = useState<TicketType[]>([]);
   const [loading, setLoading] = useState(true);
+  const [activityTab, setActivityTab] = useState('Wszystkie');
+  const [activityLogs, setActivityLogs] = useState<any[]>([]);
 
   useEffect(() => {
     const fetchStats = async () => {
@@ -50,16 +72,28 @@ const DashboardPage: React.FC = () => {
     fetchStats();
   }, []);
 
+  // Pobieranie globalnych logów aktywności
+  useEffect(() => {
+    const fetchActivity = async () => {
+      try {
+        const response = await api.get('tickets/activity-feed/');
+        setActivityLogs(response.data);
+      } catch (error) {
+        console.error('Błąd pobierania aktywności:', error);
+      }
+    };
+    if (authContext?.user?.role === 'ADMIN' || authContext?.user?.role === 'TECHNICIAN') {
+      fetchActivity();
+    }
+  }, [authContext?.user?.role]);
+
   const role = authContext?.user?.role;
   const isEmployee = role === 'EMPLOYEE';
   const isAdmin = role === 'ADMIN';
   const isTechnician = role === 'TECHNICIAN';
 
 
-  // Pobranie 5 najnowszych aktywności (posortowane po dacie utworzenia/aktualizacji)
-  const recentActivity = [...tickets]
-    .sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime())
-    .slice(0, 5);
+
 
   if (loading) {
     return (
@@ -472,9 +506,9 @@ const DashboardPage: React.FC = () => {
           ))}
         </div>
 
-        <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 xl:grid-cols-5 gap-8">
           {/* Wymagające uwagi (Wąskie gardła) */}
-          <div className="xl:col-span-2 space-y-4">
+          <div className="xl:col-span-3 space-y-4">
             <div className="flex items-center justify-between">
               <h2 className="text-xl font-bold text-gray-900 flex items-center">
                 <AlertTriangle className="w-5 h-5 text-amber-500 mr-2" /> Globalne Wąskie Gardła
@@ -536,41 +570,237 @@ const DashboardPage: React.FC = () => {
           </div>
 
           {/* Aktywność globalna */}
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <h2 className="text-xl font-bold text-gray-900 flex items-center">
-                <Clock className="w-5 h-5 text-blue-600 mr-2" /> Globalna Aktywność
-              </h2>
-              <Link to="/tickets" className="text-xs font-bold text-blue-600 hover:text-blue-800 transition-colors flex items-center">
-                Wszystko <ArrowUpRight className="w-3 h-3 ml-1" />
-              </Link>
-            </div>
+          <div className="xl:col-span-2 space-y-4">
+            {(() => {
+              const activityTabs = ['Wszystkie', 'Zgłoszenia', 'Zespół'];
+              
+              // Mapowanie akcji z API na konfigurację wizualną
+              const getActivityConfig = (log: any) => {
+                const action = log.action;
+                const ticketId = log.ticket;
+                const user = log.user_details;
+                const userName = user ? `${user.first_name} ${user.last_name}` : 'System';
+                
+                switch (action) {
+                  case 'CREATED':
+                    return {
+                      type: 'GREEN', icon: Plus, tab: 'Zgłoszenia',
+                      text: (<span>{userName} utworzył(a) zgłoszenie <strong>#{ticketId}</strong></span>),
+                      unread: true,
+                    };
+                  case 'STATUS_CHANGED':
+                    if (['ROZWIAZANE', 'ZAMKNIETE'].includes(log.new_value)) {
+                      return {
+                        type: 'GREEN', icon: CheckCircle2, tab: 'Zgłoszenia',
+                        text: (<span>{userName}: zgłoszenie <strong>#{ticketId}</strong> {log.new_value === 'ZAMKNIETE' ? 'zamknięte' : 'rozwiązane'}</span>),
+                        unread: false,
+                      };
+                    }
+                    return {
+                      type: 'ORANGE', icon: Activity, tab: 'Zgłoszenia',
+                      text: (<span>{userName} zmienił(a) status <strong>#{ticketId}</strong></span>),
+                      unread: true,
+                    };
+                  case 'PRIORITY_CHANGED':
+                    return {
+                      type: 'ORANGE', icon: AlertTriangle, tab: 'Zgłoszenia',
+                      text: (<span>Zmiana priorytetu <strong>#{ticketId}</strong>{log.new_value ? ` → ${log.new_value}` : ''}</span>),
+                      unread: true,
+                    };
+                  case 'CATEGORY_CHANGED':
+                    return {
+                      type: 'ORANGE', icon: ClipboardList, tab: 'Zgłoszenia',
+                      text: (<span>Zmiana kategorii w <strong>#{ticketId}</strong>{log.new_value ? ` → ${log.new_value}` : ''}</span>),
+                      unread: false,
+                    };
+                  case 'DESCRIPTION_CHANGED':
+                    return {
+                      type: 'ORANGE', icon: FileText, tab: 'Zgłoszenia',
+                      text: (<span>Edycja opisu <strong>#{ticketId}</strong></span>),
+                      unread: false,
+                    };
+                  case 'TITLE_CHANGED':
+                    return {
+                      type: 'ORANGE', icon: FileText, tab: 'Zgłoszenia',
+                      text: (<span>Edycja tytułu <strong>#{ticketId}</strong></span>),
+                      unread: false,
+                    };
+                  case 'REOPENED':
+                    return {
+                      type: 'ORANGE', icon: Activity, tab: 'Zgłoszenia',
+                      text: (<span>Ponownie otwarto <strong>#{ticketId}</strong></span>),
+                      unread: true,
+                    };
+                  case 'AUTO_CLOSED':
+                    return {
+                      type: 'GREEN', icon: CheckCircle2, tab: 'Zgłoszenia',
+                      text: (<span>Auto-zamknięcie <strong>#{ticketId}</strong></span>),
+                      unread: false,
+                    };
+                  case 'TECHNICIAN_ASSIGNED':
+                    return {
+                      type: 'BLUE', icon: Users, tab: 'Zespół',
+                      text: (<span>Przypisano technika do <strong>#{ticketId}</strong>{log.new_value ? `: ${log.new_value}` : ''}</span>),
+                      unread: false,
+                    };
+                  case 'TECHNICIAN_REMOVED':
+                    return {
+                      type: 'BLUE', icon: Users, tab: 'Zespół',
+                      text: (<span>Usunięto technika z <strong>#{ticketId}</strong></span>),
+                      unread: false,
+                    };
+                  case 'CREATOR_CHANGED':
+                    return {
+                      type: 'BLUE', icon: Users, tab: 'Zgłoszenia',
+                      text: (<span>Zmiana zgłaszającego w <strong>#{ticketId}</strong></span>),
+                      unread: false,
+                    };
+                  case 'COMMENT_ADDED':
+                    return {
+                      type: 'BLUE', icon: MessageSquare,
+                      tab: log.new_value === 'INTERNAL' ? 'Zespół' : 'Zgłoszenia',
+                      text: (<span>{userName} skomentował(a) <strong>#{ticketId}</strong></span>),
+                      unread: true,
+                    };
+                  case 'ATTACHMENT_ADDED': {
+                    const isMultiple = log.new_value && /^\d+ załączników$/.test(log.new_value);
+                    return {
+                      type: 'PURPLE', icon: Paperclip, tab: 'Zgłoszenia',
+                      text: isMultiple
+                        ? (<span>Dodano {log.new_value} do <strong>#{ticketId}</strong></span>)
+                        : (<span>Dodano załącznik do <strong>#{ticketId}</strong>{log.new_value ? `: ${log.new_value}` : ''}</span>),
+                      unread: false,
+                    };
+                  }
+                  case 'ATTACHMENT_DELETED':
+                    return {
+                      type: 'PURPLE', icon: Paperclip, tab: 'Zgłoszenia',
+                      text: (<span>Usunięto załącznik z <strong>#{ticketId}</strong></span>),
+                      unread: false,
+                    };
+                  case 'WORK_LOGGED':
+                    return {
+                      type: 'PURPLE', icon: Timer, tab: 'Zespół',
+                      text: (<span>Zarejestrowano czas pracy w <strong>#{ticketId}</strong>{log.new_value ? ` (${log.new_value})` : ''}</span>),
+                      unread: false,
+                    };
+                  default:
+                    return {
+                      type: 'ORANGE', icon: ClipboardList, tab: 'Zgłoszenia',
+                      text: (<span>Aktualizacja <strong>#{ticketId}</strong></span>),
+                      unread: false,
+                    };
+                }
+              };
 
-            <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-3xl shadow-sm p-6 space-y-3">
-              {recentActivity.length === 0 ? (
-                <p className="text-sm text-gray-500 dark:text-gray-400 italic text-center py-8">Brak aktywności.</p>
-              ) : (
-                recentActivity.map(ticket => (
-                  <Link to={`/tickets/${ticket.id}`} key={ticket.id} className="block p-4 border border-gray-100 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-800/50 rounded-2xl hover:border-blue-200 dark:hover:border-blue-500/50 hover:bg-white dark:hover:bg-gray-800 hover:shadow-md transition-all group">
-                    <p className="text-sm font-bold text-gray-800 dark:text-gray-100 truncate mb-2 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">#{ticket.id} {ticket.title}</p>
-                    <div className="flex items-center justify-between">
-                      <span className={`px-2.5 py-1 text-[10px] font-extrabold uppercase tracking-wider rounded-lg ${ticket.status === 'NOWE' ? 'bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-400' :
-                        ticket.status === 'W_TOKU' ? 'bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-400' :
-                          'bg-green-100 text-green-700 dark:bg-green-500/20 dark:text-green-400'
-                        }`}>
-                        {ticket.status === 'W_TOKU' ? 'W TOKU' :
-                          ticket.status === 'NOWE' ? 'NOWE' :
-                            ticket.status === 'ROZWIAZANE' ? 'ROZWIĄZANE' : 'ZAMKNIĘTE'}
-                      </span>
-                      <p className="text-[11px] font-medium text-gray-400 flex items-center">
-                        <Clock className="w-3 h-3 mr-1 opacity-70" />
-                        {dayjs(ticket.updated_at).fromNow()}
-                      </p>
+              // Filtruj: ukryj ATTACHMENT_ADDED jeśli tuż po CREATED dla tego samego ticketu
+              const createdTicketIds = new Set(
+                activityLogs
+                  .filter(l => l.action === 'CREATED')
+                  .map(l => l.ticket)
+              );
+
+              const filteredLogs = activityLogs.filter(log => {
+                if (log.action === 'ATTACHMENT_ADDED' && createdTicketIds.has(log.ticket)) {
+                  const createdLog = activityLogs.find(l => l.action === 'CREATED' && l.ticket === log.ticket);
+                  if (createdLog) {
+                    const diff = Math.abs(dayjs(log.created_at).diff(dayjs(createdLog.created_at), 'second'));
+                    if (diff < 60) return false;
+                  }
+                }
+                return true;
+              });
+
+              const activities = filteredLogs.map(log => {
+                const config = getActivityConfig(log);
+                return {
+                  id: log.id,
+                  ticketId: log.ticket,
+                  type: config.type,
+                  icon: config.icon,
+                  text: config.text,
+                  time: log.created_at,
+                  unread: config.unread,
+                  tab: config.tab,
+                  link: `/tickets/${log.ticket}`,
+                };
+              });
+
+              const filteredActivities = activityTab === 'Wszystkie' ? activities : activities.filter(a => a.tab === activityTab);
+
+              return (
+                <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-3xl shadow-sm flex flex-col h-[500px]">
+                  <div className="p-5 border-b border-gray-100 dark:border-gray-700/50">
+                    <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-4">
+                      Ostatnia aktywność
+                    </h2>
+                    <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600">
+                      {activityTabs.map(tab => (
+                        <button
+                          key={tab}
+                          onClick={() => setActivityTab(tab)}
+                          className={`px-3 py-1.5 text-xs font-semibold rounded-lg whitespace-nowrap transition-colors ${
+                            activityTab === tab 
+                            ? 'bg-gray-900 text-white dark:bg-blue-500/20 dark:text-blue-400' 
+                            : 'text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700/50 dark:hover:text-gray-200'
+                          }`}
+                        >
+                          {tab}
+                        </button>
+                      ))}
                     </div>
-                  </Link>
-                ))
-              )}
-            </div>
+                  </div>
+
+                  <div className="flex-1 overflow-y-auto p-2 scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600">
+                    {filteredActivities.length === 0 ? (
+                      <p className="text-sm text-gray-500 dark:text-gray-400 italic text-center py-8">Brak aktywności.</p>
+                    ) : (
+                      <div className="space-y-1">
+                        {filteredActivities.map((activity) => {
+                          const Icon = activity.icon;
+                          
+                          let colorClass = 'text-gray-600 dark:text-gray-400';
+                          let bgClass = 'bg-gray-100 dark:bg-gray-800';
+                          
+                          if (activity.type === 'GREEN') {
+                            colorClass = 'text-green-600 dark:text-green-400';
+                            bgClass = 'bg-green-100 dark:bg-green-500/20';
+                          } else if (activity.type === 'ORANGE') {
+                            colorClass = 'text-amber-600 dark:text-amber-400';
+                            bgClass = 'bg-amber-100 dark:bg-amber-500/20';
+                          } else if (activity.type === 'BLUE') {
+                            colorClass = 'text-blue-600 dark:text-blue-400';
+                            bgClass = 'bg-blue-100 dark:bg-blue-500/20';
+                          } else if (activity.type === 'PURPLE') {
+                            colorClass = 'text-violet-600 dark:text-violet-400';
+                            bgClass = 'bg-violet-100 dark:bg-violet-500/20';
+                          }
+
+                          return (
+                            <Link to={activity.link} key={activity.id} className="flex items-center px-4 py-3 rounded-2xl hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors group relative">
+                              {activity.unread && (
+                                <div className="absolute top-4 right-4 w-2 h-2 rounded-full bg-red-500 shadow-sm shadow-red-500/40"></div>
+                              )}
+                              <div className={`w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 mr-4 transition-transform group-hover:scale-105 ${bgClass} ${colorClass}`}>
+                                <Icon className="w-4 h-4" />
+                              </div>
+                              <div className="flex-1 min-w-0 pr-4">
+                                <p className="text-[13px] text-gray-800 dark:text-gray-200 truncate group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                                  {activity.text}
+                                </p>
+                              </div>
+                              <div className="text-[11px] font-medium text-gray-500 dark:text-gray-400 ml-2 flex-shrink-0">
+                                {formatActivityTime(activity.time)}
+                              </div>
+                            </Link>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              );
+            })()}
           </div>
         </div>
       </div>
