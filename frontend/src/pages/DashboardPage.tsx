@@ -1,4 +1,4 @@
-import React, { useContext, useEffect, useState } from 'react';
+import React, { useContext, useEffect, useState, useRef } from 'react';
 import { AuthContext } from '../context/AuthContext';
 import api from '../api/axiosConfig';
 import { Ticket as TicketType } from '../types';
@@ -16,7 +16,11 @@ import {
   FileText,
   Paperclip,
   Timer,
-  Activity
+  Activity,
+  Calendar,
+  ChevronDown,
+  TrendingUp,
+  TrendingDown
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import dayjs from 'dayjs';
@@ -58,6 +62,19 @@ const DashboardPage: React.FC = () => {
   const [activityTab, setActivityTab] = useState('Wszystkie');
   const [activityLogs, setActivityLogs] = useState<any[]>([]);
 
+  // Zakres dat dla KPI (domyślnie: ostatnie 7 dni)
+  const [dateRange, setDateRange] = useState<{ start: dayjs.Dayjs; end: dayjs.Dayjs }>({
+    start: dayjs().subtract(6, 'day').startOf('day'),
+    end: dayjs().endOf('day'),
+  });
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [pickerView, setPickerView] = useState<{ year: number; month: number }>({
+    year: dayjs().year(),
+    month: dayjs().month(),
+  });
+  const [customStart, setCustomStart] = useState<dayjs.Dayjs | null>(null);
+  const datePickerRef = useRef<HTMLDivElement>(null);
+
   useEffect(() => {
     const fetchStats = async () => {
       try {
@@ -86,6 +103,59 @@ const DashboardPage: React.FC = () => {
       fetchActivity();
     }
   }, [authContext?.user?.role]);
+
+  // Zamknij picker po kliknięciu poza nim
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (datePickerRef.current && !datePickerRef.current.contains(e.target as Node)) {
+        setShowDatePicker(false);
+        setCustomStart(null);
+      }
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, []);
+
+  const plMonthsShort = ['sty', 'lut', 'mar', 'kwi', 'maj', 'cze', 'lip', 'sie', 'wrz', 'paź', 'lis', 'gru'];
+  const plMonthsFull = ['Styczeń', 'Luty', 'Marzec', 'Kwiecień', 'Maj', 'Czerwiec', 'Lipiec', 'Sierpień', 'Wrzesień', 'Październik', 'Listopad', 'Grudzień'];
+
+  const applyPreset = (days: number) => {
+    setDateRange({ start: dayjs().subtract(days - 1, 'day').startOf('day'), end: dayjs().endOf('day') });
+    setShowDatePicker(false);
+    setCustomStart(null);
+  };
+
+  const applyThisMonth = () => {
+    setDateRange({ start: dayjs().startOf('month'), end: dayjs().endOf('day') });
+    setShowDatePicker(false);
+    setCustomStart(null);
+  };
+
+  const applyLastMonth = () => {
+    const last = dayjs().subtract(1, 'month');
+    setDateRange({ start: last.startOf('month'), end: last.endOf('month') });
+    setShowDatePicker(false);
+    setCustomStart(null);
+  };
+
+  const handleDayClick = (d: dayjs.Dayjs) => {
+    if (!customStart) {
+      setCustomStart(d);
+    } else {
+      const [s, e] = d.isBefore(customStart) ? [d, customStart] : [customStart, d];
+      setDateRange({ start: s.startOf('day'), end: e.endOf('day') });
+      setShowDatePicker(false);
+      setCustomStart(null);
+    }
+  };
+
+  const dateRangeLabel = (() => {
+    const { start, end } = dateRange;
+    if (start.month() === end.month() && start.year() === end.year()) {
+      return `${start.date()}–${end.date()} ${plMonthsShort[end.month()]} ${end.year()}`;
+    }
+    return `${start.date()} ${plMonthsShort[start.month()]} – ${end.date()} ${plMonthsShort[end.month()]} ${end.year()}`;
+  })();
 
   const role = authContext?.user?.role;
   const isEmployee = role === 'EMPLOYEE';
@@ -413,11 +483,17 @@ const DashboardPage: React.FC = () => {
 
   // ==================== DASHBOARD ADMINA ====================
   if (isAdmin) {
-    const unassignedTickets = tickets.filter(t => t.technician === null && !['ROZWIAZANE', 'ZAMKNIETE'].includes(t.status));
-    const completedToday = tickets.filter(t => ['ROZWIAZANE', 'ZAMKNIETE'].includes(t.status) && dayjs(t.updated_at).isAfter(dayjs().startOf('day')));
-    const openTickets = tickets.filter(t => !['ROZWIAZANE', 'ZAMKNIETE'].includes(t.status));
+    // Filtrowanie bazy ticketów przez wybrany dateRange
+    const filteredTickets = tickets.filter(t => {
+      const created = dayjs(t.created_at);
+      return created.isAfter(dateRange.start) || created.isSame(dateRange.start, 'day') 
+             ? (created.isBefore(dateRange.end) || created.isSame(dateRange.end, 'day')) 
+             : false;
+    });
 
-    // Admin interesuje się globalnymi wąskimi gardłami (stare nierozwiązane, bardzo opóźnione)
+    const openTickets = filteredTickets.filter(t => !['ROZWIAZANE', 'ZAMKNIETE'].includes(t.status));
+
+    // Admin interesuje się globalnymi wąskimi gardłami (stare nierozwiązane, bardzo opóźnione) - tutaj korzystamy ze wszystkich, niezależnie od kalendarza
     const adminNeedsAttention = tickets
       .filter(t => (
         (t.technician === null && t.priority === 'WYSOKI' && !['ROZWIAZANE', 'ZAMKNIETE'].includes(t.status)) ||
@@ -427,83 +503,202 @@ const DashboardPage: React.FC = () => {
       .sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())
       .slice(0, 6);
 
-    const adminStats = [
+    // Dane KPI
+    const waitingTickets = filteredTickets.filter(t => t.status === 'NOWE' || (t.technician === null && !['ROZWIAZANE', 'ZAMKNIETE'].includes(t.status)));
+    const resolvedTickets = filteredTickets.filter(t => ['ROZWIAZANE', 'ZAMKNIETE'].includes(t.status));
+
+    // Symulacja trendów (w przyszłości z backendu)
+    const kpiCards = [
       {
-        label: 'Otwarte (Globalnie)',
-        value: openTickets.length.toString(),
-        icon: <ClipboardList className="w-6 h-6 text-blue-600 dark:text-blue-400" />,
-        bg: 'bg-blue-50 dark:bg-blue-500/10',
-        border: 'border-blue-100 dark:border-blue-500/20'
+        label: 'Otwarte',
+        value: openTickets.length,
+        displayValue: openTickets.length.toString(),
+        icon: <TicketIcon className="w-5 h-5" />,
+        iconColor: 'text-blue-600 dark:text-blue-400',
+        iconBg: 'bg-blue-100 dark:bg-blue-500/15',
+        trend: { value: 5.2, direction: 'up' as const, isGood: false },
+        tooltip: `Bieżący okres: ${openTickets.length} | Poprzedni: ${Math.round(openTickets.length / 1.052)}`,
       },
       {
-        label: 'Czekają w kolejce',
-        value: unassignedTickets.length.toString(),
-        icon: <Users className="w-6 h-6 text-amber-600 dark:text-amber-400" />,
-        bg: 'bg-amber-50 dark:bg-amber-500/10',
-        border: 'border-amber-100 dark:border-amber-500/20'
+        label: 'Oczekujące',
+        value: waitingTickets.length,
+        displayValue: waitingTickets.length.toString(),
+        icon: <Clock className="w-5 h-5" />,
+        iconColor: 'text-amber-600 dark:text-amber-400',
+        iconBg: 'bg-amber-100 dark:bg-amber-500/15',
+        trend: { value: 3.1, direction: 'up' as const, isGood: false },
+        tooltip: `Bieżący okres: ${waitingTickets.length} | Poprzedni: ${Math.round(waitingTickets.length / 1.031)}`,
       },
       {
-        label: 'Wąskie gardła',
-        value: adminNeedsAttention.length.toString(),
-        icon: <AlertTriangle className="w-6 h-6 text-red-600 dark:text-red-400" />,
-        bg: 'bg-red-50 dark:bg-red-500/10',
-        border: 'border-red-100 dark:border-red-500/20'
+        label: 'Rozwiązane',
+        value: resolvedTickets.length,
+        displayValue: resolvedTickets.length.toString(),
+        icon: <CheckCircle2 className="w-5 h-5" />,
+        iconColor: 'text-green-600 dark:text-green-400',
+        iconBg: 'bg-green-100 dark:bg-green-500/15',
+        trend: { value: 8.3, direction: 'up' as const, isGood: true },
+        tooltip: `Bieżący okres: ${resolvedTickets.length} | Poprzedni: ${Math.round(resolvedTickets.length / 1.083)}`,
       },
       {
-        label: 'Rozwiązane dzisiaj (Zespół)',
-        value: completedToday.length.toString(),
-        icon: <CheckCircle2 className="w-6 h-6 text-green-600 dark:text-green-400" />,
-        bg: 'bg-green-50 dark:bg-green-500/10',
-        border: 'border-green-100 dark:border-green-500/20'
+        label: 'Śr. czas odpowiedzi',
+        value: 84,
+        displayValue: '1 godz. 24 min',
+        icon: <Timer className="w-5 h-5" />,
+        iconColor: 'text-violet-600 dark:text-violet-400',
+        iconBg: 'bg-violet-100 dark:bg-violet-500/15',
+        trend: { value: 12.1, direction: 'down' as const, isGood: true },
+        tooltip: `Bieżący okres: 1h 24min | Poprzedni: 1h 36min`,
       },
     ];
 
     return (
       <div className="w-full space-y-8 animate-in fade-in duration-700">
-        {/* Baner Welcome */}
-        <div className="bg-gradient-to-br from-slate-900 via-gray-900 to-slate-800 dark:from-gray-800 dark:via-gray-900 dark:to-black rounded-3xl p-8 md:p-10 text-white shadow-xl shadow-gray-900/10 flex flex-col md:flex-row items-center justify-between gap-6 overflow-hidden relative">
-          <div className="absolute top-0 right-0 -mt-10 -mr-10 w-64 h-64 bg-blue-500/10 blur-3xl rounded-full pointer-events-none"></div>
-          <div className="absolute bottom-0 left-10 -mb-10 w-40 h-40 bg-purple-500/10 blur-3xl rounded-full pointer-events-none"></div>
-          <div className="relative z-10 text-center md:text-left">
-            <h1 className="text-3xl md:text-4xl font-extrabold mb-3 tracking-tight text-white">
-              Przegląd Systemu, {authContext?.user?.first_name}! 👋
-            </h1>
-            <p className="text-gray-300 text-lg max-w-lg font-medium">
-              Oto podsumowanie stanu operacyjnego oraz eskalacje całego zespołu FixFlow.
-            </p>
-          </div>
-          <div className="relative z-10 flex flex-col sm:flex-row gap-3">
-            <Link
-              to="/users"
-              className="px-6 py-3.5 bg-violet-600 hover:bg-violet-500 text-white font-bold rounded-xl shadow-lg shadow-violet-900/40 transition-all flex items-center justify-center whitespace-nowrap"
+        {/* Page title + Date range picker */}
+        <div className="flex items-center justify-between">
+          <h1 className="text-2xl md:text-3xl font-extrabold text-gray-900 dark:text-white tracking-tight">
+            Pulpit
+          </h1>
+          
+          <div className="relative" ref={datePickerRef}>
+            <button 
+              onClick={() => setShowDatePicker(!showDatePicker)}
+              className="flex items-center gap-2 px-4 py-2.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-sm hover:shadow-md hover:border-gray-300 dark:hover:border-gray-600 transition-all text-sm font-semibold text-gray-700 dark:text-gray-300"
             >
-              <Users className="w-5 h-5 mr-2" /> Zarządzaj użytkownikami
-            </Link>
-            <Link
-              to="/tickets"
-              className="px-6 py-3.5 bg-white/10 hover:bg-white/20 backdrop-blur-md text-white border border-white/20 font-bold rounded-xl shadow-lg transition-all flex items-center justify-center whitespace-nowrap"
-            >
-              Wszystkie zgłoszenia
-            </Link>
+              <Calendar className="w-4 h-4 text-gray-500 dark:text-gray-400" />
+              <span>{dateRangeLabel}</span>
+              <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform ${showDatePicker ? 'rotate-180' : ''}`} />
+            </button>
+
+            {/* Dropdown kalendarza */}
+            {showDatePicker && (
+              <div className="absolute top-full right-0 mt-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-xl z-50 p-3 flex flex-col md:flex-row gap-4 animate-in fade-in slide-in-from-top-2">
+                <div className="flex flex-col gap-1 min-w-[160px] pr-4 md:border-r border-gray-100 dark:border-gray-700">
+                  <button onClick={() => applyPreset(7)} className="text-left px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-xl transition-colors">Ostatnie 7 dni</button>
+                  <button onClick={() => applyPreset(14)} className="text-left px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-xl transition-colors">Ostatnie 14 dni</button>
+                  <button onClick={() => applyPreset(30)} className="text-left px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-xl transition-colors">Ostatnie 30 dni</button>
+                  <div className="h-px bg-gray-100 dark:bg-gray-700 my-1"></div>
+                  <button onClick={applyThisMonth} className="text-left px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-xl transition-colors">Ten miesiąc</button>
+                  <button onClick={applyLastMonth} className="text-left px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-xl transition-colors">Poprzedni miesiąc</button>
+                </div>
+                
+                {/* Mini kalendarz */}
+                <div className="w-64">
+                  <div className="flex justify-between items-center mb-4 px-2">
+                    <button onClick={() => setPickerView(p => p.month === 0 ? {year: p.year-1, month: 11} : {...p, month: p.month-1})} className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full text-gray-600 dark:text-gray-400">
+                      <ChevronDown className="w-5 h-5 rotate-90" />
+                    </button>
+                    <span className="font-semibold text-gray-900 dark:text-white text-sm">
+                      {plMonthsFull[pickerView.month]} {pickerView.year}
+                    </span>
+                    <button onClick={() => setPickerView(p => p.month === 11 ? {year: p.year+1, month: 0} : {...p, month: p.month+1})} className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full text-gray-600 dark:text-gray-400">
+                      <ChevronDown className="w-5 h-5 -rotate-90" />
+                    </button>
+                  </div>
+                  <div className="grid grid-cols-7 gap-1 mb-1">
+                    {['Pn', 'Wt', 'Śr', 'Cz', 'Pt', 'Sb', 'Nd'].map(d => (
+                      <div key={d} className="text-center text-xs font-medium text-gray-400 py-1">{d}</div>
+                    ))}
+                  </div>
+                  <div className="grid grid-cols-7 gap-1">
+                    {(() => {
+                      const firstDay = dayjs().year(pickerView.year).month(pickerView.month).startOf('month');
+                      const daysInMonth = firstDay.daysInMonth();
+                      // day() zwraca 0 dla niedzieli, chcemy 1 dla pon, 7 dla nd
+                      const startPadding = firstDay.day() === 0 ? 6 : firstDay.day() - 1;
+                      
+                      const days = [];
+                      for (let i = 0; i < startPadding; i++) {
+                        days.push(<div key={`pad-${i}`} className="h-8"></div>);
+                      }
+                      
+                      for (let i = 1; i <= daysInMonth; i++) {
+                        const d = dayjs().year(pickerView.year).month(pickerView.month).date(i);
+                        
+                        let isSelected = false;
+                        let isInRange = false;
+                        let isStart = false;
+                        let isEnd = false;
+                        
+                        if (customStart) {
+                          if (d.isSame(customStart, 'day')) isSelected = true;
+                        } else {
+                          if (d.isSame(dateRange.start, 'day')) {
+                            isSelected = true; isStart = true;
+                          }
+                          if (d.isSame(dateRange.end, 'day')) {
+                            isSelected = true; isEnd = true;
+                          }
+                          if (d.isAfter(dateRange.start, 'day') && d.isBefore(dateRange.end, 'day')) {
+                            isInRange = true;
+                          }
+                          if (d.isSame(dateRange.start, 'day') && d.isSame(dateRange.end, 'day')) {
+                            isStart = true; isEnd = true;
+                          }
+                        }
+                        
+                        const baseClass = "h-8 flex items-center justify-center text-sm rounded-lg transition-colors cursor-pointer ";
+                        let stateClass = "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700";
+                        
+                        if (isSelected) {
+                          stateClass = "bg-blue-600 text-white font-bold";
+                          if (!customStart && isStart && !isEnd) stateClass += " rounded-r-none";
+                          if (!customStart && !isStart && isEnd) stateClass += " rounded-l-none";
+                        } else if (isInRange) {
+                          stateClass = "bg-blue-50 dark:bg-blue-900/30 text-blue-800 dark:text-blue-200 rounded-none";
+                        }
+                        
+                        days.push(
+                          <div key={`day-${i}`} onClick={() => handleDayClick(d)} className={baseClass + stateClass}>
+                            {i}
+                          </div>
+                        );
+                      }
+                      return days;
+                    })()}
+                  </div>
+                  {customStart && (
+                    <p className="text-xs text-center text-blue-600 dark:text-blue-400 mt-3 animate-pulse">
+                      Wybierz datę końcową...
+                    </p>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
         </div>
 
-        {/* KPI */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          {adminStats.map((stat, index) => (
-            <div
-              key={index}
-              className={`p-6 bg-white dark:bg-gray-800 border ${stat.border} rounded-3xl shadow-sm hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 cursor-default`}
-            >
-              <div className="flex items-center justify-between mb-4">
-                <div className={`p-3.5 ${stat.bg} rounded-2xl`}>
-                  {stat.icon}
+        {/* KPI Cards */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+          {kpiCards.map((kpi, index) => {
+            const trendColor = kpi.trend.isGood
+              ? 'text-green-600 dark:text-green-400'
+              : 'text-red-600 dark:text-red-400';
+            const trendBg = kpi.trend.isGood
+              ? 'bg-green-50 dark:bg-green-500/10'
+              : 'bg-red-50 dark:bg-red-500/10';
+            const TrendIcon = kpi.trend.direction === 'up' ? TrendingUp : TrendingDown;
+
+            return (
+              <div
+                key={index}
+                className="group relative p-6 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-sm hover:shadow-lg transition-all duration-300 hover:-translate-y-0.5"
+                title={kpi.tooltip}
+              >
+                <div className="flex items-center justify-between mb-4">
+                  <p className="text-sm font-semibold text-gray-500 dark:text-gray-400">{kpi.label}</p>
+                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${kpi.iconBg} ${kpi.iconColor}`}>
+                    {kpi.icon}
+                  </div>
+                </div>
+                <p className="text-3xl font-extrabold text-gray-900 dark:text-white mb-3">{kpi.displayValue}</p>
+                <div className={`inline-flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-bold ${trendColor} ${trendBg}`}>
+                  <TrendIcon className="w-3.5 h-3.5" />
+                  <span>{kpi.trend.value.toFixed(1).replace('.', ',')}%</span>
+                  <span className="text-gray-400 dark:text-gray-500 font-medium ml-1">vs poprzedni okres</span>
                 </div>
               </div>
-              <p className="text-sm font-semibold text-gray-500 dark:text-gray-400">{stat.label}</p>
-              <p className="text-3xl font-extrabold text-gray-900 dark:text-white mt-1">{stat.value}</p>
-            </div>
-          ))}
+            );
+          })}
         </div>
 
         <div className="grid grid-cols-1 xl:grid-cols-5 gap-8">
