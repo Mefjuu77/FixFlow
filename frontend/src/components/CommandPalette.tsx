@@ -11,7 +11,7 @@ import {
   ClipboardList,
 } from 'lucide-react';
 
-const GROUP_ORDER = ['Nawigacja', 'Ustawienia', 'Akcje', 'Zgłoszenia'];
+const GROUP_ORDER = ['Akcje', 'Nawigacja', 'Ustawienia', 'Zgłoszenia'];
 
 interface CommandItem {
   id: string;

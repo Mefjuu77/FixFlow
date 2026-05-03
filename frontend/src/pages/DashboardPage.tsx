@@ -510,22 +510,22 @@ const DashboardPage: React.FC = () => {
     // Symulacja trendów (w przyszłości z backendu)
     const kpiCards = [
       {
-        label: 'Otwarte',
+        label: 'Otwarte zgłoszenia',
         value: openTickets.length,
         displayValue: openTickets.length.toString(),
         icon: <TicketIcon className="w-5 h-5" />,
         iconColor: 'text-blue-600 dark:text-blue-400',
-        iconBg: 'bg-blue-100 dark:bg-blue-500/15',
+        iconBg: 'bg-blue-50 dark:bg-blue-500/10 ring-1 ring-blue-100/50 dark:ring-blue-500/20',
         trend: { value: 5.2, direction: 'up' as const, isGood: false },
         tooltip: `Bieżący okres: ${openTickets.length} | Poprzedni: ${Math.round(openTickets.length / 1.052)}`,
       },
       {
-        label: 'Oczekujące',
+        label: 'Nieprzypisane',
         value: waitingTickets.length,
         displayValue: waitingTickets.length.toString(),
-        icon: <Clock className="w-5 h-5" />,
+        icon: <Users className="w-5 h-5" />,
         iconColor: 'text-amber-600 dark:text-amber-400',
-        iconBg: 'bg-amber-100 dark:bg-amber-500/15',
+        iconBg: 'bg-amber-50 dark:bg-amber-500/10 ring-1 ring-amber-100/50 dark:ring-amber-500/20',
         trend: { value: 3.1, direction: 'up' as const, isGood: false },
         tooltip: `Bieżący okres: ${waitingTickets.length} | Poprzedni: ${Math.round(waitingTickets.length / 1.031)}`,
       },
@@ -534,30 +534,35 @@ const DashboardPage: React.FC = () => {
         value: resolvedTickets.length,
         displayValue: resolvedTickets.length.toString(),
         icon: <CheckCircle2 className="w-5 h-5" />,
-        iconColor: 'text-green-600 dark:text-green-400',
-        iconBg: 'bg-green-100 dark:bg-green-500/15',
+        iconColor: 'text-emerald-600 dark:text-emerald-400',
+        iconBg: 'bg-emerald-50 dark:bg-emerald-500/10 ring-1 ring-emerald-100/50 dark:ring-emerald-500/20',
         trend: { value: 8.3, direction: 'up' as const, isGood: true },
         tooltip: `Bieżący okres: ${resolvedTickets.length} | Poprzedni: ${Math.round(resolvedTickets.length / 1.083)}`,
       },
       {
         label: 'Śr. czas odpowiedzi',
         value: 84,
-        displayValue: '1 godz. 24 min',
+        displayValue: '1h 24m',
         icon: <Timer className="w-5 h-5" />,
         iconColor: 'text-violet-600 dark:text-violet-400',
-        iconBg: 'bg-violet-100 dark:bg-violet-500/15',
+        iconBg: 'bg-violet-50 dark:bg-violet-500/10 ring-1 ring-violet-100/50 dark:ring-violet-500/20',
         trend: { value: 12.1, direction: 'down' as const, isGood: true },
-        tooltip: `Bieżący okres: 1h 24min | Poprzedni: 1h 36min`,
+        tooltip: `Bieżący okres: 1h 24m | Poprzedni: 1h 36m`,
       },
     ];
 
     return (
-      <div className="w-full space-y-8 animate-in fade-in duration-700">
+      <div className="w-full space-y-6 md:space-y-8 animate-in fade-in duration-700">
         {/* Page title + Date range picker */}
-        <div className="flex items-center justify-between">
-          <h1 className="text-2xl md:text-3xl font-extrabold text-gray-900 dark:text-white tracking-tight">
-            Pulpit
-          </h1>
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div>
+            <h1 className="text-2xl md:text-3xl font-extrabold text-gray-900 dark:text-white tracking-tight">
+              Pulpit
+            </h1>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1 font-medium">
+              Przegląd obciążenia zespołu i wydajności
+            </p>
+          </div>
           
           <div className="relative" ref={datePickerRef}>
             <button 
@@ -668,33 +673,43 @@ const DashboardPage: React.FC = () => {
         </div>
 
         {/* KPI Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-5">
           {kpiCards.map((kpi, index) => {
             const trendColor = kpi.trend.isGood
-              ? 'text-green-600 dark:text-green-400'
-              : 'text-red-600 dark:text-red-400';
+              ? 'text-emerald-600 dark:text-emerald-400'
+              : 'text-rose-600 dark:text-rose-400';
             const trendBg = kpi.trend.isGood
-              ? 'bg-green-50 dark:bg-green-500/10'
-              : 'bg-red-50 dark:bg-red-500/10';
+              ? 'bg-emerald-50 dark:bg-emerald-500/10'
+              : 'bg-rose-50 dark:bg-rose-500/10';
             const TrendIcon = kpi.trend.direction === 'up' ? TrendingUp : TrendingDown;
 
             return (
               <div
                 key={index}
-                className="group relative p-6 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-sm hover:shadow-lg transition-all duration-300 hover:-translate-y-0.5"
+                className="group relative flex flex-col p-5 bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700/60 rounded-2xl shadow-sm hover:shadow-md transition-all duration-300"
                 title={kpi.tooltip}
               >
-                <div className="flex items-center justify-between mb-4">
-                  <p className="text-sm font-semibold text-gray-500 dark:text-gray-400">{kpi.label}</p>
-                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${kpi.iconBg} ${kpi.iconColor}`}>
+                <div className="flex items-start justify-between mb-3">
+                  <p className="text-sm font-medium text-gray-500 dark:text-gray-400 leading-tight">
+                    {kpi.label}
+                  </p>
+                  <div className={`w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 ${kpi.iconBg} ${kpi.iconColor}`}>
                     {kpi.icon}
                   </div>
                 </div>
-                <p className="text-3xl font-extrabold text-gray-900 dark:text-white mb-3">{kpi.displayValue}</p>
-                <div className={`inline-flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-bold ${trendColor} ${trendBg}`}>
-                  <TrendIcon className="w-3.5 h-3.5" />
-                  <span>{kpi.trend.value.toFixed(1).replace('.', ',')}%</span>
-                  <span className="text-gray-400 dark:text-gray-500 font-medium ml-1">vs poprzedni okres</span>
+                
+                <p className="text-3xl font-bold text-gray-900 dark:text-white tracking-tight mb-4">
+                  {kpi.displayValue}
+                </p>
+                
+                <div className="flex items-center mt-auto">
+                  <div className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-xs font-semibold ${trendColor} ${trendBg}`}>
+                    <TrendIcon className="w-3.5 h-3.5" />
+                    <span>{kpi.trend.value.toFixed(1).replace('.', ',')}%</span>
+                  </div>
+                  <span className="text-xs font-medium text-gray-400 dark:text-gray-500 ml-2">
+                    vs poprz. okres
+                  </span>
                 </div>
               </div>
             );

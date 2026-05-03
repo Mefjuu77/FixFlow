@@ -55,17 +55,22 @@ const CustomDropdown: React.FC<CustomDropdownProps> = ({ value, onChange, option
 
       {isOpen && (
         <div className={`absolute z-[60] left-0 ${placement === 'top' ? 'bottom-full mb-1 origin-bottom' : 'top-full mt-1 origin-top'} bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg dark:shadow-[0_10px_40px_rgba(0,0,0,0.5)] py-1 max-h-60 overflow-y-auto w-full min-w-max animate-in fade-in zoom-in-95 duration-100`}>
-          {options.map((opt) => (
-            <button
-              type="button"
-              key={opt.value}
-              onClick={() => { onChange(opt.value); setIsOpen(false); }}
-              className={`flex items-center w-full gap-2 px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-blue-50 dark:hover:bg-gray-700 transition-colors ${value === opt.value ? 'bg-blue-50/50 dark:bg-blue-900/30 font-semibold text-blue-700 dark:text-blue-400' : ''}`}
-            >
-              {opt.icon}
-              <span className="truncate font-medium">{opt.label}</span>
-            </button>
-          ))}
+          {options.map((opt, index) => {
+            if (opt.value === 'separator') {
+              return <div key={`sep-${index}`} className="h-px bg-gray-200 dark:bg-gray-700/80 my-1.5 mx-2" />;
+            }
+            return (
+              <button
+                type="button"
+                key={opt.value}
+                onClick={() => { onChange(opt.value); setIsOpen(false); }}
+                className={`flex items-center w-full gap-2 px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-blue-50 dark:hover:bg-gray-700 transition-colors ${value === opt.value ? 'bg-blue-50/50 dark:bg-blue-900/30 font-semibold text-blue-700 dark:text-blue-400' : ''}`}
+              >
+                {opt.icon}
+                <span className="truncate font-medium">{opt.label}</span>
+              </button>
+            );
+          })}
         </div>
       )}
     </div>
@@ -482,6 +487,7 @@ const TicketsPage: React.FC = () => {
                   </div>
                 )
               },
+              { value: 'separator', label: '' },
               ...technicians.filter(t => t.id !== authContext?.user?.id).map((tech) => ({
                 value: String(tech.id),
                 label: `${tech.first_name} ${tech.last_name}`,
@@ -537,6 +543,7 @@ const TicketsPage: React.FC = () => {
                               label: 'Przypisz do mnie',
                               icon: <UserAvatar avatar={authContext?.user?.avatar} name={authContext?.user?.first_name || 'U'} size="xs" className="mr-1" />
                             },
+                            { value: 'separator', label: '' },
                             ...technicians.filter(t => t.id !== authContext?.user?.id).map((tech) => ({
                               value: String(tech.id),
                               label: `${tech.first_name} ${tech.last_name}`,

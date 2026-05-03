@@ -92,7 +92,7 @@ const TicketDetailsPage: React.FC = () => {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [isDeletingTicket, setIsDeletingTicket] = useState(false);
   const [showToast, setShowToast] = useState(false);
-  
+
   const [isAcceptingResolution, setIsAcceptingResolution] = useState(false);
   const [resolutionAccepted, setResolutionAccepted] = useState(false);
   const [isRejectingResolution, setIsRejectingResolution] = useState(false);
@@ -392,7 +392,7 @@ const TicketDetailsPage: React.FC = () => {
 
   return (
     <div className="w-full pb-12 animate-in fade-in duration-500">
-      <button onClick={() => navigate(-1)} className="flex items-center text-gray-500 hover:text-blue-600 font-semibold mb-6 transition-colors">
+      <button onClick={() => navigate(-1)} className="flex items-center text-gray-500 dark:text-gray-400 hover:!text-blue-600 dark:hover:!text-blue-400 font-semibold mb-6 transition-colors">
         <ArrowLeft className="w-4 h-4 mr-1" /> Wstecz
       </button>
 
@@ -440,11 +440,10 @@ const TicketDetailsPage: React.FC = () => {
                       }
                     }}
                     disabled={isAcceptingResolution || isRejectingResolution || resolutionAccepted || resolutionRejected}
-                    className={`px-4 py-2 text-sm font-semibold rounded-lg transition-colors flex items-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed ${
-                      resolutionAccepted
+                    className={`px-4 py-2 text-sm font-semibold rounded-lg transition-colors flex items-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed ${resolutionAccepted
                         ? 'bg-green-700 text-white shadow-sm pointer-events-none'
                         : 'bg-green-600 hover:bg-green-700 text-white shadow-sm'
-                    }`}
+                      }`}
                   >
                     {isAcceptingResolution ? (
                       <Loader2 className="w-4 h-4 animate-spin" />
@@ -474,11 +473,10 @@ const TicketDetailsPage: React.FC = () => {
                       }
                     }}
                     disabled={isAcceptingResolution || isRejectingResolution || resolutionAccepted || resolutionRejected}
-                    className={`px-4 py-2 text-sm font-semibold rounded-lg transition-colors flex items-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed ${
-                      resolutionRejected
+                    className={`px-4 py-2 text-sm font-semibold rounded-lg transition-colors flex items-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed ${resolutionRejected
                         ? 'bg-red-500 text-white shadow-sm border-transparent pointer-events-none'
                         : 'bg-white dark:bg-gray-800 hover:bg-red-50 dark:hover:bg-red-900/20 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-800/50 shadow-sm'
-                    }`}
+                      }`}
                   >
                     {isRejectingResolution ? (
                       <Loader2 className="w-4 h-4 animate-spin" />
@@ -574,16 +572,21 @@ const TicketDetailsPage: React.FC = () => {
               </div>
             </div>
           ) : (
-            <div className="flex items-center gap-2 mb-6 group">
-              <h1 className="text-2xl font-semibold text-gray-900">{ticket.title}</h1>
+            <div
+              className={`flex items-start gap-2 mb-6 group ${isTechnicianOrAdmin ? 'cursor-text p-2.5 -my-2 rounded-xl hover:bg-blue-50/50 dark:hover:bg-gray-800/40 transition-colors border border-transparent hover:border-blue-100 dark:hover:border-gray-700' : ''}`}
+              onClick={() => {
+                if (isTechnicianOrAdmin) {
+                  setEditTitle(ticket.title);
+                  setIsEditingTitle(true);
+                }
+              }}
+              title={isTechnicianOrAdmin ? "Kliknij, aby edytować tytuł" : undefined}
+            >
+              <h1 className="text-2xl font-semibold text-gray-900 dark:text-gray-100 flex-1">{ticket.title}</h1>
               {isTechnicianOrAdmin && (
-                <button
-                  onClick={() => { setEditTitle(ticket.title); setIsEditingTitle(true); }}
-                  className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all opacity-0 group-hover:opacity-100"
-                  title="Edytuj tytuł"
-                >
+                <div className="mt-1.5 p-1 text-gray-400 group-hover:text-blue-600 rounded-lg transition-all opacity-0 group-hover:opacity-100 shrink-0">
                   <Pencil className="w-4 h-4" />
-                </button>
+                </div>
               )}
             </div>
           )}
@@ -648,30 +651,19 @@ const TicketDetailsPage: React.FC = () => {
             </div>
 
             <div className="p-4">
-              <div className="flex items-center justify-between mb-2 group">
-                <h3 className="text-sm font-semibold text-gray-800">Opis</h3>
-                {isTechnicianOrAdmin && !isEditingDescription && (
-                  <button
-                    onClick={() => { setEditDescription(ticket.description); setIsEditingDescription(true); }}
-                    className="p-1 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded transition-all opacity-0 group-hover:opacity-100"
-                    title="Edytuj opis"
-                  >
-                    <Pencil className="w-3.5 h-3.5" />
-                  </button>
-                )}
-              </div>
+              <h3 className="text-sm font-semibold text-gray-800 dark:text-gray-200 mb-2">Opis</h3>
               {isEditingDescription ? (
                 <div>
                   <textarea
                     value={editDescription}
                     onChange={(e) => setEditDescription(e.target.value)}
-                    className="w-full border border-blue-300 rounded-lg p-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 min-h-[120px] resize-none bg-white dark:bg-gray-900 dark:border-gray-600"
+                    className="w-full border border-blue-300 rounded-lg p-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 min-h-[120px] resize-none bg-white dark:bg-gray-900 dark:border-gray-600 dark:text-gray-200"
                     autoFocus
                   />
                   <div className="flex gap-2 mt-2 justify-end">
                     <button
                       onClick={() => setIsEditingDescription(false)}
-                      className="px-3 py-1.5 text-sm text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+                      className="px-3 py-1.5 text-sm text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800 rounded-lg transition-colors"
                     >
                       Anuluj
                     </button>
@@ -689,9 +681,25 @@ const TicketDetailsPage: React.FC = () => {
                   </div>
                 </div>
               ) : (
-                <p className="text-gray-700 leading-relaxed whitespace-pre-wrap text-sm">
-                  {ticket.description}
-                </p>
+                <div
+                  className={`group relative ${isTechnicianOrAdmin ? 'cursor-text p-3 -my-1 rounded-xl hover:bg-gray-50/80 dark:hover:bg-[#1a1d24] transition-colors border border-transparent hover:border-gray-200 dark:hover:border-gray-700' : ''}`}
+                  onClick={() => {
+                    if (isTechnicianOrAdmin) {
+                      setEditDescription(ticket.description);
+                      setIsEditingDescription(true);
+                    }
+                  }}
+                  title={isTechnicianOrAdmin ? "Kliknij, aby edytować opis" : undefined}
+                >
+                  <p className="text-gray-700 dark:text-gray-300 leading-relaxed whitespace-pre-wrap text-sm">
+                    {ticket.description}
+                  </p>
+                  {isTechnicianOrAdmin && (
+                    <div className="absolute top-3 right-3 text-gray-400 group-hover:text-blue-500 opacity-0 group-hover:opacity-100 transition-opacity bg-white dark:bg-gray-800 rounded p-1 shadow-sm border border-gray-200 dark:border-gray-700">
+                      <Pencil className="w-3.5 h-3.5" />
+                    </div>
+                  )}
+                </div>
               )}
 
               {ticket.attachments && ticket.attachments.length > 0 && (
@@ -1399,7 +1407,7 @@ const TicketDetailsPage: React.FC = () => {
                 </button>
 
                 {isStatusMenuOpen && (
-                  <div className="absolute left-0 z-50 w-48 mt-2 bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-600 rounded-xl shadow-xl dark:shadow-[0_10px_40px_rgba(0,0,0,0.4)] py-2 animate-in fade-in zoom-in-95 duration-100">
+                  <div className="absolute left-0 z-50 w-48 mt-2 bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-600 rounded-xl shadow-xl dark:shadow-[0_10px_40px_rgba(0,0,0,0.4)] animate-in fade-in zoom-in-95 duration-100 overflow-hidden">
                     <button
                       onClick={() => openTransitionModal('NOWE')}
                       className="w-full text-left px-4 py-2.5 hover:bg-blue-50 dark:hover:bg-gray-700/80 text-gray-700 dark:text-gray-300 hover:text-blue-700 dark:hover:text-blue-400 transition-colors text-sm font-medium"
@@ -1438,7 +1446,7 @@ const TicketDetailsPage: React.FC = () => {
                   <MoreHorizontal className="w-5 h-5" />
                 </button>
                 {isMoreMenuOpen && (
-                  <div className="absolute right-0 z-50 w-48 mt-2 bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-600 rounded-xl shadow-xl dark:shadow-[0_10px_40px_rgba(0,0,0,0.4)] py-2 animate-in fade-in zoom-in-95 duration-100 overflow-hidden">
+                  <div className="absolute right-0 z-50 w-48 mt-2 bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-600 rounded-xl shadow-xl dark:shadow-[0_10px_40px_rgba(0,0,0,0.4)] animate-in fade-in zoom-in-95 duration-100 overflow-hidden">
                     <button
                       onClick={() => {
                         setIsMoreMenuOpen(false);
@@ -1495,7 +1503,7 @@ const TicketDetailsPage: React.FC = () => {
                     {ticket.creator_details?.first_name} {ticket.creator_details?.last_name}
                   </div>
                   {isEditingCreator && isTechnicianOrAdmin && (
-                    <div className="absolute z-50 left-0 -ml-1 top-full mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-xl shadow-lg dark:shadow-[0_10px_40px_rgba(0,0,0,0.4)] py-1 w-[calc(100%+8px)] max-h-60 overflow-y-auto animate-in fade-in zoom-in-95 duration-100">
+                    <div className="absolute z-50 left-0 -ml-1 top-full mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-xl shadow-lg dark:shadow-[0_10px_40px_rgba(0,0,0,0.4)] w-[calc(100%+8px)] max-h-60 overflow-y-auto animate-in fade-in zoom-in-95 duration-100">
                       {allUsers.map(u => (
                         <button
                           key={u.id}
@@ -1541,7 +1549,7 @@ const TicketDetailsPage: React.FC = () => {
                     </span>
                   </div>
                   {isEditingPriority && isTechnicianOrAdmin && (
-                    <div className="absolute z-50 left-0 -ml-1 top-full mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-xl shadow-lg dark:shadow-[0_10px_40px_rgba(0,0,0,0.4)] py-1 w-[calc(100%+8px)] animate-in fade-in zoom-in-95 duration-100">
+                    <div className="absolute z-50 left-0 -ml-1 top-full mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-xl shadow-lg dark:shadow-[0_10px_40px_rgba(0,0,0,0.4)] w-[calc(100%+8px)] animate-in fade-in zoom-in-95 duration-100 overflow-hidden">
                       {[
                         { value: 'NISKI', label: 'Niski', icon: <ChevronsDown className="w-3.5 h-3.5 text-gray-400" />, color: 'text-gray-600' },
                         { value: 'NORMALNY', label: 'Normalny', icon: <Equal className="w-3.5 h-3.5 text-blue-500" />, color: 'text-blue-600' },
@@ -1583,7 +1591,7 @@ const TicketDetailsPage: React.FC = () => {
                     {ticket.category_name}
                   </div>
                   {isEditingCategory && isTechnicianOrAdmin && (
-                    <div className="absolute z-50 left-0 -ml-1 top-full mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-xl shadow-lg dark:shadow-[0_10px_40px_rgba(0,0,0,0.4)] py-1 w-[calc(100%+8px)] max-h-60 overflow-y-auto animate-in fade-in zoom-in-95 duration-100">
+                    <div className="absolute z-50 left-0 -ml-1 top-full mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-xl shadow-lg dark:shadow-[0_10px_40px_rgba(0,0,0,0.4)] w-[calc(100%+8px)] max-h-60 overflow-y-auto animate-in fade-in zoom-in-95 duration-100">
                       {categories.map(cat => (
                         <button
                           key={cat.id}
@@ -1635,7 +1643,7 @@ const TicketDetailsPage: React.FC = () => {
                     )}
                   </div>
                   {isEditingTechnician && isTechnicianOrAdmin && (
-                    <div className="absolute z-50 left-0 -ml-1 top-full mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-xl shadow-lg dark:shadow-[0_10px_40px_rgba(0,0,0,0.4)] py-1 w-[calc(100%+8px)] max-h-60 overflow-y-auto animate-in fade-in zoom-in-95 duration-100">
+                    <div className="absolute z-50 left-0 -ml-1 top-full mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-xl shadow-lg dark:shadow-[0_10px_40px_rgba(0,0,0,0.4)] w-[calc(100%+8px)] max-h-60 overflow-y-auto animate-in fade-in zoom-in-95 duration-100">
                       <button
                         type="button"
                         onMouseDown={async (e) => {
@@ -1736,8 +1744,19 @@ const TicketDetailsPage: React.FC = () => {
 
       {/* Modal Zmiany Statusu */}
       {transitionModalConfig.isOpen && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 animate-in fade-in duration-200">
-          <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl mx-4 overflow-hidden flex flex-col max-h-[90vh]">
+        <div
+          className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 animate-in fade-in duration-200"
+          onClick={() => {
+            if (!isSubmittingTransition) {
+              setTransitionModalConfig({ isOpen: false, targetStatus: null });
+              setIsTransitionSuccess(false);
+            }
+          }}
+        >
+          <div
+            className="bg-white rounded-xl shadow-2xl w-full max-w-2xl mx-4 overflow-hidden flex flex-col max-h-[90vh]"
+            onClick={(e) => e.stopPropagation()}
+          >
             <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
               <h2 className="text-xl font-semibold text-gray-900">
                 {transitionModalConfig.targetStatus === 'W_TOKU' ? 'W toku' :
@@ -1958,8 +1977,14 @@ const TicketDetailsPage: React.FC = () => {
 
       {/* Delete Attachment Modal */}
       {attachmentToDelete && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in">
-          <div className="bg-[#2A2B2D] border border-gray-700 rounded-xl shadow-2xl w-full max-w-[420px] overflow-hidden flex flex-col">
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in"
+          onClick={() => !isDeletingAttachment && setAttachmentToDelete(null)}
+        >
+          <div
+            className="bg-[#2A2B2D] border border-gray-700 rounded-xl shadow-2xl w-full max-w-[420px] overflow-hidden flex flex-col"
+            onClick={(e) => e.stopPropagation()}
+          >
             <div className="p-5">
               <div className="flex items-start justify-between">
                 <div className="flex items-center gap-3">
@@ -2003,8 +2028,14 @@ const TicketDetailsPage: React.FC = () => {
 
       {/* ========== Modal: Potwierdzenie usunięcia zgłoszenia ========== */}
       {showDeleteModal && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 animate-in fade-in duration-200">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm mx-4 p-6 text-center">
+        <div
+          className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 animate-in fade-in duration-200"
+          onClick={() => !isDeletingTicket && setShowDeleteModal(false)}
+        >
+          <div
+            className="bg-white rounded-2xl shadow-2xl w-full max-w-sm mx-4 p-6 text-center"
+            onClick={(e) => e.stopPropagation()}
+          >
             <div className="w-14 h-14 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
               <Trash2 className="w-7 h-7 text-red-600" />
             </div>

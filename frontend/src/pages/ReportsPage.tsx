@@ -465,10 +465,10 @@ const ReportsPage: React.FC = () => {
                   setSelectedTechnicians([]);
                   setSelectedCreators([]);
                 }}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-700 hover:bg-rose-50 dark:hover:bg-rose-500/20 hover:text-rose-600 dark:hover:text-rose-400 hover:border-rose-200 dark:hover:border-rose-500/30 transition-all border border-slate-200/60 dark:border-slate-600 shadow-sm"
+                className="group flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-700 hover:bg-rose-50 dark:hover:bg-rose-500/20 hover:text-rose-600 dark:hover:text-rose-400 hover:border-rose-200 dark:hover:border-rose-500/30 transition-all border border-slate-200/60 dark:border-slate-600 shadow-sm"
                 title="Wyczyść wszystkie filtry"
               >
-                <RefreshCw className="w-3.5 h-3.5" />
+                <RefreshCw className="w-3.5 h-3.5 transition-transform duration-500 group-hover:-rotate-180" />
                 Resetuj
               </button>
             </div>
