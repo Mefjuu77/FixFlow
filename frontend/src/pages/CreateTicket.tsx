@@ -11,16 +11,11 @@ import {
   ChevronsUp,
   Equal,
   ChevronsDown,
-  Paperclip,
-  Check,
   X,
-  Key,
-  Layout,
-  Globe,
-  Monitor,
-  HelpCircle,
-  Info
+  Check,
+  UploadCloud
 } from 'lucide-react';
+import { getCategoryIcon } from '../utils/ticketConstants';
 import MarkdownEditor from '../components/MarkdownEditor';
 import useTitle from '../hooks/useTitle';
 
@@ -35,16 +30,15 @@ const CreateTicketPage: React.FC = () => {
 
   const [categories, setCategories] = useState<Category[]>([]);
   const [error, setError] = useState('');
-  const [fieldErrors, setFieldErrors] = useState<{ title?: string; description?: string }>({});
+  const [fieldErrors, setFieldErrors] = useState<{ title?: string; description?: string; category?: string }>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [activeDropdown, setActiveDropdown] = useState<'category' | 'priority' | null>(null);
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [attachmentErrors, setAttachmentErrors] = useState<string[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [categoryShake, setCategoryShake] = useState(false);
-  const [showPriorityTooltip, setShowPriorityTooltip] = useState(false);
   const [titleBlurred, setTitleBlurred] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
 
   const navigate = useNavigate();
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -93,14 +87,6 @@ const CreateTicketPage: React.FC = () => {
     { value: 'NISKI', label: 'Niski', icon: <ChevronsDown className="w-4 h-4 text-gray-400" />, color: 'text-gray-600', hint: 'Nie blokuje pracy' },
   ];
 
-  const categoryIconMap: Record<string, React.ReactNode> = {
-    'Dostęp do konta': <Key className="w-4 h-4" />,
-    'Oprogramowanie': <Layout className="w-4 h-4" />,
-    'Sieć i internet': <Globe className="w-4 h-4" />,
-    'Sprzęt': <Monitor className="w-4 h-4" />,
-    'Inne': <HelpCircle className="w-4 h-4" />,
-  };
-
   const descriptionPlaceholderMap: Record<string, string> = {
     'Dostęp do konta': 'Opisz problem. Podaj nazwę systemu lub aplikacji...',
     'Oprogramowanie': 'Opisz problem. Podaj nazwę i wersję aplikacji jeśli znasz...',
@@ -114,29 +100,66 @@ const CreateTicketPage: React.FC = () => {
 
   const handleTitleBlur = () => {
     setTitleBlurred(true);
-    const trimmed = formData.title.trim();
-    if (trimmed.length > 0 && trimmed.length < 5) {
-      setFieldErrors(prev => ({ ...prev, title: 'Tytuł musi mieć min. 5 znaków' }));
-    } else if (trimmed.length >= 5) {
-      setFieldErrors(prev => ({ ...prev, title: undefined }));
-    }
   };
 
   const handleDescriptionBlur = () => {
-    const trimmed = formData.description.trim();
-    // Assuming simple text length approximation.
-    // HTML string length will be longer, but for UX simple length checking is fine or we strip HTML.
-    // Since we just need to show an error if it's too short.
-    const textOnly = trimmed.replace(/<[^>]*>?/gm, '');
-    if (textOnly.length > 0 && textOnly.length < 10) {
-      setFieldErrors(prev => ({ ...prev, description: 'Opis musi mieć min. 10 znaków' }));
-    } else if (textOnly.length >= 10) {
-      setFieldErrors(prev => ({ ...prev, description: undefined }));
+    // We only validate on submit now.
+  };
+
+  const processFiles = (files: FileList | File[]) => {
+    setAttachmentErrors([]);
+    const MAX_FILE_SIZE = 5 * 1024 * 1024;
+    const MAX_TOTAL_SIZE = 15 * 1024 * 1024;
+    const ALLOWED_EXTENSIONS = ['.png', '.jpg', '.jpeg', '.gif', '.webp', '.pdf', '.doc', '.docx', '.txt', '.zip'];
+    const validFiles: File[] = [];
+    const invalidFiles: string[] = [];
+
+    let currentTotal = selectedFiles.reduce((sum, f) => sum + f.size, 0);
+
+    Array.from(files).forEach(f => {
+      const extIndex = f.name.lastIndexOf('.');
+      const ext = extIndex >= 0 ? f.name.substring(extIndex).toLowerCase() : '';
+      if (!ALLOWED_EXTENSIONS.includes(ext)) {
+        invalidFiles.push(`${f.name} (niedozwolony format)`);
+      } else if (f.size > MAX_FILE_SIZE) {
+        invalidFiles.push(`${f.name} (powyżej 5MB)`);
+      } else if (currentTotal + f.size > MAX_TOTAL_SIZE) {
+        invalidFiles.push(`${f.name} (przekracza limit 15MB)`);
+      } else {
+        validFiles.push(f);
+        currentTotal += f.size;
+      }
+    });
+    
+    if (invalidFiles.length > 0) {
+      setAttachmentErrors(invalidFiles);
+    }
+    setSelectedFiles(prev => [...prev, ...validFiles]);
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+      processFiles(e.dataTransfer.files);
     }
   };
 
   const validateForm = (): boolean => {
-    const errors: { title?: string; description?: string } = {};
+    const errors: { title?: string; description?: string; category?: string } = {};
     const trimmedTitle = formData.title.trim();
     const trimmedDescription = formData.description.trim();
 
@@ -158,15 +181,14 @@ const CreateTicketPage: React.FC = () => {
     }
 
     setTitleBlurred(true);
-    setFieldErrors(errors);
-
     let isValid = Object.keys(errors).length === 0;
-
+    
     if (formData.category === 0) {
-      setCategoryShake(true);
-      setTimeout(() => setCategoryShake(false), 400); // 0.4s to match CSS
+      errors.category = 'Proszę wybrać kategorię.';
       isValid = false;
     }
+
+    setFieldErrors(errors);
 
     return isValid;
   };
@@ -224,18 +246,19 @@ const CreateTicketPage: React.FC = () => {
   const selectedPriority = priorityOptions.find(p => p.value === formData.priority);
 
   return (
-    <div className="max-w-3xl mx-auto space-y-6 pb-12">
-      <button onClick={() => navigate(-1)} className="flex items-center text-gray-500 hover:text-blue-600 font-semibold transition-colors">
-        <ArrowLeft className="w-4 h-4 mr-1" /> Wróć
-      </button>
-
-      <div className="bg-white rounded-2xl border border-gray-200 shadow-xl overflow-hidden">
-        <div className="p-8 border-b border-gray-100 bg-gray-50/50">
-          <h1 className="text-2xl font-bold text-gray-900">Nowe zgłoszenie</h1>
-          <p className="text-gray-500 text-sm mt-1">Uzupełnij szczegóły problemu technicznego.</p>
+    <div className="max-w-3xl mx-auto space-y-4 pb-4">
+      <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-xl overflow-hidden">
+        <div className="p-4 sm:p-5 border-b border-gray-100 dark:border-gray-700/50 bg-gray-50/50 dark:bg-gray-800/50 flex items-center gap-4">
+          <button onClick={() => navigate(-1)} className="p-2 -ml-2 text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-500/10 rounded-lg transition-colors" title="Wróć">
+            <ArrowLeft className="w-5 h-5" />
+          </button>
+          <div>
+            <h1 className="text-xl font-bold text-gray-900 dark:text-white leading-none">Nowe zgłoszenie</h1>
+            <p className="text-gray-500 dark:text-gray-400 text-xs mt-1">Uzupełnij szczegóły problemu technicznego.</p>
+          </div>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-8 space-y-8">
+        <form onSubmit={handleSubmit} className="p-5 space-y-5">
           {error && (
             <div className="flex items-center p-4 bg-red-50 border border-red-100 rounded-xl text-red-700 text-sm">
               <AlertCircle className="w-5 h-5 mr-3 flex-shrink-0" /> {error}
@@ -244,7 +267,7 @@ const CreateTicketPage: React.FC = () => {
 
           {/* Tytuł */}
           <div className="space-y-2">
-            <label className="text-sm font-bold text-gray-700 ml-1">Tytuł zgłoszenia</label>
+            <label className="text-sm font-bold text-gray-700 dark:text-gray-300 ml-1">Tytuł zgłoszenia</label>
             <div className="relative">
               <input
                 type="text"
@@ -261,37 +284,33 @@ const CreateTicketPage: React.FC = () => {
                 <Check className="absolute right-4 top-3.5 w-5 h-5 text-green-500" />
               )}
             </div>
-            {fieldErrors.title ? (
+            {fieldErrors.title && (
               <p className="text-xs text-red-600 font-medium ml-1 flex items-center">
                 <AlertCircle className="w-3 h-3 mr-1" /> {fieldErrors.title}
-              </p>
-            ) : (
-              <p className={`text-xs ml-1 ${formData.title.trim().length > 0 && (formData.title.trim().length < 5 || formData.title.trim().length > 200) ? 'text-red-500' : 'text-gray-400'}`}>
-                {formData.title.trim().length} / 200 znaków (min. 5)
               </p>
             )}
           </div>
 
           <hr className="border-gray-100 dark:border-gray-800" />
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6" ref={dropdownRef}>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5" ref={dropdownRef}>
             {/* Kategoria - Dropdown */}
-            <div className={`relative space-y-2 ${categoryShake ? 'animate-shake' : ''}`}>
-              <label className="text-sm font-bold text-gray-700 ml-1">Kategoria</label>
+            <div className="relative space-y-2">
+              <label className="text-sm font-bold text-gray-700 dark:text-gray-300 ml-1">Kategoria</label>
               <button
                 type="button"
                 onClick={() => setActiveDropdown(activeDropdown === 'category' ? null : 'category')}
-                className={`w-full flex items-center justify-between pl-4 pr-3 py-3 border rounded-xl hover:border-blue-400 dark:hover:border-blue-500/70 transition-all text-left ${formData.category !== 0 ? 'bg-white dark:bg-gray-800/60 border-blue-300 dark:border-blue-500/40 ring-2 ring-blue-500/10 dark:ring-blue-500/20 shadow-sm' : 'bg-gray-50 border-gray-200'}`}
+                className={`w-full flex items-center justify-between pl-4 pr-3 py-3 border rounded-xl hover:border-blue-400 dark:hover:border-blue-500/70 transition-all text-left ${fieldErrors.category ? 'border-red-400 bg-red-50/30' : (formData.category !== 0 ? 'bg-white dark:bg-gray-800/60 border-blue-300 dark:border-blue-500/40 ring-2 ring-blue-500/10 dark:ring-blue-500/20 shadow-sm' : 'bg-gray-50 dark:bg-gray-900/50 border-gray-200 dark:border-gray-800')}`}
               >
                 <div className="flex items-center gap-3">
-                  <div className="text-blue-600">{categoryIconMap[selectedCategory?.name || ''] || <HelpCircle className="w-4 h-4 text-gray-400" />}</div>
-                  <span className="font-medium text-gray-900">{selectedCategory?.name || 'Wybierz kategorię...'}</span>
+                  <div className="text-blue-600">{getCategoryIcon(selectedCategory?.name || '', 'w-4 h-4')}</div>
+                  <span className={`font-medium ${formData.category !== 0 ? 'text-gray-900 dark:text-gray-100' : 'text-gray-500 dark:text-gray-400'}`}>{selectedCategory?.name || 'Wybierz kategorię...'}</span>
                 </div>
                 <ChevronDown className={`w-5 h-5 text-gray-400 transition-transform ${activeDropdown === 'category' ? 'rotate-180' : ''}`} />
               </button>
 
               {activeDropdown === 'category' && (
-                <div className="absolute z-50 w-full mt-2 bg-white border border-gray-100 rounded-xl shadow-2xl py-2 animate-in fade-in zoom-in-95 duration-100">
+                <div className="absolute z-50 w-full mt-2 bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-xl shadow-2xl py-2 animate-in fade-in zoom-in-95 duration-100">
                   {categories.map((cat) => (
                     <button
                       key={cat.id}
@@ -300,47 +319,31 @@ const CreateTicketPage: React.FC = () => {
                         setFormData({ ...formData, category: cat.id });
                         setActiveDropdown(null);
                         if (error === 'Proszę wybrać kategorię.') setError('');
+                        if (fieldErrors.category) setFieldErrors(prev => ({ ...prev, category: undefined }));
                       }}
                       className={`w-full flex items-center gap-3 px-4 py-2.5 transition-colors text-left ${formData.category === cat.id ? 'bg-blue-50/70 dark:bg-blue-900/50 text-blue-700 dark:text-blue-400 font-bold' : 'hover:bg-blue-50/50 dark:hover:bg-gray-700/80 text-gray-700 dark:text-gray-300 hover:text-blue-700 dark:hover:text-blue-400 font-medium'}`}
                     >
-                      <div className="text-blue-600">{categoryIconMap[cat.name] || <HelpCircle className="w-4 h-4" />}</div>
+                      <div className="text-blue-600">{getCategoryIcon(cat.name, 'w-4 h-4')}</div>
                       <span className="flex-1">{cat.name}</span>
                       {formData.category === cat.id && <Check className="w-5 h-5 text-blue-600" />}
                     </button>
                   ))}
                 </div>
               )}
+              {fieldErrors.category && (
+                <p className="text-xs text-red-600 font-medium ml-1 flex items-center mt-1">
+                  <AlertCircle className="w-3 h-3 mr-1" /> {fieldErrors.category}
+                </p>
+              )}
             </div>
 
             {/* Priorytet - Dropdown */}
             <div className="relative space-y-2">
-              <div className="flex items-center gap-2 ml-1">
-                <label className="text-sm font-bold text-gray-700">Priorytet</label>
-                <div className="relative">
-                  <button
-                    type="button"
-                    onMouseEnter={() => setShowPriorityTooltip(true)}
-                    onMouseLeave={() => setShowPriorityTooltip(false)}
-                    className="text-gray-400 hover:text-blue-500 transition-colors"
-                  >
-                    <Info className="w-3.5 h-3.5" />
-                  </button>
-                  {showPriorityTooltip && (
-                    <div className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 w-64 bg-gray-900 text-white text-xs rounded-lg px-3 py-2.5 shadow-xl z-50 pointer-events-none">
-                      <ul className="space-y-1">
-                        <li><span className="text-red-400 font-semibold">Wysoki</span> — blokuje pracę lub uniemożliwia działanie</li>
-                        <li><span className="text-blue-400 font-semibold">Normalny</span> — utrudnia pracę</li>
-                        <li><span className="text-gray-400 font-semibold">Niski</span> — nie blokuje pracy</li>
-                      </ul>
-                      <div className="absolute left-1/2 -translate-x-1/2 top-full w-0 h-0 border-x-[6px] border-x-transparent border-t-[6px] border-t-gray-900" />
-                    </div>
-                  )}
-                </div>
-              </div>
+              <label className="text-sm font-bold text-gray-700 dark:text-gray-300 ml-1">Priorytet</label>
               <button
                 type="button"
                 onClick={() => setActiveDropdown(activeDropdown === 'priority' ? null : 'priority')}
-                className={`w-full flex items-center justify-between pl-4 pr-3 py-3 border rounded-xl hover:border-blue-400 dark:hover:border-blue-500/70 transition-all text-left ${formData.priority ? 'bg-white dark:bg-gray-800/60 border-blue-300 dark:border-blue-500/40 ring-2 ring-blue-500/10 dark:ring-blue-500/20 shadow-sm' : 'bg-gray-50 border-gray-200'}`}
+                className={`w-full flex items-center justify-between pl-4 pr-3 py-3 border rounded-xl hover:border-blue-400 dark:hover:border-blue-500/70 transition-all text-left ${formData.priority ? 'bg-white dark:bg-gray-800/60 border-blue-300 dark:border-blue-500/40 ring-2 ring-blue-500/10 dark:ring-blue-500/20 shadow-sm' : 'bg-gray-50 dark:bg-gray-900/50 border-gray-200 dark:border-gray-800'}`}
               >
                 <div className="flex items-center gap-3">
                   {selectedPriority?.icon}
@@ -350,7 +353,7 @@ const CreateTicketPage: React.FC = () => {
               </button>
 
               {activeDropdown === 'priority' && (
-                <div className="absolute z-50 w-full mt-2 bg-white border border-gray-100 rounded-xl shadow-2xl py-2 animate-in fade-in zoom-in-95 duration-100">
+                <div className="absolute z-50 w-full mt-2 bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-xl shadow-2xl py-2 animate-in fade-in zoom-in-95 duration-100">
                   {priorityOptions.map((opt) => (
                     <button
                       key={opt.value}
@@ -361,10 +364,14 @@ const CreateTicketPage: React.FC = () => {
                       }}
                       className={`w-full flex items-center gap-3 px-4 py-2.5 transition-colors text-left ${formData.priority === opt.value ? 'bg-blue-50/70 dark:bg-blue-900/50 text-blue-700 dark:text-blue-400 font-bold' : 'hover:bg-blue-50/50 dark:hover:bg-gray-700/80 text-gray-700 dark:text-gray-300 hover:text-blue-700 dark:hover:text-blue-400 font-medium'}`}
                     >
-                      {opt.icon}
-                      <span className="flex-1">{opt.label}</span>
-                      <span className="text-xs text-gray-400 font-normal">{opt.hint}</span>
-                      {formData.priority === opt.value && <Check className="w-5 h-5 text-blue-600" />}
+                      <div className="flex-shrink-0">{opt.icon}</div>
+                      <div className="flex-1 flex flex-col items-start leading-tight">
+                        <span>{opt.label}</span>
+                        <span className={`text-xs mt-0.5 font-normal ${formData.priority === opt.value ? 'text-blue-600/80 dark:text-blue-300/80' : 'text-gray-500 dark:text-gray-400'}`}>
+                          {opt.hint}
+                        </span>
+                      </div>
+                      {formData.priority === opt.value && <Check className="w-5 h-5 text-blue-600 flex-shrink-0" />}
                     </button>
                   ))}
                 </div>
@@ -376,7 +383,7 @@ const CreateTicketPage: React.FC = () => {
 
           {/* Opis */}
           <div className="space-y-2">
-            <label className="text-sm font-bold text-gray-700 ml-1">Opis problemu</label>
+            <label className="text-sm font-bold text-gray-700 dark:text-gray-300 ml-1">Opis problemu</label>
             <MarkdownEditor
               key={descriptionPlaceholder}
               value={formData.description}
@@ -387,6 +394,7 @@ const CreateTicketPage: React.FC = () => {
               placeholder={descriptionPlaceholder}
               className={fieldErrors.description ? 'border-red-400 bg-red-50/30 ring-1 ring-red-400/50 rounded-xl' : 'bg-gray-50 dark:bg-gray-900/50 border-gray-200 dark:border-gray-800'}
               resizable={true}
+              minHeight="150px"
               onAttachFile={() => fileInputRef.current?.click()}
               onBlur={handleDescriptionBlur}
             />
@@ -401,20 +409,31 @@ const CreateTicketPage: React.FC = () => {
 
           {/* Załączniki */}
           <div className="space-y-2">
-            <label className="text-sm font-bold text-gray-700 ml-1">Załączniki (opcjonalne)</label>
+            <label className="text-sm font-bold text-gray-700 dark:text-gray-300 ml-1">Załączniki (opcjonalne)</label>
             <div
+              onDragOver={handleDragOver}
+              onDragLeave={handleDragLeave}
+              onDrop={handleDrop}
               onClick={() => fileInputRef.current?.click()}
-              className="w-full flex items-center justify-center gap-2 py-4 border-2 border-dashed border-gray-300 rounded-xl cursor-pointer hover:border-blue-400 hover:bg-blue-50/30 transition-all text-gray-500 hover:text-blue-600"
+              className={`w-full flex flex-col items-center justify-center gap-2 py-4 border-2 border-dashed rounded-xl cursor-pointer transition-all group ${
+                isDragging
+                  ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
+                  : 'border-gray-300 dark:border-gray-700 hover:border-blue-400 dark:hover:border-blue-500/70 hover:bg-blue-50/50 dark:hover:bg-blue-900/20 text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400'
+              }`}
             >
-              <div className="text-center px-4">
-                <div className="flex items-center justify-center gap-2 mb-1.5 text-gray-700">
-                  <Paperclip className="w-4 h-4" />
-                  <span className="font-semibold">Kliknij, aby dołączyć pliki</span>
-                </div>
-                <p className="text-xs text-gray-400 mb-1">lub przeciągnij i upuść pliki tutaj</p>
-                <p className="text-[11.5px] leading-relaxed text-gray-500 max-w-sm">
-                  Maks. waga pojedyńczego pliku do <strong>5MB</strong> (łącznie do 15MB na zgłoszenie). Obsługujemy obrazki, PDF, dokumenty tekstowe oraz ZIP.
+              <div className="bg-blue-50 dark:bg-blue-900/30 text-blue-500 rounded-full p-2 group-hover:scale-110 transition-transform duration-300">
+                <UploadCloud className="w-5 h-5" />
+              </div>
+              
+              <div className="text-center px-4 space-y-1">
+                <p className="font-bold text-gray-700 dark:text-gray-300 text-sm">
+                  Kliknij, aby wgrać pliki <span className="font-normal text-gray-500 dark:text-gray-400">lub przeciągnij je tutaj</span>
                 </p>
+                <div className="flex flex-wrap items-center justify-center gap-1.5 text-[10px] font-medium text-gray-500 dark:text-gray-400 pt-0.5">
+                  <span className="px-2 py-0.5 bg-gray-100 dark:bg-gray-800 rounded-md">Max 5MB / plik</span>
+                  <span className="px-2 py-0.5 bg-gray-100 dark:bg-gray-800 rounded-md">Łącznie do 15MB</span>
+                  <span className="px-2 py-0.5 bg-gray-100 dark:bg-gray-800 rounded-md">Obrazki, PDF, Dokumenty, ZIP</span>
+                </div>
               </div>
             </div>
             <input
@@ -424,34 +443,8 @@ const CreateTicketPage: React.FC = () => {
               accept="image/*,.pdf,.doc,.docx,.txt,.zip"
               className="hidden"
               onChange={(e) => {
-                setAttachmentErrors([]);
                 if (e.target.files) {
-                  const MAX_FILE_SIZE = 5 * 1024 * 1024;
-                  const MAX_TOTAL_SIZE = 15 * 1024 * 1024;
-                  const ALLOWED_EXTENSIONS = ['.png', '.jpg', '.jpeg', '.gif', '.webp', '.pdf', '.doc', '.docx', '.txt', '.zip'];
-                  const validFiles: File[] = [];
-                  const invalidFiles: string[] = [];
-
-                  let currentTotal = selectedFiles.reduce((sum, f) => sum + f.size, 0);
-
-                  Array.from(e.target.files).forEach(f => {
-                    const extIndex = f.name.lastIndexOf('.');
-                    const ext = extIndex >= 0 ? f.name.substring(extIndex).toLowerCase() : '';
-                    if (!ALLOWED_EXTENSIONS.includes(ext)) {
-                      invalidFiles.push(`${f.name} (niedozwolony format)`);
-                    } else if (f.size > MAX_FILE_SIZE) {
-                      invalidFiles.push(`${f.name} (powyżej 5MB)`);
-                    } else if (currentTotal + f.size > MAX_TOTAL_SIZE) {
-                      invalidFiles.push(`${f.name} (przekracza limit 15MB)`);
-                    } else {
-                      validFiles.push(f);
-                      currentTotal += f.size;
-                    }
-                  });
-                  if (invalidFiles.length > 0) {
-                    setAttachmentErrors(invalidFiles);
-                  }
-                  setSelectedFiles(prev => [...prev, ...validFiles]);
+                  processFiles(e.target.files);
                 }
                 e.target.value = '';
               }}

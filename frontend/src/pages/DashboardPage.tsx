@@ -26,7 +26,7 @@ import { Link } from 'react-router-dom';
 import dayjs from 'dayjs';
 import useTitle from '../hooks/useTitle';
 import relativeTime from 'dayjs/plugin/relativeTime';
-import UserAvatar from '../components/UserAvatar';
+
 
 const formatTicketCount = (count: number) => {
   if (count === 1) return 'Masz 1 otwarte zgłoszenie';
@@ -376,65 +376,137 @@ const DashboardPage: React.FC = () => {
         </div>
 
         <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
-          {/* Wymagające uwagi */}
-          <div className="xl:col-span-2 space-y-4">
-            <div className="flex items-center justify-between">
-              <h2 className="text-xl font-bold text-gray-900 flex items-center">
-                <AlertTriangle className="w-5 h-5 text-amber-500 mr-2" /> Wymagają uwagi (Priorytety / Nieruszane)
-              </h2>
-              <span className="text-xs font-bold text-gray-400 bg-gray-100 px-2.5 py-1 rounded-lg">
-                {needsAttention.length} {needsAttention.length === 1 ? 'zgłoszenie' : 'zgłoszeń'}
-              </span>
-            </div>
+          {/* Wymagają uwagi */}
+          <div className="xl:col-span-2">
+            <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-3xl shadow-sm flex flex-col" style={{ minHeight: '360px' }}>
+              <div className="p-5 border-b border-gray-100 dark:border-gray-700/50">
+                <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-3">
+                  Wymagają uwagi
+                </h2>
+                <div className="flex items-center gap-2">
+                  {needsAttention.length === 0 ? (
+                    <span className="text-xs font-medium text-gray-400 dark:text-gray-500">Brak problemów</span>
+                  ) : (
+                    <>
+                      {(() => {
+                        const highUnassigned = needsAttention.filter(t => t.technician === null && t.priority === 'WYSOKI').length;
+                        const highMine = needsAttention.filter(t => t.technician === myId && t.priority === 'WYSOKI').length;
+                        const stale = needsAttention.filter(t => t.technician === myId && t.priority !== 'WYSOKI' && dayjs(t.updated_at).isBefore(dayjs().subtract(2, 'day'))).length;
+                        return (
+                          <>
+                            {highUnassigned > 0 && (
+                              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-rose-50 dark:bg-rose-500/10 text-rose-600 dark:text-rose-400 whitespace-nowrap">
+                                <span className="w-1.5 h-1.5 rounded-full bg-rose-500" />
+                                Krytyczne · {highUnassigned}
+                              </span>
+                            )}
+                            {highMine > 0 && (
+                              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400 whitespace-nowrap">
+                                <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
+                                Priorytetowe · {highMine}
+                              </span>
+                            )}
+                            {stale > 0 && (
+                              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-gray-100 dark:bg-gray-700/50 text-gray-600 dark:text-gray-400 whitespace-nowrap">
+                                <span className="w-1.5 h-1.5 rounded-full bg-gray-400 dark:bg-gray-500" />
+                                Nieruszane · {stale}
+                              </span>
+                            )}
+                          </>
+                        );
+                      })()}
+                    </>
+                  )}
+                </div>
+              </div>
 
-            <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-3xl shadow-sm overflow-hidden">
-              {needsAttention.length === 0 ? (
-                <div className="p-12 text-center flex flex-col items-center">
-                  <div className="w-16 h-16 bg-green-50 dark:bg-green-900/20 rounded-full flex items-center justify-center mb-4 text-green-600 dark:text-green-400">
-                    <CheckCircle2 className="w-8 h-8" />
+              <div className="flex-1 overflow-y-auto p-2 scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600">
+                {needsAttention.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center h-full text-center px-6 py-10">
+                    <div className="w-14 h-14 bg-emerald-50 dark:bg-emerald-900/20 rounded-full flex items-center justify-center mb-4">
+                      <CheckCircle2 className="w-7 h-7 text-emerald-500 dark:text-emerald-400" />
+                    </div>
+                    <h3 className="text-base font-bold text-gray-900 dark:text-white">Świetna robota!</h3>
+                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Brak priorytetowych lub opóźnionych zgłoszeń.</p>
                   </div>
-                  <h3 className="text-lg font-bold text-gray-900 dark:text-white">Świetna robota!</h3>
-                  <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Brak priorytetowych lub opóźnionych zgłoszeń na Twoim koncie.</p>
-                </div>
-              ) : (
-                <div className="divide-y divide-gray-100 dark:divide-gray-700/50">
-                  {needsAttention.map(ticket => (
-                    <Link to={`/tickets/${ticket.id}`} key={ticket.id} className="p-5 flex items-start hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors block group cursor-pointer">
-                      <div className={`w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0 ${ticket.priority === 'WYSOKI' ? 'bg-red-50 dark:bg-red-500/10 group-hover:bg-red-100 dark:group-hover:bg-red-500/20' : 'bg-amber-50 dark:bg-amber-500/10 group-hover:bg-amber-100 dark:group-hover:bg-amber-500/20'
-                        } transition-colors`}>
-                        {ticket.priority === 'WYSOKI'
-                          ? <AlertTriangle className="w-6 h-6 text-red-500" />
-                          : <TicketIcon className="w-6 h-6 text-amber-600 dark:text-amber-400" />}
-                      </div>
-                      <div className="ml-5 flex-1">
-                        <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-1.5 gap-2">
-                          <h3 className="font-extrabold text-gray-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors text-base">#{ticket.id} {ticket.title}</h3>
-                          <div className="flex items-center gap-2 flex-shrink-0">
-                            {ticket.priority === 'WYSOKI' && (
-                              <span className="px-2.5 py-1 text-[10px] font-extrabold rounded-lg bg-red-100 dark:bg-red-500/20 text-red-700 dark:text-red-400 uppercase tracking-wider">Wysoki</span>
-                            )}
-                            {ticket.technician === null ? (
-                              <span className="px-2.5 py-1 text-[10px] font-extrabold rounded-lg bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 uppercase tracking-wider">Do wzięcia</span>
-                            ) : (
-                              <span className="px-2.5 py-1 text-[10px] font-extrabold rounded-lg bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 uppercase tracking-wider">Moje</span>
-                            )}
+                ) : (
+                  <div className="space-y-1">
+                    {needsAttention.map(ticket => {
+                      // Determine reason and colors
+                      const isHighUnassigned = ticket.technician === null && ticket.priority === 'WYSOKI';
+                      const isHighMine = ticket.technician === myId && ticket.priority === 'WYSOKI';
+                      const _isStale = ticket.technician === myId && ticket.priority !== 'WYSOKI';
+
+                      const reasonLabel = isHighUnassigned
+                        ? 'Krytyczne — brak technika'
+                        : isHighMine
+                        ? 'Wysoki priorytet'
+                        : 'Brak aktywności';
+
+                      const dotColor = isHighUnassigned
+                        ? 'bg-rose-500'
+                        : isHighMine
+                        ? 'bg-amber-500'
+                        : 'bg-gray-400 dark:bg-gray-500';
+
+                      const textColor = isHighUnassigned
+                        ? 'text-rose-600 dark:text-rose-400'
+                        : isHighMine
+                        ? 'text-amber-600 dark:text-amber-400'
+                        : 'text-gray-500 dark:text-gray-400';
+
+                      const iconBg = isHighUnassigned
+                        ? 'bg-rose-50 dark:bg-rose-500/10'
+                        : isHighMine
+                        ? 'bg-amber-50 dark:bg-amber-500/10'
+                        : 'bg-gray-100 dark:bg-gray-700/50';
+
+                      const iconColor = isHighUnassigned
+                        ? 'text-rose-500'
+                        : isHighMine
+                        ? 'text-amber-500'
+                        : 'text-gray-500 dark:text-gray-400';
+
+                      const tagLabel = ticket.technician === null ? 'Do wzięcia' : 'Moje';
+
+                      return (
+                        <Link
+                          to={`/tickets/${ticket.id}`}
+                          key={ticket.id}
+                          className="flex items-center px-4 py-3 rounded-2xl hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors group relative"
+                        >
+                          <div className={`w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 mr-4 transition-transform group-hover:scale-105 ${iconBg}`}>
+                            <AlertTriangle className={`w-4 h-4 ${iconColor}`} />
                           </div>
-                        </div>
-                        <div className="flex flex-wrap items-center gap-4 text-xs font-medium text-gray-500 dark:text-gray-400 mt-2">
-                          <span className="flex items-center">
-                            <UserAvatar avatar={ticket.creator_details?.avatar} name={ticket.creator_details?.first_name || 'U'} size="xs" className="mr-1.5" />
-                            {ticket.creator_details ? `${ticket.creator_details.first_name} ${ticket.creator_details.last_name}` : 'Nieznany'}
-                          </span>
-                          <span className="flex items-center">
-                            <Clock className="w-3.5 h-3.5 mr-1.5 opacity-70" />
-                            Ostatnia akcja: {dayjs(ticket.updated_at).fromNow()}
-                          </span>
-                        </div>
-                      </div>
-                    </Link>
-                  ))}
-                </div>
-              )}
+                          <div className="flex-1 min-w-0 pr-3">
+                            <p className="text-[13px] font-medium text-gray-800 dark:text-gray-200 truncate group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                              <span className="font-bold text-gray-900 dark:text-white">#{ticket.id}</span>
+                              <span className="ml-1.5">{ticket.title}</span>
+                            </p>
+                            <div className="flex items-center gap-1.5 mt-0.5">
+                              <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${dotColor}`} />
+                              <span className={`text-[11px] font-semibold ${textColor}`}>
+                                {reasonLabel}
+                              </span>
+                              <span className="text-[10px] font-medium text-gray-400 dark:text-gray-500 ml-2">
+                                {tagLabel}
+                              </span>
+                            </div>
+                          </div>
+                          <div className="flex-shrink-0 ml-2 w-24 text-right relative">
+                            <span className="text-[11px] font-medium text-gray-400 dark:text-gray-500 group-hover:opacity-0 transition-opacity">
+                              {dayjs(ticket.updated_at).fromNow()}
+                            </span>
+                            <span className="absolute inset-0 flex items-center justify-end text-[11px] font-semibold text-blue-600 dark:text-blue-400 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
+                              Zbadaj →
+                            </span>
+                          </div>
+                        </Link>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
             </div>
           </div>
 
