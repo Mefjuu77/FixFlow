@@ -26,6 +26,8 @@ interface MarkdownEditorProps {
   minHeight?: string;
   autoFocus?: boolean;
   onAttachFile?: () => void;
+  resizable?: boolean;
+  onBlur?: () => void;
 }
 
 interface ToolbarButtonProps {
@@ -64,6 +66,8 @@ const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
   minHeight = '120px',
   autoFocus = false,
   onAttachFile,
+  resizable = false,
+  onBlur,
 }) => {
   const editor = useEditor({
     extensions: [
@@ -88,7 +92,7 @@ const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
     autofocus: autoFocus,
     editorProps: {
       attributes: {
-        class: 'prose prose-sm max-w-none focus:outline-none px-3 py-3 text-sm text-gray-800 dark:text-gray-200',
+        class: `prose prose-sm max-w-none focus:outline-none px-3 py-3 text-sm text-gray-800 dark:text-gray-200 ${resizable ? 'resize-y overflow-y-auto max-h-[500px]' : ''}`,
         style: `min-height: ${minHeight}`,
       },
     },
@@ -100,6 +104,9 @@ const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
       } else {
         onChange(html);
       }
+    },
+    onBlur: () => {
+      if (onBlur) onBlur();
     },
   });
 

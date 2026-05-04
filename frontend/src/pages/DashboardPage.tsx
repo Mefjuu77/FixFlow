@@ -755,21 +755,51 @@ const DashboardPage: React.FC = () => {
 
         <div className="grid grid-cols-1 xl:grid-cols-5 gap-8">
           {/* Wymagają uwagi — panel ryzyka */}
-          <div className="xl:col-span-3 space-y-4">
+          <div className="xl:col-span-3">
             <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-3xl shadow-sm flex flex-col h-[580px]">
+
+              {/* Header — mirrors Ostatnia aktywność structure */}
               <div className="p-5 border-b border-gray-100 dark:border-gray-700/50">
-                <div className="flex items-center justify-between">
-                  <h2 className="text-lg font-bold text-gray-900 dark:text-white">
-                    Wymagają uwagi
-                  </h2>
-                  {topRisks.length > 0 && (
-                    <span className="text-xs font-semibold text-gray-400 dark:text-gray-500">
-                      {riskItems.length} {riskItems.length === 1 ? 'problem' : 'problemów'}
+                <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-4">
+                  Wymagają uwagi
+                </h2>
+                {/* Category chips — styled like filter tabs */}
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex flex-wrap gap-2">
+                    {topRisks.length === 0 ? (
+                      <span className="text-xs font-medium text-gray-400 dark:text-gray-500">Brak problemów w systemie</span>
+                    ) : (
+                      (['critical_unassigned', 'stale_unassigned', 'frozen_progress'] as RiskReason[]).map(reason => {
+                        const count = riskItems.filter(r => r.reason === reason).length;
+                        if (count === 0) return null;
+                        const c = riskReasonColor[reason];
+                        const shortLabel: Record<RiskReason, string> = {
+                          critical_unassigned: 'Krytyczne',
+                          stale_unassigned: 'Nieprzypisane',
+                          frozen_progress: 'Zamrożone',
+                        };
+                        return (
+                          <span
+                            key={reason}
+                            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap ${c.bg} ${c.text}`}
+                          >
+                            <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${c.icon.replace('text-', 'bg-')}`} />
+                            {shortLabel[reason]}
+                            <span className="ml-0.5 opacity-70">· {count}</span>
+                          </span>
+                        );
+                      })
+                    )}
+                  </div>
+                  {riskItems.length > 6 && (
+                    <span className="text-[11px] font-medium text-gray-400 dark:text-gray-500 flex-shrink-0">
+                      +{riskItems.length - 6} więcej
                     </span>
                   )}
                 </div>
               </div>
 
+              {/* Body */}
               <div className="flex-1 overflow-y-auto p-2 scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600">
                 {topRisks.length === 0 ? (
                   <div className="flex flex-col items-center justify-center h-full text-center px-6">
@@ -784,35 +814,45 @@ const DashboardPage: React.FC = () => {
                     {topRisks.map((risk) => {
                       const colors = riskReasonColor[risk.reason];
                       const t = risk.ticket;
-                      
-                      const idleLabel = risk.reason === 'frozen_progress'
-                        ? `${risk.idle} dn. bez aktywności`
-                        : risk.reason === 'stale_unassigned'
-                        ? `Czeka ${risk.age} dn.`
-                        : `${risk.age} dn. temu`;
+
+                      const idleLabel =
+                        risk.reason === 'frozen_progress'
+                          ? `${risk.idle} dn. bez aktywności`
+                          : risk.reason === 'stale_unassigned'
+                          ? `Czeka ${risk.age} dn.`
+                          : `${risk.age} dn. bez technika`;
 
                       return (
                         <Link
                           to={`/tickets/${t.id}`}
                           key={t.id}
-                          className="flex items-center px-4 py-3 rounded-2xl hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors group"
+                          className="flex items-center px-4 py-3 rounded-2xl hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors group relative"
                         >
-                          <div className={`w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 mr-4 ${colors.bg}`}>
+                          {/* Icon — same treatment as activity feed */}
+                          <div className={`w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 mr-4 transition-transform group-hover:scale-105 ${colors.bg}`}>
                             <AlertTriangle className={`w-4 h-4 ${colors.icon}`} />
                           </div>
-                          <div className="flex-1 min-w-0">
-                            <p className="text-[13px] text-gray-800 dark:text-gray-200 truncate group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
-                              <span className="font-semibold">#{t.id}</span> {t.title}
+
+                          {/* Main content — two-line, mirrors activity row */}
+                          <div className="flex-1 min-w-0 pr-3">
+                            <p className="text-[13px] font-medium text-gray-800 dark:text-gray-200 truncate group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                              <span className="font-bold text-gray-900 dark:text-white">#{t.id}</span>
+                              <span className="ml-1.5">{t.title}</span>
                             </p>
-                            <p className={`text-[11px] font-medium mt-0.5 ${colors.text}`}>
-                              {riskReasonLabel[risk.reason]}
-                            </p>
+                            <div className="flex items-center gap-1.5 mt-0.5">
+                              <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${colors.icon.replace('text-', 'bg-')}`} />
+                              <span className={`text-[11px] font-semibold ${colors.text}`}>
+                                {riskReasonLabel[risk.reason]}
+                              </span>
+                            </div>
                           </div>
-                          <div className="flex items-center gap-3 flex-shrink-0 ml-3">
-                            <span className="text-[11px] font-medium text-gray-400 dark:text-gray-500">
+
+                          {/* Right meta — idle time swaps to CTA on hover */}
+                          <div className="flex-shrink-0 ml-2 w-24 text-right relative">
+                            <span className="text-[11px] font-medium text-gray-400 dark:text-gray-500 group-hover:opacity-0 transition-opacity">
                               {idleLabel}
                             </span>
-                            <span className="text-[11px] font-semibold text-blue-600 dark:text-blue-400 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
+                            <span className="absolute inset-0 flex items-center justify-end text-[11px] font-semibold text-blue-600 dark:text-blue-400 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
                               Zbadaj →
                             </span>
                           </div>

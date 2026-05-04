@@ -13,10 +13,16 @@ import {
   ChevronsDown,
   Paperclip,
   Check,
-  X
+  X,
+  Key,
+  Layout,
+  Globe,
+  Monitor,
+  HelpCircle,
+  Info
 } from 'lucide-react';
+import MarkdownEditor from '../components/MarkdownEditor';
 import useTitle from '../hooks/useTitle';
-import { getCategoryIcon } from '../utils/ticketConstants';
 
 const CreateTicketPage: React.FC = () => {
   useTitle('Nowe zgłoszenie');
@@ -36,6 +42,9 @@ const CreateTicketPage: React.FC = () => {
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [attachmentErrors, setAttachmentErrors] = useState<string[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [categoryShake, setCategoryShake] = useState(false);
+  const [showPriorityTooltip, setShowPriorityTooltip] = useState(false);
+  const [titleBlurred, setTitleBlurred] = useState(false);
 
   const navigate = useNavigate();
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -57,9 +66,7 @@ const CreateTicketPage: React.FC = () => {
         }
 
         setCategories(finalData);
-        if (finalData.length > 0) {
-          setFormData(prev => ({ ...prev, category: finalData[0].id }));
-        }
+        // Don't auto-select — user must choose explicitly
       } catch (err) {
         setError('Błąd podczas ładowania kategorii.');
       }
@@ -81,10 +88,52 @@ const CreateTicketPage: React.FC = () => {
 
 
   const priorityOptions = [
-    { value: 'WYSOKI', label: 'Wysoki', icon: <ChevronsUp className="w-4 h-4 text-red-500" />, color: 'text-red-600' },
-    { value: 'NORMALNY', label: 'Normalny', icon: <Equal className="w-4 h-4 text-blue-500" />, color: 'text-blue-600' },
-    { value: 'NISKI', label: 'Niski', icon: <ChevronsDown className="w-4 h-4 text-gray-400" />, color: 'text-gray-600' },
+    { value: 'WYSOKI', label: 'Wysoki', icon: <ChevronsUp className="w-4 h-4 text-red-500" />, color: 'text-red-600', hint: 'Blokuje pracę lub uniemożliwia działanie' },
+    { value: 'NORMALNY', label: 'Normalny', icon: <Equal className="w-4 h-4 text-blue-500" />, color: 'text-blue-600', hint: 'Utrudnia pracę' },
+    { value: 'NISKI', label: 'Niski', icon: <ChevronsDown className="w-4 h-4 text-gray-400" />, color: 'text-gray-600', hint: 'Nie blokuje pracy' },
   ];
+
+  const categoryIconMap: Record<string, React.ReactNode> = {
+    'Dostęp do konta': <Key className="w-4 h-4" />,
+    'Oprogramowanie': <Layout className="w-4 h-4" />,
+    'Sieć i internet': <Globe className="w-4 h-4" />,
+    'Sprzęt': <Monitor className="w-4 h-4" />,
+    'Inne': <HelpCircle className="w-4 h-4" />,
+  };
+
+  const descriptionPlaceholderMap: Record<string, string> = {
+    'Dostęp do konta': 'Opisz problem. Podaj nazwę systemu lub aplikacji...',
+    'Oprogramowanie': 'Opisz problem. Podaj nazwę i wersję aplikacji jeśli znasz...',
+    'Sieć i internet': 'Opisz problem. Podaj lokalizację lub numer pokoju...',
+    'Sprzęt': 'Opisz problem. Podaj numer seryjny urządzenia jeśli znasz...',
+    'Inne': 'Podaj jak najwięcej szczegółów...',
+  };
+
+  const selectedCategoryName = categories.find(c => c.id === formData.category)?.name || '';
+  const descriptionPlaceholder = descriptionPlaceholderMap[selectedCategoryName] || 'Podaj jak najwięcej szczegółów...';
+
+  const handleTitleBlur = () => {
+    setTitleBlurred(true);
+    const trimmed = formData.title.trim();
+    if (trimmed.length > 0 && trimmed.length < 5) {
+      setFieldErrors(prev => ({ ...prev, title: 'Tytuł musi mieć min. 5 znaków' }));
+    } else if (trimmed.length >= 5) {
+      setFieldErrors(prev => ({ ...prev, title: undefined }));
+    }
+  };
+
+  const handleDescriptionBlur = () => {
+    const trimmed = formData.description.trim();
+    // Assuming simple text length approximation.
+    // HTML string length will be longer, but for UX simple length checking is fine or we strip HTML.
+    // Since we just need to show an error if it's too short.
+    const textOnly = trimmed.replace(/<[^>]*>?/gm, '');
+    if (textOnly.length > 0 && textOnly.length < 10) {
+      setFieldErrors(prev => ({ ...prev, description: 'Opis musi mieć min. 10 znaków' }));
+    } else if (textOnly.length >= 10) {
+      setFieldErrors(prev => ({ ...prev, description: undefined }));
+    }
+  };
 
   const validateForm = (): boolean => {
     const errors: { title?: string; description?: string } = {};
@@ -101,18 +150,25 @@ const CreateTicketPage: React.FC = () => {
 
     if (!trimmedDescription) {
       errors.description = 'Opis jest wymagany.';
-    } else if (trimmedDescription.length < 10) {
-      errors.description = `Opis musi mieć co najmniej 10 znaków (obecnie ${trimmedDescription.length}).`;
+    } else {
+      const textOnly = trimmedDescription.replace(/<[^>]*>?/gm, '');
+      if (textOnly.length < 10) {
+        errors.description = 'Opis musi mieć min. 10 znaków';
+      }
     }
+
+    setTitleBlurred(true);
+    setFieldErrors(errors);
+
+    let isValid = Object.keys(errors).length === 0;
 
     if (formData.category === 0) {
-      setError('Proszę wybrać kategorię.');
-      setFieldErrors(errors);
-      return false;
+      setCategoryShake(true);
+      setTimeout(() => setCategoryShake(false), 400); // 0.4s to match CSS
+      isValid = false;
     }
 
-    setFieldErrors(errors);
-    return Object.keys(errors).length === 0;
+    return isValid;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -188,35 +244,39 @@ const CreateTicketPage: React.FC = () => {
 
           {/* Tytuł */}
           <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <label className="text-sm font-bold text-gray-700 ml-1">Tytuł zgłoszenia</label>
-              <span className={`text-xs font-medium ${formData.title.trim().length > 0 && (formData.title.trim().length < 5 || formData.title.trim().length > 200) ? 'text-red-500' : 'text-gray-400'}`}>
-                {formData.title.trim().length} / 200 znaków (min. 5)
-              </span>
-            </div>
-            <div className="relative group">
-              <FileText className="absolute left-4 top-3.5 w-5 h-5 text-gray-400 group-focus-within:text-blue-500 transition-colors" />
+            <label className="text-sm font-bold text-gray-700 ml-1">Tytuł zgłoszenia</label>
+            <div className="relative">
               <input
                 type="text"
-                className={`w-full pl-12 pr-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:bg-white dark:focus:bg-gray-900 outline-none transition-all ${fieldErrors.title ? 'border-red-300 bg-red-50/50' : formData.title.length > 0 ? 'bg-white dark:bg-gray-800/50 border-blue-200 dark:border-blue-500/40 shadow-sm' : 'bg-gray-50 dark:bg-gray-900/50 border-gray-200 dark:border-gray-800'}`}
+                className={`w-full pl-4 pr-12 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:bg-white dark:focus:bg-gray-900 outline-none transition-all ${fieldErrors.title ? 'border-red-400 bg-red-50/30' : (titleBlurred && formData.title.trim().length >= 5) ? 'border-green-400 bg-green-50/10' : 'bg-gray-50 dark:bg-gray-900/50 border-gray-200 dark:border-gray-800'}`}
                 placeholder="Co się stało?"
                 value={formData.title}
                 onChange={(e) => {
                   setFormData({ ...formData, title: e.target.value });
                   if (fieldErrors.title) setFieldErrors(prev => ({ ...prev, title: undefined }));
                 }}
+                onBlur={handleTitleBlur}
               />
+              {titleBlurred && formData.title.trim().length >= 5 && !fieldErrors.title && (
+                <Check className="absolute right-4 top-3.5 w-5 h-5 text-green-500" />
+              )}
             </div>
-            {fieldErrors.title && (
+            {fieldErrors.title ? (
               <p className="text-xs text-red-600 font-medium ml-1 flex items-center">
                 <AlertCircle className="w-3 h-3 mr-1" /> {fieldErrors.title}
+              </p>
+            ) : (
+              <p className={`text-xs ml-1 ${formData.title.trim().length > 0 && (formData.title.trim().length < 5 || formData.title.trim().length > 200) ? 'text-red-500' : 'text-gray-400'}`}>
+                {formData.title.trim().length} / 200 znaków (min. 5)
               </p>
             )}
           </div>
 
+          <hr className="border-gray-100 dark:border-gray-800" />
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6" ref={dropdownRef}>
-            {/* Kategorie - Custom Select */}
-            <div className="relative space-y-2">
+            {/* Kategoria - Dropdown */}
+            <div className={`relative space-y-2 ${categoryShake ? 'animate-shake' : ''}`}>
               <label className="text-sm font-bold text-gray-700 ml-1">Kategoria</label>
               <button
                 type="button"
@@ -224,8 +284,8 @@ const CreateTicketPage: React.FC = () => {
                 className={`w-full flex items-center justify-between pl-4 pr-3 py-3 border rounded-xl hover:border-blue-400 dark:hover:border-blue-500/70 transition-all text-left ${formData.category !== 0 ? 'bg-white dark:bg-gray-800/60 border-blue-300 dark:border-blue-500/40 ring-2 ring-blue-500/10 dark:ring-blue-500/20 shadow-sm' : 'bg-gray-50 border-gray-200'}`}
               >
                 <div className="flex items-center gap-3">
-                  <div className="text-blue-600">{getCategoryIcon(selectedCategory?.name || '')}</div>
-                  <span className="font-medium text-gray-900">{selectedCategory?.name || 'Wybierz...'}</span>
+                  <div className="text-blue-600">{categoryIconMap[selectedCategory?.name || ''] || <HelpCircle className="w-4 h-4 text-gray-400" />}</div>
+                  <span className="font-medium text-gray-900">{selectedCategory?.name || 'Wybierz kategorię...'}</span>
                 </div>
                 <ChevronDown className={`w-5 h-5 text-gray-400 transition-transform ${activeDropdown === 'category' ? 'rotate-180' : ''}`} />
               </button>
@@ -239,10 +299,11 @@ const CreateTicketPage: React.FC = () => {
                       onClick={() => {
                         setFormData({ ...formData, category: cat.id });
                         setActiveDropdown(null);
+                        if (error === 'Proszę wybrać kategorię.') setError('');
                       }}
                       className={`w-full flex items-center gap-3 px-4 py-2.5 transition-colors text-left ${formData.category === cat.id ? 'bg-blue-50/70 dark:bg-blue-900/50 text-blue-700 dark:text-blue-400 font-bold' : 'hover:bg-blue-50/50 dark:hover:bg-gray-700/80 text-gray-700 dark:text-gray-300 hover:text-blue-700 dark:hover:text-blue-400 font-medium'}`}
                     >
-                      {getCategoryIcon(cat.name)}
+                      <div className="text-blue-600">{categoryIconMap[cat.name] || <HelpCircle className="w-4 h-4" />}</div>
                       <span className="flex-1">{cat.name}</span>
                       {formData.category === cat.id && <Check className="w-5 h-5 text-blue-600" />}
                     </button>
@@ -251,9 +312,31 @@ const CreateTicketPage: React.FC = () => {
               )}
             </div>
 
-            {/* Priorytet - Custom Select */}
+            {/* Priorytet - Dropdown */}
             <div className="relative space-y-2">
-              <label className="text-sm font-bold text-gray-700 ml-1">Priorytet</label>
+              <div className="flex items-center gap-2 ml-1">
+                <label className="text-sm font-bold text-gray-700">Priorytet</label>
+                <div className="relative">
+                  <button
+                    type="button"
+                    onMouseEnter={() => setShowPriorityTooltip(true)}
+                    onMouseLeave={() => setShowPriorityTooltip(false)}
+                    className="text-gray-400 hover:text-blue-500 transition-colors"
+                  >
+                    <Info className="w-3.5 h-3.5" />
+                  </button>
+                  {showPriorityTooltip && (
+                    <div className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 w-64 bg-gray-900 text-white text-xs rounded-lg px-3 py-2.5 shadow-xl z-50 pointer-events-none">
+                      <ul className="space-y-1">
+                        <li><span className="text-red-400 font-semibold">Wysoki</span> — blokuje pracę lub uniemożliwia działanie</li>
+                        <li><span className="text-blue-400 font-semibold">Normalny</span> — utrudnia pracę</li>
+                        <li><span className="text-gray-400 font-semibold">Niski</span> — nie blokuje pracy</li>
+                      </ul>
+                      <div className="absolute left-1/2 -translate-x-1/2 top-full w-0 h-0 border-x-[6px] border-x-transparent border-t-[6px] border-t-gray-900" />
+                    </div>
+                  )}
+                </div>
+              </div>
               <button
                 type="button"
                 onClick={() => setActiveDropdown(activeDropdown === 'priority' ? null : 'priority')}
@@ -280,6 +363,7 @@ const CreateTicketPage: React.FC = () => {
                     >
                       {opt.icon}
                       <span className="flex-1">{opt.label}</span>
+                      <span className="text-xs text-gray-400 font-normal">{opt.hint}</span>
                       {formData.priority === opt.value && <Check className="w-5 h-5 text-blue-600" />}
                     </button>
                   ))}
@@ -288,30 +372,32 @@ const CreateTicketPage: React.FC = () => {
             </div>
           </div>
 
+          <hr className="border-gray-100 dark:border-gray-800" />
+
           {/* Opis */}
           <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <label className="text-sm font-bold text-gray-700 ml-1">Opis problemu</label>
-              <span className={`text-xs font-medium ${formData.description.trim().length > 0 && formData.description.trim().length < 10 ? 'text-red-500' : 'text-gray-400'}`}>
-                {formData.description.trim().length} znaków (min. 10)
-              </span>
-            </div>
-            <textarea
-              rows={5}
-              className={`w-full p-4 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:bg-white dark:focus:bg-gray-900 outline-none transition-all text-gray-900 dark:text-gray-100 resize-none ${fieldErrors.description ? 'border-red-300 bg-red-50/50' : formData.description.length > 0 ? 'bg-white dark:bg-gray-800/50 border-blue-200 dark:border-blue-500/40 shadow-sm' : 'bg-gray-50 dark:bg-gray-900/50 border-gray-200 dark:border-gray-800'}`}
-              placeholder="Podaj jak najwięcej szczegółów..."
+            <label className="text-sm font-bold text-gray-700 ml-1">Opis problemu</label>
+            <MarkdownEditor
+              key={descriptionPlaceholder}
               value={formData.description}
-              onChange={(e) => {
-                setFormData({ ...formData, description: e.target.value });
+              onChange={(v) => {
+                setFormData({ ...formData, description: v });
                 if (fieldErrors.description) setFieldErrors(prev => ({ ...prev, description: undefined }));
               }}
+              placeholder={descriptionPlaceholder}
+              className={fieldErrors.description ? 'border-red-400 bg-red-50/30 ring-1 ring-red-400/50 rounded-xl' : 'bg-gray-50 dark:bg-gray-900/50 border-gray-200 dark:border-gray-800'}
+              resizable={true}
+              onAttachFile={() => fileInputRef.current?.click()}
+              onBlur={handleDescriptionBlur}
             />
             {fieldErrors.description && (
-              <p className="text-xs text-red-600 font-medium ml-1 flex items-center">
+              <p className="text-xs text-red-600 font-medium ml-1 flex items-center mt-1">
                 <AlertCircle className="w-3 h-3 mr-1" /> {fieldErrors.description}
               </p>
             )}
           </div>
+
+          <hr className="border-gray-100 dark:border-gray-800" />
 
           {/* Załączniki */}
           <div className="space-y-2">
@@ -325,6 +411,7 @@ const CreateTicketPage: React.FC = () => {
                   <Paperclip className="w-4 h-4" />
                   <span className="font-semibold">Kliknij, aby dołączyć pliki</span>
                 </div>
+                <p className="text-xs text-gray-400 mb-1">lub przeciągnij i upuść pliki tutaj</p>
                 <p className="text-[11.5px] leading-relaxed text-gray-500 max-w-sm">
                   Maks. waga pojedyńczego pliku do <strong>5MB</strong> (łącznie do 15MB na zgłoszenie). Obsługujemy obrazki, PDF, dokumenty tekstowe oraz ZIP.
                 </p>
@@ -448,10 +535,11 @@ const CreateTicketPage: React.FC = () => {
             )}
           </div>
 
+          <div className="flex justify-end">
           <button
             type="submit"
             disabled={isSubmitting || isSuccess}
-            className={`w-full flex items-center justify-center py-4 text-white font-bold rounded-xl shadow-lg active:scale-95 transition-all disabled:opacity-80 ${isSuccess ? 'bg-green-600 hover:bg-green-700 shadow-green-100/50 dark:shadow-none' : 'bg-blue-600 hover:bg-blue-700 shadow-blue-100 dark:shadow-none'}`}
+            className={`max-w-[300px] w-full flex items-center justify-center py-4 text-white font-bold rounded-xl shadow-lg active:scale-95 transition-all disabled:opacity-80 ${isSuccess ? 'bg-green-600 hover:bg-green-700 shadow-green-100/50 dark:shadow-none' : 'bg-blue-600 hover:bg-blue-700 shadow-blue-100 dark:shadow-none'}`}
           >
             {isSubmitting && !isSuccess && (
               <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
@@ -467,6 +555,7 @@ const CreateTicketPage: React.FC = () => {
               </>
             )}
           </button>
+          </div>
         </form>
       </div>
     </div>
