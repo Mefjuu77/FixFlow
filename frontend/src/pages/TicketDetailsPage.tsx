@@ -42,6 +42,8 @@ import {
   Loader2
 } from 'lucide-react';
 import { getCategoryIcon } from '../utils/ticketConstants';
+import MarkdownEditor from '../components/MarkdownEditor';
+import MarkdownRenderer from '../components/MarkdownRenderer';
 
 const TicketDetailsPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -654,10 +656,11 @@ const TicketDetailsPage: React.FC = () => {
               <h3 className="text-sm font-semibold text-gray-800 dark:text-gray-200 mb-2">Opis</h3>
               {isEditingDescription ? (
                 <div>
-                  <textarea
+                  <MarkdownEditor
                     value={editDescription}
-                    onChange={(e) => setEditDescription(e.target.value)}
-                    className="w-full border border-blue-300 rounded-lg p-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 min-h-[120px] resize-none bg-white dark:bg-gray-900 dark:border-gray-600 dark:text-gray-200"
+                    onChange={setEditDescription}
+                    placeholder="Edytuj opis zgłoszenia..."
+                    className="border-blue-300 dark:border-gray-600"
                     autoFocus
                   />
                   <div className="flex gap-2 mt-2 justify-end">
@@ -691,9 +694,7 @@ const TicketDetailsPage: React.FC = () => {
                   }}
                   title={isTechnicianOrAdmin ? "Kliknij, aby edytować opis" : undefined}
                 >
-                  <p className="text-gray-700 dark:text-gray-300 leading-relaxed whitespace-pre-wrap text-sm">
-                    {ticket.description}
-                  </p>
+                  <MarkdownRenderer content={ticket.description} className="text-gray-700 dark:text-gray-300 text-sm leading-relaxed" />
                   {isTechnicianOrAdmin && (
                     <div className="absolute top-3 right-3 text-gray-400 group-hover:text-blue-500 opacity-0 group-hover:opacity-100 transition-opacity bg-white dark:bg-gray-800 rounded p-1 shadow-sm border border-gray-200 dark:border-gray-700">
                       <Pencil className="w-3.5 h-3.5" />
@@ -843,7 +844,7 @@ const TicketDetailsPage: React.FC = () => {
                                 <span className="font-medium uppercase tracking-wide">Notatka Wewnętrzna</span>
                               </div>
                             )}
-                            <p className="text-gray-700 text-sm whitespace-pre-wrap">{comment.content}</p>
+                            <MarkdownRenderer content={comment.content} className="text-gray-700 dark:text-gray-300 text-sm leading-relaxed" />
 
                             {comment.attachments && comment.attachments.length > 0 && (
                               <div className="mt-3 pt-3 border-t border-gray-100/70">
@@ -953,14 +954,14 @@ const TicketDetailsPage: React.FC = () => {
                       )}
                     </div>
 
-                    <textarea
+                    <MarkdownEditor
                       value={newCommentText}
-                      onChange={(e) => {
-                        setNewCommentText(e.target.value);
+                      onChange={(v) => {
+                        setNewCommentText(v);
                         if (commentError) setCommentError('');
                       }}
                       placeholder={newCommentType === 'INTERNAL' ? "Dodaj notatkę wewnętrzną (widoczna tylko dla techników)..." : "Napisz odpowiedź..."}
-                      className={`w-full border rounded-xl p-4 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 min-h-[120px] resize-none transition-colors ${commentError ? 'border-red-300 bg-red-50 focus:ring-red-500' : newCommentType === 'INTERNAL' ? 'bg-amber-50/50 border-amber-200 focus:ring-amber-500 placeholder-amber-400' : 'bg-gray-50 border-gray-200'}`}
+                      className={`${commentError ? 'border-red-300 bg-red-50' : newCommentType === 'INTERNAL' ? 'border-amber-200' : 'border-gray-200'}`}
                     />
 
                     <div className="flex justify-between items-center mt-1">
