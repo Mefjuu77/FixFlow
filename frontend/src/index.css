@@ -531,3 +531,101 @@ html.dark ::-webkit-scrollbar-thumb:hover {
 .dark .rdp-root .rdp-in-range .rdp-day_button {
   background-color: #0f172a;
 }
+
+/* ===== TIPTAP EDITOR ===== */
+
+/* Placeholder */
+.tiptap p.is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  color: #94a3b8;
+  pointer-events: none;
+  float: left;
+  height: 0;
+}
+
+/* Editor area (editable) */
+.tiptap {
+  color: #1e293b;
+}
+html.dark .tiptap {
+  color: #e2e8f0;
+}
+
+/* ===== TIPTAP RENDERED CONTENT (MarkdownRenderer) ===== */
+
+.tiptap-content p,
+.tiptap p {
+  margin-bottom: 0.4em;
+}
+.tiptap-content p:last-child,
+.tiptap p:last-child {
+  margin-bottom: 0;
+}
+
+.tiptap-content strong,
+.tiptap strong {
+  font-weight: 700;
+}
+
+.tiptap-content em,
+.tiptap em {
+  font-style: italic;
+}
+
+.tiptap-content u,
+.tiptap u {
+  text-decoration: underline;
+}
+
+.tiptap-content s,
+.tiptap s {
+  text-decoration: line-through;
+  color: #94a3b8;
+}
+
+.tiptap-content ul,
+.tiptap ul {
+  list-style-type: disc;
+  padding-left: 1.25rem;
+  margin-bottom: 0.4em;
+}
+
+.tiptap-content ol,
+.tiptap ol {
+  list-style-type: decimal;
+  padding-left: 1.25rem;
+  margin-bottom: 0.4em;
+}
+
+.tiptap-content li,
+.tiptap li {
+  margin-bottom: 0.1em;
+}
+
+.tiptap-content code,
+.tiptap code {
+  background-color: #f1f5f9;
+  color: #db2777;
+  border-radius: 4px;
+  padding: 0.1em 0.35em;
+  font-size: 0.82em;
+  font-family: ui-monospace, monospace;
+}
+
+html.dark .tiptap-content code,
+html.dark .tiptap code {
+  background-color: #1e293b;
+  color: #f472b6;
+}
+
+.tiptap-content a,
+.tiptap a {
+  color: #2563eb;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+html.dark .tiptap-content a,
+html.dark .tiptap a {
+  color: #60a5fa;
+}
