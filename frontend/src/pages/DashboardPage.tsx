@@ -493,15 +493,52 @@ const DashboardPage: React.FC = () => {
 
     const openTickets = filteredTickets.filter(t => !['ROZWIAZANE', 'ZAMKNIETE'].includes(t.status));
 
-    // Admin interesuje się globalnymi wąskimi gardłami (stare nierozwiązane, bardzo opóźnione) - tutaj korzystamy ze wszystkich, niezależnie od kalendarza
-    const adminNeedsAttention = tickets
-      .filter(t => (
-        (t.technician === null && t.priority === 'WYSOKI' && !['ROZWIAZANE', 'ZAMKNIETE'].includes(t.status)) ||
-        (t.technician === null && !['ROZWIAZANE', 'ZAMKNIETE'].includes(t.status) && dayjs(t.created_at).isBefore(dayjs().subtract(1, 'day'))) ||
-        (t.status === 'W_TOKU' && dayjs(t.updated_at).isBefore(dayjs().subtract(3, 'day')))
-      ))
-      .sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())
-      .slice(0, 6);
+    // Panel ryzyka — niezależny od kalendarza
+    // Każdy ticket dostaje powód + score do priorytetyzacji
+    type RiskReason = 'critical_unassigned' | 'stale_unassigned' | 'frozen_progress';
+    interface RiskItem {
+      ticket: TicketType;
+      reason: RiskReason;
+      score: number;
+      age: number; // dni od created_at
+      idle: number; // dni od updated_at
+    }
+
+    const riskReasonLabel: Record<RiskReason, string> = {
+      critical_unassigned: 'Krytyczne — brak technika',
+      stale_unassigned: 'Nieprzypisane zbyt długo',
+      frozen_progress: 'Brak aktywności',
+    };
+
+    const riskReasonColor: Record<RiskReason, { text: string; bg: string; icon: string }> = {
+      critical_unassigned: { text: 'text-rose-600 dark:text-rose-400', bg: 'bg-rose-50 dark:bg-rose-500/10', icon: 'text-rose-500' },
+      stale_unassigned: { text: 'text-amber-600 dark:text-amber-400', bg: 'bg-amber-50 dark:bg-amber-500/10', icon: 'text-amber-500' },
+      frozen_progress: { text: 'text-gray-600 dark:text-gray-400', bg: 'bg-gray-100 dark:bg-gray-700/50', icon: 'text-gray-500 dark:text-gray-400' },
+    };
+
+    const riskItems: RiskItem[] = [];
+    const now = dayjs();
+
+    tickets.forEach(t => {
+      if (['ROZWIAZANE', 'ZAMKNIETE'].includes(t.status)) return;
+      const age = now.diff(dayjs(t.created_at), 'day');
+      const idle = now.diff(dayjs(t.updated_at), 'day');
+
+      if (t.technician === null && t.priority === 'WYSOKI') {
+        // Krytyczny priorytet + brak technika = najwyższy risk
+        riskItems.push({ ticket: t, reason: 'critical_unassigned', score: 100 + age * 2, age, idle });
+      } else if (t.technician === null && age >= 1) {
+        // Nieprzypisane > 1 dzień
+        riskItems.push({ ticket: t, reason: 'stale_unassigned', score: 50 + age * 3, age, idle });
+      } else if (t.status === 'W_TOKU' && idle >= 3) {
+        // Zamrożone W toku > 3 dni bez aktywności
+        riskItems.push({ ticket: t, reason: 'frozen_progress', score: 30 + idle * 2, age, idle });
+      }
+    });
+
+    // Sortuj: najwyższy risk score pierwsze
+    riskItems.sort((a, b) => b.score - a.score);
+    const topRisks = riskItems.slice(0, 6);
 
     // Dane KPI
     const waitingTickets = filteredTickets.filter(t => t.status === 'NOWE' || (t.technician === null && !['ROZWIAZANE', 'ZAMKNIETE'].includes(t.status)));
@@ -717,65 +754,74 @@ const DashboardPage: React.FC = () => {
         </div>
 
         <div className="grid grid-cols-1 xl:grid-cols-5 gap-8">
-          {/* Wymagające uwagi (Wąskie gardła) */}
+          {/* Wymagają uwagi — panel ryzyka */}
           <div className="xl:col-span-3 space-y-4">
-            <div className="flex items-center justify-between">
-              <h2 className="text-xl font-bold text-gray-900 flex items-center">
-                <AlertTriangle className="w-5 h-5 text-amber-500 mr-2" /> Globalne Wąskie Gardła
-              </h2>
-              <span className="text-xs font-bold text-gray-400 bg-gray-100 px-2.5 py-1 rounded-lg">
-                {adminNeedsAttention.length} {adminNeedsAttention.length === 1 ? 'eskalacja' : 'eskalacji'}
-              </span>
-            </div>
+            <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-3xl shadow-sm flex flex-col h-[580px]">
+              <div className="p-5 border-b border-gray-100 dark:border-gray-700/50">
+                <div className="flex items-center justify-between">
+                  <h2 className="text-lg font-bold text-gray-900 dark:text-white">
+                    Wymagają uwagi
+                  </h2>
+                  {topRisks.length > 0 && (
+                    <span className="text-xs font-semibold text-gray-400 dark:text-gray-500">
+                      {riskItems.length} {riskItems.length === 1 ? 'problem' : 'problemów'}
+                    </span>
+                  )}
+                </div>
+              </div>
 
-            <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-3xl shadow-sm overflow-hidden">
-              {adminNeedsAttention.length === 0 ? (
-                <div className="p-12 text-center flex flex-col items-center">
-                  <div className="w-16 h-16 bg-green-50 dark:bg-green-900/20 rounded-full flex items-center justify-center mb-4 text-green-600 dark:text-green-400">
-                    <CheckCircle2 className="w-8 h-8" />
+              <div className="flex-1 overflow-y-auto p-2 scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600">
+                {topRisks.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center h-full text-center px-6">
+                    <div className="w-14 h-14 bg-emerald-50 dark:bg-emerald-900/20 rounded-full flex items-center justify-center mb-4">
+                      <CheckCircle2 className="w-7 h-7 text-emerald-500 dark:text-emerald-400" />
+                    </div>
+                    <h3 className="text-base font-bold text-gray-900 dark:text-white">Wszystko pod kontrolą</h3>
+                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Brak zgłoszeń wymagających interwencji.</p>
                   </div>
-                  <h3 className="text-lg font-bold text-gray-900 dark:text-white">Zespół radzi sobie świetnie!</h3>
-                  <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Brak starych, nieprzypisanych lub zablokowanych zgłoszeń w systemie.</p>
-                </div>
-              ) : (
-                <div className="divide-y divide-gray-100 dark:divide-gray-700/50">
-                  {adminNeedsAttention.map(ticket => (
-                    <Link to={`/tickets/${ticket.id}`} key={ticket.id} className="p-5 flex items-start hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors block group cursor-pointer">
-                      <div className={`w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0 ${ticket.priority === 'WYSOKI' ? 'bg-red-50 dark:bg-red-500/10 group-hover:bg-red-100 dark:group-hover:bg-red-500/20' : 'bg-amber-50 dark:bg-amber-500/10 group-hover:bg-amber-100 dark:group-hover:bg-amber-500/20'
-                        } transition-colors`}>
-                        {ticket.priority === 'WYSOKI'
-                          ? <AlertTriangle className="w-6 h-6 text-red-500" />
-                          : <TicketIcon className="w-6 h-6 text-amber-600 dark:text-amber-400" />}
-                      </div>
-                      <div className="ml-5 flex-1">
-                        <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-1.5 gap-2">
-                          <h3 className="font-extrabold text-gray-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors text-base">#{ticket.id} {ticket.title}</h3>
-                          <div className="flex items-center gap-2 flex-shrink-0">
-                            {ticket.priority === 'WYSOKI' && (
-                              <span className="px-2.5 py-1 text-[10px] font-extrabold rounded-lg bg-red-100 dark:bg-red-500/20 text-red-700 dark:text-red-400 uppercase tracking-wider">Wysoki</span>
-                            )}
-                            {ticket.technician === null ? (
-                              <span className="px-2.5 py-1 text-[10px] font-extrabold rounded-lg bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-300 uppercase tracking-wider">Nieprzypisane zbyt długo</span>
-                            ) : (
-                              <span className="px-2.5 py-1 text-[10px] font-extrabold rounded-lg bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 uppercase tracking-wider">Zamrożone "W toku"</span>
-                            )}
+                ) : (
+                  <div className="space-y-1">
+                    {topRisks.map((risk) => {
+                      const colors = riskReasonColor[risk.reason];
+                      const t = risk.ticket;
+                      
+                      const idleLabel = risk.reason === 'frozen_progress'
+                        ? `${risk.idle} dn. bez aktywności`
+                        : risk.reason === 'stale_unassigned'
+                        ? `Czeka ${risk.age} dn.`
+                        : `${risk.age} dn. temu`;
+
+                      return (
+                        <Link
+                          to={`/tickets/${t.id}`}
+                          key={t.id}
+                          className="flex items-center px-4 py-3 rounded-2xl hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors group"
+                        >
+                          <div className={`w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 mr-4 ${colors.bg}`}>
+                            <AlertTriangle className={`w-4 h-4 ${colors.icon}`} />
                           </div>
-                        </div>
-                        <div className="flex flex-wrap items-center gap-4 text-xs font-medium text-gray-500 dark:text-gray-400 mt-2">
-                          <span className="flex items-center">
-                            <UserAvatar avatar={ticket.creator_details?.avatar} name={ticket.creator_details?.first_name || 'U'} size="xs" className="mr-1.5" />
-                            {ticket.creator_details ? `${ticket.creator_details.first_name} ${ticket.creator_details.last_name}` : 'Nieznany'}
-                          </span>
-                          <span className="flex items-center">
-                            <Clock className="w-3.5 h-3.5 mr-1.5 opacity-70" />
-                            Ostatnia akcja: {dayjs(ticket.updated_at).fromNow()}
-                          </span>
-                        </div>
-                      </div>
-                    </Link>
-                  ))}
-                </div>
-              )}
+                          <div className="flex-1 min-w-0">
+                            <p className="text-[13px] text-gray-800 dark:text-gray-200 truncate group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                              <span className="font-semibold">#{t.id}</span> {t.title}
+                            </p>
+                            <p className={`text-[11px] font-medium mt-0.5 ${colors.text}`}>
+                              {riskReasonLabel[risk.reason]}
+                            </p>
+                          </div>
+                          <div className="flex items-center gap-3 flex-shrink-0 ml-3">
+                            <span className="text-[11px] font-medium text-gray-400 dark:text-gray-500">
+                              {idleLabel}
+                            </span>
+                            <span className="text-[11px] font-semibold text-blue-600 dark:text-blue-400 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
+                              Zbadaj →
+                            </span>
+                          </div>
+                        </Link>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
             </div>
           </div>
 

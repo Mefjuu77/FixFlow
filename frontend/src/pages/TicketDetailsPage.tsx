@@ -962,6 +962,7 @@ const TicketDetailsPage: React.FC = () => {
                       }}
                       placeholder={newCommentType === 'INTERNAL' ? "Dodaj notatkę wewnętrzną (widoczna tylko dla techników)..." : "Napisz odpowiedź..."}
                       className={`${commentError ? 'border-red-300 bg-red-50' : newCommentType === 'INTERNAL' ? 'border-amber-200' : 'border-gray-200'}`}
+                      onAttachFile={() => newCommentFileRef.current?.click()}
                     />
 
                     <div className="flex justify-between items-center mt-1">
@@ -1033,14 +1034,6 @@ const TicketDetailsPage: React.FC = () => {
                               e.target.value = '';
                             }}
                           />
-                          <button
-                            type="button"
-                            onClick={() => newCommentFileRef.current?.click()}
-                            className="text-gray-500 hover:text-blue-600 transition-colors p-2 rounded-lg hover:bg-gray-100"
-                            title="Dodaj załącznik"
-                          >
-                            <Paperclip className="w-5 h-5" />
-                          </button>
                         </div>
                         <button
                           onClick={handleAddComment}

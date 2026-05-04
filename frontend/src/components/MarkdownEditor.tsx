@@ -15,6 +15,7 @@ import {
   Link2,
   Undo2,
   Redo2,
+  Paperclip,
 } from 'lucide-react';
 
 interface MarkdownEditorProps {
@@ -24,6 +25,7 @@ interface MarkdownEditorProps {
   className?: string;
   minHeight?: string;
   autoFocus?: boolean;
+  onAttachFile?: () => void;
 }
 
 interface ToolbarButtonProps {
@@ -61,6 +63,7 @@ const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
   className = '',
   minHeight = '120px',
   autoFocus = false,
+  onAttachFile,
 }) => {
   const editor = useEditor({
     extensions: [
@@ -185,6 +188,17 @@ const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
           isActive={editor.isActive('link')}
           onClick={handleAddLink}
         />
+
+        {onAttachFile && (
+          <>
+            <ToolbarSeparator />
+            <ToolbarButton
+              icon={<Paperclip className="w-3.5 h-3.5" />}
+              label="Dodaj załącznik"
+              onClick={onAttachFile}
+            />
+          </>
+        )}
 
         <ToolbarSeparator />
 
