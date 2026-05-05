@@ -1207,6 +1207,17 @@ const DashboardPage: React.FC = () => {
               const activityTabs = ['Wszystkie', 'Zgłoszenia', 'Zespół'];
               
               // Mapowanie akcji z API na konfigurację wizualną
+              const trunc = (s: string, max = 40) => s.length > max ? s.slice(0, max) + '...' : s;
+
+              const statusLabel: Record<string, string> = {
+                NOWE: 'Nowe', W_TOKU: 'W toku', ROZWIAZANE: 'Rozwiązane', ZAMKNIETE: 'Zamknięte',
+              };
+              const priorityLabel: Record<string, string> = {
+                NISKI: 'Niski', NORMALNY: 'Normalny', WYSOKI: 'Wysoki',
+              };
+              const sl = (v: string) => statusLabel[v] ?? v;
+              const pl = (v: string) => priorityLabel[v] ?? v;
+
               const getActivityConfig = (log: any) => {
                 const action = log.action;
                 const ticketId = log.ticket;
@@ -1214,7 +1225,7 @@ const DashboardPage: React.FC = () => {
                 const userName = user ? `${user.first_name} ${user.last_name}` : 'System';
                 const bulk = log._bulkCount;
                 const bulkLabel = bulk ? `${bulk} zgłoszeń` : null;
-                
+
                 switch (action) {
                   case 'CREATED':
                     return {
@@ -1224,88 +1235,112 @@ const DashboardPage: React.FC = () => {
                         : (<span>{userName} utworzył(a) zgłoszenie <strong>#{ticketId}</strong></span>),
                       unread: true,
                     };
-                  case 'STATUS_CHANGED':
-                    if (['ROZWIAZANE', 'ZAMKNIETE'].includes(log.new_value)) {
-                      const verb = log.new_value === 'ZAMKNIETE' ? 'zamknął(ęła)' : 'rozwiązał(a)';
-                      return {
-                        type: 'GREEN', icon: CheckCircle2, tab: 'Zgłoszenia',
-                        text: bulk
-                          ? (<span>{userName} {verb} <strong>{bulkLabel}</strong></span>)
-                          : (<span>{userName}: zgłoszenie <strong>#{ticketId}</strong> {log.new_value === 'ZAMKNIETE' ? 'zamknięte' : 'rozwiązane'}</span>),
-                        unread: false,
-                      };
-                    }
+
+                  case 'STATUS_CHANGED': {
+                    const oldS = log.old_value ? sl(log.old_value) : null;
+                    const newS = log.new_value ? sl(log.new_value) : null;
+                    const arrow = oldS && newS ? `: ${oldS} → ${newS}` : newS ? ` → ${newS}` : '';
+                    const isResolved = ['ROZWIAZANE', 'ZAMKNIETE'].includes(log.new_value);
                     return {
-                      type: 'ORANGE', icon: Activity, tab: 'Zgłoszenia',
+                      type: isResolved ? 'GREEN' : 'ORANGE',
+                      icon: isResolved ? CheckCircle2 : Activity,
+                      tab: 'Zgłoszenia',
                       text: bulk
-                        ? (<span>{userName} zmienił(a) status <strong>{bulkLabel}</strong></span>)
-                        : (<span>{userName} zmienił(a) status <strong>#{ticketId}</strong></span>),
-                      unread: true,
+                        ? (<span>{userName} zmienił(a) status <strong>{bulkLabel}</strong>{newS ? ` → ${newS}` : ''}</span>)
+                        : (<span>{userName} zmienił(a) status <strong>#{ticketId}</strong>{arrow}</span>),
+                      unread: !isResolved,
                     };
-                  case 'PRIORITY_CHANGED':
+                  }
+
+                  case 'PRIORITY_CHANGED': {
+                    const oldP = log.old_value ? pl(log.old_value) : null;
+                    const newP = log.new_value ? pl(log.new_value) : null;
+                    const arrow = oldP && newP ? `: ${oldP} → ${newP}` : newP ? ` → ${newP}` : '';
                     return {
                       type: 'ORANGE', icon: AlertTriangle, tab: 'Zgłoszenia',
                       text: bulk
-                        ? (<span>{userName} zmienił(a) priorytet <strong>{bulkLabel}</strong>{log.new_value ? ` → ${log.new_value}` : ''}</span>)
-                        : (<span>Zmiana priorytetu <strong>#{ticketId}</strong>{log.new_value ? ` → ${log.new_value}` : ''}</span>),
+                        ? (<span>{userName} zmienił(a) priorytet <strong>{bulkLabel}</strong>{newP ? ` → ${newP}` : ''}</span>)
+                        : (<span>{userName} zmienił(a) priorytet <strong>#{ticketId}</strong>{arrow}</span>),
                       unread: true,
                     };
-                  case 'CATEGORY_CHANGED':
+                  }
+
+                  case 'CATEGORY_CHANGED': {
+                    const oldC = log.old_value || null;
+                    const newC = log.new_value || null;
+                    const arrow = oldC && newC ? `: ${oldC} → ${newC}` : newC ? ` → ${newC}` : '';
                     return {
                       type: 'ORANGE', icon: ClipboardList, tab: 'Zgłoszenia',
                       text: bulk
-                        ? (<span>{userName} zmienił(a) kategorię <strong>{bulkLabel}</strong></span>)
-                        : (<span>Zmiana kategorii w <strong>#{ticketId}</strong>{log.new_value ? ` → ${log.new_value}` : ''}</span>),
+                        ? (<span>{userName} zmienił(a) kategorię <strong>{bulkLabel}</strong>{newC ? ` → ${newC}` : ''}</span>)
+                        : (<span>{userName} zmienił(a) kategorię <strong>#{ticketId}</strong>{arrow}</span>),
                       unread: false,
                     };
+                  }
+
+                  case 'TITLE_CHANGED': {
+                    const oldT = log.old_value ? `„${trunc(log.old_value)}”` : null;
+                    const newT = log.new_value ? `„${trunc(log.new_value)}”` : null;
+                    const detail = oldT && newT ? `: ${oldT} → ${newT}` : newT ? ` → ${newT}` : '';
+                    return {
+                      type: 'ORANGE', icon: FileText, tab: '_edycje',
+                      text: (<span>{userName} zmienił(a) tytuł <strong>#{ticketId}</strong>{detail}</span>),
+                      unread: false,
+                    };
+                  }
+
                   case 'DESCRIPTION_CHANGED':
                     return {
-                      type: 'ORANGE', icon: FileText, tab: 'Zgłoszenia',
-                      text: (<span>Edycja opisu <strong>#{ticketId}</strong></span>),
+                      type: 'ORANGE', icon: FileText, tab: '_edycje',
+                      text: (<span>{userName} zaktualizował(a) opis zgłoszenia <strong>#{ticketId}</strong></span>),
                       unread: false,
                     };
-                  case 'TITLE_CHANGED':
-                    return {
-                      type: 'ORANGE', icon: FileText, tab: 'Zgłoszenia',
-                      text: (<span>Edycja tytułu <strong>#{ticketId}</strong></span>),
-                      unread: false,
-                    };
+
                   case 'REOPENED':
                     return {
                       type: 'ORANGE', icon: Activity, tab: 'Zgłoszenia',
                       text: bulk
                         ? (<span>{userName} ponownie otworzył(a) <strong>{bulkLabel}</strong></span>)
-                        : (<span>Ponownie otwarto <strong>#{ticketId}</strong></span>),
+                        : (<span>{userName} ponownie otworzył(a) <strong>#{ticketId}</strong></span>),
                       unread: true,
                     };
+
                   case 'AUTO_CLOSED':
                     return {
                       type: 'GREEN', icon: CheckCircle2, tab: 'Zgłoszenia',
-                      text: (<span>Auto-zamknięcie <strong>#{ticketId}</strong></span>),
+                      text: (<span>System automatycznie zamknął <strong>#{ticketId}</strong></span>),
                       unread: false,
                     };
-                  case 'TECHNICIAN_ASSIGNED':
+
+                  case 'TECHNICIAN_ASSIGNED': {
+                    const tech = log.new_value || null;
                     return {
                       type: 'BLUE', icon: Users, tab: 'Zespół',
                       text: bulk
-                        ? (<span>{userName} przypisał(a) technika do <strong>{bulkLabel}</strong>{log.new_value ? `: ${log.new_value}` : ''}</span>)
-                        : (<span>Przypisano technika do <strong>#{ticketId}</strong>{log.new_value ? `: ${log.new_value}` : ''}</span>),
+                        ? (<span>{userName} przypisał(a) technika do <strong>{bulkLabel}</strong>{tech ? `: ${tech}` : ''}</span>)
+                        : (<span>{userName} przypisał(a) technika do <strong>#{ticketId}</strong>{tech ? `: ${tech}` : ''}</span>),
                       unread: false,
                     };
-                  case 'TECHNICIAN_REMOVED':
+                  }
+
+                  case 'TECHNICIAN_REMOVED': {
+                    const tech = log.old_value || log.new_value || null;
                     return {
                       type: 'BLUE', icon: Users, tab: 'Zespół',
                       text: bulk
-                        ? (<span>{userName} usunął(ęła) technika z <strong>{bulkLabel}</strong></span>)
-                        : (<span>Usunięto technika z <strong>#{ticketId}</strong></span>),
+                        ? (<span>{userName} usunął(a) technika z <strong>{bulkLabel}</strong>{tech ? `: ${tech}` : ''}</span>)
+                        : (<span>{userName} usunął(a) technika z <strong>#{ticketId}</strong>{tech ? `: ${tech}` : ''}</span>),
                       unread: false,
                     };
+                  }
+
                   case 'CREATOR_CHANGED':
                     return {
                       type: 'BLUE', icon: Users, tab: 'Zgłoszenia',
-                      text: (<span>Zmiana zgłaszającego w <strong>#{ticketId}</strong></span>),
+                      text: (<span>{userName} zmienił(a) zgłaszającego w <strong>#{ticketId}</strong>{log.new_value ? ` → ${log.new_value}` : ''}</span>),
                       unread: false,
                     };
+
                   case 'COMMENT_ADDED':
                     return {
                       type: 'BLUE', icon: MessageSquare,
@@ -1313,8 +1348,9 @@ const DashboardPage: React.FC = () => {
                       text: (<span>{userName} skomentował(a) <strong>#{ticketId}</strong></span>),
                       unread: true,
                     };
+
                   case 'ATTACHMENT_ADDED': {
-                    const isMultiple = log.new_value && /^\d+ załączników$/.test(log.new_value);
+                    const isMultiple = log.new_value && /^\d+ załącznik/.test(log.new_value);
                     return {
                       type: 'PURPLE', icon: Paperclip, tab: 'Zgłoszenia',
                       text: isMultiple
@@ -1323,22 +1359,25 @@ const DashboardPage: React.FC = () => {
                       unread: false,
                     };
                   }
+
                   case 'ATTACHMENT_DELETED':
                     return {
                       type: 'PURPLE', icon: Paperclip, tab: 'Zgłoszenia',
-                      text: (<span>Usunięto załącznik z <strong>#{ticketId}</strong></span>),
+                      text: (<span>{userName} usunął(a) załącznik z <strong>#{ticketId}</strong>{log.old_value ? `: ${log.old_value}` : ''}</span>),
                       unread: false,
                     };
+
                   case 'WORK_LOGGED':
                     return {
                       type: 'PURPLE', icon: Timer, tab: 'Zespół',
-                      text: (<span>Zarejestrowano czas pracy w <strong>#{ticketId}</strong>{log.new_value ? ` (${log.new_value})` : ''}</span>),
+                      text: (<span>{userName} zarejestrował(a) czas pracy w <strong>#{ticketId}</strong>{log.new_value ? ` (${log.new_value})` : ''}</span>),
                       unread: false,
                     };
+
                   default:
                     return {
                       type: 'ORANGE', icon: ClipboardList, tab: 'Zgłoszenia',
-                      text: (<span>Aktualizacja <strong>#{ticketId}</strong></span>),
+                      text: (<span>{userName}: aktualizacja <strong>#{ticketId}</strong></span>),
                       unread: false,
                     };
                 }
@@ -1382,7 +1421,9 @@ const DashboardPage: React.FC = () => {
                 };
               });
 
-              const filteredActivities = activityTab === 'Wszystkie' ? activities : activities.filter(a => a.tab === activityTab);
+              const filteredActivities = activityTab === 'Wszystkie'
+                ? activities
+                : activities.filter(a => a.tab === activityTab && a.tab !== '_edycje');
 
               return (
                 <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-3xl shadow-sm flex flex-col h-[580px]">

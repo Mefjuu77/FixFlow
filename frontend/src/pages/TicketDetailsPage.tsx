@@ -575,7 +575,7 @@ const TicketDetailsPage: React.FC = () => {
             </div>
           ) : (
             <div
-              className={`flex items-start gap-2 mb-6 group ${isTechnicianOrAdmin ? 'cursor-text p-2.5 -my-2 rounded-xl hover:bg-blue-50/50 dark:hover:bg-gray-800/40 transition-colors border border-transparent hover:border-blue-100 dark:hover:border-gray-700' : ''}`}
+              className={`flex items-start gap-2 mb-6 group min-w-0 ${isTechnicianOrAdmin ? 'cursor-text p-2.5 -my-2 rounded-xl hover:bg-blue-50/50 dark:hover:bg-gray-800/40 transition-colors border border-transparent hover:border-blue-100 dark:hover:border-gray-700' : ''}`}
               onClick={() => {
                 if (isTechnicianOrAdmin) {
                   setEditTitle(ticket.title);
@@ -584,7 +584,7 @@ const TicketDetailsPage: React.FC = () => {
               }}
               title={isTechnicianOrAdmin ? "Kliknij, aby edytować tytuł" : undefined}
             >
-              <h1 className="text-2xl font-semibold text-gray-900 dark:text-gray-100 flex-1">{ticket.title}</h1>
+              <h1 className="text-2xl font-semibold text-gray-900 dark:text-gray-100 flex-1 min-w-0 break-words">{ticket.title}</h1>
               {isTechnicianOrAdmin && (
                 <div className="mt-1.5 p-1 text-gray-400 group-hover:text-blue-600 rounded-lg transition-all opacity-0 group-hover:opacity-100 shrink-0">
                   <Pencil className="w-4 h-4" />
