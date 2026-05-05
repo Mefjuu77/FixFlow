@@ -107,11 +107,10 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                       <Link
                         key={item.name}
                         to={item.path}
-                        className={`flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-150 font-medium text-sm ${
-                          isActive
+                        className={`flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-150 font-medium text-sm ${isActive
                             ? 'bg-blue-600 text-white shadow-sm shadow-blue-900/30'
                             : 'text-gray-400 hover:bg-gray-800 hover:text-gray-100'
-                        }`}
+                          }`}
                       >
                         <span className={isActive ? 'text-white' : 'text-gray-500'}>
                           {item.icon}
@@ -167,7 +166,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
       {/* Main Content */}
       <div className="flex flex-col flex-1 overflow-hidden">
         {/* Page Content */}
-        <main className="flex-1 p-6 overflow-y-auto bg-gray-50">
+        <main className="flex-1 pt-0 px-6 pb-6 overflow-y-auto bg-gray-50">
           {children}
         </main>
       </div>

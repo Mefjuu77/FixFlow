@@ -374,30 +374,40 @@ const DashboardPage: React.FC = () => {
     return (
       <div className="w-full space-y-6 md:space-y-8 animate-in fade-in duration-700">
         {/* Page title — matches admin style */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pt-[22px]">
           <div>
             <h1 className="text-2xl md:text-3xl font-extrabold text-gray-900 dark:text-white tracking-tight">
               Mój pulpit
             </h1>
-            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1 font-medium">
-              {(() => {
-                const count = myOpen.length;
-                if (count === 0) return 'Nie masz żadnych otwartych zgłoszeń';
-                if (count === 1) return 'Masz 1 otwarte zgłoszenie przypisane do Ciebie';
-                if ([2, 3, 4].includes(count % 10) && ![12, 13, 14].includes(count % 100)) {
-                  return `Masz ${count} otwarte zgłoszenia przypisane do Ciebie`;
-                }
-                return `Masz ${count} otwartych zgłoszeń przypisanych do Ciebie`;
-              })()}
-            </p>
+            <div className="flex items-center gap-2 mt-1 flex-wrap">
+              <p className="text-sm text-gray-500 dark:text-gray-400 font-medium">
+                {(() => {
+                  const count = myOpen.length;
+                  if (count === 0) return 'Nie masz żadnych otwartych zgłoszeń';
+                  if (count === 1) return 'Masz 1 otwarte zgłoszenie przypisane do Ciebie';
+                  if ([2, 3, 4].includes(count % 10) && ![12, 13, 14].includes(count % 100)) {
+                    return `Masz ${count} otwarte zgłoszenia przypisane do Ciebie`;
+                  }
+                  return `Masz ${count} otwartych zgłoszeń przypisanych do Ciebie`;
+                })()}
+              </p>
+            </div>
           </div>
-          <Link
-            to="/create-ticket"
-            className="inline-flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl shadow-sm hover:shadow-md shadow-blue-600/10 transition-all text-sm whitespace-nowrap"
-          >
-            <Plus className="w-4 h-4" />
-            Nowe zgłoszenie
-          </Link>
+          <div className="flex flex-col sm:flex-row items-center gap-3">
+            <Link
+              to="/tickets?assignment=assigned_to_me"
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700/50 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-700 font-bold rounded-xl shadow-sm transition-all text-sm whitespace-nowrap"
+            >
+              Moje zgłoszenia
+            </Link>
+            <Link
+              to="/create-ticket"
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl shadow-sm hover:shadow-md shadow-blue-600/10 transition-all text-sm whitespace-nowrap"
+            >
+              <Plus className="w-4 h-4" />
+              Nowe zgłoszenie
+            </Link>
+          </div>
         </div>
 
         {/* KPI Cards — admin-style visual system */}
@@ -1183,700 +1193,701 @@ const DashboardPage: React.FC = () => {
     ];
 
     return (
-      <div className="w-full space-y-6 md:space-y-8 animate-in fade-in duration-700">
-        {/* Severity bar animation — CSS needed because inline styles can't react to group-hover */}
+      <>
         <style>{`
           .risk-row .risk-severity-bar { transform: scaleX(0); }
           .risk-row:hover .risk-severity-bar { transform: scaleX(1); }
         `}</style>
-        {/* Page title + Date range picker */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div>
-            <h1 className="text-2xl md:text-3xl font-extrabold text-gray-900 dark:text-white tracking-tight">
-              Pulpit
-            </h1>
-            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1 font-medium">
-              Przegląd obciążenia zespołu i wydajności
-            </p>
-          </div>
+        <div className="w-full space-y-6 md:space-y-8 animate-in fade-in duration-700">
+          {/* Page title + Date range picker */}
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pt-[22px]">
+            <div>
+              <h1 className="text-2xl md:text-3xl font-extrabold text-gray-900 dark:text-white tracking-tight">
+                Pulpit
+              </h1>
+              <p className="text-sm text-gray-500 dark:text-gray-400 mt-1 font-medium">
+                Przegląd obciążenia zespołu i wydajności
+              </p>
+            </div>
 
-          <div className="relative" ref={datePickerRef}>
-            <button
-              onClick={() => setShowDatePicker(!showDatePicker)}
-              className="flex items-center gap-2 px-4 py-2.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-sm hover:shadow-md hover:border-gray-300 dark:hover:border-gray-600 transition-all text-sm font-semibold text-gray-700 dark:text-gray-300"
-            >
-              <Calendar className="w-4 h-4 text-gray-500 dark:text-gray-400" />
-              <span>{dateRangeLabel}</span>
-              <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform ${showDatePicker ? 'rotate-180' : ''}`} />
-            </button>
-
-            {/* Dropdown kalendarza */}
-            {showDatePicker && (
-              <div className="absolute top-full right-0 mt-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-xl z-50 p-3 flex flex-col md:flex-row gap-4 animate-in fade-in slide-in-from-top-2">
-                <div className="flex flex-col gap-1 min-w-[160px] pr-4 md:border-r border-gray-100 dark:border-gray-700">
-                  <button onClick={() => applyPreset(7)} className="text-left px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-xl transition-colors">Ostatnie 7 dni</button>
-                  <button onClick={() => applyPreset(14)} className="text-left px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-xl transition-colors">Ostatnie 14 dni</button>
-                  <button onClick={() => applyPreset(30)} className="text-left px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-xl transition-colors">Ostatnie 30 dni</button>
-                  <div className="h-px bg-gray-100 dark:bg-gray-700 my-1"></div>
-                  <button onClick={applyThisMonth} className="text-left px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-xl transition-colors">Ten miesiąc</button>
-                  <button onClick={applyLastMonth} className="text-left px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-xl transition-colors">Poprzedni miesiąc</button>
-                </div>
-
-                {/* Mini kalendarz */}
-                <div className="w-64">
-                  <div className="flex justify-between items-center mb-4 px-2">
-                    <button onClick={() => setPickerView(p => p.month === 0 ? { year: p.year - 1, month: 11 } : { ...p, month: p.month - 1 })} className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full text-gray-600 dark:text-gray-400">
-                      <ChevronDown className="w-5 h-5 rotate-90" />
-                    </button>
-                    <span className="font-semibold text-gray-900 dark:text-white text-sm">
-                      {plMonthsFull[pickerView.month]} {pickerView.year}
-                    </span>
-                    <button onClick={() => setPickerView(p => p.month === 11 ? { year: p.year + 1, month: 0 } : { ...p, month: p.month + 1 })} className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full text-gray-600 dark:text-gray-400">
-                      <ChevronDown className="w-5 h-5 -rotate-90" />
-                    </button>
-                  </div>
-                  <div className="grid grid-cols-7 gap-1 mb-1">
-                    {['Pn', 'Wt', 'Śr', 'Cz', 'Pt', 'Sb', 'Nd'].map(d => (
-                      <div key={d} className="text-center text-xs font-medium text-gray-400 py-1">{d}</div>
-                    ))}
-                  </div>
-                  <div className="grid grid-cols-7 gap-1">
-                    {(() => {
-                      const firstDay = dayjs().year(pickerView.year).month(pickerView.month).startOf('month');
-                      const daysInMonth = firstDay.daysInMonth();
-                      // day() zwraca 0 dla niedzieli, chcemy 1 dla pon, 7 dla nd
-                      const startPadding = firstDay.day() === 0 ? 6 : firstDay.day() - 1;
-
-                      const days = [];
-                      for (let i = 0; i < startPadding; i++) {
-                        days.push(<div key={`pad-${i}`} className="h-8"></div>);
-                      }
-
-                      for (let i = 1; i <= daysInMonth; i++) {
-                        const d = dayjs().year(pickerView.year).month(pickerView.month).date(i);
-
-                        let isSelected = false;
-                        let isInRange = false;
-                        let isStart = false;
-                        let isEnd = false;
-
-                        if (customStart) {
-                          if (d.isSame(customStart, 'day')) isSelected = true;
-                        } else {
-                          if (d.isSame(dateRange.start, 'day')) {
-                            isSelected = true; isStart = true;
-                          }
-                          if (d.isSame(dateRange.end, 'day')) {
-                            isSelected = true; isEnd = true;
-                          }
-                          if (d.isAfter(dateRange.start, 'day') && d.isBefore(dateRange.end, 'day')) {
-                            isInRange = true;
-                          }
-                          if (d.isSame(dateRange.start, 'day') && d.isSame(dateRange.end, 'day')) {
-                            isStart = true; isEnd = true;
-                          }
-                        }
-
-                        const baseClass = "h-8 flex items-center justify-center text-sm rounded-lg transition-colors cursor-pointer ";
-                        let stateClass = "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700";
-
-                        if (isSelected) {
-                          stateClass = "bg-blue-600 text-white font-bold";
-                          if (!customStart && isStart && !isEnd) stateClass += " rounded-r-none";
-                          if (!customStart && !isStart && isEnd) stateClass += " rounded-l-none";
-                        } else if (isInRange) {
-                          stateClass = "bg-blue-50 dark:bg-blue-900/30 text-blue-800 dark:text-blue-200 rounded-none";
-                        }
-
-                        days.push(
-                          <div key={`day-${i}`} onClick={() => handleDayClick(d)} className={baseClass + stateClass}>
-                            {i}
-                          </div>
-                        );
-                      }
-                      return days;
-                    })()}
-                  </div>
-                  {customStart && (
-                    <p className="text-xs text-center text-blue-600 dark:text-blue-400 mt-3 animate-pulse">
-                      Wybierz datę końcową...
-                    </p>
-                  )}
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* KPI Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-5">
-          {kpiCards.map((kpi, index) => {
-            const trendColor = kpi.trend.isGood
-              ? 'text-emerald-600 dark:text-emerald-400'
-              : 'text-rose-600 dark:text-rose-400';
-            const trendBg = kpi.trend.isGood
-              ? 'bg-emerald-50 dark:bg-emerald-500/10'
-              : 'bg-rose-50 dark:bg-rose-500/10';
-            const TrendIcon = kpi.trend.direction === 'up' ? TrendingUp : TrendingDown;
-
-            return (
-              <div
-                key={index}
-                className="group relative flex flex-col p-5 bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700/60 rounded-2xl shadow-sm hover:shadow-md transition-all duration-300"
-                title={kpi.tooltip}
+            <div className="relative" ref={datePickerRef}>
+              <button
+                onClick={() => setShowDatePicker(!showDatePicker)}
+                className="flex items-center gap-2 px-4 py-2.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-sm hover:shadow-md hover:border-gray-300 dark:hover:border-gray-600 transition-all text-sm font-semibold text-gray-700 dark:text-gray-300"
               >
-                <div className="flex items-start justify-between mb-3">
-                  <p className="text-sm font-medium text-gray-500 dark:text-gray-400 leading-tight">
-                    {kpi.label}
-                  </p>
-                  <div className={`w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 ${kpi.iconBg} ${kpi.iconColor}`}>
-                    {kpi.icon}
+                <Calendar className="w-4 h-4 text-gray-500 dark:text-gray-400" />
+                <span>{dateRangeLabel}</span>
+                <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform ${showDatePicker ? 'rotate-180' : ''}`} />
+              </button>
+
+              {/* Dropdown kalendarza */}
+              {showDatePicker && (
+                <div className="absolute top-full right-0 mt-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-xl z-50 p-3 flex flex-col md:flex-row gap-4 animate-in fade-in slide-in-from-top-2">
+                  <div className="flex flex-col gap-1 min-w-[160px] pr-4 md:border-r border-gray-100 dark:border-gray-700">
+                    <button onClick={() => applyPreset(7)} className="text-left px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-xl transition-colors">Ostatnie 7 dni</button>
+                    <button onClick={() => applyPreset(14)} className="text-left px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-xl transition-colors">Ostatnie 14 dni</button>
+                    <button onClick={() => applyPreset(30)} className="text-left px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-xl transition-colors">Ostatnie 30 dni</button>
+                    <div className="h-px bg-gray-100 dark:bg-gray-700 my-1"></div>
+                    <button onClick={applyThisMonth} className="text-left px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-xl transition-colors">Ten miesiąc</button>
+                    <button onClick={applyLastMonth} className="text-left px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-xl transition-colors">Poprzedni miesiąc</button>
+                  </div>
+
+                  {/* Mini kalendarz */}
+                  <div className="w-64">
+                    <div className="flex justify-between items-center mb-4 px-2">
+                      <button onClick={() => setPickerView(p => p.month === 0 ? { year: p.year - 1, month: 11 } : { ...p, month: p.month - 1 })} className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full text-gray-600 dark:text-gray-400">
+                        <ChevronDown className="w-5 h-5 rotate-90" />
+                      </button>
+                      <span className="font-semibold text-gray-900 dark:text-white text-sm">
+                        {plMonthsFull[pickerView.month]} {pickerView.year}
+                      </span>
+                      <button onClick={() => setPickerView(p => p.month === 11 ? { year: p.year + 1, month: 0 } : { ...p, month: p.month + 1 })} className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full text-gray-600 dark:text-gray-400">
+                        <ChevronDown className="w-5 h-5 -rotate-90" />
+                      </button>
+                    </div>
+                    <div className="grid grid-cols-7 gap-1 mb-1">
+                      {['Pn', 'Wt', 'Śr', 'Cz', 'Pt', 'Sb', 'Nd'].map(d => (
+                        <div key={d} className="text-center text-xs font-medium text-gray-400 py-1">{d}</div>
+                      ))}
+                    </div>
+                    <div className="grid grid-cols-7 gap-1">
+                      {(() => {
+                        const firstDay = dayjs().year(pickerView.year).month(pickerView.month).startOf('month');
+                        const daysInMonth = firstDay.daysInMonth();
+                        // day() zwraca 0 dla niedzieli, chcemy 1 dla pon, 7 dla nd
+                        const startPadding = firstDay.day() === 0 ? 6 : firstDay.day() - 1;
+
+                        const days = [];
+                        for (let i = 0; i < startPadding; i++) {
+                          days.push(<div key={`pad-${i}`} className="h-8"></div>);
+                        }
+
+                        for (let i = 1; i <= daysInMonth; i++) {
+                          const d = dayjs().year(pickerView.year).month(pickerView.month).date(i);
+
+                          let isSelected = false;
+                          let isInRange = false;
+                          let isStart = false;
+                          let isEnd = false;
+
+                          if (customStart) {
+                            if (d.isSame(customStart, 'day')) isSelected = true;
+                          } else {
+                            if (d.isSame(dateRange.start, 'day')) {
+                              isSelected = true; isStart = true;
+                            }
+                            if (d.isSame(dateRange.end, 'day')) {
+                              isSelected = true; isEnd = true;
+                            }
+                            if (d.isAfter(dateRange.start, 'day') && d.isBefore(dateRange.end, 'day')) {
+                              isInRange = true;
+                            }
+                            if (d.isSame(dateRange.start, 'day') && d.isSame(dateRange.end, 'day')) {
+                              isStart = true; isEnd = true;
+                            }
+                          }
+
+                          const baseClass = "h-8 flex items-center justify-center text-sm rounded-lg transition-colors cursor-pointer ";
+                          let stateClass = "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700";
+
+                          if (isSelected) {
+                            stateClass = "bg-blue-600 text-white font-bold";
+                            if (!customStart && isStart && !isEnd) stateClass += " rounded-r-none";
+                            if (!customStart && !isStart && isEnd) stateClass += " rounded-l-none";
+                          } else if (isInRange) {
+                            stateClass = "bg-blue-50 dark:bg-blue-900/30 text-blue-800 dark:text-blue-200 rounded-none";
+                          }
+
+                          days.push(
+                            <div key={`day-${i}`} onClick={() => handleDayClick(d)} className={baseClass + stateClass}>
+                              {i}
+                            </div>
+                          );
+                        }
+                        return days;
+                      })()}
+                    </div>
+                    {customStart && (
+                      <p className="text-xs text-center text-blue-600 dark:text-blue-400 mt-3 animate-pulse">
+                        Wybierz datę końcową...
+                      </p>
+                    )}
                   </div>
                 </div>
+              )}
+            </div>
+          </div>
 
-                <p className="text-3xl font-bold text-gray-900 dark:text-white tracking-tight mb-4">
-                  {kpi.displayValue}
-                </p>
-
-                <div className="flex items-center mt-auto">
-                  <div className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-xs font-semibold ${trendColor} ${trendBg}`}>
-                    <TrendIcon className="w-3.5 h-3.5" />
-                    <span>{kpi.trend.value.toFixed(1).replace('.', ',')}%</span>
-                  </div>
-                  <span className="text-xs font-medium text-gray-400 dark:text-gray-500 ml-2">
-                    vs poprz. okres
-                  </span>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-
-        <div className="grid grid-cols-1 xl:grid-cols-5 gap-8">
-          {/* Wymagają uwagi — panel ryzyka */}
-          <div className="xl:col-span-3">
-            {(() => {
-              // Urgency helper — used for both sorting and bar color
-              const getUrgencyDays = (r: RiskItem) =>
-                r.reason === 'frozen_progress' ? r.idle : r.age;
-
-              // Filtrowane risk items wg wybranego chipa, zawsze sortowane wg urgencyDays malejąco
-              // (żeby czerwone były na górze niezależnie od kategorii)
-              const visibleRisks = (riskFilter
-                ? riskItems.filter(r => r.reason === riskFilter)
-                : riskItems
-              ).slice().sort((a, b) => getUrgencyDays(b) - getUrgencyDays(a));
-
-
-              const chipConfig: { reason: RiskReason; label: string; activeStyle: string; inactiveStyle: string }[] = [
-                {
-                  reason: 'critical_unassigned',
-                  label: 'Krytyczne',
-                  activeStyle: 'bg-rose-600 text-white dark:bg-rose-500 dark:text-white ring-2 ring-rose-300 dark:ring-rose-500/40',
-                  inactiveStyle: 'bg-rose-50 dark:bg-rose-500/10 text-rose-600 dark:text-rose-400 hover:bg-rose-100 dark:hover:bg-rose-500/20',
-                },
-                {
-                  reason: 'stale_unassigned',
-                  label: 'Nieprzypisane',
-                  activeStyle: 'bg-amber-600 text-white dark:bg-amber-500 dark:text-white ring-2 ring-amber-300 dark:ring-amber-500/40',
-                  inactiveStyle: 'bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400 hover:bg-amber-100 dark:hover:bg-amber-500/20',
-                },
-                {
-                  reason: 'frozen_progress',
-                  label: 'Zamrożone',
-                  activeStyle: 'bg-gray-700 text-white dark:bg-gray-500 dark:text-white ring-2 ring-gray-400 dark:ring-gray-500/40',
-                  inactiveStyle: 'bg-gray-100 dark:bg-gray-700/50 text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-600/50',
-                },
-              ];
-
-              const priorityBadge = (priority: string) => {
-                const styles: Record<string, string> = {
-                  WYSOKI: 'bg-rose-100 text-rose-700 dark:bg-rose-500/15 dark:text-rose-400',
-                  NORMALNY: 'bg-blue-100 text-blue-700 dark:bg-blue-500/15 dark:text-blue-400',
-                  NISKI: 'bg-gray-100 text-gray-600 dark:bg-gray-700/50 dark:text-gray-400',
-                };
-                const labels: Record<string, string> = { WYSOKI: 'Wysoki', NORMALNY: 'Normalny', NISKI: 'Niski' };
-                return (
-                  <span className={`px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider ${styles[priority] || styles.NORMALNY}`}>
-                    {labels[priority] || priority}
-                  </span>
-                );
-              };
-
-              const statusBadge = (status: string) => {
-                const styles: Record<string, string> = {
-                  NOWE: 'bg-blue-100 text-blue-700 dark:bg-blue-500/15 dark:text-blue-400',
-                  W_TOKU: 'bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-400',
-                };
-                const labels: Record<string, string> = { NOWE: 'Nowe', W_TOKU: 'W toku' };
-                return (
-                  <span className={`px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider ${styles[status] || 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400'}`}>
-                    {labels[status] || status}
-                  </span>
-                );
-              };
+          {/* KPI Cards */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-5">
+            {kpiCards.map((kpi, index) => {
+              const trendColor = kpi.trend.isGood
+                ? 'text-emerald-600 dark:text-emerald-400'
+                : 'text-rose-600 dark:text-rose-400';
+              const trendBg = kpi.trend.isGood
+                ? 'bg-emerald-50 dark:bg-emerald-500/10'
+                : 'bg-rose-50 dark:bg-rose-500/10';
+              const TrendIcon = kpi.trend.direction === 'up' ? TrendingUp : TrendingDown;
 
               return (
-                <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-3xl shadow-sm flex flex-col h-[580px]">
-
-                  {/* Header */}
-                  <div className="p-5 border-b border-gray-100 dark:border-gray-700/50">
-                    <div className="flex items-center justify-between mb-4">
-                      <h2 className="text-lg font-bold text-gray-900 dark:text-white">
-                        Wymagają uwagi
-                        {riskItems.length > 0 && (
-                          <span className="ml-2 text-sm font-semibold text-gray-400 dark:text-gray-500">
-                            ({riskFilter ? visibleRisks.length : riskItems.length})
-                          </span>
-                        )}
-                      </h2>
+                <div
+                  key={index}
+                  className="group relative flex flex-col p-5 bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700/60 rounded-2xl shadow-sm hover:shadow-md transition-all duration-300"
+                  title={kpi.tooltip}
+                >
+                  <div className="flex items-start justify-between mb-3">
+                    <p className="text-sm font-medium text-gray-500 dark:text-gray-400 leading-tight">
+                      {kpi.label}
+                    </p>
+                    <div className={`w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 ${kpi.iconBg} ${kpi.iconColor}`}>
+                      {kpi.icon}
                     </div>
-                    <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600">
-                      {riskItems.length === 0 ? (
-                        <span className="text-xs font-medium text-gray-400 dark:text-gray-500">Brak problemów w systemie</span>
+                  </div>
+
+                  <p className="text-3xl font-bold text-gray-900 dark:text-white tracking-tight mb-4">
+                    {kpi.displayValue}
+                  </p>
+
+                  <div className="flex items-center mt-auto">
+                    <div className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-xs font-semibold ${trendColor} ${trendBg}`}>
+                      <TrendIcon className="w-3.5 h-3.5" />
+                      <span>{kpi.trend.value.toFixed(1).replace('.', ',')}%</span>
+                    </div>
+                    <span className="text-xs font-medium text-gray-400 dark:text-gray-500 ml-2">
+                      vs poprz. okres
+                    </span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          <div className="grid grid-cols-1 xl:grid-cols-5 gap-8">
+            {/* Wymagają uwagi — panel ryzyka */}
+            <div className="xl:col-span-3">
+              {(() => {
+                // Urgency helper — used for both sorting and bar color
+                const getUrgencyDays = (r: RiskItem) =>
+                  r.reason === 'frozen_progress' ? r.idle : r.age;
+
+                // Filtrowane risk items wg wybranego chipa, zawsze sortowane wg urgencyDays malejąco
+                // (żeby czerwone były na górze niezależnie od kategorii)
+                const visibleRisks = (riskFilter
+                  ? riskItems.filter(r => r.reason === riskFilter)
+                  : riskItems
+                ).slice().sort((a, b) => getUrgencyDays(b) - getUrgencyDays(a));
+
+
+                const chipConfig: { reason: RiskReason; label: string; activeStyle: string; inactiveStyle: string }[] = [
+                  {
+                    reason: 'critical_unassigned',
+                    label: 'Krytyczne',
+                    activeStyle: 'bg-rose-600 text-white dark:bg-rose-500 dark:text-white ring-2 ring-rose-300 dark:ring-rose-500/40',
+                    inactiveStyle: 'bg-rose-50 dark:bg-rose-500/10 text-rose-600 dark:text-rose-400 hover:bg-rose-100 dark:hover:bg-rose-500/20',
+                  },
+                  {
+                    reason: 'stale_unassigned',
+                    label: 'Nieprzypisane',
+                    activeStyle: 'bg-amber-600 text-white dark:bg-amber-500 dark:text-white ring-2 ring-amber-300 dark:ring-amber-500/40',
+                    inactiveStyle: 'bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400 hover:bg-amber-100 dark:hover:bg-amber-500/20',
+                  },
+                  {
+                    reason: 'frozen_progress',
+                    label: 'Zamrożone',
+                    activeStyle: 'bg-gray-700 text-white dark:bg-gray-500 dark:text-white ring-2 ring-gray-400 dark:ring-gray-500/40',
+                    inactiveStyle: 'bg-gray-100 dark:bg-gray-700/50 text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-600/50',
+                  },
+                ];
+
+                const priorityBadge = (priority: string) => {
+                  const styles: Record<string, string> = {
+                    WYSOKI: 'bg-rose-100 text-rose-700 dark:bg-rose-500/15 dark:text-rose-400',
+                    NORMALNY: 'bg-blue-100 text-blue-700 dark:bg-blue-500/15 dark:text-blue-400',
+                    NISKI: 'bg-gray-100 text-gray-600 dark:bg-gray-700/50 dark:text-gray-400',
+                  };
+                  const labels: Record<string, string> = { WYSOKI: 'Wysoki', NORMALNY: 'Normalny', NISKI: 'Niski' };
+                  return (
+                    <span className={`px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider ${styles[priority] || styles.NORMALNY}`}>
+                      {labels[priority] || priority}
+                    </span>
+                  );
+                };
+
+                const statusBadge = (status: string) => {
+                  const styles: Record<string, string> = {
+                    NOWE: 'bg-blue-100 text-blue-700 dark:bg-blue-500/15 dark:text-blue-400',
+                    W_TOKU: 'bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-400',
+                  };
+                  const labels: Record<string, string> = { NOWE: 'Nowe', W_TOKU: 'W toku' };
+                  return (
+                    <span className={`px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider ${styles[status] || 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400'}`}>
+                      {labels[status] || status}
+                    </span>
+                  );
+                };
+
+                return (
+                  <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-3xl shadow-sm flex flex-col h-[580px]">
+
+                    {/* Header */}
+                    <div className="p-5 border-b border-gray-100 dark:border-gray-700/50">
+                      <div className="flex items-center justify-between mb-4">
+                        <h2 className="text-lg font-bold text-gray-900 dark:text-white">
+                          Wymagają uwagi
+                          {riskItems.length > 0 && (
+                            <span className="ml-2 text-sm font-semibold text-gray-400 dark:text-gray-500">
+                              ({riskFilter ? visibleRisks.length : riskItems.length})
+                            </span>
+                          )}
+                        </h2>
+                      </div>
+                      <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600">
+                        {riskItems.length === 0 ? (
+                          <span className="text-xs font-medium text-gray-400 dark:text-gray-500">Brak problemów w systemie</span>
+                        ) : (
+                          <>
+                            {/* Chip "Wszystkie" */}
+                            <button
+                              onClick={() => setRiskFilter(null)}
+                              className={`px-3 py-1.5 text-xs font-semibold rounded-lg whitespace-nowrap transition-colors ${riskFilter === null
+                                ? 'bg-gray-900 text-white dark:bg-blue-500/20 dark:text-blue-400'
+                                : 'text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700/50 dark:hover:text-gray-200'
+                                }`}
+                            >
+                              Wszystkie
+                            </button>
+                            {chipConfig.map(chip => {
+                              const count = riskItems.filter(r => r.reason === chip.reason).length;
+                              if (count === 0) return null;
+                              const isActive = riskFilter === chip.reason;
+                              return (
+                                <button
+                                  key={chip.reason}
+                                  onClick={() => setRiskFilter(isActive ? null : chip.reason)}
+                                  className={`px-3 py-1.5 text-xs font-semibold rounded-lg whitespace-nowrap transition-colors ${isActive
+                                    ? 'bg-gray-900 text-white dark:bg-blue-500/20 dark:text-blue-400'
+                                    : 'text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700/50 dark:hover:text-gray-200'
+                                    }`}
+                                >
+                                  {chip.label} · {count}
+                                </button>
+                              );
+                            })}
+                          </>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Body */}
+                    <div className="flex-1 overflow-y-auto p-2 scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600">
+                      {visibleRisks.length === 0 ? (
+                        <div className="flex flex-col items-center justify-center h-full text-center px-6">
+                          <div className="w-14 h-14 bg-emerald-50 dark:bg-emerald-900/20 rounded-full flex items-center justify-center mb-4">
+                            <CheckCircle2 className="w-7 h-7 text-emerald-500 dark:text-emerald-400" />
+                          </div>
+                          <h3 className="text-base font-bold text-gray-900 dark:text-white">Wszystko pod kontrolą</h3>
+                          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Brak zgłoszeń wymagających interwencji.</p>
+                        </div>
                       ) : (
-                        <>
-                          {/* Chip "Wszystkie" */}
+                        <div className="space-y-0.5">
+                          {visibleRisks.map((risk) => {
+                            const colors = riskReasonColor[risk.reason];
+                            const t = risk.ticket;
+
+                            const RiskIcon = risk.reason === 'critical_unassigned'
+                              ? AlertTriangle
+                              : risk.reason === 'stale_unassigned'
+                                ? Users
+                                : Clock;
+
+                            const idleLabel =
+                              risk.reason === 'frozen_progress'
+                                ? `${risk.idle}d ciszy`
+                                : risk.reason === 'stale_unassigned'
+                                  ? `${risk.age}d czeka`
+                                  : `${risk.age}d`;
+
+                            // Urgency days — shared helper ensures consistency with sort order
+                            const urgencyDays = getUrgencyDays(risk);
+
+                            // Severity bar color based on wait time
+                            const severityBarColor =
+                              urgencyDays >= 15
+                                ? 'bg-rose-500/60'
+                                : urgencyDays >= 8
+                                  ? 'bg-orange-400/60'
+                                  : urgencyDays >= 4
+                                    ? 'bg-amber-400/60'
+                                    : 'bg-emerald-400/60';
+
+                            return (
+                              <Link
+                                to={`/tickets/${t.id}`}
+                                key={t.id}
+                                className="risk-row relative flex items-center px-4 py-3.5 rounded-2xl hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors group overflow-hidden min-w-0"
+                              >
+                                {/* Bottom-edge severity bar — animates scaleX 0→1 on hover via .risk-row CSS */}
+                                <div
+                                  className={`risk-severity-bar absolute bottom-0 left-0 h-0.5 ${severityBarColor} rounded-full`}
+                                  style={{
+                                    width: '100%',
+                                    transformOrigin: 'left',
+                                    transition: 'transform 200ms ease-out',
+                                  }}
+                                />
+
+                                <div className={`relative w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 mr-3.5 transition-transform group-hover:scale-105 ${colors.bg}`}>
+                                  <RiskIcon className={`w-4 h-4 ${colors.icon}`} />
+                                </div>
+                                <div className="relative flex-1 min-w-0 mr-3">
+                                  <div className="flex items-center min-w-0">
+                                    <span className="text-[13px] font-bold text-gray-900 dark:text-white flex-shrink-0 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors duration-150">#{t.id}</span>
+                                    <span className="mx-1.5 text-gray-300 dark:text-gray-600 flex-shrink-0">·</span>
+                                    <span className="text-[13px] text-gray-700 dark:text-gray-200 truncate block min-w-0 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors duration-150">{t.title}</span>
+                                  </div>
+                                  <div className="flex items-center gap-1.5 mt-1">
+                                    <span className={`text-[11px] font-medium ${colors.text}`}>
+                                      {riskReasonLabel[risk.reason]}
+                                    </span>
+                                    <span className="text-gray-300 dark:text-gray-600">·</span>
+                                    {priorityBadge(t.priority)}
+                                    {statusBadge(t.status)}
+                                  </div>
+                                </div>
+
+                                {/* Timestamp ↔ Zbadaj cross-fade */}
+                                <div className="relative flex-shrink-0 w-20 text-right">
+                                  <span className="block text-[11px] font-medium text-gray-400 dark:text-gray-500 opacity-100 group-hover:opacity-0 transition-opacity duration-150 ease-in-out">
+                                    {idleLabel}
+                                  </span>
+                                  <span className="absolute inset-0 flex items-center justify-end text-[11px] font-semibold text-blue-600 dark:text-blue-400 opacity-0 group-hover:opacity-100 transition-opacity duration-150 ease-in-out whitespace-nowrap pointer-events-none">
+                                    Zbadaj →
+                                  </span>
+                                </div>
+                              </Link>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                );
+              })()}
+            </div>
+
+            {/* Aktywność globalna */}
+            <div className="xl:col-span-2 space-y-4">
+              {(() => {
+                const activityTabs = ['Wszystkie', 'Zgłoszenia', 'Zespół'];
+
+                // Mapowanie akcji z API na konfigurację wizualną
+                const trunc = (s: string, max = 40) => s.length > max ? s.slice(0, max) + '...' : s;
+
+                const statusLabel: Record<string, string> = {
+                  NOWE: 'Nowe', W_TOKU: 'W toku', ROZWIAZANE: 'Rozwiązane', ZAMKNIETE: 'Zamknięte',
+                };
+                const priorityLabel: Record<string, string> = {
+                  NISKI: 'Niski', NORMALNY: 'Normalny', WYSOKI: 'Wysoki',
+                };
+                const sl = (v: string) => statusLabel[v] ?? v;
+                const pl = (v: string) => priorityLabel[v] ?? v;
+
+                const getActivityConfig = (log: any) => {
+                  const action = log.action;
+                  const ticketId = log.ticket;
+                  const user = log.user_details;
+                  const userName = user ? `${user.first_name} ${user.last_name}` : 'System';
+                  const bulk = log._bulkCount;
+                  const bulkLabel = bulk ? `${bulk} zgłoszeń` : null;
+
+                  switch (action) {
+                    case 'CREATED':
+                      return {
+                        type: 'GREEN', icon: Plus, tab: 'Zgłoszenia',
+                        text: bulk
+                          ? (<span>{userName} utworzył(a) <strong>{bulkLabel}</strong></span>)
+                          : (<span>{userName} utworzył(a) zgłoszenie <strong>#{ticketId}</strong></span>),
+                        unread: true,
+                      };
+
+                    case 'STATUS_CHANGED': {
+                      const oldS = log.old_value ? sl(log.old_value) : null;
+                      const newS = log.new_value ? sl(log.new_value) : null;
+                      const arrow = oldS && newS ? `: ${oldS} → ${newS}` : newS ? ` → ${newS}` : '';
+                      const isResolved = ['ROZWIAZANE', 'ZAMKNIETE'].includes(log.new_value);
+                      return {
+                        type: isResolved ? 'GREEN' : 'ORANGE',
+                        icon: isResolved ? CheckCircle2 : Activity,
+                        tab: 'Zgłoszenia',
+                        text: bulk
+                          ? (<span>{userName} zmienił(a) status <strong>{bulkLabel}</strong>{newS ? ` → ${newS}` : ''}</span>)
+                          : (<span>{userName} zmienił(a) status <strong>#{ticketId}</strong>{arrow}</span>),
+                        unread: !isResolved,
+                      };
+                    }
+
+                    case 'PRIORITY_CHANGED': {
+                      const oldP = log.old_value ? pl(log.old_value) : null;
+                      const newP = log.new_value ? pl(log.new_value) : null;
+                      const arrow = oldP && newP ? `: ${oldP} → ${newP}` : newP ? ` → ${newP}` : '';
+                      return {
+                        type: 'ORANGE', icon: AlertTriangle, tab: 'Zgłoszenia',
+                        text: bulk
+                          ? (<span>{userName} zmienił(a) priorytet <strong>{bulkLabel}</strong>{newP ? ` → ${newP}` : ''}</span>)
+                          : (<span>{userName} zmienił(a) priorytet <strong>#{ticketId}</strong>{arrow}</span>),
+                        unread: true,
+                      };
+                    }
+
+                    case 'CATEGORY_CHANGED': {
+                      const oldC = log.old_value || null;
+                      const newC = log.new_value || null;
+                      const arrow = oldC && newC ? `: ${oldC} → ${newC}` : newC ? ` → ${newC}` : '';
+                      return {
+                        type: 'ORANGE', icon: ClipboardList, tab: 'Zgłoszenia',
+                        text: bulk
+                          ? (<span>{userName} zmienił(a) kategorię <strong>{bulkLabel}</strong>{newC ? ` → ${newC}` : ''}</span>)
+                          : (<span>{userName} zmienił(a) kategorię <strong>#{ticketId}</strong>{arrow}</span>),
+                        unread: false,
+                      };
+                    }
+
+                    case 'TITLE_CHANGED': {
+                      const oldT = log.old_value ? `„${trunc(log.old_value)}”` : null;
+                      const newT = log.new_value ? `„${trunc(log.new_value)}”` : null;
+                      const detail = oldT && newT ? `: ${oldT} → ${newT}` : newT ? ` → ${newT}` : '';
+                      return {
+                        type: 'ORANGE', icon: FileText, tab: '_edycje',
+                        text: (<span>{userName} zmienił(a) tytuł <strong>#{ticketId}</strong>{detail}</span>),
+                        unread: false,
+                      };
+                    }
+
+                    case 'DESCRIPTION_CHANGED':
+                      return {
+                        type: 'ORANGE', icon: FileText, tab: '_edycje',
+                        text: (<span>{userName} zaktualizował(a) opis zgłoszenia <strong>#{ticketId}</strong></span>),
+                        unread: false,
+                      };
+
+                    case 'REOPENED':
+                      return {
+                        type: 'ORANGE', icon: Activity, tab: 'Zgłoszenia',
+                        text: bulk
+                          ? (<span>{userName} ponownie otworzył(a) <strong>{bulkLabel}</strong></span>)
+                          : (<span>{userName} ponownie otworzył(a) <strong>#{ticketId}</strong></span>),
+                        unread: true,
+                      };
+
+                    case 'AUTO_CLOSED':
+                      return {
+                        type: 'GREEN', icon: CheckCircle2, tab: 'Zgłoszenia',
+                        text: (<span>System automatycznie zamknął <strong>#{ticketId}</strong></span>),
+                        unread: false,
+                      };
+
+                    case 'TECHNICIAN_ASSIGNED': {
+                      const tech = log.new_value || null;
+                      return {
+                        type: 'BLUE', icon: Users, tab: 'Zespół',
+                        text: bulk
+                          ? (<span>{userName} przypisał(a) technika do <strong>{bulkLabel}</strong>{tech ? `: ${tech}` : ''}</span>)
+                          : (<span>{userName} przypisał(a) technika do <strong>#{ticketId}</strong>{tech ? `: ${tech}` : ''}</span>),
+                        unread: false,
+                      };
+                    }
+
+                    case 'TECHNICIAN_REMOVED': {
+                      const tech = log.old_value || log.new_value || null;
+                      return {
+                        type: 'BLUE', icon: Users, tab: 'Zespół',
+                        text: bulk
+                          ? (<span>{userName} usunął(a) technika z <strong>{bulkLabel}</strong>{tech ? `: ${tech}` : ''}</span>)
+                          : (<span>{userName} usunął(a) technika z <strong>#{ticketId}</strong>{tech ? `: ${tech}` : ''}</span>),
+                        unread: false,
+                      };
+                    }
+
+                    case 'CREATOR_CHANGED':
+                      return {
+                        type: 'BLUE', icon: Users, tab: 'Zgłoszenia',
+                        text: (<span>{userName} zmienił(a) zgłaszającego w <strong>#{ticketId}</strong>{log.new_value ? ` → ${log.new_value}` : ''}</span>),
+                        unread: false,
+                      };
+
+                    case 'COMMENT_ADDED':
+                      return {
+                        type: 'BLUE', icon: MessageSquare,
+                        tab: log.new_value === 'INTERNAL' ? 'Zespół' : 'Zgłoszenia',
+                        text: (<span>{userName} skomentował(a) <strong>#{ticketId}</strong></span>),
+                        unread: true,
+                      };
+
+                    case 'ATTACHMENT_ADDED': {
+                      const isMultiple = log.new_value && /^\d+ załącznik/.test(log.new_value);
+                      return {
+                        type: 'PURPLE', icon: Paperclip, tab: 'Zgłoszenia',
+                        text: isMultiple
+                          ? (<span>{userName} dodał(a) {log.new_value} do <strong>#{ticketId}</strong></span>)
+                          : (<span>{userName} dodał(a) załącznik do <strong>#{ticketId}</strong>{log.new_value ? `: ${log.new_value}` : ''}</span>),
+                        unread: false,
+                      };
+                    }
+
+                    case 'ATTACHMENT_DELETED':
+                      return {
+                        type: 'PURPLE', icon: Paperclip, tab: 'Zgłoszenia',
+                        text: (<span>{userName} usunął(a) załącznik z <strong>#{ticketId}</strong>{log.old_value ? `: ${log.old_value}` : ''}</span>),
+                        unread: false,
+                      };
+
+                    case 'WORK_LOGGED':
+                      return {
+                        type: 'PURPLE', icon: Timer, tab: 'Zespół',
+                        text: (<span>{userName} zarejestrował(a) czas pracy w <strong>#{ticketId}</strong>{log.new_value ? ` (${log.new_value})` : ''}</span>),
+                        unread: false,
+                      };
+
+                    default:
+                      return {
+                        type: 'ORANGE', icon: ClipboardList, tab: 'Zgłoszenia',
+                        text: (<span>{userName}: aktualizacja <strong>#{ticketId}</strong></span>),
+                        unread: false,
+                      };
+                  }
+                };
+
+                // Filtruj: ukryj ATTACHMENT_ADDED jeśli tuż po CREATED lub COMMENT_ADDED dla tego samego ticketu
+                const parentEvents = new Set(
+                  activityLogs
+                    .filter(l => ['CREATED', 'COMMENT_ADDED'].includes(l.action))
+                    .map(l => l.ticket)
+                );
+
+                const filteredLogs = activityLogs.filter(log => {
+                  if (log.action === 'ATTACHMENT_ADDED' && parentEvents.has(log.ticket)) {
+                    const parentLog = activityLogs.find(
+                      l => ['CREATED', 'COMMENT_ADDED'].includes(l.action) && l.ticket === log.ticket
+                    );
+                    if (parentLog) {
+                      const diff = Math.abs(dayjs(log.created_at).diff(dayjs(parentLog.created_at), 'second'));
+                      if (diff < 60) return false;
+                    }
+                  }
+                  return true;
+                });
+
+                // Grupuj bulk actions
+                const groupedLogs = groupBulkLogs(filteredLogs);
+
+                const activities = groupedLogs.map((log: any) => {
+                  const config = getActivityConfig(log);
+                  return {
+                    id: log.id,
+                    ticketId: log.ticket,
+                    type: config.type,
+                    icon: config.icon,
+                    text: config.text,
+                    time: log.created_at,
+                    unread: config.unread,
+                    tab: config.tab,
+                    link: log._bulkCount ? '/tickets' : `/tickets/${log.ticket}`,
+                  };
+                });
+
+                const filteredActivities = activityTab === 'Wszystkie'
+                  ? activities
+                  : activities.filter(a => a.tab === activityTab && a.tab !== '_edycje');
+
+                return (
+                  <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-3xl shadow-sm flex flex-col h-[580px]">
+                    <div className="p-5 border-b border-gray-100 dark:border-gray-700/50">
+                      <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-4">
+                        Ostatnia aktywność
+                      </h2>
+                      <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600">
+                        {activityTabs.map(tab => (
                           <button
-                            onClick={() => setRiskFilter(null)}
-                            className={`px-3 py-1.5 text-xs font-semibold rounded-lg whitespace-nowrap transition-colors ${riskFilter === null
+                            key={tab}
+                            onClick={() => setActivityTab(tab)}
+                            className={`px-3 py-1.5 text-xs font-semibold rounded-lg whitespace-nowrap transition-colors ${activityTab === tab
                               ? 'bg-gray-900 text-white dark:bg-blue-500/20 dark:text-blue-400'
                               : 'text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700/50 dark:hover:text-gray-200'
                               }`}
                           >
-                            Wszystkie
+                            {tab}
                           </button>
-                          {chipConfig.map(chip => {
-                            const count = riskItems.filter(r => r.reason === chip.reason).length;
-                            if (count === 0) return null;
-                            const isActive = riskFilter === chip.reason;
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="flex-1 overflow-y-auto p-2 scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600">
+                      {filteredActivities.length === 0 ? (
+                        <div className="flex flex-col items-center justify-center h-full text-center px-6">
+                          <div className="w-14 h-14 bg-gray-100 dark:bg-gray-700/50 rounded-full flex items-center justify-center mb-4">
+                            <Activity className="w-7 h-7 text-gray-400 dark:text-gray-500" />
+                          </div>
+                          <h3 className="text-base font-bold text-gray-900 dark:text-white">Brak aktywności</h3>
+                          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Nie znaleziono zdarzeń dla wybranego filtru.</p>
+                        </div>
+                      ) : (
+                        <div className="space-y-0.5">
+                          {filteredActivities.map((activity) => {
+                            const Icon = activity.icon;
+
+                            let colorClass = 'text-gray-600 dark:text-gray-400';
+                            let bgClass = 'bg-gray-100 dark:bg-gray-800';
+
+                            if (activity.type === 'GREEN') {
+                              colorClass = 'text-green-600 dark:text-green-400';
+                              bgClass = 'bg-green-100 dark:bg-green-500/20';
+                            } else if (activity.type === 'ORANGE') {
+                              colorClass = 'text-amber-600 dark:text-amber-400';
+                              bgClass = 'bg-amber-100 dark:bg-amber-500/20';
+                            } else if (activity.type === 'BLUE') {
+                              colorClass = 'text-blue-600 dark:text-blue-400';
+                              bgClass = 'bg-blue-100 dark:bg-blue-500/20';
+                            } else if (activity.type === 'PURPLE') {
+                              colorClass = 'text-violet-600 dark:text-violet-400';
+                              bgClass = 'bg-violet-100 dark:bg-violet-500/20';
+                            }
+
                             return (
-                              <button
-                                key={chip.reason}
-                                onClick={() => setRiskFilter(isActive ? null : chip.reason)}
-                                className={`px-3 py-1.5 text-xs font-semibold rounded-lg whitespace-nowrap transition-colors ${isActive
-                                  ? 'bg-gray-900 text-white dark:bg-blue-500/20 dark:text-blue-400'
-                                  : 'text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700/50 dark:hover:text-gray-200'
-                                  }`}
+                              <Link
+                                to={activity.link}
+                                key={activity.id}
+                                className="relative flex items-center px-4 py-3.5 rounded-2xl hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors group overflow-hidden"
                               >
-                                {chip.label} · {count}
-                              </button>
+                                <div className={`w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 mr-3.5 transition-transform group-hover:scale-105 ${bgClass} ${colorClass}`}>
+                                  <Icon className="w-4 h-4" />
+                                </div>
+                                <div className="flex-1 min-w-0 mr-3">
+                                  <p className="text-[13px] text-gray-700 dark:text-gray-200 truncate group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors duration-150">
+                                    {activity.text}
+                                  </p>
+                                </div>
+                                {/* Timestamp ↔ Zbadaj cross-fade — identical to risk panel */}
+                                <div className="relative flex-shrink-0 w-20 text-right">
+                                  <span className="block text-[11px] font-medium text-gray-400 dark:text-gray-500 opacity-100 group-hover:opacity-0 transition-opacity duration-150 ease-in-out whitespace-nowrap">
+                                    {formatActivityTime(activity.time)}
+                                  </span>
+                                  <span className="absolute inset-0 flex items-center justify-end text-[11px] font-semibold text-blue-600 dark:text-blue-400 opacity-0 group-hover:opacity-100 transition-opacity duration-150 ease-in-out whitespace-nowrap pointer-events-none">
+                                    Zbadaj →
+                                  </span>
+                                </div>
+                              </Link>
                             );
                           })}
-                        </>
+                        </div>
                       )}
                     </div>
                   </div>
-
-                  {/* Body */}
-                  <div className="flex-1 overflow-y-auto p-2 scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600">
-                    {visibleRisks.length === 0 ? (
-                      <div className="flex flex-col items-center justify-center h-full text-center px-6">
-                        <div className="w-14 h-14 bg-emerald-50 dark:bg-emerald-900/20 rounded-full flex items-center justify-center mb-4">
-                          <CheckCircle2 className="w-7 h-7 text-emerald-500 dark:text-emerald-400" />
-                        </div>
-                        <h3 className="text-base font-bold text-gray-900 dark:text-white">Wszystko pod kontrolą</h3>
-                        <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Brak zgłoszeń wymagających interwencji.</p>
-                      </div>
-                    ) : (
-                      <div className="space-y-0.5">
-                        {visibleRisks.map((risk) => {
-                          const colors = riskReasonColor[risk.reason];
-                          const t = risk.ticket;
-
-                          const RiskIcon = risk.reason === 'critical_unassigned'
-                            ? AlertTriangle
-                            : risk.reason === 'stale_unassigned'
-                              ? Users
-                              : Clock;
-
-                          const idleLabel =
-                            risk.reason === 'frozen_progress'
-                              ? `${risk.idle}d ciszy`
-                              : risk.reason === 'stale_unassigned'
-                                ? `${risk.age}d czeka`
-                                : `${risk.age}d`;
-
-                          // Urgency days — shared helper ensures consistency with sort order
-                          const urgencyDays = getUrgencyDays(risk);
-
-                          // Severity bar color based on wait time
-                          const severityBarColor =
-                            urgencyDays >= 15
-                              ? 'bg-rose-500/60'
-                              : urgencyDays >= 8
-                                ? 'bg-orange-400/60'
-                                : urgencyDays >= 4
-                                  ? 'bg-amber-400/60'
-                                  : 'bg-emerald-400/60';
-
-                          return (
-                            <Link
-                              to={`/tickets/${t.id}`}
-                              key={t.id}
-                              className="risk-row relative flex items-center px-4 py-3.5 rounded-2xl hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors group overflow-hidden min-w-0"
-                            >
-                              {/* Bottom-edge severity bar — animates scaleX 0→1 on hover via .risk-row CSS */}
-                              <div
-                                className={`risk-severity-bar absolute bottom-0 left-0 h-0.5 ${severityBarColor} rounded-full`}
-                                style={{
-                                  width: '100%',
-                                  transformOrigin: 'left',
-                                  transition: 'transform 200ms ease-out',
-                                }}
-                              />
-
-                              <div className={`relative w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 mr-3.5 transition-transform group-hover:scale-105 ${colors.bg}`}>
-                                <RiskIcon className={`w-4 h-4 ${colors.icon}`} />
-                              </div>
-                              <div className="relative flex-1 min-w-0 mr-3">
-                                <div className="flex items-center min-w-0">
-                                  <span className="text-[13px] font-bold text-gray-900 dark:text-white flex-shrink-0 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors duration-150">#{t.id}</span>
-                                  <span className="mx-1.5 text-gray-300 dark:text-gray-600 flex-shrink-0">·</span>
-                                  <span className="text-[13px] text-gray-700 dark:text-gray-200 truncate block min-w-0 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors duration-150">{t.title}</span>
-                                </div>
-                                <div className="flex items-center gap-1.5 mt-1">
-                                  <span className={`text-[11px] font-medium ${colors.text}`}>
-                                    {riskReasonLabel[risk.reason]}
-                                  </span>
-                                  <span className="text-gray-300 dark:text-gray-600">·</span>
-                                  {priorityBadge(t.priority)}
-                                  {statusBadge(t.status)}
-                                </div>
-                              </div>
-
-                              {/* Timestamp ↔ Zbadaj cross-fade */}
-                              <div className="relative flex-shrink-0 w-20 text-right">
-                                <span className="block text-[11px] font-medium text-gray-400 dark:text-gray-500 opacity-100 group-hover:opacity-0 transition-opacity duration-150 ease-in-out">
-                                  {idleLabel}
-                                </span>
-                                <span className="absolute inset-0 flex items-center justify-end text-[11px] font-semibold text-blue-600 dark:text-blue-400 opacity-0 group-hover:opacity-100 transition-opacity duration-150 ease-in-out whitespace-nowrap pointer-events-none">
-                                  Zbadaj →
-                                </span>
-                              </div>
-                            </Link>
-                          );
-                        })}
-                      </div>
-                    )}
-                  </div>
-                </div>
-              );
-            })()}
-          </div>
-
-          {/* Aktywność globalna */}
-          <div className="xl:col-span-2 space-y-4">
-            {(() => {
-              const activityTabs = ['Wszystkie', 'Zgłoszenia', 'Zespół'];
-
-              // Mapowanie akcji z API na konfigurację wizualną
-              const trunc = (s: string, max = 40) => s.length > max ? s.slice(0, max) + '...' : s;
-
-              const statusLabel: Record<string, string> = {
-                NOWE: 'Nowe', W_TOKU: 'W toku', ROZWIAZANE: 'Rozwiązane', ZAMKNIETE: 'Zamknięte',
-              };
-              const priorityLabel: Record<string, string> = {
-                NISKI: 'Niski', NORMALNY: 'Normalny', WYSOKI: 'Wysoki',
-              };
-              const sl = (v: string) => statusLabel[v] ?? v;
-              const pl = (v: string) => priorityLabel[v] ?? v;
-
-              const getActivityConfig = (log: any) => {
-                const action = log.action;
-                const ticketId = log.ticket;
-                const user = log.user_details;
-                const userName = user ? `${user.first_name} ${user.last_name}` : 'System';
-                const bulk = log._bulkCount;
-                const bulkLabel = bulk ? `${bulk} zgłoszeń` : null;
-
-                switch (action) {
-                  case 'CREATED':
-                    return {
-                      type: 'GREEN', icon: Plus, tab: 'Zgłoszenia',
-                      text: bulk
-                        ? (<span>{userName} utworzył(a) <strong>{bulkLabel}</strong></span>)
-                        : (<span>{userName} utworzył(a) zgłoszenie <strong>#{ticketId}</strong></span>),
-                      unread: true,
-                    };
-
-                  case 'STATUS_CHANGED': {
-                    const oldS = log.old_value ? sl(log.old_value) : null;
-                    const newS = log.new_value ? sl(log.new_value) : null;
-                    const arrow = oldS && newS ? `: ${oldS} → ${newS}` : newS ? ` → ${newS}` : '';
-                    const isResolved = ['ROZWIAZANE', 'ZAMKNIETE'].includes(log.new_value);
-                    return {
-                      type: isResolved ? 'GREEN' : 'ORANGE',
-                      icon: isResolved ? CheckCircle2 : Activity,
-                      tab: 'Zgłoszenia',
-                      text: bulk
-                        ? (<span>{userName} zmienił(a) status <strong>{bulkLabel}</strong>{newS ? ` → ${newS}` : ''}</span>)
-                        : (<span>{userName} zmienił(a) status <strong>#{ticketId}</strong>{arrow}</span>),
-                      unread: !isResolved,
-                    };
-                  }
-
-                  case 'PRIORITY_CHANGED': {
-                    const oldP = log.old_value ? pl(log.old_value) : null;
-                    const newP = log.new_value ? pl(log.new_value) : null;
-                    const arrow = oldP && newP ? `: ${oldP} → ${newP}` : newP ? ` → ${newP}` : '';
-                    return {
-                      type: 'ORANGE', icon: AlertTriangle, tab: 'Zgłoszenia',
-                      text: bulk
-                        ? (<span>{userName} zmienił(a) priorytet <strong>{bulkLabel}</strong>{newP ? ` → ${newP}` : ''}</span>)
-                        : (<span>{userName} zmienił(a) priorytet <strong>#{ticketId}</strong>{arrow}</span>),
-                      unread: true,
-                    };
-                  }
-
-                  case 'CATEGORY_CHANGED': {
-                    const oldC = log.old_value || null;
-                    const newC = log.new_value || null;
-                    const arrow = oldC && newC ? `: ${oldC} → ${newC}` : newC ? ` → ${newC}` : '';
-                    return {
-                      type: 'ORANGE', icon: ClipboardList, tab: 'Zgłoszenia',
-                      text: bulk
-                        ? (<span>{userName} zmienił(a) kategorię <strong>{bulkLabel}</strong>{newC ? ` → ${newC}` : ''}</span>)
-                        : (<span>{userName} zmienił(a) kategorię <strong>#{ticketId}</strong>{arrow}</span>),
-                      unread: false,
-                    };
-                  }
-
-                  case 'TITLE_CHANGED': {
-                    const oldT = log.old_value ? `„${trunc(log.old_value)}”` : null;
-                    const newT = log.new_value ? `„${trunc(log.new_value)}”` : null;
-                    const detail = oldT && newT ? `: ${oldT} → ${newT}` : newT ? ` → ${newT}` : '';
-                    return {
-                      type: 'ORANGE', icon: FileText, tab: '_edycje',
-                      text: (<span>{userName} zmienił(a) tytuł <strong>#{ticketId}</strong>{detail}</span>),
-                      unread: false,
-                    };
-                  }
-
-                  case 'DESCRIPTION_CHANGED':
-                    return {
-                      type: 'ORANGE', icon: FileText, tab: '_edycje',
-                      text: (<span>{userName} zaktualizował(a) opis zgłoszenia <strong>#{ticketId}</strong></span>),
-                      unread: false,
-                    };
-
-                  case 'REOPENED':
-                    return {
-                      type: 'ORANGE', icon: Activity, tab: 'Zgłoszenia',
-                      text: bulk
-                        ? (<span>{userName} ponownie otworzył(a) <strong>{bulkLabel}</strong></span>)
-                        : (<span>{userName} ponownie otworzył(a) <strong>#{ticketId}</strong></span>),
-                      unread: true,
-                    };
-
-                  case 'AUTO_CLOSED':
-                    return {
-                      type: 'GREEN', icon: CheckCircle2, tab: 'Zgłoszenia',
-                      text: (<span>System automatycznie zamknął <strong>#{ticketId}</strong></span>),
-                      unread: false,
-                    };
-
-                  case 'TECHNICIAN_ASSIGNED': {
-                    const tech = log.new_value || null;
-                    return {
-                      type: 'BLUE', icon: Users, tab: 'Zespół',
-                      text: bulk
-                        ? (<span>{userName} przypisał(a) technika do <strong>{bulkLabel}</strong>{tech ? `: ${tech}` : ''}</span>)
-                        : (<span>{userName} przypisał(a) technika do <strong>#{ticketId}</strong>{tech ? `: ${tech}` : ''}</span>),
-                      unread: false,
-                    };
-                  }
-
-                  case 'TECHNICIAN_REMOVED': {
-                    const tech = log.old_value || log.new_value || null;
-                    return {
-                      type: 'BLUE', icon: Users, tab: 'Zespół',
-                      text: bulk
-                        ? (<span>{userName} usunął(a) technika z <strong>{bulkLabel}</strong>{tech ? `: ${tech}` : ''}</span>)
-                        : (<span>{userName} usunął(a) technika z <strong>#{ticketId}</strong>{tech ? `: ${tech}` : ''}</span>),
-                      unread: false,
-                    };
-                  }
-
-                  case 'CREATOR_CHANGED':
-                    return {
-                      type: 'BLUE', icon: Users, tab: 'Zgłoszenia',
-                      text: (<span>{userName} zmienił(a) zgłaszającego w <strong>#{ticketId}</strong>{log.new_value ? ` → ${log.new_value}` : ''}</span>),
-                      unread: false,
-                    };
-
-                  case 'COMMENT_ADDED':
-                    return {
-                      type: 'BLUE', icon: MessageSquare,
-                      tab: log.new_value === 'INTERNAL' ? 'Zespół' : 'Zgłoszenia',
-                      text: (<span>{userName} skomentował(a) <strong>#{ticketId}</strong></span>),
-                      unread: true,
-                    };
-
-                  case 'ATTACHMENT_ADDED': {
-                    const isMultiple = log.new_value && /^\d+ załącznik/.test(log.new_value);
-                    return {
-                      type: 'PURPLE', icon: Paperclip, tab: 'Zgłoszenia',
-                      text: isMultiple
-                        ? (<span>{userName} dodał(a) {log.new_value} do <strong>#{ticketId}</strong></span>)
-                        : (<span>{userName} dodał(a) załącznik do <strong>#{ticketId}</strong>{log.new_value ? `: ${log.new_value}` : ''}</span>),
-                      unread: false,
-                    };
-                  }
-
-                  case 'ATTACHMENT_DELETED':
-                    return {
-                      type: 'PURPLE', icon: Paperclip, tab: 'Zgłoszenia',
-                      text: (<span>{userName} usunął(a) załącznik z <strong>#{ticketId}</strong>{log.old_value ? `: ${log.old_value}` : ''}</span>),
-                      unread: false,
-                    };
-
-                  case 'WORK_LOGGED':
-                    return {
-                      type: 'PURPLE', icon: Timer, tab: 'Zespół',
-                      text: (<span>{userName} zarejestrował(a) czas pracy w <strong>#{ticketId}</strong>{log.new_value ? ` (${log.new_value})` : ''}</span>),
-                      unread: false,
-                    };
-
-                  default:
-                    return {
-                      type: 'ORANGE', icon: ClipboardList, tab: 'Zgłoszenia',
-                      text: (<span>{userName}: aktualizacja <strong>#{ticketId}</strong></span>),
-                      unread: false,
-                    };
-                }
-              };
-
-              // Filtruj: ukryj ATTACHMENT_ADDED jeśli tuż po CREATED lub COMMENT_ADDED dla tego samego ticketu
-              const parentEvents = new Set(
-                activityLogs
-                  .filter(l => ['CREATED', 'COMMENT_ADDED'].includes(l.action))
-                  .map(l => l.ticket)
-              );
-
-              const filteredLogs = activityLogs.filter(log => {
-                if (log.action === 'ATTACHMENT_ADDED' && parentEvents.has(log.ticket)) {
-                  const parentLog = activityLogs.find(
-                    l => ['CREATED', 'COMMENT_ADDED'].includes(l.action) && l.ticket === log.ticket
-                  );
-                  if (parentLog) {
-                    const diff = Math.abs(dayjs(log.created_at).diff(dayjs(parentLog.created_at), 'second'));
-                    if (diff < 60) return false;
-                  }
-                }
-                return true;
-              });
-
-              // Grupuj bulk actions
-              const groupedLogs = groupBulkLogs(filteredLogs);
-
-              const activities = groupedLogs.map((log: any) => {
-                const config = getActivityConfig(log);
-                return {
-                  id: log.id,
-                  ticketId: log.ticket,
-                  type: config.type,
-                  icon: config.icon,
-                  text: config.text,
-                  time: log.created_at,
-                  unread: config.unread,
-                  tab: config.tab,
-                  link: log._bulkCount ? '/tickets' : `/tickets/${log.ticket}`,
-                };
-              });
-
-              const filteredActivities = activityTab === 'Wszystkie'
-                ? activities
-                : activities.filter(a => a.tab === activityTab && a.tab !== '_edycje');
-
-              return (
-                <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-3xl shadow-sm flex flex-col h-[580px]">
-                  <div className="p-5 border-b border-gray-100 dark:border-gray-700/50">
-                    <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-4">
-                      Ostatnia aktywność
-                    </h2>
-                    <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600">
-                      {activityTabs.map(tab => (
-                        <button
-                          key={tab}
-                          onClick={() => setActivityTab(tab)}
-                          className={`px-3 py-1.5 text-xs font-semibold rounded-lg whitespace-nowrap transition-colors ${activityTab === tab
-                            ? 'bg-gray-900 text-white dark:bg-blue-500/20 dark:text-blue-400'
-                            : 'text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700/50 dark:hover:text-gray-200'
-                            }`}
-                        >
-                          {tab}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div className="flex-1 overflow-y-auto p-2 scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600">
-                    {filteredActivities.length === 0 ? (
-                      <div className="flex flex-col items-center justify-center h-full text-center px-6">
-                        <div className="w-14 h-14 bg-gray-100 dark:bg-gray-700/50 rounded-full flex items-center justify-center mb-4">
-                          <Activity className="w-7 h-7 text-gray-400 dark:text-gray-500" />
-                        </div>
-                        <h3 className="text-base font-bold text-gray-900 dark:text-white">Brak aktywności</h3>
-                        <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Nie znaleziono zdarzeń dla wybranego filtru.</p>
-                      </div>
-                    ) : (
-                      <div className="space-y-0.5">
-                        {filteredActivities.map((activity) => {
-                          const Icon = activity.icon;
-
-                          let colorClass = 'text-gray-600 dark:text-gray-400';
-                          let bgClass = 'bg-gray-100 dark:bg-gray-800';
-
-                          if (activity.type === 'GREEN') {
-                            colorClass = 'text-green-600 dark:text-green-400';
-                            bgClass = 'bg-green-100 dark:bg-green-500/20';
-                          } else if (activity.type === 'ORANGE') {
-                            colorClass = 'text-amber-600 dark:text-amber-400';
-                            bgClass = 'bg-amber-100 dark:bg-amber-500/20';
-                          } else if (activity.type === 'BLUE') {
-                            colorClass = 'text-blue-600 dark:text-blue-400';
-                            bgClass = 'bg-blue-100 dark:bg-blue-500/20';
-                          } else if (activity.type === 'PURPLE') {
-                            colorClass = 'text-violet-600 dark:text-violet-400';
-                            bgClass = 'bg-violet-100 dark:bg-violet-500/20';
-                          }
-
-                          return (
-                            <Link
-                              to={activity.link}
-                              key={activity.id}
-                              className="relative flex items-center px-4 py-3.5 rounded-2xl hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors group overflow-hidden"
-                            >
-                              <div className={`w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 mr-3.5 transition-transform group-hover:scale-105 ${bgClass} ${colorClass}`}>
-                                <Icon className="w-4 h-4" />
-                              </div>
-                              <div className="flex-1 min-w-0 mr-3">
-                                <p className="text-[13px] text-gray-700 dark:text-gray-200 truncate group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors duration-150">
-                                  {activity.text}
-                                </p>
-                              </div>
-                              {/* Timestamp ↔ Zbadaj cross-fade — identical to risk panel */}
-                              <div className="relative flex-shrink-0 w-20 text-right">
-                                <span className="block text-[11px] font-medium text-gray-400 dark:text-gray-500 opacity-100 group-hover:opacity-0 transition-opacity duration-150 ease-in-out whitespace-nowrap">
-                                  {formatActivityTime(activity.time)}
-                                </span>
-                                <span className="absolute inset-0 flex items-center justify-end text-[11px] font-semibold text-blue-600 dark:text-blue-400 opacity-0 group-hover:opacity-100 transition-opacity duration-150 ease-in-out whitespace-nowrap pointer-events-none">
-                                  Zbadaj →
-                                </span>
-                              </div>
-                            </Link>
-                          );
-                        })}
-                      </div>
-                    )}
-                  </div>
-                </div>
-              );
-            })()}
+                );
+              })()}
+            </div>
           </div>
         </div>
-      </div>
+      </>
     );
   }
 
