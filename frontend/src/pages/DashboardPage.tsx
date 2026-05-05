@@ -515,7 +515,7 @@ const DashboardPage: React.FC = () => {
               };
 
               return (
-                <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-3xl shadow-sm flex flex-col h-[580px]">
+                <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-3xl shadow-sm flex flex-col h-[calc(100vh-280px)] min-h-[580px]">
 
                   {/* Header */}
                   <div className="p-5 border-b border-gray-100 dark:border-gray-700/50">
@@ -942,7 +942,7 @@ const DashboardPage: React.FC = () => {
                 : activities.filter(a => a.tab === activityTab && a.tab !== '_edycje');
 
               return (
-                <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-3xl shadow-sm flex flex-col h-[580px]">
+                <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-3xl shadow-sm flex flex-col h-[calc(100vh-280px)] min-h-[580px]">
                   <div className="p-5 border-b border-gray-100 dark:border-gray-700/50">
                     <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-4">
                       Ostatnia aktywność
@@ -1427,7 +1427,7 @@ const DashboardPage: React.FC = () => {
                 };
 
                 return (
-                  <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-3xl shadow-sm flex flex-col h-[580px]">
+                  <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-3xl shadow-sm flex flex-col h-[calc(100vh-280px)] min-h-[580px]">
 
                     {/* Header */}
                     <div className="p-5 border-b border-gray-100 dark:border-gray-700/50">
@@ -1800,7 +1800,7 @@ const DashboardPage: React.FC = () => {
                   : activities.filter(a => a.tab === activityTab && a.tab !== '_edycje');
 
                 return (
-                  <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-3xl shadow-sm flex flex-col h-[580px]">
+                  <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-3xl shadow-sm flex flex-col h-[calc(100vh-280px)] min-h-[580px]">
                     <div className="p-5 border-b border-gray-100 dark:border-gray-700/50">
                       <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-4">
                         Ostatnia aktywność
