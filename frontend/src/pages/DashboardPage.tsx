@@ -27,13 +27,6 @@ import useTitle from '../hooks/useTitle';
 import relativeTime from 'dayjs/plugin/relativeTime';
 
 
-const formatTicketCount = (count: number) => {
-  if (count === 1) return 'Masz 1 otwarte zgłoszenie';
-  if ([2, 3, 4].includes(count % 10) && ![12, 13, 14].includes(count % 100)) {
-    return `Masz ${count} otwarte zgłoszenia`;
-  }
-  return `Masz ${count} otwartych zgłoszeń`;
-};
 
 // Plugin do obsługi czasu relatywnego (np. "2 godziny temu")
 dayjs.extend(relativeTime);
@@ -379,50 +372,52 @@ const DashboardPage: React.FC = () => {
     ];
 
     return (
-      <div className="w-full space-y-8 animate-in fade-in duration-700">
-        {/* Baner Welcome */}
-        <div className="bg-gradient-to-br from-slate-900 via-gray-900 to-slate-800 dark:from-gray-800 dark:via-gray-900 dark:to-black rounded-3xl p-8 md:p-10 text-white shadow-xl shadow-gray-900/10 flex flex-col md:flex-row items-center justify-between gap-6 overflow-hidden relative">
-          <div className="absolute top-0 right-0 -mt-10 -mr-10 w-64 h-64 bg-blue-500/10 blur-3xl rounded-full pointer-events-none"></div>
-          <div className="absolute bottom-0 left-10 -mb-10 w-40 h-40 bg-purple-500/10 blur-3xl rounded-full pointer-events-none"></div>
-          <div className="relative z-10 text-center md:text-left">
-            <h1 className="text-3xl md:text-4xl font-extrabold mb-3 tracking-tight text-white">
-              Witaj, {authContext?.user?.first_name}! 👋
+      <div className="w-full space-y-6 md:space-y-8 animate-in fade-in duration-700">
+        {/* Page title — matches admin style */}
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div>
+            <h1 className="text-2xl md:text-3xl font-extrabold text-gray-900 dark:text-white tracking-tight">
+              Mój pulpit
             </h1>
-            <p className="text-gray-300 text-lg max-w-lg font-medium">
-              {formatTicketCount(myOpen.length)}. Pula nieprzypisanych czeka!
+            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1 font-medium">
+              {(() => {
+                const count = myOpen.length;
+                if (count === 0) return 'Nie masz żadnych otwartych zgłoszeń';
+                if (count === 1) return 'Masz 1 otwarte zgłoszenie przypisane do Ciebie';
+                if ([2, 3, 4].includes(count % 10) && ![12, 13, 14].includes(count % 100)) {
+                  return `Masz ${count} otwarte zgłoszenia przypisane do Ciebie`;
+                }
+                return `Masz ${count} otwartych zgłoszeń przypisanych do Ciebie`;
+              })()}
             </p>
           </div>
-          <div className="relative z-10 flex flex-col sm:flex-row gap-3">
-            <Link
-              to="/tickets"
-              className="px-6 py-3.5 bg-white/10 hover:bg-white/20 backdrop-blur-md text-white border border-white/20 font-bold rounded-xl shadow-lg transition-all flex items-center justify-center whitespace-nowrap"
-            >
-              Moje zgłoszenia
-            </Link>
-            <Link
-              to="/create-ticket"
-              className="px-6 py-3.5 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl shadow-lg shadow-blue-900/40 transition-all flex items-center justify-center whitespace-nowrap"
-            >
-              <Plus className="w-5 h-5 mr-2" />
-              Nowe zgłoszenie
-            </Link>
-          </div>
+          <Link
+            to="/create-ticket"
+            className="inline-flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl shadow-sm hover:shadow-md shadow-blue-600/10 transition-all text-sm whitespace-nowrap"
+          >
+            <Plus className="w-4 h-4" />
+            Nowe zgłoszenie
+          </Link>
         </div>
 
-        {/* KPI */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        {/* KPI Cards — admin-style visual system */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-5">
           {techStats.map((stat, index) => (
             <div
               key={index}
-              className={`p-6 bg-white dark:bg-gray-800 border ${stat.border} rounded-3xl shadow-sm hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 cursor-default`}
+              className="group relative flex flex-col p-5 bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700/60 rounded-2xl shadow-sm hover:shadow-md transition-all duration-300"
             >
-              <div className="flex items-center justify-between mb-4">
-                <div className={`p-3.5 ${stat.bg} rounded-2xl`}>
+              <div className="flex items-start justify-between mb-3">
+                <p className="text-sm font-medium text-gray-500 dark:text-gray-400 leading-tight">
+                  {stat.label}
+                </p>
+                <div className={`w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 ${stat.bg} ring-1 ${stat.border}`}>
                   {stat.icon}
                 </div>
               </div>
-              <p className="text-sm font-semibold text-gray-500 dark:text-gray-400">{stat.label}</p>
-              <p className="text-3xl font-extrabold text-gray-900 dark:text-white mt-1">{stat.value}</p>
+              <p className="text-3xl font-bold text-gray-900 dark:text-white tracking-tight">
+                {stat.value}
+              </p>
             </div>
           ))}
         </div>
