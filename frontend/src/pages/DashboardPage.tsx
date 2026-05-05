@@ -8,7 +8,6 @@ import {
   CheckCircle2,
   AlertCircle,
   Plus,
-  ArrowUpRight,
   Ticket as TicketIcon,
   Users,
   AlertTriangle,
@@ -291,10 +290,6 @@ const DashboardPage: React.FC = () => {
       .sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())
       .slice(0, 6);
 
-    const techRecentActivity = [...myTickets]
-      .sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime())
-      .slice(0, 5);
-
     const techStats = [
       {
         label: 'Moje otwarte zgłoszenia',
@@ -509,43 +504,202 @@ const DashboardPage: React.FC = () => {
             </div>
           </div>
 
-          {/* Aktywność technika */}
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <h2 className="text-xl font-bold text-gray-900 flex items-center">
-                <Clock className="w-5 h-5 text-blue-600 mr-2" /> Moja Aktywność
-              </h2>
-              <Link to="/tickets" className="text-xs font-bold text-blue-600 hover:text-blue-800 transition-colors flex items-center">
-                Wszystko <ArrowUpRight className="w-3 h-3 ml-1" />
-              </Link>
-            </div>
+          {/* Ostatnia aktywność — perspektywa technika */}
+          <div>
+            {(() => {
+              const techActivityTabs = ['Wszystkie', 'Moje', 'Pula'];
 
-            <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-3xl shadow-sm p-6 space-y-3">
-              {techRecentActivity.length === 0 ? (
-                <p className="text-sm text-gray-500 dark:text-gray-400 italic text-center py-8">Brak aktywności na Twoich zgłoszeniach.</p>
-              ) : (
-                techRecentActivity.map(ticket => (
-                  <Link to={`/tickets/${ticket.id}`} key={ticket.id} className="block p-4 border border-gray-100 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-800/50 rounded-2xl hover:border-blue-200 dark:hover:border-blue-500/50 hover:bg-white dark:hover:bg-gray-800 hover:shadow-md transition-all group">
-                    <p className="text-sm font-bold text-gray-800 dark:text-gray-100 truncate mb-2 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">#{ticket.id} {ticket.title}</p>
-                    <div className="flex items-center justify-between">
-                      <span className={`px-2.5 py-1 text-[10px] font-extrabold uppercase tracking-wider rounded-lg ${ticket.status === 'NOWE' ? 'bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-400' :
-                          ticket.status === 'W_TOKU' ? 'bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-400' :
-                            ticket.status === 'ROZWIAZANE' ? 'bg-green-100 text-green-700 dark:bg-green-500/20 dark:text-green-400' :
-                              'bg-teal-100 text-teal-800 dark:bg-teal-900/30 dark:text-teal-400'
-                        }`}>
-                        {ticket.status === 'W_TOKU' ? 'W TOKU' :
-                          ticket.status === 'NOWE' ? 'NOWE' :
-                            ticket.status === 'ROZWIAZANE' ? 'ROZWIĄZANE' : 'ZAMKNIĘTE'}
-                      </span>
-                      <p className="text-[11px] font-medium text-gray-400 flex items-center">
-                        <Clock className="w-3 h-3 mr-1 opacity-70" />
-                        {dayjs(ticket.updated_at).fromNow()}
-                      </p>
+              // Mapowanie akcji z API na konfigurację wizualną (technik)
+              const getTechActivityConfig = (log: any) => {
+                const action = log.action;
+                const ticketId = log.ticket;
+                const user = log.user_details;
+                const userName = user ? `${user.first_name} ${user.last_name}` : 'System';
+                const isMe = user?.id === myId;
+                const youLabel = isMe ? 'Ty' : userName;
+
+                switch (action) {
+                  case 'CREATED':
+                    return {
+                      type: 'GREEN', icon: Plus,
+                      text: (<span>{youLabel} utworzył(a) <strong>#{ticketId}</strong></span>),
+                    };
+                  case 'STATUS_CHANGED':
+                    if (['ROZWIAZANE', 'ZAMKNIETE'].includes(log.new_value)) {
+                      return {
+                        type: 'GREEN', icon: CheckCircle2,
+                        text: (<span>{youLabel} {log.new_value === 'ZAMKNIETE' ? 'zamknął(ęła)' : 'rozwiązał(a)'} <strong>#{ticketId}</strong></span>),
+                      };
+                    }
+                    return {
+                      type: 'ORANGE', icon: Activity,
+                      text: (<span>{youLabel} zmienił(a) status <strong>#{ticketId}</strong></span>),
+                    };
+                  case 'TECHNICIAN_ASSIGNED':
+                    return {
+                      type: 'BLUE', icon: Users,
+                      text: (<span>Przypisano {log.new_value || 'technika'} do <strong>#{ticketId}</strong></span>),
+                    };
+                  case 'TECHNICIAN_REMOVED':
+                    return {
+                      type: 'BLUE', icon: Users,
+                      text: (<span>Usunięto technika z <strong>#{ticketId}</strong></span>),
+                    };
+                  case 'COMMENT_ADDED':
+                    return {
+                      type: 'BLUE', icon: MessageSquare,
+                      text: (<span>{youLabel} skomentował(a) <strong>#{ticketId}</strong></span>),
+                    };
+                  case 'PRIORITY_CHANGED':
+                    return {
+                      type: 'ORANGE', icon: AlertTriangle,
+                      text: (<span>Zmiana priorytetu <strong>#{ticketId}</strong>{log.new_value ? ` → ${log.new_value}` : ''}</span>),
+                    };
+                  case 'ATTACHMENT_ADDED': {
+                    const isMultiple = log.new_value && /^\d+ załączników$/.test(log.new_value);
+                    return {
+                      type: 'PURPLE', icon: Paperclip,
+                      text: isMultiple
+                        ? (<span>{youLabel} dodał(a) {log.new_value} do <strong>#{ticketId}</strong></span>)
+                        : (<span>{youLabel} dodał(a) załącznik do <strong>#{ticketId}</strong></span>),
+                    };
+                  }
+                  case 'WORK_LOGGED':
+                    return {
+                      type: 'PURPLE', icon: Timer,
+                      text: (<span>{youLabel} zalogował(a) czas w <strong>#{ticketId}</strong>{log.new_value ? ` (${log.new_value})` : ''}</span>),
+                    };
+                  default:
+                    return {
+                      type: 'ORANGE', icon: ClipboardList,
+                      text: (<span>Aktualizacja <strong>#{ticketId}</strong></span>),
+                    };
+                }
+              };
+
+              // Zbiory ticketów per tab
+              const myTicketIds = new Set(myTickets.map(t => t.id));
+              const unassignedIds = new Set(
+                tickets
+                  .filter(t => t.technician === null && !['ROZWIAZANE', 'ZAMKNIETE'].includes(t.status))
+                  .map(t => t.id)
+              );
+
+              // Filtruj duplikaty załączników (jak w adminie)
+              const parentEvents = new Set(
+                activityLogs
+                  .filter((l: any) => ['CREATED', 'COMMENT_ADDED'].includes(l.action))
+                  .map((l: any) => l.ticket)
+              );
+              const cleanedLogs = activityLogs.filter((log: any) => {
+                if (log.action === 'ATTACHMENT_ADDED' && parentEvents.has(log.ticket)) {
+                  const parentLog = activityLogs.find(
+                    (l: any) => ['CREATED', 'COMMENT_ADDED'].includes(l.action) && l.ticket === log.ticket
+                  );
+                  if (parentLog) {
+                    const diff = Math.abs(dayjs(log.created_at).diff(dayjs(parentLog.created_at), 'second'));
+                    if (diff < 60) return false;
+                  }
+                }
+                return true;
+              });
+
+              // Tylko logi dotyczące ticketów technika LUB nieprzypisanych
+              const relevantLogs = cleanedLogs.filter((log: any) =>
+                myTicketIds.has(log.ticket) || unassignedIds.has(log.ticket)
+              );
+
+              const activities = relevantLogs.map((log: any) => {
+                const config = getTechActivityConfig(log);
+                return {
+                  id: log.id,
+                  ticketId: log.ticket,
+                  type: config.type,
+                  icon: config.icon,
+                  text: config.text,
+                  time: log.created_at,
+                  link: `/tickets/${log.ticket}`,
+                  isMine: myTicketIds.has(log.ticket),
+                  isPool: unassignedIds.has(log.ticket),
+                };
+              });
+
+              const filteredActivities = activityTab === 'Wszystkie'
+                ? activities
+                : activityTab === 'Moje'
+                ? activities.filter(a => a.isMine)
+                : activities.filter(a => a.isPool);
+
+              return (
+                <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-3xl shadow-sm flex flex-col" style={{ minHeight: '360px' }}>
+                  <div className="p-5 border-b border-gray-100 dark:border-gray-700/50">
+                    <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-4">
+                      Ostatnia aktywność
+                    </h2>
+                    <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600">
+                      {techActivityTabs.map(tab => (
+                        <button
+                          key={tab}
+                          onClick={() => setActivityTab(tab)}
+                          className={`px-3 py-1.5 text-xs font-semibold rounded-lg whitespace-nowrap transition-colors ${
+                            activityTab === tab
+                            ? 'bg-gray-900 text-white dark:bg-blue-500/20 dark:text-blue-400'
+                            : 'text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700/50 dark:hover:text-gray-200'
+                          }`}
+                        >
+                          {tab}
+                        </button>
+                      ))}
                     </div>
-                  </Link>
-                ))
-              )}
-            </div>
+                  </div>
+
+                  <div className="flex-1 overflow-y-auto p-2 scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600" style={{ maxHeight: '340px' }}>
+                    {filteredActivities.length === 0 ? (
+                      <p className="text-sm text-gray-500 dark:text-gray-400 italic text-center py-8">Brak aktywności.</p>
+                    ) : (
+                      <div className="space-y-0.5">
+                        {filteredActivities.map((activity) => {
+                          const Icon = activity.icon;
+
+                          let colorClass = 'text-gray-600 dark:text-gray-400';
+                          let bgClass = 'bg-gray-100 dark:bg-gray-800';
+
+                          if (activity.type === 'GREEN') {
+                            colorClass = 'text-green-600 dark:text-green-400';
+                            bgClass = 'bg-green-100 dark:bg-green-500/20';
+                          } else if (activity.type === 'ORANGE') {
+                            colorClass = 'text-amber-600 dark:text-amber-400';
+                            bgClass = 'bg-amber-100 dark:bg-amber-500/20';
+                          } else if (activity.type === 'BLUE') {
+                            colorClass = 'text-blue-600 dark:text-blue-400';
+                            bgClass = 'bg-blue-100 dark:bg-blue-500/20';
+                          } else if (activity.type === 'PURPLE') {
+                            colorClass = 'text-violet-600 dark:text-violet-400';
+                            bgClass = 'bg-violet-100 dark:bg-violet-500/20';
+                          }
+
+                          return (
+                            <Link to={activity.link} key={activity.id} className="flex items-center px-4 py-3 rounded-2xl hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors group">
+                              <div className={`w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 mr-4 transition-transform group-hover:scale-105 ${bgClass} ${colorClass}`}>
+                                <Icon className="w-4 h-4" />
+                              </div>
+                              <div className="flex-1 min-w-0 pr-4">
+                                <p className="text-[13px] text-gray-800 dark:text-gray-200 truncate group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                                  {activity.text}
+                                </p>
+                              </div>
+                              <div className="text-[11px] font-medium text-gray-500 dark:text-gray-400 ml-2 flex-shrink-0">
+                                {formatActivityTime(activity.time)}
+                              </div>
+                            </Link>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              );
+            })()}
           </div>
         </div>
       </div>
@@ -615,7 +769,61 @@ const DashboardPage: React.FC = () => {
     const waitingTickets = filteredTickets.filter(t => t.status === 'NOWE' || (t.technician === null && !['ROZWIAZANE', 'ZAMKNIETE'].includes(t.status)));
     const resolvedTickets = filteredTickets.filter(t => ['ROZWIAZANE', 'ZAMKNIETE'].includes(t.status));
 
-    // Symulacja trendów (w przyszłości z backendu)
+    // Poprzedni okres (ta sama długość, bezpośrednio przed bieżącym)
+    const rangeDays = dateRange.end.diff(dateRange.start, 'day') + 1;
+    const prevStart = dateRange.start.subtract(rangeDays, 'day');
+    const prevEnd = dateRange.start.subtract(1, 'day').endOf('day');
+
+    const prevTickets = tickets.filter(t => {
+      const created = dayjs(t.created_at);
+      return (created.isAfter(prevStart) || created.isSame(prevStart, 'day'))
+        && (created.isBefore(prevEnd) || created.isSame(prevEnd, 'day'));
+    });
+
+    const prevOpen = prevTickets.filter(t => !['ROZWIAZANE', 'ZAMKNIETE'].includes(t.status)).length;
+    const prevWaiting = prevTickets.filter(t => t.status === 'NOWE' || (t.technician === null && !['ROZWIAZANE', 'ZAMKNIETE'].includes(t.status))).length;
+    const prevResolved = prevTickets.filter(t => ['ROZWIAZANE', 'ZAMKNIETE'].includes(t.status)).length;
+
+    // Oblicz trend procentowy
+    const calcTrend = (current: number, prev: number) => {
+      if (prev === 0 && current === 0) return { value: 0, direction: 'up' as const };
+      if (prev === 0) return { value: 100, direction: 'up' as const };
+      const pct = ((current - prev) / prev) * 100;
+      return {
+        value: Math.abs(pct),
+        direction: pct >= 0 ? 'up' as const : 'down' as const,
+      };
+    };
+
+    const openTrend = calcTrend(openTickets.length, prevOpen);
+    const waitingTrend = calcTrend(waitingTickets.length, prevWaiting);
+    const resolvedTrend = calcTrend(resolvedTickets.length, prevResolved);
+
+    // Śr. czas odpowiedzi (w minutach) — resolved_at - created_at dla rozwiązanych ticketów
+    const avgResponseTime = (ticketList: TicketType[]) => {
+      const resolved = ticketList.filter(t => t.resolved_at && ['ROZWIAZANE', 'ZAMKNIETE'].includes(t.status));
+      if (resolved.length === 0) return 0;
+      const totalMin = resolved.reduce((sum, t) => {
+        return sum + dayjs(t.resolved_at).diff(dayjs(t.created_at), 'minute');
+      }, 0);
+      return Math.round(totalMin / resolved.length);
+    };
+
+    const currentAvgMin = avgResponseTime(filteredTickets);
+    const prevAvgMin = avgResponseTime(prevTickets);
+    const avgTrend = calcTrend(currentAvgMin, prevAvgMin);
+
+    const formatMinutes = (min: number) => {
+      if (min === 0) return '—';
+      const h = Math.floor(min / 60);
+      const m = min % 60;
+      if (h === 0) return `${m}m`;
+      return `${h}h ${m}m`;
+    };
+
+    // Formatuj etykietę dla poprzedniego okresu
+    const prevPeriodLabel = `${prevStart.date()} ${plMonthsShort[prevStart.month()]} – ${prevEnd.date()} ${plMonthsShort[prevEnd.month()]}`;
+
     const kpiCards = [
       {
         label: 'Otwarte zgłoszenia',
@@ -624,8 +832,8 @@ const DashboardPage: React.FC = () => {
         icon: <TicketIcon className="w-5 h-5" />,
         iconColor: 'text-blue-600 dark:text-blue-400',
         iconBg: 'bg-blue-50 dark:bg-blue-500/10 ring-1 ring-blue-100/50 dark:ring-blue-500/20',
-        trend: { value: 5.2, direction: 'up' as const, isGood: false },
-        tooltip: `Bieżący okres: ${openTickets.length} | Poprzedni: ${Math.round(openTickets.length / 1.052)}`,
+        trend: { ...openTrend, isGood: openTrend.direction === 'down' },
+        tooltip: `Bieżący: ${openTickets.length} | Poprzedni (${prevPeriodLabel}): ${prevOpen}`,
       },
       {
         label: 'Nieprzypisane',
@@ -634,8 +842,8 @@ const DashboardPage: React.FC = () => {
         icon: <Users className="w-5 h-5" />,
         iconColor: 'text-amber-600 dark:text-amber-400',
         iconBg: 'bg-amber-50 dark:bg-amber-500/10 ring-1 ring-amber-100/50 dark:ring-amber-500/20',
-        trend: { value: 3.1, direction: 'up' as const, isGood: false },
-        tooltip: `Bieżący okres: ${waitingTickets.length} | Poprzedni: ${Math.round(waitingTickets.length / 1.031)}`,
+        trend: { ...waitingTrend, isGood: waitingTrend.direction === 'down' },
+        tooltip: `Bieżący: ${waitingTickets.length} | Poprzedni (${prevPeriodLabel}): ${prevWaiting}`,
       },
       {
         label: 'Rozwiązane',
@@ -644,18 +852,18 @@ const DashboardPage: React.FC = () => {
         icon: <CheckCircle2 className="w-5 h-5" />,
         iconColor: 'text-emerald-600 dark:text-emerald-400',
         iconBg: 'bg-emerald-50 dark:bg-emerald-500/10 ring-1 ring-emerald-100/50 dark:ring-emerald-500/20',
-        trend: { value: 8.3, direction: 'up' as const, isGood: true },
-        tooltip: `Bieżący okres: ${resolvedTickets.length} | Poprzedni: ${Math.round(resolvedTickets.length / 1.083)}`,
+        trend: { ...resolvedTrend, isGood: resolvedTrend.direction === 'up' },
+        tooltip: `Bieżący: ${resolvedTickets.length} | Poprzedni (${prevPeriodLabel}): ${prevResolved}`,
       },
       {
         label: 'Śr. czas odpowiedzi',
-        value: 84,
-        displayValue: '1h 24m',
+        value: currentAvgMin,
+        displayValue: formatMinutes(currentAvgMin),
         icon: <Timer className="w-5 h-5" />,
         iconColor: 'text-violet-600 dark:text-violet-400',
         iconBg: 'bg-violet-50 dark:bg-violet-500/10 ring-1 ring-violet-100/50 dark:ring-violet-500/20',
-        trend: { value: 12.1, direction: 'down' as const, isGood: true },
-        tooltip: `Bieżący okres: 1h 24m | Poprzedni: 1h 36m`,
+        trend: { ...avgTrend, isGood: avgTrend.direction === 'down' },
+        tooltip: `Bieżący: ${formatMinutes(currentAvgMin)} | Poprzedni (${prevPeriodLabel}): ${formatMinutes(prevAvgMin)}`,
       },
     ];
 
