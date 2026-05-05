@@ -532,8 +532,8 @@ const DashboardPage: React.FC = () => {
                           <button
                             onClick={() => setRiskFilter(null)}
                             className={`px-3 py-1.5 text-xs font-semibold rounded-lg whitespace-nowrap transition-colors ${riskFilter === null
-                                ? 'bg-gray-900 text-white dark:bg-blue-500/20 dark:text-blue-400'
-                                : 'text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700/50 dark:hover:text-gray-200'
+                              ? 'bg-gray-900 text-white dark:bg-blue-500/20 dark:text-blue-400'
+                              : 'text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700/50 dark:hover:text-gray-200'
                               }`}
                           >
                             Wszystkie
@@ -547,10 +547,10 @@ const DashboardPage: React.FC = () => {
                                 key={chip.reason}
                                 onClick={() => !isEmpty && setRiskFilter(isActive ? null : chip.reason)}
                                 className={`px-3 py-1.5 text-xs font-semibold rounded-lg whitespace-nowrap transition-colors ${isEmpty
-                                    ? 'text-gray-300 dark:text-gray-600 cursor-default'
-                                    : isActive
-                                      ? 'bg-gray-900 text-white dark:bg-blue-500/20 dark:text-blue-400'
-                                      : 'text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700/50 dark:hover:text-gray-200'
+                                  ? 'text-gray-300 dark:text-gray-600 cursor-default'
+                                  : isActive
+                                    ? 'bg-gray-900 text-white dark:bg-blue-500/20 dark:text-blue-400'
+                                    : 'text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700/50 dark:hover:text-gray-200'
                                   }`}
                               >
                                 {chip.label} · {count}
@@ -618,11 +618,11 @@ const DashboardPage: React.FC = () => {
                             if (riskFilter === null && risk.reason !== lastGroup) {
                               lastGroup = risk.reason;
                               groupHeader = (
-                                <div className="flex items-center gap-2 px-4 pt-3 pb-1.5">
-                                  <span className="text-[11px] font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">
+                                <div className="flex items-center gap-3 px-4 pt-4 pb-2">
+                                  <span className="text-[11px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-widest">
                                     {groupLabels[risk.reason]}
                                   </span>
-                                  <div className="flex-1 h-px bg-gray-100 dark:bg-gray-700/50" />
+                                  <div className="flex-1 h-px bg-gray-200/60 dark:bg-gray-700/60" />
                                 </div>
                               );
                             }
@@ -665,7 +665,8 @@ const DashboardPage: React.FC = () => {
                                       {priorityBadge(t.priority)}
                                       {statusBadge(t.status)}
                                       {riskFilter === null && (
-                                        <span className="text-[10px] font-medium text-gray-400 dark:text-gray-500 ml-1">
+                                        <span className="text-[10px] text-gray-400/80 dark:text-gray-500/60 ml-1 flex items-center gap-1.5">
+                                          <span className="w-0.5 h-0.5 rounded-full bg-gray-300 dark:bg-gray-600"></span>
                                           {ownershipTag}
                                         </span>
                                       )}
@@ -947,8 +948,8 @@ const DashboardPage: React.FC = () => {
                           key={tab}
                           onClick={() => setActivityTab(tab)}
                           className={`px-3 py-1.5 text-xs font-semibold rounded-lg whitespace-nowrap transition-colors ${activityTab === tab
-                              ? 'bg-gray-900 text-white dark:bg-blue-500/20 dark:text-blue-400'
-                              : 'text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700/50 dark:hover:text-gray-200'
+                            ? 'bg-gray-900 text-white dark:bg-blue-500/20 dark:text-blue-400'
+                            : 'text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700/50 dark:hover:text-gray-200'
                             }`}
                         >
                           {tab}
@@ -1444,8 +1445,8 @@ const DashboardPage: React.FC = () => {
                           <button
                             onClick={() => setRiskFilter(null)}
                             className={`px-3 py-1.5 text-xs font-semibold rounded-lg whitespace-nowrap transition-colors ${riskFilter === null
-                                ? 'bg-gray-900 text-white dark:bg-blue-500/20 dark:text-blue-400'
-                                : 'text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700/50 dark:hover:text-gray-200'
+                              ? 'bg-gray-900 text-white dark:bg-blue-500/20 dark:text-blue-400'
+                              : 'text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700/50 dark:hover:text-gray-200'
                               }`}
                           >
                             Wszystkie
@@ -1459,8 +1460,8 @@ const DashboardPage: React.FC = () => {
                                 key={chip.reason}
                                 onClick={() => setRiskFilter(isActive ? null : chip.reason)}
                                 className={`px-3 py-1.5 text-xs font-semibold rounded-lg whitespace-nowrap transition-colors ${isActive
-                                    ? 'bg-gray-900 text-white dark:bg-blue-500/20 dark:text-blue-400'
-                                    : 'text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700/50 dark:hover:text-gray-200'
+                                  ? 'bg-gray-900 text-white dark:bg-blue-500/20 dark:text-blue-400'
+                                  : 'text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700/50 dark:hover:text-gray-200'
                                   }`}
                               >
                                 {chip.label} · {count}
@@ -1518,7 +1519,7 @@ const DashboardPage: React.FC = () => {
                             <Link
                               to={`/tickets/${t.id}`}
                               key={t.id}
-                              className="risk-row relative flex items-center px-4 py-3.5 rounded-2xl hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors group overflow-hidden"
+                              className="risk-row relative flex items-center px-4 py-3.5 rounded-2xl hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors group overflow-hidden min-w-0"
                             >
                               {/* Bottom-edge severity bar — animates scaleX 0→1 on hover via .risk-row CSS */}
                               <div
@@ -1534,11 +1535,11 @@ const DashboardPage: React.FC = () => {
                                 <RiskIcon className={`w-4 h-4 ${colors.icon}`} />
                               </div>
                               <div className="relative flex-1 min-w-0 mr-3">
-                                <p className="text-[13px] text-gray-700 dark:text-gray-200 truncate leading-snug group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors duration-150">
-                                  <span className="font-bold text-gray-900 dark:text-white">#{t.id}</span>
-                                  <span className="mx-1.5 text-gray-300 dark:text-gray-600">·</span>
-                                  {t.title}
-                                </p>
+                                <div className="flex items-center min-w-0">
+                                  <span className="text-[13px] font-bold text-gray-900 dark:text-white flex-shrink-0 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors duration-150">#{t.id}</span>
+                                  <span className="mx-1.5 text-gray-300 dark:text-gray-600 flex-shrink-0">·</span>
+                                  <span className="text-[13px] text-gray-700 dark:text-gray-200 truncate block min-w-0 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors duration-150">{t.title}</span>
+                                </div>
                                 <div className="flex items-center gap-1.5 mt-1">
                                   <span className={`text-[11px] font-medium ${colors.text}`}>
                                     {riskReasonLabel[risk.reason]}
@@ -1805,8 +1806,8 @@ const DashboardPage: React.FC = () => {
                           key={tab}
                           onClick={() => setActivityTab(tab)}
                           className={`px-3 py-1.5 text-xs font-semibold rounded-lg whitespace-nowrap transition-colors ${activityTab === tab
-                              ? 'bg-gray-900 text-white dark:bg-blue-500/20 dark:text-blue-400'
-                              : 'text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700/50 dark:hover:text-gray-200'
+                            ? 'bg-gray-900 text-white dark:bg-blue-500/20 dark:text-blue-400'
+                            : 'text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700/50 dark:hover:text-gray-200'
                             }`}
                         >
                           {tab}
