@@ -53,6 +53,45 @@ const formatActivityTime = (dateStr: string) => {
   return `${plDays[date.day()]}, ${date.date()} ${plMonths[date.month()]}`;
 };
 
+/**
+ * Grupuje logi z bulk actions: jeśli ten sam user + action + new_value
+ * wystąpiły w oknie 30s, łączy je w jeden wiersz z liczbą zgłoszeń.
+ */
+const groupBulkLogs = (logs: any[]): any[] => {
+  if (logs.length === 0) return [];
+
+  const BULK_WINDOW_SEC = 30;
+  const groups: any[][] = [];
+  let currentGroup: any[] = [logs[0]];
+
+  for (let i = 1; i < logs.length; i++) {
+    const prev = logs[i - 1];
+    const curr = logs[i];
+    const sameUser = prev.user === curr.user;
+    const sameAction = prev.action === curr.action;
+    const sameValue = (prev.new_value || '') === (curr.new_value || '');
+    const timeDiff = Math.abs(dayjs(prev.created_at).diff(dayjs(curr.created_at), 'second'));
+
+    if (sameUser && sameAction && sameValue && timeDiff <= BULK_WINDOW_SEC) {
+      currentGroup.push(curr);
+    } else {
+      groups.push(currentGroup);
+      currentGroup = [curr];
+    }
+  }
+  groups.push(currentGroup);
+
+  // Zwróć: grupy 1-elementowe → oryginalny log; grupy >1 → log z _bulkCount i _bulkTicketIds
+  return groups.map(group => {
+    if (group.length === 1) return group[0];
+    return {
+      ...group[0],
+      _bulkCount: group.length,
+      _bulkTicketIds: group.map((l: any) => l.ticket),
+    };
+  });
+};
+
 const DashboardPage: React.FC = () => {
   useTitle('Panel główny');
   const authContext = useContext(AuthContext);
@@ -517,33 +556,46 @@ const DashboardPage: React.FC = () => {
                 const userName = user ? `${user.first_name} ${user.last_name}` : 'System';
                 const isMe = user?.id === myId;
                 const youLabel = isMe ? 'Ty' : userName;
+                const bulk = log._bulkCount;
+                const bulkLabel = bulk ? `${bulk} zgłoszeń` : null;
 
                 switch (action) {
                   case 'CREATED':
                     return {
                       type: 'GREEN', icon: Plus,
-                      text: (<span>{youLabel} utworzył(a) <strong>#{ticketId}</strong></span>),
+                      text: bulk
+                        ? (<span>{youLabel} utworzył(a) <strong>{bulkLabel}</strong></span>)
+                        : (<span>{youLabel} utworzył(a) <strong>#{ticketId}</strong></span>),
                     };
                   case 'STATUS_CHANGED':
                     if (['ROZWIAZANE', 'ZAMKNIETE'].includes(log.new_value)) {
+                      const verb = log.new_value === 'ZAMKNIETE' ? 'zamknął(ęła)' : 'rozwiązał(a)';
                       return {
                         type: 'GREEN', icon: CheckCircle2,
-                        text: (<span>{youLabel} {log.new_value === 'ZAMKNIETE' ? 'zamknął(ęła)' : 'rozwiązał(a)'} <strong>#{ticketId}</strong></span>),
+                        text: bulk
+                          ? (<span>{youLabel} {verb} <strong>{bulkLabel}</strong></span>)
+                          : (<span>{youLabel} {verb} <strong>#{ticketId}</strong></span>),
                       };
                     }
                     return {
                       type: 'ORANGE', icon: Activity,
-                      text: (<span>{youLabel} zmienił(a) status <strong>#{ticketId}</strong></span>),
+                      text: bulk
+                        ? (<span>{youLabel} zmienił(a) status <strong>{bulkLabel}</strong></span>)
+                        : (<span>{youLabel} zmienił(a) status <strong>#{ticketId}</strong></span>),
                     };
                   case 'TECHNICIAN_ASSIGNED':
                     return {
                       type: 'BLUE', icon: Users,
-                      text: (<span>Przypisano {log.new_value || 'technika'} do <strong>#{ticketId}</strong></span>),
+                      text: bulk
+                        ? (<span>{youLabel} przypisał(a) technika do <strong>{bulkLabel}</strong></span>)
+                        : (<span>Przypisano {log.new_value || 'technika'} do <strong>#{ticketId}</strong></span>),
                     };
                   case 'TECHNICIAN_REMOVED':
                     return {
                       type: 'BLUE', icon: Users,
-                      text: (<span>Usunięto technika z <strong>#{ticketId}</strong></span>),
+                      text: bulk
+                        ? (<span>{youLabel} usunął(ęła) technika z <strong>{bulkLabel}</strong></span>)
+                        : (<span>Usunięto technika z <strong>#{ticketId}</strong></span>),
                     };
                   case 'COMMENT_ADDED':
                     return {
@@ -553,7 +605,9 @@ const DashboardPage: React.FC = () => {
                   case 'PRIORITY_CHANGED':
                     return {
                       type: 'ORANGE', icon: AlertTriangle,
-                      text: (<span>Zmiana priorytetu <strong>#{ticketId}</strong>{log.new_value ? ` → ${log.new_value}` : ''}</span>),
+                      text: bulk
+                        ? (<span>{youLabel} zmienił(a) priorytet <strong>{bulkLabel}</strong>{log.new_value ? ` → ${log.new_value}` : ''}</span>)
+                        : (<span>Zmiana priorytetu <strong>#{ticketId}</strong>{log.new_value ? ` → ${log.new_value}` : ''}</span>),
                     };
                   case 'ATTACHMENT_ADDED': {
                     const isMultiple = log.new_value && /^\d+ załączników$/.test(log.new_value);
@@ -609,7 +663,10 @@ const DashboardPage: React.FC = () => {
                 myTicketIds.has(log.ticket) || unassignedIds.has(log.ticket)
               );
 
-              const activities = relevantLogs.map((log: any) => {
+              // Grupuj bulk actions
+              const groupedLogs = groupBulkLogs(relevantLogs);
+
+              const activities = groupedLogs.map((log: any) => {
                 const config = getTechActivityConfig(log);
                 return {
                   id: log.id,
@@ -618,7 +675,7 @@ const DashboardPage: React.FC = () => {
                   icon: config.icon,
                   text: config.text,
                   time: log.created_at,
-                  link: `/tickets/${log.ticket}`,
+                  link: log._bulkCount ? '/tickets' : `/tickets/${log.ticket}`,
                   isMine: myTicketIds.has(log.ticket),
                   isPool: unassignedIds.has(log.ticket),
                 };
@@ -1155,37 +1212,50 @@ const DashboardPage: React.FC = () => {
                 const ticketId = log.ticket;
                 const user = log.user_details;
                 const userName = user ? `${user.first_name} ${user.last_name}` : 'System';
+                const bulk = log._bulkCount;
+                const bulkLabel = bulk ? `${bulk} zgłoszeń` : null;
                 
                 switch (action) {
                   case 'CREATED':
                     return {
                       type: 'GREEN', icon: Plus, tab: 'Zgłoszenia',
-                      text: (<span>{userName} utworzył(a) zgłoszenie <strong>#{ticketId}</strong></span>),
+                      text: bulk
+                        ? (<span>{userName} utworzył(a) <strong>{bulkLabel}</strong></span>)
+                        : (<span>{userName} utworzył(a) zgłoszenie <strong>#{ticketId}</strong></span>),
                       unread: true,
                     };
                   case 'STATUS_CHANGED':
                     if (['ROZWIAZANE', 'ZAMKNIETE'].includes(log.new_value)) {
+                      const verb = log.new_value === 'ZAMKNIETE' ? 'zamknął(ęła)' : 'rozwiązał(a)';
                       return {
                         type: 'GREEN', icon: CheckCircle2, tab: 'Zgłoszenia',
-                        text: (<span>{userName}: zgłoszenie <strong>#{ticketId}</strong> {log.new_value === 'ZAMKNIETE' ? 'zamknięte' : 'rozwiązane'}</span>),
+                        text: bulk
+                          ? (<span>{userName} {verb} <strong>{bulkLabel}</strong></span>)
+                          : (<span>{userName}: zgłoszenie <strong>#{ticketId}</strong> {log.new_value === 'ZAMKNIETE' ? 'zamknięte' : 'rozwiązane'}</span>),
                         unread: false,
                       };
                     }
                     return {
                       type: 'ORANGE', icon: Activity, tab: 'Zgłoszenia',
-                      text: (<span>{userName} zmienił(a) status <strong>#{ticketId}</strong></span>),
+                      text: bulk
+                        ? (<span>{userName} zmienił(a) status <strong>{bulkLabel}</strong></span>)
+                        : (<span>{userName} zmienił(a) status <strong>#{ticketId}</strong></span>),
                       unread: true,
                     };
                   case 'PRIORITY_CHANGED':
                     return {
                       type: 'ORANGE', icon: AlertTriangle, tab: 'Zgłoszenia',
-                      text: (<span>Zmiana priorytetu <strong>#{ticketId}</strong>{log.new_value ? ` → ${log.new_value}` : ''}</span>),
+                      text: bulk
+                        ? (<span>{userName} zmienił(a) priorytet <strong>{bulkLabel}</strong>{log.new_value ? ` → ${log.new_value}` : ''}</span>)
+                        : (<span>Zmiana priorytetu <strong>#{ticketId}</strong>{log.new_value ? ` → ${log.new_value}` : ''}</span>),
                       unread: true,
                     };
                   case 'CATEGORY_CHANGED':
                     return {
                       type: 'ORANGE', icon: ClipboardList, tab: 'Zgłoszenia',
-                      text: (<span>Zmiana kategorii w <strong>#{ticketId}</strong>{log.new_value ? ` → ${log.new_value}` : ''}</span>),
+                      text: bulk
+                        ? (<span>{userName} zmienił(a) kategorię <strong>{bulkLabel}</strong></span>)
+                        : (<span>Zmiana kategorii w <strong>#{ticketId}</strong>{log.new_value ? ` → ${log.new_value}` : ''}</span>),
                       unread: false,
                     };
                   case 'DESCRIPTION_CHANGED':
@@ -1203,7 +1273,9 @@ const DashboardPage: React.FC = () => {
                   case 'REOPENED':
                     return {
                       type: 'ORANGE', icon: Activity, tab: 'Zgłoszenia',
-                      text: (<span>Ponownie otwarto <strong>#{ticketId}</strong></span>),
+                      text: bulk
+                        ? (<span>{userName} ponownie otworzył(a) <strong>{bulkLabel}</strong></span>)
+                        : (<span>Ponownie otwarto <strong>#{ticketId}</strong></span>),
                       unread: true,
                     };
                   case 'AUTO_CLOSED':
@@ -1215,13 +1287,17 @@ const DashboardPage: React.FC = () => {
                   case 'TECHNICIAN_ASSIGNED':
                     return {
                       type: 'BLUE', icon: Users, tab: 'Zespół',
-                      text: (<span>Przypisano technika do <strong>#{ticketId}</strong>{log.new_value ? `: ${log.new_value}` : ''}</span>),
+                      text: bulk
+                        ? (<span>{userName} przypisał(a) technika do <strong>{bulkLabel}</strong>{log.new_value ? `: ${log.new_value}` : ''}</span>)
+                        : (<span>Przypisano technika do <strong>#{ticketId}</strong>{log.new_value ? `: ${log.new_value}` : ''}</span>),
                       unread: false,
                     };
                   case 'TECHNICIAN_REMOVED':
                     return {
                       type: 'BLUE', icon: Users, tab: 'Zespół',
-                      text: (<span>Usunięto technika z <strong>#{ticketId}</strong></span>),
+                      text: bulk
+                        ? (<span>{userName} usunął(ęła) technika z <strong>{bulkLabel}</strong></span>)
+                        : (<span>Usunięto technika z <strong>#{ticketId}</strong></span>),
                       unread: false,
                     };
                   case 'CREATOR_CHANGED':
@@ -1288,7 +1364,10 @@ const DashboardPage: React.FC = () => {
                 return true;
               });
 
-              const activities = filteredLogs.map(log => {
+              // Grupuj bulk actions
+              const groupedLogs = groupBulkLogs(filteredLogs);
+
+              const activities = groupedLogs.map((log: any) => {
                 const config = getActivityConfig(log);
                 return {
                   id: log.id,
@@ -1299,7 +1378,7 @@ const DashboardPage: React.FC = () => {
                   time: log.created_at,
                   unread: config.unread,
                   tab: config.tab,
-                  link: `/tickets/${log.ticket}`,
+                  link: log._bulkCount ? '/tickets' : `/tickets/${log.ticket}`,
                 };
               });
 
