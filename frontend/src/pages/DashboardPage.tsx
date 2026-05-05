@@ -320,15 +320,32 @@ const DashboardPage: React.FC = () => {
     const unassignedTickets = tickets.filter(t => t.technician === null && !['ROZWIAZANE', 'ZAMKNIETE'].includes(t.status));
     const myCompletedToday = myTickets.filter(t => ['ROZWIAZANE', 'ZAMKNIETE'].includes(t.status) && dayjs(t.updated_at).isAfter(dayjs().startOf('day')));
 
-    // Technika interesują priorytety, zgłoszenia nieruszane oraz nieprzypisane.
-    const needsAttention = tickets
-      .filter(t => (
-        (t.technician === null && t.priority === 'WYSOKI' && !['ROZWIAZANE', 'ZAMKNIETE'].includes(t.status)) ||
-        (t.technician === myId && t.priority === 'WYSOKI' && !['ROZWIAZANE', 'ZAMKNIETE'].includes(t.status)) ||
-        (t.technician === myId && !['ROZWIAZANE', 'ZAMKNIETE'].includes(t.status) && dayjs(t.updated_at).isBefore(dayjs().subtract(2, 'day')))
-      ))
-      .sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())
-      .slice(0, 6);
+    // ---- Risk scoring system (technik) ----
+    type TechRiskReason = 'critical_mine' | 'pool_unassigned' | 'stale_mine';
+    type TechRiskItem = { ticket: TicketType; reason: TechRiskReason; score: number; age: number; idle: number };
+
+    const techRiskItems: TechRiskItem[] = [];
+    const now = dayjs();
+
+    tickets.forEach(t => {
+      if (['ROZWIAZANE', 'ZAMKNIETE'].includes(t.status)) return;
+      const age = now.diff(dayjs(t.created_at), 'day');
+      const idle = now.diff(dayjs(t.updated_at), 'day');
+
+      // 🔴 Krytyczne moje — moje z wysokim priorytetem
+      if (t.technician === myId && t.priority === 'WYSOKI') {
+        techRiskItems.push({ ticket: t, reason: 'critical_mine', score: 100 + idle * 3, age, idle });
+      }
+      // 🟠 Do wzięcia — nieprzypisane w puli (wysoki priorytet daje bonus)
+      else if (t.technician === null) {
+        const priorityBonus = t.priority === 'WYSOKI' ? 30 : t.priority === 'NORMALNY' ? 10 : 0;
+        techRiskItems.push({ ticket: t, reason: 'pool_unassigned', score: 50 + age * 2 + priorityBonus, age, idle });
+      }
+      // 🟡 Nieruszane — moje, ale brak aktywności >= 2 dni
+      else if (t.technician === myId && idle >= 2) {
+        techRiskItems.push({ ticket: t, reason: 'stale_mine', score: 30 + idle * 2, age, idle });
+      }
+    });
 
     const techStats = [
       {
@@ -410,146 +427,251 @@ const DashboardPage: React.FC = () => {
           ))}
         </div>
 
-        <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
-          {/* Wymagają uwagi */}
-          <div className="xl:col-span-2">
-            <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-3xl shadow-sm flex flex-col" style={{ minHeight: '360px' }}>
-              <div className="p-5 border-b border-gray-100 dark:border-gray-700/50">
-                <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-3">
-                  Wymagają uwagi
-                </h2>
-                <div className="flex items-center gap-2">
-                  {needsAttention.length === 0 ? (
-                    <span className="text-xs font-medium text-gray-400 dark:text-gray-500">Brak problemów</span>
-                  ) : (
-                    <>
-                      {(() => {
-                        const highUnassigned = needsAttention.filter(t => t.technician === null && t.priority === 'WYSOKI').length;
-                        const highMine = needsAttention.filter(t => t.technician === myId && t.priority === 'WYSOKI').length;
-                        const stale = needsAttention.filter(t => t.technician === myId && t.priority !== 'WYSOKI' && dayjs(t.updated_at).isBefore(dayjs().subtract(2, 'day'))).length;
-                        return (
-                          <>
-                            {highUnassigned > 0 && (
-                              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-rose-50 dark:bg-rose-500/10 text-rose-600 dark:text-rose-400 whitespace-nowrap">
-                                <span className="w-1.5 h-1.5 rounded-full bg-rose-500" />
-                                Krytyczne · {highUnassigned}
-                              </span>
-                            )}
-                            {highMine > 0 && (
-                              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400 whitespace-nowrap">
-                                <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
-                                Priorytetowe · {highMine}
-                              </span>
-                            )}
-                            {stale > 0 && (
-                              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-gray-100 dark:bg-gray-700/50 text-gray-600 dark:text-gray-400 whitespace-nowrap">
-                                <span className="w-1.5 h-1.5 rounded-full bg-gray-400 dark:bg-gray-500" />
-                                Nieruszane · {stale}
-                              </span>
-                            )}
-                          </>
-                        );
-                      })()}
-                    </>
-                  )}
-                </div>
-              </div>
+        <div className="grid grid-cols-1 xl:grid-cols-5 gap-8">
+          {/* Wymagają uwagi — panel ryzyka (technik) */}
+          <div className="xl:col-span-3">
+            {/* Severity bar animation CSS */}
+            <style>{`
+              .risk-row .risk-severity-bar { transform: scaleX(0); }
+              .risk-row:hover .risk-severity-bar { transform: scaleX(1); }
+            `}</style>
+            {(() => {
+              const getTechUrgencyDays = (r: TechRiskItem) =>
+                r.reason === 'stale_mine' ? r.idle : r.age;
 
-              <div className="flex-1 overflow-y-auto p-2 scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600">
-                {needsAttention.length === 0 ? (
-                  <div className="flex flex-col items-center justify-center h-full text-center px-6 py-10">
-                    <div className="w-14 h-14 bg-emerald-50 dark:bg-emerald-900/20 rounded-full flex items-center justify-center mb-4">
-                      <CheckCircle2 className="w-7 h-7 text-emerald-500 dark:text-emerald-400" />
+              const visibleTechRisks = (riskFilter
+                ? techRiskItems.filter(r => r.reason === riskFilter)
+                : techRiskItems
+              ).slice().sort((a, b) => getTechUrgencyDays(b) - getTechUrgencyDays(a));
+
+              const techChipConfig: { reason: TechRiskReason; label: string }[] = [
+                { reason: 'critical_mine', label: 'Krytyczne moje' },
+                { reason: 'pool_unassigned', label: 'Do wzięcia' },
+                { reason: 'stale_mine', label: 'Nieruszane' },
+              ];
+
+              const techRiskReasonLabel: Record<TechRiskReason, string> = {
+                critical_mine: 'Wysoki priorytet — moje',
+                pool_unassigned: 'Nieprzypisane — pula',
+                stale_mine: 'Brak aktywności',
+              };
+
+              const techRiskReasonColor: Record<TechRiskReason, { bg: string; icon: string; text: string }> = {
+                critical_mine: {
+                  bg: 'bg-rose-50 dark:bg-rose-500/10',
+                  icon: 'text-rose-500 dark:text-rose-400',
+                  text: 'text-rose-600 dark:text-rose-400',
+                },
+                pool_unassigned: {
+                  bg: 'bg-amber-50 dark:bg-amber-500/10',
+                  icon: 'text-amber-500 dark:text-amber-400',
+                  text: 'text-amber-600 dark:text-amber-400',
+                },
+                stale_mine: {
+                  bg: 'bg-gray-100 dark:bg-gray-700/50',
+                  icon: 'text-gray-500 dark:text-gray-400',
+                  text: 'text-gray-500 dark:text-gray-400',
+                },
+              };
+
+              const priorityBadge = (priority: string) => {
+                const styles: Record<string, string> = {
+                  WYSOKI: 'bg-rose-100 text-rose-700 dark:bg-rose-500/15 dark:text-rose-400',
+                  NORMALNY: 'bg-blue-100 text-blue-700 dark:bg-blue-500/15 dark:text-blue-400',
+                  NISKI: 'bg-gray-100 text-gray-600 dark:bg-gray-700/50 dark:text-gray-400',
+                };
+                const labels: Record<string, string> = { WYSOKI: 'Wysoki', NORMALNY: 'Normalny', NISKI: 'Niski' };
+                return (
+                  <span className={`px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider ${styles[priority] || styles.NORMALNY}`}>
+                    {labels[priority] || priority}
+                  </span>
+                );
+              };
+
+              const statusBadge = (status: string) => {
+                const styles: Record<string, string> = {
+                  NOWE: 'bg-blue-100 text-blue-700 dark:bg-blue-500/15 dark:text-blue-400',
+                  W_TOKU: 'bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-400',
+                };
+                const labels: Record<string, string> = { NOWE: 'Nowe', W_TOKU: 'W toku' };
+                return (
+                  <span className={`px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider ${styles[status] || 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400'}`}>
+                    {labels[status] || status}
+                  </span>
+                );
+              };
+
+              return (
+                <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-3xl shadow-sm flex flex-col h-[580px]">
+
+                  {/* Header */}
+                  <div className="p-5 border-b border-gray-100 dark:border-gray-700/50">
+                    <div className="flex items-center justify-between mb-4">
+                      <h2 className="text-lg font-bold text-gray-900 dark:text-white">
+                        Wymagają uwagi
+                        {techRiskItems.length > 0 && (
+                          <span className="ml-2 text-sm font-semibold text-gray-400 dark:text-gray-500">
+                            ({riskFilter ? visibleTechRisks.length : techRiskItems.length})
+                          </span>
+                        )}
+                      </h2>
                     </div>
-                    <h3 className="text-base font-bold text-gray-900 dark:text-white">Świetna robota!</h3>
-                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Brak priorytetowych lub opóźnionych zgłoszeń.</p>
+                    <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600">
+                      {techRiskItems.length === 0 ? (
+                        <span className="text-xs font-medium text-gray-400 dark:text-gray-500">Brak problemów</span>
+                      ) : (
+                        <>
+                          <button
+                            onClick={() => setRiskFilter(null)}
+                            className={`px-3 py-1.5 text-xs font-semibold rounded-lg whitespace-nowrap transition-colors ${
+                              riskFilter === null
+                                ? 'bg-gray-900 text-white dark:bg-blue-500/20 dark:text-blue-400'
+                                : 'text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700/50 dark:hover:text-gray-200'
+                            }`}
+                          >
+                            Wszystkie
+                          </button>
+                          {techChipConfig.map(chip => {
+                            const count = techRiskItems.filter(r => r.reason === chip.reason).length;
+                            if (count === 0) return null;
+                            const isActive = riskFilter === chip.reason;
+                            return (
+                              <button
+                                key={chip.reason}
+                                onClick={() => setRiskFilter(isActive ? null : chip.reason)}
+                                className={`px-3 py-1.5 text-xs font-semibold rounded-lg whitespace-nowrap transition-colors ${
+                                  isActive
+                                    ? 'bg-gray-900 text-white dark:bg-blue-500/20 dark:text-blue-400'
+                                    : 'text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700/50 dark:hover:text-gray-200'
+                                }`}
+                              >
+                                {chip.label} · {count}
+                              </button>
+                            );
+                          })}
+                        </>
+                      )}
+                    </div>
                   </div>
-                ) : (
-                  <div className="space-y-1">
-                    {needsAttention.map(ticket => {
-                      // Determine reason and colors
-                      const isHighUnassigned = ticket.technician === null && ticket.priority === 'WYSOKI';
-                      const isHighMine = ticket.technician === myId && ticket.priority === 'WYSOKI';
 
-                      const reasonLabel = isHighUnassigned
-                        ? 'Krytyczne — brak technika'
-                        : isHighMine
-                        ? 'Wysoki priorytet'
-                        : 'Brak aktywności';
+                  {/* Body */}
+                  <div className="flex-1 overflow-y-auto p-2 scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600">
+                    {visibleTechRisks.length === 0 ? (
+                      <div className="flex flex-col items-center justify-center h-full text-center px-6">
+                        <div className="w-14 h-14 bg-emerald-50 dark:bg-emerald-900/20 rounded-full flex items-center justify-center mb-4">
+                          <CheckCircle2 className="w-7 h-7 text-emerald-500 dark:text-emerald-400" />
+                        </div>
+                        <h3 className="text-base font-bold text-gray-900 dark:text-white">Świetna robota!</h3>
+                        <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Brak priorytetowych lub opóźnionych zgłoszeń.</p>
+                      </div>
+                    ) : (
+                      <div className="space-y-0.5">
+                        {visibleTechRisks.map((risk) => {
+                          const colors = techRiskReasonColor[risk.reason];
+                          const t = risk.ticket;
 
-                      const dotColor = isHighUnassigned
-                        ? 'bg-rose-500'
-                        : isHighMine
-                        ? 'bg-amber-500'
-                        : 'bg-gray-400 dark:bg-gray-500';
+                          const RiskIcon = risk.reason === 'critical_mine'
+                            ? AlertTriangle
+                            : risk.reason === 'pool_unassigned'
+                            ? Users
+                            : Clock;
 
-                      const textColor = isHighUnassigned
-                        ? 'text-rose-600 dark:text-rose-400'
-                        : isHighMine
-                        ? 'text-amber-600 dark:text-amber-400'
-                        : 'text-gray-500 dark:text-gray-400';
+                          const idleLabel =
+                            risk.reason === 'stale_mine'
+                              ? `${risk.idle}d ciszy`
+                              : risk.reason === 'pool_unassigned'
+                              ? `${risk.age}d czeka`
+                              : `${risk.age}d`;
 
-                      const iconBg = isHighUnassigned
-                        ? 'bg-rose-50 dark:bg-rose-500/10'
-                        : isHighMine
-                        ? 'bg-amber-50 dark:bg-amber-500/10'
-                        : 'bg-gray-100 dark:bg-gray-700/50';
+                          const urgencyDays = getTechUrgencyDays(risk);
 
-                      const iconColor = isHighUnassigned
-                        ? 'text-rose-500'
-                        : isHighMine
-                        ? 'text-amber-500'
-                        : 'text-gray-500 dark:text-gray-400';
+                          const severityBarColor =
+                            urgencyDays >= 15
+                              ? 'bg-rose-500/60'
+                              : urgencyDays >= 8
+                              ? 'bg-orange-400/60'
+                              : urgencyDays >= 4
+                              ? 'bg-amber-400/60'
+                              : 'bg-emerald-400/60';
 
-                      const tagLabel = ticket.technician === null ? 'Do wzięcia' : 'Moje';
+                          const ownershipTag = t.technician === null ? 'Do wzięcia' : 'Moje';
 
-                      return (
-                        <Link
-                          to={`/tickets/${ticket.id}`}
-                          key={ticket.id}
-                          className="flex items-center px-4 py-3 rounded-2xl hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors group relative"
-                        >
-                          <div className={`w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 mr-4 transition-transform group-hover:scale-105 ${iconBg}`}>
-                            <AlertTriangle className={`w-4 h-4 ${iconColor}`} />
-                          </div>
-                          <div className="flex-1 min-w-0 pr-3">
-                            <p className="text-[13px] font-medium text-gray-800 dark:text-gray-200 truncate group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
-                              <span className="font-bold text-gray-900 dark:text-white">#{ticket.id}</span>
-                              <span className="ml-1.5">{ticket.title}</span>
-                            </p>
-                            <div className="flex items-center gap-1.5 mt-0.5">
-                              <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${dotColor}`} />
-                              <span className={`text-[11px] font-semibold ${textColor}`}>
-                                {reasonLabel}
-                              </span>
-                              <span className="text-[10px] font-medium text-gray-400 dark:text-gray-500 ml-2">
-                                {tagLabel}
-                              </span>
-                            </div>
-                          </div>
-                          <div className="flex-shrink-0 ml-2 w-24 text-right relative">
-                            <span className="text-[11px] font-medium text-gray-400 dark:text-gray-500 group-hover:opacity-0 transition-opacity">
-                              {dayjs(ticket.updated_at).fromNow()}
-                            </span>
-                            <span className="absolute inset-0 flex items-center justify-end text-[11px] font-semibold text-blue-600 dark:text-blue-400 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
-                              Zbadaj →
-                            </span>
-                          </div>
-                        </Link>
-                      );
-                    })}
+                          return (
+                            <Link
+                              to={`/tickets/${t.id}`}
+                              key={t.id}
+                              className="risk-row relative flex items-center px-4 py-3.5 rounded-2xl hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors group overflow-hidden"
+                            >
+                              {/* Bottom-edge severity bar */}
+                              <div
+                                className={`risk-severity-bar absolute bottom-0 left-0 h-0.5 ${severityBarColor} rounded-full`}
+                                style={{
+                                  width: '100%',
+                                  transformOrigin: 'left',
+                                  transition: 'transform 200ms ease-out',
+                                }}
+                              />
+
+                              <div className={`relative w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 mr-3.5 transition-transform group-hover:scale-105 ${colors.bg}`}>
+                                <RiskIcon className={`w-4 h-4 ${colors.icon}`} />
+                              </div>
+                              <div className="relative flex-1 min-w-0 mr-3">
+                                <p className="text-[13px] text-gray-700 dark:text-gray-200 truncate leading-snug group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors duration-150">
+                                  <span className="font-bold text-gray-900 dark:text-white">#{t.id}</span>
+                                  <span className="mx-1.5 text-gray-300 dark:text-gray-600">·</span>
+                                  {t.title}
+                                </p>
+                                <div className="flex items-center gap-1.5 mt-1">
+                                  <span className={`text-[11px] font-medium ${colors.text}`}>
+                                    {techRiskReasonLabel[risk.reason]}
+                                  </span>
+                                  <span className="text-gray-300 dark:text-gray-600">·</span>
+                                  {priorityBadge(t.priority)}
+                                  {statusBadge(t.status)}
+                                  <span className="text-[10px] font-medium text-gray-400 dark:text-gray-500 ml-1">
+                                    {ownershipTag}
+                                  </span>
+                                </div>
+                              </div>
+
+                              {/* Timestamp ↔ Zbadaj cross-fade */}
+                              <div className="relative flex-shrink-0 w-20 text-right">
+                                <span className="block text-[11px] font-medium text-gray-400 dark:text-gray-500 opacity-100 group-hover:opacity-0 transition-opacity duration-150 ease-in-out">
+                                  {idleLabel}
+                                </span>
+                                <span className="absolute inset-0 flex items-center justify-end text-[11px] font-semibold text-blue-600 dark:text-blue-400 opacity-0 group-hover:opacity-100 transition-opacity duration-150 ease-in-out whitespace-nowrap pointer-events-none">
+                                  Zbadaj →
+                                </span>
+                              </div>
+                            </Link>
+                          );
+                        })}
+                      </div>
+                    )}
                   </div>
-                )}
-              </div>
-            </div>
+                </div>
+              );
+            })()}
           </div>
 
           {/* Ostatnia aktywność — perspektywa technika */}
-          <div>
+          <div className="xl:col-span-2 space-y-4">
             {(() => {
               const techActivityTabs = ['Wszystkie', 'Moje', 'Pula'];
 
               // Mapowanie akcji z API na konfigurację wizualną (technik)
+              // Pełna wersja — identyczna szczegółowość co admin, z perspektywą "Ty/ImięNazwisko"
+              const trunc = (s: string, max = 40) => s.length > max ? s.slice(0, max) + '...' : s;
+
+              const statusLabel: Record<string, string> = {
+                NOWE: 'Nowe', W_TOKU: 'W toku', ROZWIAZANE: 'Rozwiązane', ZAMKNIETE: 'Zamknięte',
+              };
+              const priorityLabel: Record<string, string> = {
+                NISKI: 'Niski', NORMALNY: 'Normalny', WYSOKI: 'Wysoki',
+              };
+              const sl = (v: string) => statusLabel[v] ?? v;
+              const pl = (v: string) => priorityLabel[v] ?? v;
+
               const getTechActivityConfig = (log: any) => {
                 const action = log.action;
                 const ticketId = log.ticket;
@@ -563,71 +685,156 @@ const DashboardPage: React.FC = () => {
                 switch (action) {
                   case 'CREATED':
                     return {
-                      type: 'GREEN', icon: Plus,
+                      type: 'GREEN', icon: Plus, tab: 'Moje',
                       text: bulk
                         ? (<span>{youLabel} utworzył(a) <strong>{bulkLabel}</strong></span>)
-                        : (<span>{youLabel} utworzył(a) <strong>#{ticketId}</strong></span>),
+                        : (<span>{youLabel} utworzył(a) zgłoszenie <strong>#{ticketId}</strong></span>),
+                      unread: true,
                     };
-                  case 'STATUS_CHANGED':
-                    if (['ROZWIAZANE', 'ZAMKNIETE'].includes(log.new_value)) {
-                      const verb = log.new_value === 'ZAMKNIETE' ? 'zamknął(ęła)' : 'rozwiązał(a)';
-                      return {
-                        type: 'GREEN', icon: CheckCircle2,
-                        text: bulk
-                          ? (<span>{youLabel} {verb} <strong>{bulkLabel}</strong></span>)
-                          : (<span>{youLabel} {verb} <strong>#{ticketId}</strong></span>),
-                      };
-                    }
+
+                  case 'STATUS_CHANGED': {
+                    const oldS = log.old_value ? sl(log.old_value) : null;
+                    const newS = log.new_value ? sl(log.new_value) : null;
+                    const arrow = oldS && newS ? `: ${oldS} → ${newS}` : newS ? ` → ${newS}` : '';
+                    const isResolved = ['ROZWIAZANE', 'ZAMKNIETE'].includes(log.new_value);
                     return {
-                      type: 'ORANGE', icon: Activity,
+                      type: isResolved ? 'GREEN' : 'ORANGE',
+                      icon: isResolved ? CheckCircle2 : Activity,
+                      tab: 'Moje',
                       text: bulk
-                        ? (<span>{youLabel} zmienił(a) status <strong>{bulkLabel}</strong></span>)
-                        : (<span>{youLabel} zmienił(a) status <strong>#{ticketId}</strong></span>),
+                        ? (<span>{youLabel} zmienił(a) status <strong>{bulkLabel}</strong>{newS ? ` → ${newS}` : ''}</span>)
+                        : (<span>{youLabel} zmienił(a) status <strong>#{ticketId}</strong>{arrow}</span>),
+                      unread: !isResolved,
                     };
-                  case 'TECHNICIAN_ASSIGNED':
+                  }
+
+                  case 'PRIORITY_CHANGED': {
+                    const oldP = log.old_value ? pl(log.old_value) : null;
+                    const newP = log.new_value ? pl(log.new_value) : null;
+                    const arrow = oldP && newP ? `: ${oldP} → ${newP}` : newP ? ` → ${newP}` : '';
                     return {
-                      type: 'BLUE', icon: Users,
+                      type: 'ORANGE', icon: AlertTriangle, tab: 'Moje',
                       text: bulk
-                        ? (<span>{youLabel} przypisał(a) technika do <strong>{bulkLabel}</strong></span>)
-                        : (<span>Przypisano {log.new_value || 'technika'} do <strong>#{ticketId}</strong></span>),
+                        ? (<span>{youLabel} zmienił(a) priorytet <strong>{bulkLabel}</strong>{newP ? ` → ${newP}` : ''}</span>)
+                        : (<span>{youLabel} zmienił(a) priorytet <strong>#{ticketId}</strong>{arrow}</span>),
+                      unread: true,
                     };
-                  case 'TECHNICIAN_REMOVED':
+                  }
+
+                  case 'CATEGORY_CHANGED': {
+                    const oldC = log.old_value || null;
+                    const newC = log.new_value || null;
+                    const arrow = oldC && newC ? `: ${oldC} → ${newC}` : newC ? ` → ${newC}` : '';
                     return {
-                      type: 'BLUE', icon: Users,
+                      type: 'ORANGE', icon: ClipboardList, tab: 'Moje',
                       text: bulk
-                        ? (<span>{youLabel} usunął(ęła) technika z <strong>{bulkLabel}</strong></span>)
-                        : (<span>Usunięto technika z <strong>#{ticketId}</strong></span>),
+                        ? (<span>{youLabel} zmienił(a) kategorię <strong>{bulkLabel}</strong>{newC ? ` → ${newC}` : ''}</span>)
+                        : (<span>{youLabel} zmienił(a) kategorię <strong>#{ticketId}</strong>{arrow}</span>),
+                      unread: false,
                     };
+                  }
+
+                  case 'TITLE_CHANGED': {
+                    const oldT = log.old_value ? `„${trunc(log.old_value)}"` : null;
+                    const newT = log.new_value ? `„${trunc(log.new_value)}"` : null;
+                    const detail = oldT && newT ? `: ${oldT} → ${newT}` : newT ? ` → ${newT}` : '';
+                    return {
+                      type: 'ORANGE', icon: FileText, tab: '_edycje',
+                      text: (<span>{youLabel} zmienił(a) tytuł <strong>#{ticketId}</strong>{detail}</span>),
+                      unread: false,
+                    };
+                  }
+
+                  case 'DESCRIPTION_CHANGED':
+                    return {
+                      type: 'ORANGE', icon: FileText, tab: '_edycje',
+                      text: (<span>{youLabel} zaktualizował(a) opis zgłoszenia <strong>#{ticketId}</strong></span>),
+                      unread: false,
+                    };
+
+                  case 'REOPENED':
+                    return {
+                      type: 'ORANGE', icon: Activity, tab: 'Moje',
+                      text: bulk
+                        ? (<span>{youLabel} ponownie otworzył(a) <strong>{bulkLabel}</strong></span>)
+                        : (<span>{youLabel} ponownie otworzył(a) <strong>#{ticketId}</strong></span>),
+                      unread: true,
+                    };
+
+                  case 'AUTO_CLOSED':
+                    return {
+                      type: 'GREEN', icon: CheckCircle2, tab: 'Moje',
+                      text: (<span>System automatycznie zamknął <strong>#{ticketId}</strong></span>),
+                      unread: false,
+                    };
+
+                  case 'TECHNICIAN_ASSIGNED': {
+                    const tech = log.new_value || null;
+                    return {
+                      type: 'BLUE', icon: Users, tab: 'Pula',
+                      text: bulk
+                        ? (<span>{youLabel} przypisał(a) technika do <strong>{bulkLabel}</strong>{tech ? `: ${tech}` : ''}</span>)
+                        : (<span>{youLabel} przypisał(a) technika do <strong>#{ticketId}</strong>{tech ? `: ${tech}` : ''}</span>),
+                      unread: false,
+                    };
+                  }
+
+                  case 'TECHNICIAN_REMOVED': {
+                    const tech = log.old_value || log.new_value || null;
+                    return {
+                      type: 'BLUE', icon: Users, tab: 'Pula',
+                      text: bulk
+                        ? (<span>{youLabel} usunął(a) technika z <strong>{bulkLabel}</strong>{tech ? `: ${tech}` : ''}</span>)
+                        : (<span>{youLabel} usunął(a) technika z <strong>#{ticketId}</strong>{tech ? `: ${tech}` : ''}</span>),
+                      unread: false,
+                    };
+                  }
+
+                  case 'CREATOR_CHANGED':
+                    return {
+                      type: 'BLUE', icon: Users, tab: 'Moje',
+                      text: (<span>{youLabel} zmienił(a) zgłaszającego w <strong>#{ticketId}</strong>{log.new_value ? ` → ${log.new_value}` : ''}</span>),
+                      unread: false,
+                    };
+
                   case 'COMMENT_ADDED':
                     return {
                       type: 'BLUE', icon: MessageSquare,
+                      tab: log.new_value === 'INTERNAL' ? 'Pula' : 'Moje',
                       text: (<span>{youLabel} skomentował(a) <strong>#{ticketId}</strong></span>),
+                      unread: true,
                     };
-                  case 'PRIORITY_CHANGED':
-                    return {
-                      type: 'ORANGE', icon: AlertTriangle,
-                      text: bulk
-                        ? (<span>{youLabel} zmienił(a) priorytet <strong>{bulkLabel}</strong>{log.new_value ? ` → ${log.new_value}` : ''}</span>)
-                        : (<span>Zmiana priorytetu <strong>#{ticketId}</strong>{log.new_value ? ` → ${log.new_value}` : ''}</span>),
-                    };
+
                   case 'ATTACHMENT_ADDED': {
-                    const isMultiple = log.new_value && /^\d+ załączników$/.test(log.new_value);
+                    const isMultiple = log.new_value && /^\d+ załącznik/.test(log.new_value);
                     return {
-                      type: 'PURPLE', icon: Paperclip,
+                      type: 'PURPLE', icon: Paperclip, tab: 'Moje',
                       text: isMultiple
                         ? (<span>{youLabel} dodał(a) {log.new_value} do <strong>#{ticketId}</strong></span>)
-                        : (<span>{youLabel} dodał(a) załącznik do <strong>#{ticketId}</strong></span>),
+                        : (<span>{youLabel} dodał(a) załącznik do <strong>#{ticketId}</strong>{log.new_value ? `: ${log.new_value}` : ''}</span>),
+                      unread: false,
                     };
                   }
+
+                  case 'ATTACHMENT_DELETED':
+                    return {
+                      type: 'PURPLE', icon: Paperclip, tab: 'Moje',
+                      text: (<span>{youLabel} usunął(a) załącznik z <strong>#{ticketId}</strong>{log.old_value ? `: ${log.old_value}` : ''}</span>),
+                      unread: false,
+                    };
+
                   case 'WORK_LOGGED':
                     return {
-                      type: 'PURPLE', icon: Timer,
-                      text: (<span>{youLabel} zalogował(a) czas w <strong>#{ticketId}</strong>{log.new_value ? ` (${log.new_value})` : ''}</span>),
+                      type: 'PURPLE', icon: Timer, tab: 'Moje',
+                      text: (<span>{youLabel} zarejestrował(a) czas pracy w <strong>#{ticketId}</strong>{log.new_value ? ` (${log.new_value})` : ''}</span>),
+                      unread: false,
                     };
+
                   default:
                     return {
-                      type: 'ORANGE', icon: ClipboardList,
-                      text: (<span>Aktualizacja <strong>#{ticketId}</strong></span>),
+                      type: 'ORANGE', icon: ClipboardList, tab: 'Moje',
+                      text: (<span>{youLabel}: aktualizacja <strong>#{ticketId}</strong></span>),
+                      unread: false,
                     };
                 }
               };
@@ -676,6 +883,8 @@ const DashboardPage: React.FC = () => {
                   icon: config.icon,
                   text: config.text,
                   time: log.created_at,
+                  tab: config.tab,
+                  unread: config.unread,
                   link: log._bulkCount ? '/tickets' : `/tickets/${log.ticket}`,
                   isMine: myTicketIds.has(log.ticket),
                   isPool: unassignedIds.has(log.ticket),
@@ -684,17 +893,15 @@ const DashboardPage: React.FC = () => {
 
               const filteredActivities = activityTab === 'Wszystkie'
                 ? activities
-                : activityTab === 'Moje'
-                ? activities.filter(a => a.isMine)
-                : activities.filter(a => a.isPool);
+                : activities.filter(a => a.tab === activityTab && a.tab !== '_edycje');
 
               return (
-                <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-3xl shadow-sm flex flex-col" style={{ minHeight: '360px' }}>
+                <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-3xl shadow-sm flex flex-col h-[580px]">
                   <div className="p-5 border-b border-gray-100 dark:border-gray-700/50">
                     <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-4">
                       Ostatnia aktywność
                     </h2>
-                    <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600">
+                    <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600">
                       {techActivityTabs.map(tab => (
                         <button
                           key={tab}
@@ -711,9 +918,15 @@ const DashboardPage: React.FC = () => {
                     </div>
                   </div>
 
-                  <div className="flex-1 overflow-y-auto p-2 scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600" style={{ maxHeight: '340px' }}>
+                  <div className="flex-1 overflow-y-auto p-2 scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600">
                     {filteredActivities.length === 0 ? (
-                      <p className="text-sm text-gray-500 dark:text-gray-400 italic text-center py-8">Brak aktywności.</p>
+                      <div className="flex flex-col items-center justify-center h-full text-center px-6">
+                        <div className="w-14 h-14 bg-gray-100 dark:bg-gray-700/50 rounded-full flex items-center justify-center mb-4">
+                          <Activity className="w-7 h-7 text-gray-400 dark:text-gray-500" />
+                        </div>
+                        <h3 className="text-base font-bold text-gray-900 dark:text-white">Brak aktywności</h3>
+                        <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Nie znaleziono zdarzeń dla wybranego filtru.</p>
+                      </div>
                     ) : (
                       <div className="space-y-0.5">
                         {filteredActivities.map((activity) => {
@@ -737,17 +950,27 @@ const DashboardPage: React.FC = () => {
                           }
 
                           return (
-                            <Link to={activity.link} key={activity.id} className="flex items-center px-4 py-3 rounded-2xl hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors group">
-                              <div className={`w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 mr-4 transition-transform group-hover:scale-105 ${bgClass} ${colorClass}`}>
+                            <Link
+                              to={activity.link}
+                              key={activity.id}
+                              className="relative flex items-center px-4 py-3.5 rounded-2xl hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors group overflow-hidden"
+                            >
+                              <div className={`w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 mr-3.5 transition-transform group-hover:scale-105 ${bgClass} ${colorClass}`}>
                                 <Icon className="w-4 h-4" />
                               </div>
-                              <div className="flex-1 min-w-0 pr-4">
-                                <p className="text-[13px] text-gray-800 dark:text-gray-200 truncate group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                              <div className="flex-1 min-w-0 mr-3">
+                                <p className="text-[13px] text-gray-700 dark:text-gray-200 truncate group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors duration-150">
                                   {activity.text}
                                 </p>
                               </div>
-                              <div className="text-[11px] font-medium text-gray-500 dark:text-gray-400 ml-2 flex-shrink-0">
-                                {formatActivityTime(activity.time)}
+                              {/* Timestamp ↔ Zbadaj cross-fade */}
+                              <div className="relative flex-shrink-0 w-20 text-right">
+                                <span className="block text-[11px] font-medium text-gray-400 dark:text-gray-500 opacity-100 group-hover:opacity-0 transition-opacity duration-150 ease-in-out whitespace-nowrap">
+                                  {formatActivityTime(activity.time)}
+                                </span>
+                                <span className="absolute inset-0 flex items-center justify-end text-[11px] font-semibold text-blue-600 dark:text-blue-400 opacity-0 group-hover:opacity-100 transition-opacity duration-150 ease-in-out whitespace-nowrap pointer-events-none">
+                                  Zbadaj →
+                                </span>
                               </div>
                             </Link>
                           );
