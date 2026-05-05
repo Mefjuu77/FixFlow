@@ -926,6 +926,11 @@ const DashboardPage: React.FC = () => {
 
     return (
       <div className="w-full space-y-6 md:space-y-8 animate-in fade-in duration-700">
+        {/* Severity bar animation — CSS needed because inline styles can't react to group-hover */}
+        <style>{`
+          .risk-row .risk-severity-bar { transform: scaleX(0); }
+          .risk-row:hover .risk-severity-bar { transform: scaleX(1); }
+        `}</style>
         {/* Page title + Date range picker */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
@@ -1146,9 +1151,6 @@ const DashboardPage: React.FC = () => {
                 );
               };
 
-              // Max score for severity bar scaling
-              const maxScore = riskItems.length > 0 ? Math.max(...riskItems.map(r => r.score)) : 100;
-
               return (
                 <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-3xl shadow-sm flex flex-col h-[580px]">
 
@@ -1225,32 +1227,40 @@ const DashboardPage: React.FC = () => {
                               ? `${risk.age}d czeka`
                               : `${risk.age}d`;
 
-                          // Severity bar width (min 15%, max 100%)
-                          const severityPct = Math.min(100, Math.max(15, (risk.score / maxScore) * 100));
-                          const severityColor =
-                            risk.reason === 'critical_unassigned'
-                              ? 'bg-rose-500/30 dark:bg-rose-500/20'
-                              : risk.reason === 'stale_unassigned'
-                              ? 'bg-amber-500/25 dark:bg-amber-500/15'
-                              : 'bg-gray-300/40 dark:bg-gray-600/30';
+                          // Urgency days: use whichever is most relevant per reason
+                          const urgencyDays = risk.reason === 'frozen_progress' ? risk.idle : risk.age;
+
+                          // Severity bar color based on wait time
+                          const severityBarColor =
+                            urgencyDays >= 15
+                              ? 'bg-rose-500'
+                              : urgencyDays >= 8
+                              ? 'bg-orange-400'
+                              : urgencyDays >= 4
+                              ? 'bg-amber-400'
+                              : 'bg-emerald-400';
 
                           return (
                             <Link
                               to={`/tickets/${t.id}`}
                               key={t.id}
-                              className="relative flex items-center px-4 py-3.5 rounded-2xl hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors group overflow-hidden"
+                              className="risk-row relative flex items-center px-4 py-3.5 rounded-2xl hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors group overflow-hidden"
                             >
-                              {/* Severity bar background */}
+                              {/* Bottom-edge severity bar — animates scaleX 0→1 on hover via .risk-row CSS */}
                               <div
-                                className={`absolute inset-y-0 left-0 ${severityColor} rounded-2xl transition-all opacity-0 group-hover:opacity-100`}
-                                style={{ width: `${severityPct}%` }}
+                                className={`risk-severity-bar absolute bottom-0 left-0 h-0.5 ${severityBarColor} rounded-full`}
+                                style={{
+                                  width: '100%',
+                                  transformOrigin: 'left',
+                                  transition: 'transform 200ms ease-out',
+                                }}
                               />
 
                               <div className={`relative w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 mr-3.5 transition-transform group-hover:scale-105 ${colors.bg}`}>
                                 <RiskIcon className={`w-4 h-4 ${colors.icon}`} />
                               </div>
                               <div className="relative flex-1 min-w-0 mr-3">
-                                <p className="text-[13px] text-gray-700 dark:text-gray-200 truncate leading-snug group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                                <p className="text-[13px] text-gray-700 dark:text-gray-200 truncate leading-snug group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors duration-150">
                                   <span className="font-bold text-gray-900 dark:text-white">#{t.id}</span>
                                   <span className="mx-1.5 text-gray-300 dark:text-gray-600">·</span>
                                   {t.title}
@@ -1264,11 +1274,13 @@ const DashboardPage: React.FC = () => {
                                   {statusBadge(t.status)}
                                 </div>
                               </div>
+
+                              {/* Timestamp ↔ Zbadaj cross-fade */}
                               <div className="relative flex-shrink-0 w-20 text-right">
-                                <span className="text-[11px] font-medium text-gray-400 dark:text-gray-500 group-hover:opacity-0 transition-opacity">
+                                <span className="block text-[11px] font-medium text-gray-400 dark:text-gray-500 opacity-100 group-hover:opacity-0 transition-opacity duration-150 ease-in-out">
                                   {idleLabel}
                                 </span>
-                                <span className="absolute inset-0 flex items-center justify-end text-[11px] font-semibold text-blue-600 dark:text-blue-400 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
+                                <span className="absolute inset-0 flex items-center justify-end text-[11px] font-semibold text-blue-600 dark:text-blue-400 opacity-0 group-hover:opacity-100 transition-opacity duration-150 ease-in-out whitespace-nowrap pointer-events-none">
                                   Zbadaj →
                                 </span>
                               </div>
