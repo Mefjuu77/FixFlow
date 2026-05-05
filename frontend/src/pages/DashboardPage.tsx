@@ -99,6 +99,7 @@ const DashboardPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [activityTab, setActivityTab] = useState('Wszystkie');
   const [activityLogs, setActivityLogs] = useState<any[]>([]);
+  const [riskFilter, setRiskFilter] = useState<string | null>(null);
 
   // Zakres dat dla KPI (domyślnie: ostatnie 7 dni)
   const [dateRange, setDateRange] = useState<{ start: dayjs.Dayjs; end: dayjs.Dayjs }>({
@@ -820,7 +821,6 @@ const DashboardPage: React.FC = () => {
 
     // Sortuj: najwyższy risk score pierwsze
     riskItems.sort((a, b) => b.score - a.score);
-    const topRisks = riskItems.slice(0, 6);
 
     // Dane KPI
     const waitingTickets = filteredTickets.filter(t => t.status === 'NOWE' || (t.technician === null && !['ROZWIAZANE', 'ZAMKNIETE'].includes(t.status)));
@@ -1092,113 +1092,195 @@ const DashboardPage: React.FC = () => {
         <div className="grid grid-cols-1 xl:grid-cols-5 gap-8">
           {/* Wymagają uwagi — panel ryzyka */}
           <div className="xl:col-span-3">
-            <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-3xl shadow-sm flex flex-col h-[580px]">
+            {(() => {
+              // Filtrowane risk items wg wybranego chipa
+              const visibleRisks = riskFilter
+                ? riskItems.filter(r => r.reason === riskFilter)
+                : riskItems;
 
-              {/* Header */}
-              <div className="p-5 border-b border-gray-100 dark:border-gray-700/50">
-                <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-4">
-                  Wymagają uwagi
-                </h2>
-                <div className="flex items-center justify-between gap-2">
-                  <div className="flex flex-wrap gap-1.5">
-                    {topRisks.length === 0 ? (
-                      <span className="text-xs font-medium text-gray-400 dark:text-gray-500">Brak problemów w systemie</span>
-                    ) : (
-                      (['critical_unassigned', 'stale_unassigned', 'frozen_progress'] as RiskReason[]).map(reason => {
-                        const count = riskItems.filter(r => r.reason === reason).length;
-                        if (count === 0) return null;
-                        const chipStyles: Record<RiskReason, string> = {
-                          critical_unassigned: 'bg-rose-50 dark:bg-rose-500/10 text-rose-600 dark:text-rose-400',
-                          stale_unassigned: 'bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400',
-                          frozen_progress: 'bg-gray-100 dark:bg-gray-700/50 text-gray-500 dark:text-gray-400',
-                        };
-                        const chipLabel: Record<RiskReason, string> = {
-                          critical_unassigned: 'Krytyczne',
-                          stale_unassigned: 'Nieprzypisane',
-                          frozen_progress: 'Zamrożone',
-                        };
-                        return (
-                          <span
-                            key={reason}
-                            className={`px-2.5 py-1 rounded-lg text-[11px] font-semibold whitespace-nowrap ${chipStyles[reason]}`}
-                          >
-                            {chipLabel[reason]} ({count})
+              const chipConfig: { reason: RiskReason; label: string; activeStyle: string; inactiveStyle: string }[] = [
+                {
+                  reason: 'critical_unassigned',
+                  label: 'Krytyczne',
+                  activeStyle: 'bg-rose-600 text-white dark:bg-rose-500 dark:text-white ring-2 ring-rose-300 dark:ring-rose-500/40',
+                  inactiveStyle: 'bg-rose-50 dark:bg-rose-500/10 text-rose-600 dark:text-rose-400 hover:bg-rose-100 dark:hover:bg-rose-500/20',
+                },
+                {
+                  reason: 'stale_unassigned',
+                  label: 'Nieprzypisane',
+                  activeStyle: 'bg-amber-600 text-white dark:bg-amber-500 dark:text-white ring-2 ring-amber-300 dark:ring-amber-500/40',
+                  inactiveStyle: 'bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400 hover:bg-amber-100 dark:hover:bg-amber-500/20',
+                },
+                {
+                  reason: 'frozen_progress',
+                  label: 'Zamrożone',
+                  activeStyle: 'bg-gray-700 text-white dark:bg-gray-500 dark:text-white ring-2 ring-gray-400 dark:ring-gray-500/40',
+                  inactiveStyle: 'bg-gray-100 dark:bg-gray-700/50 text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-600/50',
+                },
+              ];
+
+              const priorityBadge = (priority: string) => {
+                const styles: Record<string, string> = {
+                  WYSOKI: 'bg-rose-100 text-rose-700 dark:bg-rose-500/15 dark:text-rose-400',
+                  NORMALNY: 'bg-blue-100 text-blue-700 dark:bg-blue-500/15 dark:text-blue-400',
+                  NISKI: 'bg-gray-100 text-gray-600 dark:bg-gray-700/50 dark:text-gray-400',
+                };
+                const labels: Record<string, string> = { WYSOKI: 'Wysoki', NORMALNY: 'Normalny', NISKI: 'Niski' };
+                return (
+                  <span className={`px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider ${styles[priority] || styles.NORMALNY}`}>
+                    {labels[priority] || priority}
+                  </span>
+                );
+              };
+
+              const statusBadge = (status: string) => {
+                const styles: Record<string, string> = {
+                  NOWE: 'bg-blue-100 text-blue-700 dark:bg-blue-500/15 dark:text-blue-400',
+                  W_TOKU: 'bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-400',
+                };
+                const labels: Record<string, string> = { NOWE: 'Nowe', W_TOKU: 'W toku' };
+                return (
+                  <span className={`px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider ${styles[status] || 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400'}`}>
+                    {labels[status] || status}
+                  </span>
+                );
+              };
+
+              // Max score for severity bar scaling
+              const maxScore = riskItems.length > 0 ? Math.max(...riskItems.map(r => r.score)) : 100;
+
+              return (
+                <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-3xl shadow-sm flex flex-col h-[580px]">
+
+                  {/* Header */}
+                  <div className="p-5 border-b border-gray-100 dark:border-gray-700/50">
+                    <div className="flex items-center justify-between mb-4">
+                      <h2 className="text-lg font-bold text-gray-900 dark:text-white">
+                        Wymagają uwagi
+                        {riskItems.length > 0 && (
+                          <span className="ml-2 text-sm font-semibold text-gray-400 dark:text-gray-500">
+                            ({riskFilter ? visibleRisks.length : riskItems.length})
                           </span>
-                        );
-                      })
+                        )}
+                      </h2>
+                      {riskFilter && (
+                        <button
+                          onClick={() => setRiskFilter(null)}
+                          className="text-[11px] font-medium text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 transition-colors"
+                        >
+                          Pokaż wszystkie
+                        </button>
+                      )}
+                    </div>
+                    <div className="flex flex-wrap gap-1.5">
+                      {riskItems.length === 0 ? (
+                        <span className="text-xs font-medium text-gray-400 dark:text-gray-500">Brak problemów w systemie</span>
+                      ) : (
+                        chipConfig.map(chip => {
+                          const count = riskItems.filter(r => r.reason === chip.reason).length;
+                          if (count === 0) return null;
+                          const isActive = riskFilter === chip.reason;
+                          return (
+                            <button
+                              key={chip.reason}
+                              onClick={() => setRiskFilter(isActive ? null : chip.reason)}
+                              className={`px-2.5 py-1 rounded-lg text-[11px] font-semibold whitespace-nowrap transition-all cursor-pointer ${
+                                isActive ? chip.activeStyle : chip.inactiveStyle
+                              }`}
+                            >
+                              {chip.label} ({count})
+                            </button>
+                          );
+                        })
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Body */}
+                  <div className="flex-1 overflow-y-auto p-2 scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600">
+                    {visibleRisks.length === 0 ? (
+                      <div className="flex flex-col items-center justify-center h-full text-center px-6">
+                        <div className="w-14 h-14 bg-emerald-50 dark:bg-emerald-900/20 rounded-full flex items-center justify-center mb-4">
+                          <CheckCircle2 className="w-7 h-7 text-emerald-500 dark:text-emerald-400" />
+                        </div>
+                        <h3 className="text-base font-bold text-gray-900 dark:text-white">Wszystko pod kontrolą</h3>
+                        <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Brak zgłoszeń wymagających interwencji.</p>
+                      </div>
+                    ) : (
+                      <div className="space-y-0.5">
+                        {visibleRisks.map((risk) => {
+                          const colors = riskReasonColor[risk.reason];
+                          const t = risk.ticket;
+
+                          const RiskIcon = risk.reason === 'critical_unassigned'
+                            ? AlertTriangle
+                            : risk.reason === 'stale_unassigned'
+                            ? Users
+                            : Clock;
+
+                          const idleLabel =
+                            risk.reason === 'frozen_progress'
+                              ? `${risk.idle}d ciszy`
+                              : risk.reason === 'stale_unassigned'
+                              ? `${risk.age}d czeka`
+                              : `${risk.age}d`;
+
+                          // Severity bar width (min 15%, max 100%)
+                          const severityPct = Math.min(100, Math.max(15, (risk.score / maxScore) * 100));
+                          const severityColor =
+                            risk.reason === 'critical_unassigned'
+                              ? 'bg-rose-500/30 dark:bg-rose-500/20'
+                              : risk.reason === 'stale_unassigned'
+                              ? 'bg-amber-500/25 dark:bg-amber-500/15'
+                              : 'bg-gray-300/40 dark:bg-gray-600/30';
+
+                          return (
+                            <Link
+                              to={`/tickets/${t.id}`}
+                              key={t.id}
+                              className="relative flex items-center px-4 py-3.5 rounded-2xl hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors group overflow-hidden"
+                            >
+                              {/* Severity bar background */}
+                              <div
+                                className={`absolute inset-y-0 left-0 ${severityColor} rounded-2xl transition-all opacity-0 group-hover:opacity-100`}
+                                style={{ width: `${severityPct}%` }}
+                              />
+
+                              <div className={`relative w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 mr-3.5 transition-transform group-hover:scale-105 ${colors.bg}`}>
+                                <RiskIcon className={`w-4 h-4 ${colors.icon}`} />
+                              </div>
+                              <div className="relative flex-1 min-w-0 mr-3">
+                                <p className="text-[13px] text-gray-700 dark:text-gray-200 truncate leading-snug group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                                  <span className="font-bold text-gray-900 dark:text-white">#{t.id}</span>
+                                  <span className="mx-1.5 text-gray-300 dark:text-gray-600">·</span>
+                                  {t.title}
+                                </p>
+                                <div className="flex items-center gap-1.5 mt-1">
+                                  <span className={`text-[11px] font-medium ${colors.text}`}>
+                                    {riskReasonLabel[risk.reason]}
+                                  </span>
+                                  <span className="text-gray-300 dark:text-gray-600">·</span>
+                                  {priorityBadge(t.priority)}
+                                  {statusBadge(t.status)}
+                                </div>
+                              </div>
+                              <div className="relative flex-shrink-0 w-20 text-right">
+                                <span className="text-[11px] font-medium text-gray-400 dark:text-gray-500 group-hover:opacity-0 transition-opacity">
+                                  {idleLabel}
+                                </span>
+                                <span className="absolute inset-0 flex items-center justify-end text-[11px] font-semibold text-blue-600 dark:text-blue-400 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
+                                  Zbadaj →
+                                </span>
+                              </div>
+                            </Link>
+                          );
+                        })}
+                      </div>
                     )}
                   </div>
-                  {riskItems.length > 6 && (
-                    <span className="text-[11px] font-medium text-gray-400 dark:text-gray-500 flex-shrink-0">
-                      +{riskItems.length - 6} więcej
-                    </span>
-                  )}
                 </div>
-              </div>
-
-              {/* Body */}
-              <div className="flex-1 overflow-y-auto p-2 scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600">
-                {topRisks.length === 0 ? (
-                  <div className="flex flex-col items-center justify-center h-full text-center px-6">
-                    <div className="w-14 h-14 bg-emerald-50 dark:bg-emerald-900/20 rounded-full flex items-center justify-center mb-4">
-                      <CheckCircle2 className="w-7 h-7 text-emerald-500 dark:text-emerald-400" />
-                    </div>
-                    <h3 className="text-base font-bold text-gray-900 dark:text-white">Wszystko pod kontrolą</h3>
-                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Brak zgłoszeń wymagających interwencji.</p>
-                  </div>
-                ) : (
-                  <div className="space-y-0.5">
-                    {topRisks.map((risk) => {
-                      const colors = riskReasonColor[risk.reason];
-                      const t = risk.ticket;
-
-                      const RiskIcon = risk.reason === 'critical_unassigned'
-                        ? AlertTriangle
-                        : risk.reason === 'stale_unassigned'
-                        ? Users
-                        : Clock;
-
-                      const idleLabel =
-                        risk.reason === 'frozen_progress'
-                          ? `${risk.idle}d ciszy`
-                          : risk.reason === 'stale_unassigned'
-                          ? `${risk.age}d czeka`
-                          : `${risk.age}d`;
-
-                      return (
-                        <Link
-                          to={`/tickets/${t.id}`}
-                          key={t.id}
-                          className="flex items-center px-4 py-3.5 rounded-2xl hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors group"
-                        >
-                          <div className={`w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 mr-3.5 transition-transform group-hover:scale-105 ${colors.bg}`}>
-                            <RiskIcon className={`w-4 h-4 ${colors.icon}`} />
-                          </div>
-                          <div className="flex-1 min-w-0 mr-3">
-                            <p className="text-[13px] text-gray-700 dark:text-gray-200 truncate leading-snug group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
-                              <span className="font-bold text-gray-900 dark:text-white">#{t.id}</span>
-                              <span className="mx-1.5 text-gray-300 dark:text-gray-600">·</span>
-                              {t.title}
-                            </p>
-                            <p className={`text-[11px] font-medium mt-0.5 ${colors.text}`}>
-                              {riskReasonLabel[risk.reason]}
-                            </p>
-                          </div>
-                          <div className="flex-shrink-0 w-20 text-right relative">
-                            <span className="text-[11px] font-medium text-gray-400 dark:text-gray-500 group-hover:opacity-0 transition-opacity">
-                              {idleLabel}
-                            </span>
-                            <span className="absolute inset-0 flex items-center justify-end text-[11px] font-semibold text-blue-600 dark:text-blue-400 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
-                              Zbadaj →
-                            </span>
-                          </div>
-                        </Link>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
-            </div>
+              );
+            })()}
           </div>
 
           {/* Aktywność globalna */}
