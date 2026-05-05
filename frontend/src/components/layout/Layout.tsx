@@ -166,7 +166,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
       {/* Main Content */}
       <div className="flex flex-col flex-1 overflow-hidden">
         {/* Page Content */}
-        <main className="flex-1 pt-0 px-6 pb-6 overflow-y-auto bg-gray-50">
+        <main className={`flex-1 px-6 pb-6 overflow-y-auto bg-gray-50 dark:bg-transparent ${location.pathname === '/dashboard' || location.pathname === '/' ? 'pt-0' : 'pt-6'}`}>
           {children}
         </main>
       </div>
