@@ -1098,10 +1098,17 @@ const DashboardPage: React.FC = () => {
           {/* Wymagają uwagi — panel ryzyka */}
           <div className="xl:col-span-3">
             {(() => {
-              // Filtrowane risk items wg wybranego chipa
-              const visibleRisks = riskFilter
+              // Urgency helper — used for both sorting and bar color
+              const getUrgencyDays = (r: RiskItem) =>
+                r.reason === 'frozen_progress' ? r.idle : r.age;
+
+              // Filtrowane risk items wg wybranego chipa, zawsze sortowane wg urgencyDays malejąco
+              // (żeby czerwone były na górze niezależnie od kategorii)
+              const visibleRisks = (riskFilter
                 ? riskItems.filter(r => r.reason === riskFilter)
-                : riskItems;
+                : riskItems
+              ).slice().sort((a, b) => getUrgencyDays(b) - getUrgencyDays(a));
+
 
               const chipConfig: { reason: RiskReason; label: string; activeStyle: string; inactiveStyle: string }[] = [
                 {
@@ -1165,35 +1172,42 @@ const DashboardPage: React.FC = () => {
                           </span>
                         )}
                       </h2>
-                      {riskFilter && (
-                        <button
-                          onClick={() => setRiskFilter(null)}
-                          className="text-[11px] font-medium text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 transition-colors"
-                        >
-                          Pokaż wszystkie
-                        </button>
-                      )}
                     </div>
-                    <div className="flex flex-wrap gap-1.5">
+                    <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600">
                       {riskItems.length === 0 ? (
                         <span className="text-xs font-medium text-gray-400 dark:text-gray-500">Brak problemów w systemie</span>
                       ) : (
-                        chipConfig.map(chip => {
-                          const count = riskItems.filter(r => r.reason === chip.reason).length;
-                          if (count === 0) return null;
-                          const isActive = riskFilter === chip.reason;
-                          return (
-                            <button
-                              key={chip.reason}
-                              onClick={() => setRiskFilter(isActive ? null : chip.reason)}
-                              className={`px-2.5 py-1 rounded-lg text-[11px] font-semibold whitespace-nowrap transition-all cursor-pointer ${
-                                isActive ? chip.activeStyle : chip.inactiveStyle
-                              }`}
-                            >
-                              {chip.label} ({count})
-                            </button>
-                          );
-                        })
+                        <>
+                          {/* Chip "Wszystkie" */}
+                          <button
+                            onClick={() => setRiskFilter(null)}
+                            className={`px-3 py-1.5 text-xs font-semibold rounded-lg whitespace-nowrap transition-colors ${
+                              riskFilter === null
+                                ? 'bg-gray-900 text-white dark:bg-blue-500/20 dark:text-blue-400'
+                                : 'text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700/50 dark:hover:text-gray-200'
+                            }`}
+                          >
+                            Wszystkie
+                          </button>
+                          {chipConfig.map(chip => {
+                            const count = riskItems.filter(r => r.reason === chip.reason).length;
+                            if (count === 0) return null;
+                            const isActive = riskFilter === chip.reason;
+                            return (
+                              <button
+                                key={chip.reason}
+                                onClick={() => setRiskFilter(isActive ? null : chip.reason)}
+                                className={`px-3 py-1.5 text-xs font-semibold rounded-lg whitespace-nowrap transition-colors ${
+                                  isActive
+                                    ? 'bg-gray-900 text-white dark:bg-blue-500/20 dark:text-blue-400'
+                                    : 'text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700/50 dark:hover:text-gray-200'
+                                }`}
+                              >
+                                {chip.label} · {count}
+                              </button>
+                            );
+                          })}
+                        </>
                       )}
                     </div>
                   </div>
@@ -1227,18 +1241,18 @@ const DashboardPage: React.FC = () => {
                               ? `${risk.age}d czeka`
                               : `${risk.age}d`;
 
-                          // Urgency days: use whichever is most relevant per reason
-                          const urgencyDays = risk.reason === 'frozen_progress' ? risk.idle : risk.age;
+                          // Urgency days — shared helper ensures consistency with sort order
+                          const urgencyDays = getUrgencyDays(risk);
 
                           // Severity bar color based on wait time
                           const severityBarColor =
                             urgencyDays >= 15
-                              ? 'bg-rose-500'
+                              ? 'bg-rose-500/60'
                               : urgencyDays >= 8
-                              ? 'bg-orange-400'
+                              ? 'bg-orange-400/60'
                               : urgencyDays >= 4
-                              ? 'bg-amber-400'
-                              : 'bg-emerald-400';
+                              ? 'bg-amber-400/60'
+                              : 'bg-emerald-400/60';
 
                           return (
                             <Link
@@ -1544,15 +1558,21 @@ const DashboardPage: React.FC = () => {
 
                   <div className="flex-1 overflow-y-auto p-2 scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600">
                     {filteredActivities.length === 0 ? (
-                      <p className="text-sm text-gray-500 dark:text-gray-400 italic text-center py-8">Brak aktywności.</p>
+                      <div className="flex flex-col items-center justify-center h-full text-center px-6">
+                        <div className="w-14 h-14 bg-gray-100 dark:bg-gray-700/50 rounded-full flex items-center justify-center mb-4">
+                          <Activity className="w-7 h-7 text-gray-400 dark:text-gray-500" />
+                        </div>
+                        <h3 className="text-base font-bold text-gray-900 dark:text-white">Brak aktywności</h3>
+                        <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Nie znaleziono zdarzeń dla wybranego filtru.</p>
+                      </div>
                     ) : (
-                      <div className="space-y-1">
+                      <div className="space-y-0.5">
                         {filteredActivities.map((activity) => {
                           const Icon = activity.icon;
-                          
+
                           let colorClass = 'text-gray-600 dark:text-gray-400';
                           let bgClass = 'bg-gray-100 dark:bg-gray-800';
-                          
+
                           if (activity.type === 'GREEN') {
                             colorClass = 'text-green-600 dark:text-green-400';
                             bgClass = 'bg-green-100 dark:bg-green-500/20';
@@ -1568,17 +1588,27 @@ const DashboardPage: React.FC = () => {
                           }
 
                           return (
-                            <Link to={activity.link} key={activity.id} className="flex items-center px-4 py-3 rounded-2xl hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors group relative">
-                              <div className={`w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 mr-4 transition-transform group-hover:scale-105 ${bgClass} ${colorClass}`}>
+                            <Link
+                              to={activity.link}
+                              key={activity.id}
+                              className="relative flex items-center px-4 py-3.5 rounded-2xl hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors group overflow-hidden"
+                            >
+                              <div className={`w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 mr-3.5 transition-transform group-hover:scale-105 ${bgClass} ${colorClass}`}>
                                 <Icon className="w-4 h-4" />
                               </div>
-                              <div className="flex-1 min-w-0 pr-4">
-                                <p className="text-[13px] text-gray-800 dark:text-gray-200 truncate group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                              <div className="flex-1 min-w-0 mr-3">
+                                <p className="text-[13px] text-gray-700 dark:text-gray-200 truncate group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors duration-150">
                                   {activity.text}
                                 </p>
                               </div>
-                              <div className="text-[11px] font-medium text-gray-500 dark:text-gray-400 ml-2 flex-shrink-0">
-                                {formatActivityTime(activity.time)}
+                              {/* Timestamp ↔ Zbadaj cross-fade — identical to risk panel */}
+                              <div className="relative flex-shrink-0 w-20 text-right">
+                                <span className="block text-[11px] font-medium text-gray-400 dark:text-gray-500 opacity-100 group-hover:opacity-0 transition-opacity duration-150 ease-in-out whitespace-nowrap">
+                                  {formatActivityTime(activity.time)}
+                                </span>
+                                <span className="absolute inset-0 flex items-center justify-end text-[11px] font-semibold text-blue-600 dark:text-blue-400 opacity-0 group-hover:opacity-100 transition-opacity duration-150 ease-in-out whitespace-nowrap pointer-events-none">
+                                  Zbadaj →
+                                </span>
                               </div>
                             </Link>
                           );
