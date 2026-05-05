@@ -660,7 +660,7 @@ const TicketsPage: React.FC = () => {
                         <div
                           title={ticket.title}
                           onClick={() => handleSelectTicket(ticket.id)}
-                          className="inline-block font-bold text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white cursor-pointer transition-colors whitespace-normal break-words"
+                          className="block font-bold text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white cursor-pointer transition-colors truncate"
                         >
                           {ticket.title}
                         </div>
@@ -668,7 +668,7 @@ const TicketsPage: React.FC = () => {
                         <Link
                           to={`/tickets/${ticket.id}`}
                           title={ticket.title}
-                          className="inline-block font-bold text-blue-600 hover:text-blue-800 hover:underline transition-colors whitespace-normal break-words"
+                          className="block font-bold text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 hover:underline transition-colors truncate"
                         >
                           {ticket.title}
                         </Link>

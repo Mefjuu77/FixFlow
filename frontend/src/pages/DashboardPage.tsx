@@ -47,7 +47,7 @@ const formatActivityTime = (dateStr: string) => {
   if (diffMinutes < 60) return `${Math.max(1, diffMinutes)} min temu`;
   if (diffHours < 24 && date.isSame(now, 'day')) return `${diffHours} godz. temu`;
   if (date.isSame(now.subtract(1, 'day'), 'day')) return `wczoraj`;
-  
+
   const plMonths = ['sty', 'lut', 'mar', 'kwi', 'maj', 'cze', 'lip', 'sie', 'wrz', 'paź', 'lis', 'gru'];
   const plDays = ['Nie', 'Pon', 'Wto', 'Śro', 'Czw', 'Pią', 'Sob'];
   return `${plDays[date.day()]}, ${date.date()} ${plMonths[date.month()]}`;
@@ -442,7 +442,15 @@ const DashboardPage: React.FC = () => {
               const visibleTechRisks = (riskFilter
                 ? techRiskItems.filter(r => r.reason === riskFilter)
                 : techRiskItems
-              ).slice().sort((a, b) => getTechUrgencyDays(b) - getTechUrgencyDays(a));
+              ).slice().sort((a, b) => {
+                // In "Wszystkie" view, group by category first
+                if (!riskFilter) {
+                  const groupOrder: Record<TechRiskReason, number> = { critical_mine: 0, pool_unassigned: 1, stale_mine: 2 };
+                  const groupDiff = groupOrder[a.reason] - groupOrder[b.reason];
+                  if (groupDiff !== 0) return groupDiff;
+                }
+                return getTechUrgencyDays(b) - getTechUrgencyDays(a);
+              });
 
               const techChipConfig: { reason: TechRiskReason; label: string }[] = [
                 { reason: 'critical_mine', label: 'Krytyczne moje' },
@@ -523,27 +531,27 @@ const DashboardPage: React.FC = () => {
                         <>
                           <button
                             onClick={() => setRiskFilter(null)}
-                            className={`px-3 py-1.5 text-xs font-semibold rounded-lg whitespace-nowrap transition-colors ${
-                              riskFilter === null
+                            className={`px-3 py-1.5 text-xs font-semibold rounded-lg whitespace-nowrap transition-colors ${riskFilter === null
                                 ? 'bg-gray-900 text-white dark:bg-blue-500/20 dark:text-blue-400'
                                 : 'text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700/50 dark:hover:text-gray-200'
-                            }`}
+                              }`}
                           >
                             Wszystkie
                           </button>
                           {techChipConfig.map(chip => {
                             const count = techRiskItems.filter(r => r.reason === chip.reason).length;
-                            if (count === 0) return null;
                             const isActive = riskFilter === chip.reason;
+                            const isEmpty = count === 0;
                             return (
                               <button
                                 key={chip.reason}
-                                onClick={() => setRiskFilter(isActive ? null : chip.reason)}
-                                className={`px-3 py-1.5 text-xs font-semibold rounded-lg whitespace-nowrap transition-colors ${
-                                  isActive
-                                    ? 'bg-gray-900 text-white dark:bg-blue-500/20 dark:text-blue-400'
-                                    : 'text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700/50 dark:hover:text-gray-200'
-                                }`}
+                                onClick={() => !isEmpty && setRiskFilter(isActive ? null : chip.reason)}
+                                className={`px-3 py-1.5 text-xs font-semibold rounded-lg whitespace-nowrap transition-colors ${isEmpty
+                                    ? 'text-gray-300 dark:text-gray-600 cursor-default'
+                                    : isActive
+                                      ? 'bg-gray-900 text-white dark:bg-blue-500/20 dark:text-blue-400'
+                                      : 'text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700/50 dark:hover:text-gray-200'
+                                  }`}
                               >
                                 {chip.label} · {count}
                               </button>
@@ -566,86 +574,118 @@ const DashboardPage: React.FC = () => {
                       </div>
                     ) : (
                       <div className="space-y-0.5">
-                        {visibleTechRisks.map((risk) => {
-                          const colors = techRiskReasonColor[risk.reason];
-                          const t = risk.ticket;
+                        {(() => {
+                          const groupLabels: Record<TechRiskReason, string> = {
+                            critical_mine: '🔴 Krytyczne moje',
+                            pool_unassigned: '🟠 Do wzięcia',
+                            stale_mine: '🟡 Nieruszane',
+                          };
 
-                          const RiskIcon = risk.reason === 'critical_mine'
-                            ? AlertTriangle
-                            : risk.reason === 'pool_unassigned'
-                            ? Users
-                            : Clock;
+                          let lastGroup: TechRiskReason | null = null;
 
-                          const idleLabel =
-                            risk.reason === 'stale_mine'
-                              ? `${risk.idle}d ciszy`
+                          return visibleTechRisks.map((risk) => {
+                            const colors = techRiskReasonColor[risk.reason];
+                            const t = risk.ticket;
+
+                            const RiskIcon = risk.reason === 'critical_mine'
+                              ? AlertTriangle
                               : risk.reason === 'pool_unassigned'
-                              ? `${risk.age}d czeka`
-                              : `${risk.age}d`;
+                                ? Users
+                                : Clock;
 
-                          const urgencyDays = getTechUrgencyDays(risk);
+                            const idleLabel =
+                              risk.reason === 'stale_mine'
+                                ? `${risk.idle}d ciszy`
+                                : risk.reason === 'pool_unassigned'
+                                  ? `${risk.age}d czeka`
+                                  : `${risk.age}d`;
 
-                          const severityBarColor =
-                            urgencyDays >= 15
-                              ? 'bg-rose-500/60'
-                              : urgencyDays >= 8
-                              ? 'bg-orange-400/60'
-                              : urgencyDays >= 4
-                              ? 'bg-amber-400/60'
-                              : 'bg-emerald-400/60';
+                            const urgencyDays = getTechUrgencyDays(risk);
 
-                          const ownershipTag = t.technician === null ? 'Do wzięcia' : 'Moje';
+                            const severityBarColor =
+                              urgencyDays >= 15
+                                ? 'bg-rose-500/60'
+                                : urgencyDays >= 8
+                                  ? 'bg-orange-400/60'
+                                  : urgencyDays >= 4
+                                    ? 'bg-amber-400/60'
+                                    : 'bg-emerald-400/60';
 
-                          return (
-                            <Link
-                              to={`/tickets/${t.id}`}
-                              key={t.id}
-                              className="risk-row relative flex items-center px-4 py-3.5 rounded-2xl hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors group overflow-hidden"
-                            >
-                              {/* Bottom-edge severity bar */}
-                              <div
-                                className={`risk-severity-bar absolute bottom-0 left-0 h-0.5 ${severityBarColor} rounded-full`}
-                                style={{
-                                  width: '100%',
-                                  transformOrigin: 'left',
-                                  transition: 'transform 200ms ease-out',
-                                }}
-                              />
+                            const ownershipTag = t.technician === null ? 'Do wzięcia' : 'Moje';
 
-                              <div className={`relative w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 mr-3.5 transition-transform group-hover:scale-105 ${colors.bg}`}>
-                                <RiskIcon className={`w-4 h-4 ${colors.icon}`} />
-                              </div>
-                              <div className="relative flex-1 min-w-0 mr-3">
-                                <p className="text-[13px] text-gray-700 dark:text-gray-200 truncate leading-snug group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors duration-150">
-                                  <span className="font-bold text-gray-900 dark:text-white">#{t.id}</span>
-                                  <span className="mx-1.5 text-gray-300 dark:text-gray-600">·</span>
-                                  {t.title}
-                                </p>
-                                <div className="flex items-center gap-1.5 mt-1">
-                                  <span className={`text-[11px] font-medium ${colors.text}`}>
-                                    {techRiskReasonLabel[risk.reason]}
+                            // Group separator — only in "Wszystkie" view
+                            let groupHeader: React.ReactNode = null;
+                            if (riskFilter === null && risk.reason !== lastGroup) {
+                              lastGroup = risk.reason;
+                              groupHeader = (
+                                <div className="flex items-center gap-2 px-4 pt-3 pb-1.5">
+                                  <span className="text-[11px] font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">
+                                    {groupLabels[risk.reason]}
                                   </span>
-                                  <span className="text-gray-300 dark:text-gray-600">·</span>
-                                  {priorityBadge(t.priority)}
-                                  {statusBadge(t.status)}
-                                  <span className="text-[10px] font-medium text-gray-400 dark:text-gray-500 ml-1">
-                                    {ownershipTag}
-                                  </span>
+                                  <div className="flex-1 h-px bg-gray-100 dark:bg-gray-700/50" />
                                 </div>
-                              </div>
+                              );
+                            }
 
-                              {/* Timestamp ↔ Zbadaj cross-fade */}
-                              <div className="relative flex-shrink-0 w-20 text-right">
-                                <span className="block text-[11px] font-medium text-gray-400 dark:text-gray-500 opacity-100 group-hover:opacity-0 transition-opacity duration-150 ease-in-out">
-                                  {idleLabel}
-                                </span>
-                                <span className="absolute inset-0 flex items-center justify-end text-[11px] font-semibold text-blue-600 dark:text-blue-400 opacity-0 group-hover:opacity-100 transition-opacity duration-150 ease-in-out whitespace-nowrap pointer-events-none">
-                                  Zbadaj →
-                                </span>
-                              </div>
-                            </Link>
-                          );
-                        })}
+                            return (
+                              <React.Fragment key={t.id}>
+                                {groupHeader}
+                                <Link
+                                  to={`/tickets/${t.id}`}
+                                  className="risk-row relative flex items-center px-4 py-3.5 rounded-2xl hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors group overflow-hidden"
+                                >
+                                  {/* Bottom-edge severity bar */}
+                                  <div
+                                    className={`risk-severity-bar absolute bottom-0 left-0 h-0.5 ${severityBarColor} rounded-full`}
+                                    style={{
+                                      width: '100%',
+                                      transformOrigin: 'left',
+                                      transition: 'transform 200ms ease-out',
+                                    }}
+                                  />
+
+                                  <div className={`relative w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 mr-3.5 transition-transform group-hover:scale-105 ${colors.bg}`}>
+                                    <RiskIcon className={`w-4 h-4 ${colors.icon}`} />
+                                  </div>
+                                  <div className="relative flex-1 min-w-0 mr-3">
+                                    <div className="flex items-center min-w-0">
+                                      <span className="text-[13px] font-bold text-gray-900 dark:text-white flex-shrink-0 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors duration-150">#{t.id}</span>
+                                      <span className="mx-1.5 text-gray-300 dark:text-gray-600 flex-shrink-0">·</span>
+                                      <span className="text-[13px] text-gray-700 dark:text-gray-200 truncate group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors duration-150">{t.title}</span>
+                                    </div>
+                                    <div className="flex items-center gap-1.5 mt-1">
+                                      {riskFilter === null && (
+                                        <>
+                                          <span className={`text-[11px] font-medium ${colors.text}`}>
+                                            {techRiskReasonLabel[risk.reason]}
+                                          </span>
+                                          <span className="text-gray-300 dark:text-gray-600">·</span>
+                                        </>
+                                      )}
+                                      {priorityBadge(t.priority)}
+                                      {statusBadge(t.status)}
+                                      {riskFilter === null && (
+                                        <span className="text-[10px] font-medium text-gray-400 dark:text-gray-500 ml-1">
+                                          {ownershipTag}
+                                        </span>
+                                      )}
+                                    </div>
+                                  </div>
+
+                                  {/* Timestamp ↔ Zbadaj cross-fade */}
+                                  <div className="relative flex-shrink-0 w-20 text-right">
+                                    <span className="block text-[11px] font-medium text-gray-400 dark:text-gray-500 opacity-100 group-hover:opacity-0 transition-opacity duration-150 ease-in-out">
+                                      {idleLabel}
+                                    </span>
+                                    <span className="absolute inset-0 flex items-center justify-end text-[11px] font-semibold text-blue-600 dark:text-blue-400 opacity-0 group-hover:opacity-100 transition-opacity duration-150 ease-in-out whitespace-nowrap pointer-events-none">
+                                      Zbadaj →
+                                    </span>
+                                  </div>
+                                </Link>
+                              </React.Fragment>
+                            );
+                          });
+                        })()}
                       </div>
                     )}
                   </div>
@@ -906,11 +946,10 @@ const DashboardPage: React.FC = () => {
                         <button
                           key={tab}
                           onClick={() => setActivityTab(tab)}
-                          className={`px-3 py-1.5 text-xs font-semibold rounded-lg whitespace-nowrap transition-colors ${
-                            activityTab === tab
-                            ? 'bg-gray-900 text-white dark:bg-blue-500/20 dark:text-blue-400'
-                            : 'text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700/50 dark:hover:text-gray-200'
-                          }`}
+                          className={`px-3 py-1.5 text-xs font-semibold rounded-lg whitespace-nowrap transition-colors ${activityTab === tab
+                              ? 'bg-gray-900 text-white dark:bg-blue-500/20 dark:text-blue-400'
+                              : 'text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700/50 dark:hover:text-gray-200'
+                            }`}
                         >
                           {tab}
                         </button>
@@ -992,9 +1031,9 @@ const DashboardPage: React.FC = () => {
     // Filtrowanie bazy ticketów przez wybrany dateRange
     const filteredTickets = tickets.filter(t => {
       const created = dayjs(t.created_at);
-      return created.isAfter(dateRange.start) || created.isSame(dateRange.start, 'day') 
-             ? (created.isBefore(dateRange.end) || created.isSame(dateRange.end, 'day')) 
-             : false;
+      return created.isAfter(dateRange.start) || created.isSame(dateRange.start, 'day')
+        ? (created.isBefore(dateRange.end) || created.isSame(dateRange.end, 'day'))
+        : false;
     });
 
     const openTickets = filteredTickets.filter(t => !['ROZWIAZANE', 'ZAMKNIETE'].includes(t.status));
@@ -1164,9 +1203,9 @@ const DashboardPage: React.FC = () => {
               Przegląd obciążenia zespołu i wydajności
             </p>
           </div>
-          
+
           <div className="relative" ref={datePickerRef}>
-            <button 
+            <button
               onClick={() => setShowDatePicker(!showDatePicker)}
               className="flex items-center gap-2 px-4 py-2.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-sm hover:shadow-md hover:border-gray-300 dark:hover:border-gray-600 transition-all text-sm font-semibold text-gray-700 dark:text-gray-300"
             >
@@ -1186,17 +1225,17 @@ const DashboardPage: React.FC = () => {
                   <button onClick={applyThisMonth} className="text-left px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-xl transition-colors">Ten miesiąc</button>
                   <button onClick={applyLastMonth} className="text-left px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-xl transition-colors">Poprzedni miesiąc</button>
                 </div>
-                
+
                 {/* Mini kalendarz */}
                 <div className="w-64">
                   <div className="flex justify-between items-center mb-4 px-2">
-                    <button onClick={() => setPickerView(p => p.month === 0 ? {year: p.year-1, month: 11} : {...p, month: p.month-1})} className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full text-gray-600 dark:text-gray-400">
+                    <button onClick={() => setPickerView(p => p.month === 0 ? { year: p.year - 1, month: 11 } : { ...p, month: p.month - 1 })} className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full text-gray-600 dark:text-gray-400">
                       <ChevronDown className="w-5 h-5 rotate-90" />
                     </button>
                     <span className="font-semibold text-gray-900 dark:text-white text-sm">
                       {plMonthsFull[pickerView.month]} {pickerView.year}
                     </span>
-                    <button onClick={() => setPickerView(p => p.month === 11 ? {year: p.year+1, month: 0} : {...p, month: p.month+1})} className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full text-gray-600 dark:text-gray-400">
+                    <button onClick={() => setPickerView(p => p.month === 11 ? { year: p.year + 1, month: 0 } : { ...p, month: p.month + 1 })} className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full text-gray-600 dark:text-gray-400">
                       <ChevronDown className="w-5 h-5 -rotate-90" />
                     </button>
                   </div>
@@ -1211,20 +1250,20 @@ const DashboardPage: React.FC = () => {
                       const daysInMonth = firstDay.daysInMonth();
                       // day() zwraca 0 dla niedzieli, chcemy 1 dla pon, 7 dla nd
                       const startPadding = firstDay.day() === 0 ? 6 : firstDay.day() - 1;
-                      
+
                       const days = [];
                       for (let i = 0; i < startPadding; i++) {
                         days.push(<div key={`pad-${i}`} className="h-8"></div>);
                       }
-                      
+
                       for (let i = 1; i <= daysInMonth; i++) {
                         const d = dayjs().year(pickerView.year).month(pickerView.month).date(i);
-                        
+
                         let isSelected = false;
                         let isInRange = false;
                         let isStart = false;
                         let isEnd = false;
-                        
+
                         if (customStart) {
                           if (d.isSame(customStart, 'day')) isSelected = true;
                         } else {
@@ -1241,10 +1280,10 @@ const DashboardPage: React.FC = () => {
                             isStart = true; isEnd = true;
                           }
                         }
-                        
+
                         const baseClass = "h-8 flex items-center justify-center text-sm rounded-lg transition-colors cursor-pointer ";
                         let stateClass = "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700";
-                        
+
                         if (isSelected) {
                           stateClass = "bg-blue-600 text-white font-bold";
                           if (!customStart && isStart && !isEnd) stateClass += " rounded-r-none";
@@ -1252,7 +1291,7 @@ const DashboardPage: React.FC = () => {
                         } else if (isInRange) {
                           stateClass = "bg-blue-50 dark:bg-blue-900/30 text-blue-800 dark:text-blue-200 rounded-none";
                         }
-                        
+
                         days.push(
                           <div key={`day-${i}`} onClick={() => handleDayClick(d)} className={baseClass + stateClass}>
                             {i}
@@ -1298,11 +1337,11 @@ const DashboardPage: React.FC = () => {
                     {kpi.icon}
                   </div>
                 </div>
-                
+
                 <p className="text-3xl font-bold text-gray-900 dark:text-white tracking-tight mb-4">
                   {kpi.displayValue}
                 </p>
-                
+
                 <div className="flex items-center mt-auto">
                   <div className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-xs font-semibold ${trendColor} ${trendBg}`}>
                     <TrendIcon className="w-3.5 h-3.5" />
@@ -1404,11 +1443,10 @@ const DashboardPage: React.FC = () => {
                           {/* Chip "Wszystkie" */}
                           <button
                             onClick={() => setRiskFilter(null)}
-                            className={`px-3 py-1.5 text-xs font-semibold rounded-lg whitespace-nowrap transition-colors ${
-                              riskFilter === null
+                            className={`px-3 py-1.5 text-xs font-semibold rounded-lg whitespace-nowrap transition-colors ${riskFilter === null
                                 ? 'bg-gray-900 text-white dark:bg-blue-500/20 dark:text-blue-400'
                                 : 'text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700/50 dark:hover:text-gray-200'
-                            }`}
+                              }`}
                           >
                             Wszystkie
                           </button>
@@ -1420,11 +1458,10 @@ const DashboardPage: React.FC = () => {
                               <button
                                 key={chip.reason}
                                 onClick={() => setRiskFilter(isActive ? null : chip.reason)}
-                                className={`px-3 py-1.5 text-xs font-semibold rounded-lg whitespace-nowrap transition-colors ${
-                                  isActive
+                                className={`px-3 py-1.5 text-xs font-semibold rounded-lg whitespace-nowrap transition-colors ${isActive
                                     ? 'bg-gray-900 text-white dark:bg-blue-500/20 dark:text-blue-400'
                                     : 'text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700/50 dark:hover:text-gray-200'
-                                }`}
+                                  }`}
                               >
                                 {chip.label} · {count}
                               </button>
@@ -1454,15 +1491,15 @@ const DashboardPage: React.FC = () => {
                           const RiskIcon = risk.reason === 'critical_unassigned'
                             ? AlertTriangle
                             : risk.reason === 'stale_unassigned'
-                            ? Users
-                            : Clock;
+                              ? Users
+                              : Clock;
 
                           const idleLabel =
                             risk.reason === 'frozen_progress'
                               ? `${risk.idle}d ciszy`
                               : risk.reason === 'stale_unassigned'
-                              ? `${risk.age}d czeka`
-                              : `${risk.age}d`;
+                                ? `${risk.age}d czeka`
+                                : `${risk.age}d`;
 
                           // Urgency days — shared helper ensures consistency with sort order
                           const urgencyDays = getUrgencyDays(risk);
@@ -1472,10 +1509,10 @@ const DashboardPage: React.FC = () => {
                             urgencyDays >= 15
                               ? 'bg-rose-500/60'
                               : urgencyDays >= 8
-                              ? 'bg-orange-400/60'
-                              : urgencyDays >= 4
-                              ? 'bg-amber-400/60'
-                              : 'bg-emerald-400/60';
+                                ? 'bg-orange-400/60'
+                                : urgencyDays >= 4
+                                  ? 'bg-amber-400/60'
+                                  : 'bg-emerald-400/60';
 
                           return (
                             <Link
@@ -1536,7 +1573,7 @@ const DashboardPage: React.FC = () => {
           <div className="xl:col-span-2 space-y-4">
             {(() => {
               const activityTabs = ['Wszystkie', 'Zgłoszenia', 'Zespół'];
-              
+
               // Mapowanie akcji z API na konfigurację wizualną
               const trunc = (s: string, max = 40) => s.length > max ? s.slice(0, max) + '...' : s;
 
@@ -1767,11 +1804,10 @@ const DashboardPage: React.FC = () => {
                         <button
                           key={tab}
                           onClick={() => setActivityTab(tab)}
-                          className={`px-3 py-1.5 text-xs font-semibold rounded-lg whitespace-nowrap transition-colors ${
-                            activityTab === tab 
-                            ? 'bg-gray-900 text-white dark:bg-blue-500/20 dark:text-blue-400' 
-                            : 'text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700/50 dark:hover:text-gray-200'
-                          }`}
+                          className={`px-3 py-1.5 text-xs font-semibold rounded-lg whitespace-nowrap transition-colors ${activityTab === tab
+                              ? 'bg-gray-900 text-white dark:bg-blue-500/20 dark:text-blue-400'
+                              : 'text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700/50 dark:hover:text-gray-200'
+                            }`}
                         >
                           {tab}
                         </button>
