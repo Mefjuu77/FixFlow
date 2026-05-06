@@ -1882,11 +1882,12 @@ const TicketDetailsPage: React.FC = () => {
                   )}
 
                   <div className={`border rounded-md bg-white overflow-hidden transition-colors ${transitionCommentType === 'internal' ? 'border-amber-200 shadow-sm shadow-amber-50' : 'border-gray-200'}`}>
-                    <textarea
+                    <MarkdownEditor
                       value={transitionCommentText}
-                      onChange={(e) => setTransitionCommentText(e.target.value)}
-                      className={`w-full p-3 min-h-[120px] focus:outline-none resize-y text-sm ${transitionCommentType === 'internal' ? 'bg-amber-50/10' : ''}`}
+                      onChange={setTransitionCommentText}
                       placeholder={transitionCommentType === 'internal' ? "Dodaj notatkę wewnętrzną..." : "Odpowiedz klientowi..."}
+                      className={transitionCommentType === 'internal' ? 'bg-amber-50/10' : ''}
+                      minHeight="120px"
                     />
                   </div>
                 </div>

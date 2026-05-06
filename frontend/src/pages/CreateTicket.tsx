@@ -137,7 +137,7 @@ const CreateTicketPage: React.FC = () => {
         currentTotal += f.size;
       }
     });
-    
+
     if (invalidFiles.length > 0) {
       setAttachmentErrors(invalidFiles);
     }
@@ -189,7 +189,7 @@ const CreateTicketPage: React.FC = () => {
 
     setTitleBlurred(true);
     let isValid = Object.keys(errors).length === 0;
-    
+
     if (formData.category === 0) {
       errors.category = 'Proszę wybrać kategorię.';
       isValid = false;
@@ -261,7 +261,7 @@ const CreateTicketPage: React.FC = () => {
           </button>
           <div>
             <h1 className="text-xl font-bold text-gray-900 dark:text-white leading-none">Nowe zgłoszenie</h1>
-            <p className="text-gray-500 dark:text-gray-400 text-xs mt-1">Uzupełnij szczegóły problemu technicznego.</p>
+            <p className="text-gray-500 dark:text-gray-400 text-xs mt-1">Opisz problem i dodaj potrzebne szczegóły.</p>
           </div>
         </div>
 
@@ -422,16 +422,15 @@ const CreateTicketPage: React.FC = () => {
               onDragLeave={handleDragLeave}
               onDrop={handleDrop}
               onClick={() => fileInputRef.current?.click()}
-              className={`w-full flex flex-col items-center justify-center gap-2 py-4 border-2 border-dashed rounded-xl cursor-pointer transition-all group ${
-                isDragging
-                  ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
-                  : 'border-gray-300 dark:border-gray-700 hover:border-blue-400 dark:hover:border-blue-500/70 hover:bg-blue-50/50 dark:hover:bg-blue-900/20 text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400'
-              }`}
+              className={`w-full flex flex-col items-center justify-center gap-2 py-4 border-2 border-dashed rounded-xl cursor-pointer transition-all group ${isDragging
+                ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
+                : 'border-gray-300 dark:border-gray-700 hover:border-blue-400 dark:hover:border-blue-500/70 hover:bg-blue-50/50 dark:hover:bg-blue-900/20 text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400'
+                }`}
             >
               <div className="bg-blue-50 dark:bg-blue-900/30 text-blue-500 rounded-full p-2 group-hover:scale-110 transition-transform duration-300">
                 <UploadCloud className="w-5 h-5" />
               </div>
-              
+
               <div className="text-center px-4 space-y-1">
                 <p className="font-bold text-gray-700 dark:text-gray-300 text-sm">
                   Kliknij, aby wgrać pliki <span className="font-normal text-gray-500 dark:text-gray-400">lub przeciągnij je tutaj</span>
@@ -536,25 +535,25 @@ const CreateTicketPage: React.FC = () => {
           </div>
 
           <div className="flex justify-end">
-          <button
-            type="submit"
-            disabled={isSubmitting || isSuccess}
-            className={`max-w-[300px] w-full flex items-center justify-center py-4 text-white font-bold rounded-xl shadow-lg active:scale-95 transition-all disabled:opacity-80 ${isSuccess ? 'bg-green-600 hover:bg-green-700 shadow-green-100/50 dark:shadow-none' : 'bg-blue-600 hover:bg-blue-700 shadow-blue-100 dark:shadow-none'}`}
-          >
-            {isSubmitting && !isSuccess && (
-              <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-            )}
-            {isSuccess && (
-              <>
-                <Check className="w-5 h-5 mr-2" /> Sukces
-              </>
-            )}
-            {!isSubmitting && !isSuccess && (
-              <>
-                <Send className="w-5 h-5 mr-2" /> Utwórz zgłoszenie
-              </>
-            )}
-          </button>
+            <button
+              type="submit"
+              disabled={isSubmitting || isSuccess}
+              className={`max-w-[300px] w-full flex items-center justify-center py-4 text-white font-bold rounded-xl shadow-lg active:scale-95 transition-all disabled:opacity-80 ${isSuccess ? 'bg-green-600 hover:bg-green-700 shadow-green-100/50 dark:shadow-none' : 'bg-blue-600 hover:bg-blue-700 shadow-blue-100 dark:shadow-none'}`}
+            >
+              {isSubmitting && !isSuccess && (
+                <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+              )}
+              {isSuccess && (
+                <>
+                  <Check className="w-5 h-5 mr-2" /> Sukces
+                </>
+              )}
+              {!isSubmitting && !isSuccess && (
+                <>
+                  <Send className="w-5 h-5 mr-2" /> Utwórz zgłoszenie
+                </>
+              )}
+            </button>
           </div>
         </form>
       </div>

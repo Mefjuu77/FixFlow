@@ -288,7 +288,7 @@ const DashboardPage: React.FC = () => {
                   <p className="text-[13px] font-semibold text-gray-900 dark:text-white leading-snug truncate group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
                     {action.label}
                   </p>
-                  <p className="text-[11px] text-gray-400 dark:text-gray-500 mt-0.5 truncate">
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5 truncate">
                     {action.sub}
                   </p>
                 </div>
@@ -325,12 +325,12 @@ const DashboardPage: React.FC = () => {
                         <TicketIcon className="w-4 h-4" />
                       </div>
                       <div className="flex-1 min-w-0 mr-3">
-                        <p className="text-[13px] text-gray-700 dark:text-gray-200 truncate leading-snug group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                        <p className="text-[13px] font-medium text-gray-800 dark:text-gray-200 truncate leading-snug group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
                           <span className="font-bold text-gray-900 dark:text-white">#{ticket.id}</span>
                           <span className="mx-1.5 text-gray-300 dark:text-gray-600">·</span>
                           {ticket.title}
                         </p>
-                        <p className="text-[11px] text-gray-400 dark:text-gray-500 mt-0.5">
+                        <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
                           Aktualizacja: {dayjs(ticket.updated_at).fromNow()}
                         </p>
                       </div>

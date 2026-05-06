@@ -5,7 +5,7 @@ import api from '../api/axiosConfig';
 import { ticketService } from '../api/ticketService';
 import { Ticket, User } from '../types';
 import dayjs from 'dayjs';
-import { PlusCircle, Search, ChevronDown, ArrowUp, ArrowDown, UserMinus, Circle, CheckCircle2, XCircle, Loader2, Trash2 } from 'lucide-react';
+import { Plus, PlusCircle, Search, ChevronDown, ArrowUp, ArrowDown, UserMinus, Circle, CheckCircle2, XCircle, Loader2, Trash2 } from 'lucide-react';
 import useTitle from '../hooks/useTitle';
 import { getCategoryIcon, STATUS_LABELS, STATUS_STYLES, PRIORITY_LABELS, PRIORITY_ICONS } from '../utils/ticketConstants';
 import UserAvatar from '../components/UserAvatar';
@@ -393,9 +393,9 @@ const TicketsPage: React.FC = () => {
         </div>
         <Link
           to="/create-ticket"
-          className="inline-flex items-center px-5 py-2.5 text-white text-sm font-bold bg-blue-600 rounded-xl hover:bg-blue-700 shadow-lg shadow-blue-200 transition-all"
+          className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl shadow-sm hover:shadow-md shadow-blue-600/10 transition-all text-sm whitespace-nowrap"
         >
-          <PlusCircle size={18} className="mr-2" />
+          <Plus className="w-4 h-4" />
           Nowe zgłoszenie
         </Link>
       </div>
