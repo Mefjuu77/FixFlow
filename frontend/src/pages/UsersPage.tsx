@@ -27,10 +27,25 @@ const ROLE_LABELS: Record<string, string> = {
   ADMIN: 'Administrator',
 };
 
-const ROLE_LABELS_PLURAL: Record<string, string> = {
-  EMPLOYEE: 'Pracowników',
-  TECHNICIAN: 'Techników',
-  ADMIN: 'Administratorów',
+const getRolePlural = (role: string, count: number): string => {
+  if (count === 1) return ROLE_LABELS[role];
+  
+  const lastDigit = count % 10;
+  const lastTwoDigits = count % 100;
+  
+  const forms: Record<string, [string, string]> = {
+    EMPLOYEE: ['Pracownicy', 'Pracowników'],
+    TECHNICIAN: ['Technicy', 'Techników'],
+    ADMIN: ['Administratorzy', 'Administratorów'],
+  };
+  
+  const roleForms = forms[role];
+  if (!roleForms) return '';
+  
+  if (lastDigit >= 2 && lastDigit <= 4 && (lastTwoDigits < 10 || lastTwoDigits >= 20)) {
+    return roleForms[0];
+  }
+  return roleForms[1];
 };
 
 const ROLE_STYLES: Record<string, string> = {
@@ -130,8 +145,21 @@ const UsersPage: React.FC = () => {
     setRoleFilter('all');
   };
 
+  const getSortTooltip = (field: 'name' | 'email', label: string) => {
+    const isActive = sortConfig.key === field;
+    let sortLegend = '';
+    
+    if (!isActive) {
+      sortLegend = 'Sortuj A → Z';
+    } else {
+      sortLegend = sortConfig.direction === 'asc' ? 'Posortowane A → Z' : 'Posortowane Z → A';
+    }
+    
+    return `${label} • ${sortLegend}`;
+  };
+
   // Filter: search ∩ role
-  const filteredUsers = users
+  const filteredUsers = [...users]
     .filter(u => {
       if (roleFilter !== 'all' && u.role !== roleFilter) return false;
       if (searchQuery) {
@@ -294,7 +322,7 @@ const UsersPage: React.FC = () => {
               </div>
               <div className="min-w-0">
                 <p className="text-lg font-bold text-gray-900 dark:text-white leading-none">{roleCounts[role]}</p>
-                <p className="text-[11px] text-gray-500 dark:text-gray-400 mt-0.5 leading-tight">{ROLE_LABELS_PLURAL[role]}</p>
+                <p className="text-[11px] text-gray-500 dark:text-gray-400 mt-0.5 leading-tight">{getRolePlural(role, roleCounts[role])}</p>
               </div>
             </button>
           );
@@ -359,11 +387,17 @@ const UsersPage: React.FC = () => {
                   className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100/80 dark:hover:bg-gray-700/50 transition-colors group/th"
                   onClick={() => handleSort('name')}
                 >
-                  <div className="flex items-center gap-1">
+                  <div className="flex items-center gap-1 relative w-max">
                     Użytkownik
                     <span className={`transition-opacity duration-200 flex items-center ${sortConfig.key === 'name' ? 'opacity-100 text-blue-600' : 'opacity-0 group-hover/th:opacity-100 text-gray-400'}`}>
-                      {sortConfig.key === 'name' && sortConfig.direction === 'desc' ? <ArrowDown className="w-3.5 h-3.5" /> : <ArrowUp className="w-3.5 h-3.5" />}
+                      {sortConfig.key !== 'name' || sortConfig.direction === 'asc' ? <ArrowUp className="w-3.5 h-3.5" /> : <ArrowDown className="w-3.5 h-3.5" />}
                     </span>
+                    {/* Tooltip */}
+                    <div className="absolute top-full mt-2 -left-2 z-[60] pointer-events-none opacity-0 group-hover/th:opacity-100 transition-opacity duration-200">
+                      <div className="bg-[#24272f] text-white text-[11.5px] font-medium px-3 py-2 rounded shadow-lg w-max whitespace-nowrap normal-case tracking-normal text-left leading-snug">
+                        {getSortTooltip('name', 'Użytkownik')}
+                      </div>
+                    </div>
                   </div>
                 </th>
                 {/* Sortable: Email */}
@@ -371,11 +405,17 @@ const UsersPage: React.FC = () => {
                   className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100/80 dark:hover:bg-gray-700/50 transition-colors group/th"
                   onClick={() => handleSort('email')}
                 >
-                  <div className="flex items-center gap-1">
+                  <div className="flex items-center gap-1 relative w-max">
                     Email
                     <span className={`transition-opacity duration-200 flex items-center ${sortConfig.key === 'email' ? 'opacity-100 text-blue-600' : 'opacity-0 group-hover/th:opacity-100 text-gray-400'}`}>
-                      {sortConfig.key === 'email' && sortConfig.direction === 'desc' ? <ArrowDown className="w-3.5 h-3.5" /> : <ArrowUp className="w-3.5 h-3.5" />}
+                      {sortConfig.key !== 'email' || sortConfig.direction === 'asc' ? <ArrowUp className="w-3.5 h-3.5" /> : <ArrowDown className="w-3.5 h-3.5" />}
                     </span>
+                    {/* Tooltip */}
+                    <div className="absolute top-full mt-2 left-1/2 -translate-x-1/2 z-[60] pointer-events-none opacity-0 group-hover/th:opacity-100 transition-opacity duration-200">
+                      <div className="bg-[#24272f] text-white text-[11.5px] font-medium px-3 py-2 rounded shadow-lg w-max whitespace-nowrap normal-case tracking-normal text-left leading-snug">
+                        {getSortTooltip('email', 'Email')}
+                      </div>
+                    </div>
                   </div>
                 </th>
                 <th className="px-6 py-4 text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Rola</th>
@@ -482,13 +522,13 @@ const UsersPage: React.FC = () => {
       {/* ========== Modal: Tworzenie / Edycja ========== */}
       {isModalOpen && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 animate-in fade-in duration-200">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg mx-4 overflow-hidden">
-            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
-              <h2 className="text-lg font-bold text-gray-900">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-lg mx-4 overflow-hidden">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 dark:border-gray-700">
+              <h2 className="text-lg font-bold text-gray-900 dark:text-white">
                 {editUserId ? (focusPassword ? 'Resetuj hasło' : 'Edytuj użytkownika') : 'Nowy użytkownik'}
               </h2>
-              <button onClick={() => setIsModalOpen(false)} className="p-1.5 hover:bg-gray-100 rounded-lg transition-colors">
-                <X className="w-5 h-5 text-gray-500" />
+              <button onClick={() => setIsModalOpen(false)} className="p-1.5 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors">
+                <X className="w-5 h-5 text-gray-500 dark:text-gray-400" />
               </button>
             </div>
 
@@ -496,48 +536,48 @@ const UsersPage: React.FC = () => {
               {/* Imię i Nazwisko */}
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="text-xs font-bold text-gray-600 mb-1 block">Imię</label>
+                  <label className="text-xs font-bold text-gray-600 dark:text-gray-400 mb-1 block">Imię</label>
                   <input
                     type="text"
                     value={formData.first_name}
                     onChange={e => { setFormData({ ...formData, first_name: e.target.value }); if (formErrors.first_name) setFormErrors(p => ({ ...p, first_name: undefined })); }}
-                    className={`w-full px-3 py-2 border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 ${formErrors.first_name ? 'border-red-300 bg-red-50' : 'border-gray-200'}`}
+                    className={`w-full px-3 py-2 border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-900 dark:text-white ${formErrors.first_name ? 'border-red-300 dark:border-red-500/50 bg-red-50 dark:bg-red-500/10' : 'border-gray-200 dark:border-gray-700'}`}
                     placeholder="Jan"
                   />
-                  {formErrors.first_name && <p className="text-xs text-red-500 mt-1">{formErrors.first_name}</p>}
+                  {formErrors.first_name && <p className="text-xs text-red-500 dark:text-red-400 mt-1">{formErrors.first_name}</p>}
                 </div>
                 <div>
-                  <label className="text-xs font-bold text-gray-600 mb-1 block">Nazwisko</label>
+                  <label className="text-xs font-bold text-gray-600 dark:text-gray-400 mb-1 block">Nazwisko</label>
                   <input
                     type="text"
                     value={formData.last_name}
                     onChange={e => { setFormData({ ...formData, last_name: e.target.value }); if (formErrors.last_name) setFormErrors(p => ({ ...p, last_name: undefined })); }}
-                    className={`w-full px-3 py-2 border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 ${formErrors.last_name ? 'border-red-300 bg-red-50' : 'border-gray-200'}`}
+                    className={`w-full px-3 py-2 border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-900 dark:text-white ${formErrors.last_name ? 'border-red-300 dark:border-red-500/50 bg-red-50 dark:bg-red-500/10' : 'border-gray-200 dark:border-gray-700'}`}
                     placeholder="Kowalski"
                   />
-                  {formErrors.last_name && <p className="text-xs text-red-500 mt-1">{formErrors.last_name}</p>}
+                  {formErrors.last_name && <p className="text-xs text-red-500 dark:text-red-400 mt-1">{formErrors.last_name}</p>}
                 </div>
               </div>
 
               {/* Email */}
               <div>
-                <label className="text-xs font-bold text-gray-600 mb-1 block">Email</label>
+                <label className="text-xs font-bold text-gray-600 dark:text-gray-400 mb-1 block">Email</label>
                 <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 dark:text-gray-500" />
                   <input
                     type="email"
                     value={formData.email}
                     onChange={e => { setFormData({ ...formData, email: e.target.value }); if (formErrors.email) setFormErrors(p => ({ ...p, email: undefined })); }}
-                    className={`w-full pl-10 pr-3 py-2 border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 ${formErrors.email ? 'border-red-300 bg-red-50' : 'border-gray-200'}`}
+                    className={`w-full pl-10 pr-3 py-2 border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-900 dark:text-white ${formErrors.email ? 'border-red-300 dark:border-red-500/50 bg-red-50 dark:bg-red-500/10' : 'border-gray-200 dark:border-gray-700'}`}
                     placeholder="jan.kowalski@firma.pl"
                   />
                 </div>
-                {formErrors.email && <p className="text-xs text-red-500 mt-1">{formErrors.email}</p>}
+                {formErrors.email && <p className="text-xs text-red-500 dark:text-red-400 mt-1">{formErrors.email}</p>}
               </div>
 
               {/* Rola */}
               <div>
-                <label className="text-xs font-bold text-gray-600 mb-1 block">Rola</label>
+                <label className="text-xs font-bold text-gray-600 dark:text-gray-400 mb-1 block">Rola</label>
                 <div className="grid grid-cols-3 gap-2">
                   {(['EMPLOYEE', 'TECHNICIAN', 'ADMIN'] as const).map(r => (
                     <button
@@ -546,8 +586,8 @@ const UsersPage: React.FC = () => {
                       onClick={() => setFormData({ ...formData, role: r })}
                       className={`flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl text-sm font-semibold border transition-all ${
                         formData.role === r
-                          ? `${ROLE_STYLES[r]} ring-2 ring-offset-1 ${r === 'ADMIN' ? 'ring-violet-400' : r === 'TECHNICIAN' ? 'ring-blue-400' : 'ring-gray-400'}`
-                          : 'border-gray-200 text-gray-500 hover:bg-gray-50'
+                          ? `${ROLE_STYLES[r]} ring-2 ring-offset-1 dark:ring-offset-gray-800 ${r === 'ADMIN' ? 'ring-violet-400 dark:ring-violet-500' : r === 'TECHNICIAN' ? 'ring-blue-400 dark:ring-blue-500' : 'ring-gray-400 dark:ring-gray-500'}`
+                          : 'border-gray-200 dark:border-gray-700 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700'
                       }`}
                     >
                       {ROLE_ICONS[r]}
@@ -559,34 +599,34 @@ const UsersPage: React.FC = () => {
 
               {/* Hasło */}
               <div>
-                <label className="text-xs font-bold text-gray-600 mb-1 block">
-                  Hasło {editUserId && <span className="font-normal text-gray-400">(zostaw puste aby nie zmieniać)</span>}
+                <label className="text-xs font-bold text-gray-600 dark:text-gray-400 mb-1 block">
+                  Hasło {editUserId && <span className="font-normal text-gray-400 dark:text-gray-500">(zostaw puste aby nie zmieniać)</span>}
                 </label>
                 <div className="relative">
                   <input
                     type={showPassword ? 'text' : 'password'}
                     value={formData.password}
                     onChange={e => { setFormData({ ...formData, password: e.target.value }); if (formErrors.password) setFormErrors(p => ({ ...p, password: undefined })); }}
-                    className={`w-full px-3 py-2 pr-10 border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 ${formErrors.password ? 'border-red-300 bg-red-50' : focusPassword ? 'border-amber-300 bg-amber-50/30' : 'border-gray-200'}`}
+                    className={`w-full px-3 py-2 pr-10 border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-900 dark:text-white ${formErrors.password ? 'border-red-300 dark:border-red-500/50 bg-red-50 dark:bg-red-500/10' : focusPassword ? 'border-amber-300 dark:border-amber-500/50 bg-amber-50/30 dark:bg-amber-500/10' : 'border-gray-200 dark:border-gray-700'}`}
                     placeholder={editUserId ? '••••••••' : 'Min. 6 znaków'}
                     autoFocus={focusPassword}
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300"
                   >
                     {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </button>
                 </div>
-                {formErrors.password && <p className="text-xs text-red-500 mt-1">{formErrors.password}</p>}
+                {formErrors.password && <p className="text-xs text-red-500 dark:text-red-400 mt-1">{formErrors.password}</p>}
               </div>
             </div>
 
-            <div className="px-6 py-4 border-t border-gray-100 flex justify-end gap-3">
+            <div className="px-6 py-4 border-t border-gray-100 dark:border-gray-700 flex justify-end gap-3">
               <button
                 onClick={() => setIsModalOpen(false)}
-                className="px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-100 rounded-xl transition-colors"
+                className="px-4 py-2 text-sm font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-xl transition-colors"
               >
                 Anuluj
               </button>
@@ -606,19 +646,19 @@ const UsersPage: React.FC = () => {
       {/* ========== Modal: Potwierdzenie usunięcia ========== */}
       {deleteTarget && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 animate-in fade-in duration-200">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm mx-4 p-6 text-center">
-            <div className="w-14 h-14 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <Trash2 className="w-7 h-7 text-red-600" />
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-sm mx-4 p-6 text-center">
+            <div className="w-14 h-14 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
+              <Trash2 className="w-7 h-7 text-red-600 dark:text-red-400" />
             </div>
-            <h3 className="text-lg font-bold text-gray-900 mb-1">Usunąć użytkownika?</h3>
-            <p className="text-sm text-gray-500 mb-6">
-              Czy na pewno chcesz usunąć <span className="font-semibold text-gray-700">{deleteTarget.first_name} {deleteTarget.last_name}</span>?
+            <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-1">Usunąć użytkownika?</h3>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">
+              Czy na pewno chcesz usunąć <span className="font-semibold text-gray-700 dark:text-gray-200">{deleteTarget.first_name} {deleteTarget.last_name}</span>?
               <br />Tej operacji nie można cofnąć.
             </p>
             <div className="flex gap-3 justify-center">
               <button
                 onClick={() => setDeleteTarget(null)}
-                className="px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-100 rounded-xl transition-colors"
+                className="px-4 py-2 text-sm font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-xl transition-colors"
               >
                 Anuluj
               </button>
