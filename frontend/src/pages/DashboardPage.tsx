@@ -109,6 +109,7 @@ const DashboardPage: React.FC = () => {
     month: dayjs().month(),
   });
   const [customStart, setCustomStart] = useState<dayjs.Dayjs | null>(null);
+  const [hoverDate, setHoverDate] = useState<dayjs.Dayjs | null>(null);
   const datePickerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -159,12 +160,21 @@ const DashboardPage: React.FC = () => {
     setDateRange({ start: dayjs().subtract(days - 1, 'day').startOf('day'), end: dayjs().endOf('day') });
     setShowDatePicker(false);
     setCustomStart(null);
+    setHoverDate(null);
+  };
+
+  const applyToday = () => {
+    setDateRange({ start: dayjs().startOf('day'), end: dayjs().endOf('day') });
+    setShowDatePicker(false);
+    setCustomStart(null);
+    setHoverDate(null);
   };
 
   const applyThisMonth = () => {
     setDateRange({ start: dayjs().startOf('month'), end: dayjs().endOf('day') });
     setShowDatePicker(false);
     setCustomStart(null);
+    setHoverDate(null);
   };
 
   const applyLastMonth = () => {
@@ -172,9 +182,11 @@ const DashboardPage: React.FC = () => {
     setDateRange({ start: last.startOf('month'), end: last.endOf('month') });
     setShowDatePicker(false);
     setCustomStart(null);
+    setHoverDate(null);
   };
 
   const handleDayClick = (d: dayjs.Dayjs) => {
+    if (d.isAfter(dayjs(), 'day')) return; // blokuj przyszłe daty
     if (!customStart) {
       setCustomStart(d);
     } else {
@@ -182,6 +194,7 @@ const DashboardPage: React.FC = () => {
       setDateRange({ start: s.startOf('day'), end: e.endOf('day') });
       setShowDatePicker(false);
       setCustomStart(null);
+      setHoverDate(null);
     }
   };
 
@@ -1313,7 +1326,10 @@ const DashboardPage: React.FC = () => {
               {/* Dropdown kalendarza */}
               {showDatePicker && (
                 <div className="absolute top-full right-0 mt-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-xl z-50 p-3 flex flex-col md:flex-row gap-4 animate-in fade-in slide-in-from-top-2">
+                  {/* Presety */}
                   <div className="flex flex-col gap-1 min-w-[160px] pr-4 md:border-r border-gray-100 dark:border-gray-700">
+                    <button onClick={applyToday} className="text-left px-4 py-2 text-sm font-medium text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-500/10 rounded-xl transition-colors font-semibold">Dzisiaj</button>
+                    <div className="h-px bg-gray-100 dark:bg-gray-700 my-1"></div>
                     <button onClick={() => applyPreset(7)} className="text-left px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-xl transition-colors">Ostatnie 7 dni</button>
                     <button onClick={() => applyPreset(14)} className="text-left px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-xl transition-colors">Ostatnie 14 dni</button>
                     <button onClick={() => applyPreset(30)} className="text-left px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-xl transition-colors">Ostatnie 30 dni</button>
@@ -1324,27 +1340,55 @@ const DashboardPage: React.FC = () => {
 
                   {/* Mini kalendarz */}
                   <div className="w-64">
-                    <div className="flex justify-between items-center mb-4 px-2">
-                      <button onClick={() => setPickerView(p => p.month === 0 ? { year: p.year - 1, month: 11 } : { ...p, month: p.month - 1 })} className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full text-gray-600 dark:text-gray-400">
-                        <ChevronDown className="w-5 h-5 rotate-90" />
+                    {/* Nawigacja: rok + miesiąc */}
+                    <div className="flex justify-between items-center mb-3 px-1">
+                      {/* Poprzedni rok */}
+                      <button
+                        onClick={() => setPickerView(p => ({ ...p, year: p.year - 1 }))}
+                        className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full text-gray-400 dark:text-gray-500 text-xs font-bold"
+                        title="Poprzedni rok"
+                      >
+                        «
                       </button>
-                      <span className="font-semibold text-gray-900 dark:text-white text-sm">
+                      {/* Poprzedni miesiąc */}
+                      <button onClick={() => setPickerView(p => p.month === 0 ? { year: p.year - 1, month: 11 } : { ...p, month: p.month - 1 })} className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full text-gray-600 dark:text-gray-400">
+                        <ChevronDown className="w-4 h-4 rotate-90" />
+                      </button>
+                      <span className="font-semibold text-gray-900 dark:text-white text-sm select-none">
                         {plMonthsFull[pickerView.month]} {pickerView.year}
                       </span>
-                      <button onClick={() => setPickerView(p => p.month === 11 ? { year: p.year + 1, month: 0 } : { ...p, month: p.month + 1 })} className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full text-gray-600 dark:text-gray-400">
-                        <ChevronDown className="w-5 h-5 -rotate-90" />
+                      {/* Następny miesiąc */}
+                      <button
+                        onClick={() => setPickerView(p => p.month === 11 ? { year: p.year + 1, month: 0 } : { ...p, month: p.month + 1 })}
+                        disabled={pickerView.year === dayjs().year() && pickerView.month >= dayjs().month()}
+                        className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full text-gray-600 dark:text-gray-400 disabled:opacity-30 disabled:cursor-not-allowed"
+                      >
+                        <ChevronDown className="w-4 h-4 -rotate-90" />
+                      </button>
+                      {/* Następny rok */}
+                      <button
+                        onClick={() => setPickerView(p => ({ ...p, year: p.year + 1 }))}
+                        disabled={pickerView.year >= dayjs().year()}
+                        className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full text-gray-400 dark:text-gray-500 text-xs font-bold disabled:opacity-30 disabled:cursor-not-allowed"
+                        title="Następny rok"
+                      >
+                        »
                       </button>
                     </div>
+
+                    {/* Dni tygodnia */}
                     <div className="grid grid-cols-7 gap-1 mb-1">
                       {['Pn', 'Wt', 'Śr', 'Cz', 'Pt', 'Sb', 'Nd'].map(d => (
                         <div key={d} className="text-center text-xs font-medium text-gray-400 py-1">{d}</div>
                       ))}
                     </div>
+
+                    {/* Siatka dni */}
                     <div className="grid grid-cols-7 gap-1">
                       {(() => {
+                        const today = dayjs();
                         const firstDay = dayjs().year(pickerView.year).month(pickerView.month).startOf('month');
                         const daysInMonth = firstDay.daysInMonth();
-                        // day() zwraca 0 dla niedzieli, chcemy 1 dla pon, 7 dla nd
                         const startPadding = firstDay.day() === 0 ? 6 : firstDay.day() - 1;
 
                         const days = [];
@@ -1354,52 +1398,72 @@ const DashboardPage: React.FC = () => {
 
                         for (let i = 1; i <= daysInMonth; i++) {
                           const d = dayjs().year(pickerView.year).month(pickerView.month).date(i);
+                          const isFuture = d.isAfter(today, 'day');
+                          const isToday = d.isSame(today, 'day');
 
+                          // Oblicz zaznaczenie i zakres
                           let isSelected = false;
                           let isInRange = false;
                           let isStart = false;
                           let isEnd = false;
 
-                          if (customStart) {
-                            if (d.isSame(customStart, 'day')) isSelected = true;
-                          } else {
-                            if (d.isSame(dateRange.start, 'day')) {
-                              isSelected = true; isStart = true;
+                          // Preview hover range gdy wybrano customStart
+                          if (customStart && !isFuture) {
+                            if (d.isSame(customStart, 'day')) { isSelected = true; isStart = true; }
+                            if (hoverDate) {
+                              const [hStart, hEnd] = hoverDate.isBefore(customStart) ? [hoverDate, customStart] : [customStart, hoverDate];
+                              if (d.isSame(hEnd, 'day')) { isSelected = true; isEnd = true; }
+                              if (d.isAfter(hStart, 'day') && d.isBefore(hEnd, 'day')) isInRange = true;
                             }
-                            if (d.isSame(dateRange.end, 'day')) {
-                              isSelected = true; isEnd = true;
-                            }
-                            if (d.isAfter(dateRange.start, 'day') && d.isBefore(dateRange.end, 'day')) {
-                              isInRange = true;
-                            }
-                            if (d.isSame(dateRange.start, 'day') && d.isSame(dateRange.end, 'day')) {
-                              isStart = true; isEnd = true;
-                            }
+                          } else if (!customStart) {
+                            if (d.isSame(dateRange.start, 'day')) { isSelected = true; isStart = true; }
+                            if (d.isSame(dateRange.end, 'day')) { isSelected = true; isEnd = true; }
+                            if (d.isAfter(dateRange.start, 'day') && d.isBefore(dateRange.end, 'day')) isInRange = true;
+                            if (d.isSame(dateRange.start, 'day') && d.isSame(dateRange.end, 'day')) { isStart = true; isEnd = true; }
                           }
 
-                          const baseClass = "h-8 flex items-center justify-center text-sm rounded-lg transition-colors cursor-pointer ";
-                          let stateClass = "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700";
+                          let cls = "h-8 relative flex items-center justify-center text-sm rounded-lg transition-colors ";
 
-                          if (isSelected) {
-                            stateClass = "bg-blue-600 text-white font-bold";
-                            if (!customStart && isStart && !isEnd) stateClass += " rounded-r-none";
-                            if (!customStart && !isStart && isEnd) stateClass += " rounded-l-none";
+                          if (isFuture) {
+                            cls += "text-gray-300 dark:text-gray-600 cursor-not-allowed";
+                          } else if (isSelected) {
+                            cls += "bg-blue-600 text-white font-bold cursor-pointer z-10";
+                            if (isStart && !isEnd) cls += " rounded-r-none";
+                            if (!isStart && isEnd) cls += " rounded-l-none";
                           } else if (isInRange) {
-                            stateClass = "bg-blue-50 dark:bg-blue-900/30 text-blue-800 dark:text-blue-200 rounded-none";
+                            cls += "bg-blue-50 dark:bg-blue-900/30 text-blue-800 dark:text-blue-200 rounded-none cursor-pointer";
+                          } else {
+                            cls += "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer";
                           }
 
                           days.push(
-                            <div key={`day-${i}`} onClick={() => handleDayClick(d)} className={baseClass + stateClass}>
+                            <div
+                              key={`day-${i}`}
+                              onClick={() => handleDayClick(d)}
+                              onMouseEnter={() => customStart && !isFuture && setHoverDate(d)}
+                              onMouseLeave={() => customStart && setHoverDate(null)}
+                              className={cls}
+                            >
                               {i}
+                              {/* Marker dzisiaj */}
+                              {isToday && !isSelected && (
+                                <span className="absolute bottom-0.5 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-blue-500"></span>
+                              )}
                             </div>
                           );
                         }
                         return days;
                       })()}
                     </div>
-                    {customStart && (
+
+                    {/* Podpowiedź wyboru zakresu */}
+                    {customStart ? (
                       <p className="text-xs text-center text-blue-600 dark:text-blue-400 mt-3 animate-pulse">
                         Wybierz datę końcową...
+                      </p>
+                    ) : (
+                      <p className="text-xs text-center text-gray-400 dark:text-gray-500 mt-3">
+                        Kliknij dwa razy, aby wybrać zakres
                       </p>
                     )}
                   </div>

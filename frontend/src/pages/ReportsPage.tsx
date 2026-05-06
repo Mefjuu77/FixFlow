@@ -26,7 +26,7 @@ interface PreviewRow {
   created_at: string; comments_count: number; work_minutes: number;
 }
 
-type DatePreset = 'week' | 'month' | 'quarter' | 'year' | 'custom';
+type DatePreset = 'today' | 'week' | 'month' | 'quarter' | 'year' | 'custom';
 
 
 
@@ -200,6 +200,7 @@ const ReportsPage: React.FC = () => {
   useEffect(() => {
     const now = dayjs();
     switch (datePreset) {
+      case 'today': setDateFrom(now.format('YYYY-MM-DD')); setDateTo(now.format('YYYY-MM-DD')); break;
       case 'week': setDateFrom(now.subtract(7, 'day').format('YYYY-MM-DD')); setDateTo(now.format('YYYY-MM-DD')); break;
       case 'month': setDateFrom(now.subtract(1, 'month').format('YYYY-MM-DD')); setDateTo(now.format('YYYY-MM-DD')); break;
       case 'quarter': setDateFrom(now.subtract(3, 'month').format('YYYY-MM-DD')); setDateTo(now.format('YYYY-MM-DD')); break;
@@ -301,6 +302,7 @@ const ReportsPage: React.FC = () => {
   }));
 
   const presetButtons: { key: DatePreset; label: string }[] = [
+    { key: 'today', label: 'Dzisiaj' },
     { key: 'week', label: '7 Dni' },
     { key: 'month', label: '30 Dni' },
     { key: 'quarter', label: 'Kwartał' },
@@ -383,11 +385,22 @@ const ReportsPage: React.FC = () => {
                       <DayPicker
                         mode="single"
                         selected={dateFrom ? new Date(dateFrom) : undefined}
-                        onSelect={(date) => { if (date) { setDateFrom(dayjs(date).format('YYYY-MM-DD')); setDatePreset('custom'); setShowFromCal(false); } }}
+                        onSelect={(date) => {
+                          if (date) {
+                            const newFrom = dayjs(date).format('YYYY-MM-DD');
+                            setDateFrom(newFrom);
+                            setDatePreset('custom');
+                            setShowFromCal(false);
+                            // Auto-korekta: jeśli dateTo jest wcześniejsza niż nowa dateFrom, zamień
+                            if (dateTo && newFrom > dateTo) {
+                              setDateTo(newFrom);
+                            }
+                          }
+                        }}
                         locale={pl}
                         captionLayout="dropdown"
                         startMonth={new Date(2020, 0)}
-                        endMonth={new Date(new Date().getFullYear() + 1, 11)}
+                        endMonth={new Date()}
                         components={calendarComponents}
                         modifiers={{
                           other: dateTo ? new Date(dateTo) : undefined,
@@ -421,11 +434,22 @@ const ReportsPage: React.FC = () => {
                       <DayPicker
                         mode="single"
                         selected={dateTo ? new Date(dateTo) : undefined}
-                        onSelect={(date) => { if (date) { setDateTo(dayjs(date).format('YYYY-MM-DD')); setDatePreset('custom'); setShowToCal(false); } }}
+                        onSelect={(date) => {
+                          if (date) {
+                            const newTo = dayjs(date).format('YYYY-MM-DD');
+                            setDateTo(newTo);
+                            setDatePreset('custom');
+                            setShowToCal(false);
+                            // Auto-korekta: jeśli dateFrom jest późniejsza niż nowe dateTo, zamień
+                            if (dateFrom && newTo < dateFrom) {
+                              setDateFrom(newTo);
+                            }
+                          }
+                        }}
                         locale={pl}
                         captionLayout="dropdown"
                         startMonth={new Date(2020, 0)}
-                        endMonth={new Date(new Date().getFullYear() + 1, 11)}
+                        endMonth={new Date()}
                         components={calendarComponents}
                         modifiers={{
                           other: dateFrom ? new Date(dateFrom) : undefined,
