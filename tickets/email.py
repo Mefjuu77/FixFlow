@@ -17,7 +17,7 @@ STATUS_COLORS = {
     'NOWE': '#2563EB',
     'W_TOKU': '#D97706',
     'ROZWIAZANE': '#16A34A',
-    'ZAMKNIETE': '#6B7280',
+    'ZAMKNIETE': '#14B8A6',
 }
 
 STATUS_LABELS = {
@@ -27,10 +27,23 @@ STATUS_LABELS = {
     'ZAMKNIETE': 'Zamknięte',
 }
 
+STATUS_BADGE_COLORS = {
+    'NOWE': ('#DBEAFE', '#1E40AF'),
+    'W_TOKU': ('#FEF3C7', '#92400E'),
+    'ROZWIAZANE': ('#DCFCE7', '#166534'),
+    'ZAMKNIETE': ('#CCFBF1', '#115E59'),
+}
+
 PRIORITY_COLORS = {
     'WYSOKI': '#DC2626',
     'NORMALNY': '#2563EB',
     'NISKI': '#6B7280',
+}
+
+PRIORITY_BADGE_COLORS = {
+    'WYSOKI': ('#FEE2E2', '#991B1B'),
+    'NORMALNY': ('#DBEAFE', '#1E40AF'),
+    'NISKI': ('#F3F4F6', '#1F2937'),
 }
 
 PRIORITY_LABELS = {
@@ -44,11 +57,11 @@ PRIORITY_LABELS = {
 # Budowanie szablonu HTML
 # ============================================================
 
-def _badge(label, color):
+def _badge(label, bg_color, text_color):
     """Generuje inline badge HTML."""
     return (
         f'<span style="display:inline-block;padding:3px 10px;border-radius:20px;'
-        f'font-size:12px;font-weight:600;color:#fff;background-color:{color};'
+        f'font-size:12px;font-weight:600;color:{text_color};background-color:{bg_color};'
         f'letter-spacing:0.3px;">{label}</span>'
     )
 
@@ -70,9 +83,9 @@ def _build_html_email(title, greeting, body_html, ticket=None, accent_color='#25
 
     if ticket:
         priority_label = PRIORITY_LABELS.get(getattr(ticket, 'priority', ''), '—')
-        priority_color = PRIORITY_COLORS.get(getattr(ticket, 'priority', ''), '#6B7280')
+        priority_bg, priority_text = PRIORITY_BADGE_COLORS.get(getattr(ticket, 'priority', ''), ('#F3F4F6', '#1F2937'))
         status_label = STATUS_LABELS.get(getattr(ticket, 'status', ''), '—')
-        status_color = STATUS_COLORS.get(getattr(ticket, 'status', ''), '#6B7280')
+        status_bg, status_text = STATUS_BADGE_COLORS.get(getattr(ticket, 'status', ''), ('#F3F4F6', '#1F2937'))
 
         creator_name = ''
         if hasattr(ticket, 'creator') and ticket.creator:
@@ -103,11 +116,11 @@ def _build_html_email(title, greeting, body_html, ticket=None, accent_color='#25
                       <tr>
                         <td width="50%" style="vertical-align:top;padding-right:8px;">
                           <div style="font-size:11px;color:#94A3B8;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;">Status</div>
-                          {_badge(status_label, status_color)}
+                          {_badge(status_label, status_bg, status_text)}
                         </td>
                         <td width="50%" style="vertical-align:top;padding-left:8px;">
                           <div style="font-size:11px;color:#94A3B8;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;">Priorytet</div>
-                          {_badge(priority_label, priority_color)}
+                          {_badge(priority_label, priority_bg, priority_text)}
                         </td>
                       </tr>
                     </table>
@@ -264,18 +277,18 @@ class TicketEmailAccumulator:
             old_s, new_s = self._status_change
             old_label = STATUS_LABELS.get(old_s, old_s)
             new_label = STATUS_LABELS.get(new_s, new_s)
-            old_color = STATUS_COLORS.get(old_s, '#6B7280')
-            new_color = STATUS_COLORS.get(new_s, '#6B7280')
+            old_bg, old_text = STATUS_BADGE_COLORS.get(old_s, ('#F3F4F6', '#1F2937'))
+            new_bg, new_text = STATUS_BADGE_COLORS.get(new_s, ('#F3F4F6', '#1F2937'))
 
             sections_html += (
                 f'<div style="margin:12px 0;padding:14px 18px;background-color:#F8FAFC;'
                 f'border-radius:10px;border:1px solid #E2E8F0;">'
                 f'<div style="font-size:11px;color:#94A3B8;font-weight:600;text-transform:uppercase;'
                 f'letter-spacing:0.5px;margin-bottom:8px;">Zmiana statusu</div>'
-                f'{_badge(old_label, old_color)}'
+                f'{_badge(old_label, old_bg, old_text)}'
                 f'<span style="display:inline-block;margin:0 10px;color:#94A3B8;font-size:16px;'
                 f'vertical-align:middle;">&rarr;</span>'
-                f'{_badge(new_label, new_color)}'
+                f'{_badge(new_label, new_bg, new_text)}'
                 f'</div>'
             )
             sections_plain += f'Zmiana statusu: {old_label} → {new_label}\n'
@@ -514,14 +527,15 @@ def send_status_change_notification(ticket, old_status, new_status):
     """
     old_label = STATUS_LABELS.get(old_status, old_status)
     new_label = STATUS_LABELS.get(new_status, new_status)
-    old_color = STATUS_COLORS.get(old_status, '#6B7280')
-    new_color = STATUS_COLORS.get(new_status, '#6B7280')
+    old_bg, old_text = STATUS_BADGE_COLORS.get(old_status, ('#F3F4F6', '#1F2937'))
+    new_bg, new_text = STATUS_BADGE_COLORS.get(new_status, ('#F3F4F6', '#1F2937'))
+    new_accent = STATUS_COLORS.get(new_status, '#2563EB')
 
     status_change_html = (
         f'<div style="margin:16px 0;padding:16px 20px;background-color:#F8FAFC;border-radius:10px;border:1px solid #E2E8F0;text-align:center;">'
-        f'  {_badge(old_label, old_color)}'
+        f'  {_badge(old_label, old_bg, old_text)}'
         f'  <span style="display:inline-block;margin:0 12px;color:#94A3B8;font-size:18px;vertical-align:middle;">&rarr;</span>'
-        f'  {_badge(new_label, new_color)}'
+        f'  {_badge(new_label, new_bg, new_text)}'
         f'</div>'
     )
 
@@ -542,7 +556,7 @@ def send_status_change_notification(ticket, old_status, new_status):
                 f'{status_change_html}'
             ),
             ticket=ticket,
-            accent_color=new_color,
+            accent_color=new_accent,
         )
         _send_threaded_email(
             f'[FixFlow] #{ticket.id}: {ticket.title}',
@@ -566,7 +580,7 @@ def send_status_change_notification(ticket, old_status, new_status):
                 f'{status_change_html}'
             ),
             ticket=ticket,
-            accent_color=new_color,
+            accent_color=new_accent,
         )
         _send_threaded_email(
             f'[FixFlow] #{ticket.id}: {ticket.title}',
@@ -818,7 +832,7 @@ def send_auto_closed_notification(ticket):
             f'Jeśli problem nadal występuje, możesz utworzyć nowe zgłoszenie w panelu FixFlow.'
         ),
         ticket=ticket,
-        accent_color='#6B7280',
+        accent_color='#14B8A6',
     )
     _send_threaded_email(
         f'[FixFlow] #{ticket.id}: {ticket.title}',
