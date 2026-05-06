@@ -15,6 +15,10 @@ import {
   Mail,
   Eye,
   EyeOff,
+  KeyRound,
+  ArrowUp,
+  ArrowDown,
+  Users,
 } from 'lucide-react';
 
 const ROLE_LABELS: Record<string, string> = {
@@ -23,16 +27,34 @@ const ROLE_LABELS: Record<string, string> = {
   ADMIN: 'Administrator',
 };
 
+const ROLE_LABELS_PLURAL: Record<string, string> = {
+  EMPLOYEE: 'Pracowników',
+  TECHNICIAN: 'Techników',
+  ADMIN: 'Administratorów',
+};
+
 const ROLE_STYLES: Record<string, string> = {
-  EMPLOYEE: 'bg-gray-100 text-gray-700 border-gray-200',
-  TECHNICIAN: 'bg-blue-50 text-blue-700 border-blue-200',
-  ADMIN: 'bg-violet-50 text-violet-700 border-violet-200',
+  EMPLOYEE: 'bg-gray-100 dark:bg-gray-700/50 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-gray-600',
+  TECHNICIAN: 'bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400 border-blue-200 dark:border-blue-800/60',
+  ADMIN: 'bg-violet-50 dark:bg-violet-900/20 text-violet-700 dark:text-violet-400 border-violet-200 dark:border-violet-800/60',
+};
+
+const ROLE_CARD_STYLES: Record<string, { bg: string; border: string; icon: string }> = {
+  EMPLOYEE: { bg: 'bg-gray-50 dark:bg-gray-800', border: 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600', icon: 'text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-gray-700/50' },
+  TECHNICIAN: { bg: 'bg-blue-50/50 dark:bg-blue-900/20', border: 'border-blue-200 dark:border-blue-800 hover:border-blue-300 dark:hover:border-blue-700', icon: 'text-blue-600 dark:text-blue-400 bg-blue-100 dark:bg-blue-900/50' },
+  ADMIN: { bg: 'bg-violet-50/50 dark:bg-violet-900/20', border: 'border-violet-200 dark:border-violet-800 hover:border-violet-300 dark:hover:border-violet-700', icon: 'text-violet-600 dark:text-violet-400 bg-violet-100 dark:bg-violet-900/50' },
 };
 
 const ROLE_ICONS: Record<string, React.ReactNode> = {
   EMPLOYEE: <UserIcon className="w-3.5 h-3.5" />,
   TECHNICIAN: <Wrench className="w-3.5 h-3.5" />,
   ADMIN: <Shield className="w-3.5 h-3.5" />,
+};
+
+const ROLE_ICONS_LG: Record<string, React.ReactNode> = {
+  EMPLOYEE: <UserIcon className="w-4.5 h-4.5" />,
+  TECHNICIAN: <Wrench className="w-4.5 h-4.5" />,
+  ADMIN: <Shield className="w-4.5 h-4.5" />,
 };
 
 interface UserForm {
@@ -43,6 +65,9 @@ interface UserForm {
   password: string;
 }
 
+type SortField = 'name' | 'email';
+type SortDirection = 'asc' | 'desc';
+
 const emptyForm: UserForm = { email: '', first_name: '', last_name: '', role: 'EMPLOYEE', password: '' };
 
 const UsersPage: React.FC = () => {
@@ -50,6 +75,8 @@ const UsersPage: React.FC = () => {
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
+  const [roleFilter, setRoleFilter] = useState<string>('all');
+  const [sortConfig, setSortConfig] = useState<{ key: SortField; direction: SortDirection }>({ key: 'name', direction: 'asc' });
 
   // Modal
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -58,6 +85,7 @@ const UsersPage: React.FC = () => {
   const [formErrors, setFormErrors] = useState<Partial<Record<keyof UserForm, string>>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [focusPassword, setFocusPassword] = useState(false);
 
   // Delete
   const [deleteTarget, setDeleteTarget] = useState<User | null>(null);
@@ -87,15 +115,52 @@ const UsersPage: React.FC = () => {
     }
   }, [location.state]);
 
-  const filteredUsers = users.filter(u => {
-    const q = searchQuery.toLowerCase();
-    return (
-      u.email.toLowerCase().includes(q) ||
-      u.first_name.toLowerCase().includes(q) ||
-      u.last_name.toLowerCase().includes(q) ||
-      ROLE_LABELS[u.role]?.toLowerCase().includes(q)
-    );
-  });
+  // Role counts
+  const roleCounts = {
+    all: users.length,
+    EMPLOYEE: users.filter(u => u.role === 'EMPLOYEE').length,
+    TECHNICIAN: users.filter(u => u.role === 'TECHNICIAN').length,
+    ADMIN: users.filter(u => u.role === 'ADMIN').length,
+  };
+
+  const hasActiveFilters = searchQuery !== '' || roleFilter !== 'all';
+
+  const clearFilters = () => {
+    setSearchQuery('');
+    setRoleFilter('all');
+  };
+
+  // Filter: search ∩ role
+  const filteredUsers = users
+    .filter(u => {
+      if (roleFilter !== 'all' && u.role !== roleFilter) return false;
+      if (searchQuery) {
+        const q = searchQuery.toLowerCase();
+        return (
+          u.email.toLowerCase().includes(q) ||
+          u.first_name.toLowerCase().includes(q) ||
+          u.last_name.toLowerCase().includes(q) ||
+          ROLE_LABELS[u.role]?.toLowerCase().includes(q)
+        );
+      }
+      return true;
+    })
+    .sort((a, b) => {
+      const dir = sortConfig.direction === 'asc' ? 1 : -1;
+      if (sortConfig.key === 'name') {
+        const nameA = `${a.first_name} ${a.last_name}`.toLowerCase();
+        const nameB = `${b.first_name} ${b.last_name}`.toLowerCase();
+        return nameA.localeCompare(nameB, 'pl') * dir;
+      }
+      return a.email.localeCompare(b.email, 'pl') * dir;
+    });
+
+  const handleSort = (field: SortField) => {
+    setSortConfig(prev => ({
+      key: field,
+      direction: prev.key === field && prev.direction === 'asc' ? 'desc' : 'asc',
+    }));
+  };
 
   // ---------- Modal ----------
   const openCreateModal = () => {
@@ -103,6 +168,7 @@ const UsersPage: React.FC = () => {
     setFormData(emptyForm);
     setFormErrors({});
     setShowPassword(false);
+    setFocusPassword(false);
     setIsModalOpen(true);
   };
 
@@ -111,6 +177,16 @@ const UsersPage: React.FC = () => {
     setFormData({ email: user.email, first_name: user.first_name, last_name: user.last_name, role: user.role, password: '' });
     setFormErrors({});
     setShowPassword(false);
+    setFocusPassword(false);
+    setIsModalOpen(true);
+  };
+
+  const openResetPasswordModal = (user: User) => {
+    setEditUserId(user.id);
+    setFormData({ email: user.email, first_name: user.first_name, last_name: user.last_name, role: user.role, password: '' });
+    setFormErrors({});
+    setShowPassword(true);
+    setFocusPassword(true);
     setIsModalOpen(true);
   };
 
@@ -186,56 +262,166 @@ const UsersPage: React.FC = () => {
 
   return (
     <div className="w-full space-y-6 animate-in fade-in duration-500">
-      {/* Nagłówek */}
+      {/* ============ Header ============ */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900 tracking-tight">Zarządzanie użytkownikami</h1>
-          <p className="mt-1 text-gray-500">
-            {users.length} {users.length === 1 ? 'użytkownik' : (users.length < 5 ? 'użytkowników' : 'użytkowników')} w systemie
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Zarządzanie użytkownikami</h1>
+          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+            {users.length} {users.length === 1 ? 'użytkownik' : 'użytkowników'} w systemie
           </p>
         </div>
         <button
           onClick={openCreateModal}
-          className="inline-flex items-center px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl text-sm shadow-lg shadow-blue-200 transition-all"
+          className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl shadow-sm hover:shadow-md shadow-blue-600/10 transition-all text-sm whitespace-nowrap"
         >
-          <Plus className="w-4 h-4 mr-2" /> Nowy użytkownik
+          <Plus className="w-4 h-4" /> Nowy użytkownik
         </button>
       </div>
 
-      {/* Wyszukiwarka */}
-      <div className="relative max-w-md">
-        <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-        <input
-          type="text"
-          placeholder="Szukaj po imieniu, nazwisku, email lub roli..."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          className="w-full pl-10 pr-4 py-2.5 bg-white border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none shadow-sm"
-        />
+      {/* ============ Role Summary Strip (secondary) ============ */}
+      <div className="grid grid-cols-3 gap-2">
+        {(['EMPLOYEE', 'TECHNICIAN', 'ADMIN'] as const).map(role => {
+          const styles = ROLE_CARD_STYLES[role];
+          const isActive = roleFilter === role;
+          return (
+            <button
+              key={role}
+              onClick={() => setRoleFilter(roleFilter === role ? 'all' : role)}
+              className={`flex items-center gap-2.5 px-3 py-2.5 rounded-xl border transition-all text-left ${styles.bg} ${isActive ? `${styles.border} ring-2 ring-offset-1 dark:ring-offset-gray-900 ${role === 'ADMIN' ? 'ring-violet-300 dark:ring-violet-600' : role === 'TECHNICIAN' ? 'ring-blue-300 dark:ring-blue-600' : 'ring-gray-300 dark:ring-gray-500'}` : `${styles.border}`} hover:shadow-sm`}
+            >
+              <div className={`w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 ${styles.icon}`}>
+                {ROLE_ICONS[role]}
+              </div>
+              <div className="min-w-0">
+                <p className="text-lg font-bold text-gray-900 dark:text-white leading-none">{roleCounts[role]}</p>
+                <p className="text-[11px] text-gray-500 dark:text-gray-400 mt-0.5 leading-tight">{ROLE_LABELS_PLURAL[role]}</p>
+              </div>
+            </button>
+          );
+        })}
       </div>
 
-      {/* Tabela */}
-      <div className="bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden">
+      {/* ============ Filter Bar ============ */}
+      <div className="flex flex-col sm:flex-row gap-3 p-4 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-sm">
+        {/* Search */}
+        <div className="relative flex-1 max-w-sm">
+          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+          <input
+            type="text"
+            className="w-full pl-10 pr-4 py-2 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none dark:text-white"
+            placeholder="Szukaj po imieniu, nazwisku lub email..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
+        </div>
+
+        {/* Role tabs — primary filter control */}
+        <div className="flex items-center gap-1.5 flex-wrap">
+          {([
+            { value: 'all', label: 'Wszyscy', count: roleCounts.all },
+            { value: 'EMPLOYEE', label: 'Pracownicy', count: roleCounts.EMPLOYEE },
+            { value: 'TECHNICIAN', label: 'Technicy', count: roleCounts.TECHNICIAN },
+            { value: 'ADMIN', label: 'Administratorzy', count: roleCounts.ADMIN },
+          ] as const).map(tab => (
+            <button
+              key={tab.value}
+              onClick={() => setRoleFilter(tab.value)}
+              className={`px-3.5 py-2 rounded-lg text-sm font-semibold transition-all whitespace-nowrap ${
+                roleFilter === tab.value
+                  ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 border border-blue-200 dark:border-blue-800/60 shadow-sm'
+                  : 'text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700/50 border border-transparent'
+              }`}
+            >
+              {tab.label} <span className={`ml-0.5 tabular-nums ${roleFilter === tab.value ? 'text-blue-500 dark:text-blue-400' : 'text-gray-400 dark:text-gray-500'}`}>({tab.count})</span>
+            </button>
+          ))}
+
+          {/* Clear filters */}
+          {hasActiveFilters && (
+            <button
+              onClick={clearFilters}
+              className="ml-1 px-2.5 py-1.5 rounded-lg text-xs font-medium text-gray-500 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 border border-transparent transition-colors flex items-center gap-1"
+            >
+              <X className="w-3.5 h-3.5" /> Wyczyść
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* ============ Table ============ */}
+      <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left">
             <thead>
-              <tr className="border-b border-gray-100 bg-gray-50/70">
-                <th className="px-6 py-3.5 text-xs font-bold text-gray-500 uppercase tracking-wider">Użytkownik</th>
-                <th className="px-6 py-3.5 text-xs font-bold text-gray-500 uppercase tracking-wider">Email</th>
-                <th className="px-6 py-3.5 text-xs font-bold text-gray-500 uppercase tracking-wider">Rola</th>
-                <th className="px-6 py-3.5 text-xs font-bold text-gray-500 uppercase tracking-wider text-right">Akcje</th>
+              <tr className="border-b-2 border-gray-200 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-800/50 transition-colors">
+                {/* Sortable: Użytkownik */}
+                <th
+                  className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100/80 dark:hover:bg-gray-700/50 transition-colors group/th"
+                  onClick={() => handleSort('name')}
+                >
+                  <div className="flex items-center gap-1">
+                    Użytkownik
+                    <span className={`transition-opacity duration-200 flex items-center ${sortConfig.key === 'name' ? 'opacity-100 text-blue-600' : 'opacity-0 group-hover/th:opacity-100 text-gray-400'}`}>
+                      {sortConfig.key === 'name' && sortConfig.direction === 'desc' ? <ArrowDown className="w-3.5 h-3.5" /> : <ArrowUp className="w-3.5 h-3.5" />}
+                    </span>
+                  </div>
+                </th>
+                {/* Sortable: Email */}
+                <th
+                  className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100/80 dark:hover:bg-gray-700/50 transition-colors group/th"
+                  onClick={() => handleSort('email')}
+                >
+                  <div className="flex items-center gap-1">
+                    Email
+                    <span className={`transition-opacity duration-200 flex items-center ${sortConfig.key === 'email' ? 'opacity-100 text-blue-600' : 'opacity-0 group-hover/th:opacity-100 text-gray-400'}`}>
+                      {sortConfig.key === 'email' && sortConfig.direction === 'desc' ? <ArrowDown className="w-3.5 h-3.5" /> : <ArrowUp className="w-3.5 h-3.5" />}
+                    </span>
+                  </div>
+                </th>
+                <th className="px-6 py-4 text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Rola</th>
+                <th className="px-6 py-4 text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider text-right">Akcje</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-50">
+            <tbody className="divide-y divide-gray-100 dark:divide-gray-700/50">
               {filteredUsers.length === 0 ? (
                 <tr>
-                  <td colSpan={4} className="px-6 py-12 text-center text-gray-500 text-sm italic">
-                    {searchQuery ? 'Brak wyników wyszukiwania.' : 'Brak użytkowników.'}
+                  <td colSpan={4} className="px-6 py-16 text-center">
+                    {users.length === 0 ? (
+                      /* Empty state: no users at all */
+                      <div className="flex flex-col items-center">
+                        <div className="w-14 h-14 bg-blue-50 dark:bg-blue-900/20 rounded-full flex items-center justify-center mb-4">
+                          <Users className="w-7 h-7 text-blue-400" />
+                        </div>
+                        <p className="text-sm font-semibold text-gray-700 dark:text-gray-200 mb-1">Brak użytkowników w systemie</p>
+                        <p className="text-xs text-gray-400 mb-4">Dodaj pierwszego użytkownika, aby rozpocząć.</p>
+                        <button
+                          onClick={openCreateModal}
+                          className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl text-sm shadow-sm transition-all"
+                        >
+                          <Plus className="w-4 h-4" /> Dodaj użytkownika
+                        </button>
+                      </div>
+                    ) : (
+                      /* Empty state: no search results */
+                      <div className="flex flex-col items-center">
+                        <div className="w-14 h-14 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center mb-4">
+                          <Search className="w-7 h-7 text-gray-400 dark:text-gray-500" />
+                        </div>
+                        <p className="text-sm font-semibold text-gray-700 dark:text-gray-200 mb-1">Brak wyników</p>
+                        <p className="text-xs text-gray-400 mb-4">Spróbuj zmienić kryteria wyszukiwania.</p>
+                        <button
+                          onClick={clearFilters}
+                          className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700 rounded-xl transition-colors"
+                        >
+                          <X className="w-3.5 h-3.5" /> Wyczyść filtry
+                        </button>
+                      </div>
+                    )}
                   </td>
                 </tr>
               ) : (
                 filteredUsers.map(user => (
-                  <tr key={user.id} className="hover:bg-gray-50/60 transition-colors">
+                  <tr key={user.id} className="group/row hover:bg-gray-50/60 dark:hover:bg-gray-700/30 transition-colors">
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
                         <div className="w-9 h-9 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center overflow-hidden outline outline-1 outline-gray-200 text-white font-bold text-sm flex-shrink-0">
@@ -246,32 +432,39 @@ const UsersPage: React.FC = () => {
                           )}
                         </div>
                         <div>
-                          <p className="text-sm font-semibold text-gray-900">{user.first_name} {user.last_name}</p>
-                          <p className="text-xs text-gray-400">ID: {user.id}</p>
+                          <p className="text-sm font-bold text-gray-900 dark:text-white">{user.first_name} {user.last_name}</p>
+                          <p className="text-xs text-gray-400 dark:text-gray-500 font-mono">#{user.id}</p>
                         </div>
                       </div>
                     </td>
                     <td className="px-6 py-4">
-                      <span className="text-sm text-gray-700">{user.email}</span>
+                      <span className="text-sm text-gray-600 dark:text-gray-300">{user.email}</span>
                     </td>
                     <td className="px-6 py-4">
-                      <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-bold rounded-lg border ${ROLE_STYLES[user.role]}`}>
+                      <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold rounded-lg border ${ROLE_STYLES[user.role]}`}>
                         {ROLE_ICONS[user.role]}
                         {ROLE_LABELS[user.role]}
                       </span>
                     </td>
                     <td className="px-6 py-4 text-right">
-                      <div className="flex items-center justify-end gap-1">
+                      <div className="flex items-center justify-end gap-0.5 opacity-60 group-hover/row:opacity-100 transition-opacity">
                         <button
                           onClick={() => openEditModal(user)}
-                          className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                          className="p-2 text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-500/10 rounded-lg transition-all hover:scale-110"
                           title="Edytuj"
                         >
                           <Edit3 className="w-4 h-4" />
                         </button>
                         <button
+                          onClick={() => openResetPasswordModal(user)}
+                          className="p-2 text-gray-500 dark:text-gray-400 hover:text-amber-600 dark:hover:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-500/10 rounded-lg transition-all hover:scale-110"
+                          title="Resetuj hasło"
+                        >
+                          <KeyRound className="w-4 h-4" />
+                        </button>
+                        <button
                           onClick={() => setDeleteTarget(user)}
-                          className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                          className="p-2 text-gray-500 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg transition-all hover:scale-110"
                           title="Usuń"
                         >
                           <Trash2 className="w-4 h-4" />
@@ -292,7 +485,7 @@ const UsersPage: React.FC = () => {
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg mx-4 overflow-hidden">
             <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
               <h2 className="text-lg font-bold text-gray-900">
-                {editUserId ? 'Edytuj użytkownika' : 'Nowy użytkownik'}
+                {editUserId ? (focusPassword ? 'Resetuj hasło' : 'Edytuj użytkownika') : 'Nowy użytkownik'}
               </h2>
               <button onClick={() => setIsModalOpen(false)} className="p-1.5 hover:bg-gray-100 rounded-lg transition-colors">
                 <X className="w-5 h-5 text-gray-500" />
@@ -374,8 +567,9 @@ const UsersPage: React.FC = () => {
                     type={showPassword ? 'text' : 'password'}
                     value={formData.password}
                     onChange={e => { setFormData({ ...formData, password: e.target.value }); if (formErrors.password) setFormErrors(p => ({ ...p, password: undefined })); }}
-                    className={`w-full px-3 py-2 pr-10 border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 ${formErrors.password ? 'border-red-300 bg-red-50' : 'border-gray-200'}`}
+                    className={`w-full px-3 py-2 pr-10 border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 ${formErrors.password ? 'border-red-300 bg-red-50' : focusPassword ? 'border-amber-300 bg-amber-50/30' : 'border-gray-200'}`}
                     placeholder={editUserId ? '••••••••' : 'Min. 6 znaków'}
+                    autoFocus={focusPassword}
                   />
                   <button
                     type="button"
