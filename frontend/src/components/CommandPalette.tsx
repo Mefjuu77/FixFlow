@@ -87,7 +87,7 @@ const CommandPalette: React.FC = () => {
 
     // Nawigacja
     items.push(
-      { id: 'nav-dashboard', label: 'Panel główny', icon: <LayoutGrid className="w-4 h-4" />, action: () => runAndClose(() => navigate('/dashboard')), group: 'Nawigacja', keywords: 'dashboard strona główna home' },
+      { id: 'nav-dashboard', label: 'Start', icon: <LayoutGrid className="w-4 h-4" />, action: () => runAndClose(() => navigate('/dashboard')), group: 'Nawigacja', keywords: 'dashboard strona główna home panel' },
       { id: 'nav-tickets', label: 'Zgłoszenia', icon: <ClipboardList className="w-4 h-4" />, action: () => runAndClose(() => navigate('/tickets')), group: 'Nawigacja', keywords: 'tickety lista' },
     );
 

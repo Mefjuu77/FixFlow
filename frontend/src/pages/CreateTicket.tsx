@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { ticketService } from '../api/ticketService';
 import { Category, TicketPayload } from '../types/ticket';
 import {
@@ -41,6 +41,7 @@ const CreateTicketPage: React.FC = () => {
   const [isDragging, setIsDragging] = useState(false);
 
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -60,7 +61,13 @@ const CreateTicketPage: React.FC = () => {
         }
 
         setCategories(finalData);
-        // Don't auto-select — user must choose explicitly
+
+        // Auto-select category from URL param ?category=Sieć
+        const paramCategory = searchParams.get('category');
+        if (paramCategory) {
+          const match = finalData.find(c => c.name.toLowerCase() === paramCategory.toLowerCase());
+          if (match) setFormData(prev => ({ ...prev, category: match.id }));
+        }
       } catch (err) {
         setError('Błąd podczas ładowania kategorii.');
       }

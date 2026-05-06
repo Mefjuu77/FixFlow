@@ -38,7 +38,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
     {
       label: 'GŁÓWNE',
       items: [
-        { name: 'Panel główny', path: '/dashboard', icon: <LayoutGrid size={20} strokeWidth={1.75} /> },
+        { name: 'Start', path: '/dashboard', icon: <LayoutGrid size={20} strokeWidth={1.75} /> },
         { name: 'Zgłoszenia', path: '/tickets', icon: <ClipboardList size={20} strokeWidth={1.75} /> },
       ],
     },

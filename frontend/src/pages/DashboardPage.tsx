@@ -19,7 +19,11 @@ import {
   Calendar,
   ChevronDown,
   TrendingUp,
-  TrendingDown
+  TrendingDown,
+  Monitor,
+  Globe,
+  Printer,
+  KeyRound
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import dayjs from 'dayjs';
@@ -86,7 +90,7 @@ const groupBulkLogs = (logs: any[]): any[] => {
 };
 
 const DashboardPage: React.FC = () => {
-  useTitle('Panel główny');
+  useTitle('Start');
   const authContext = useContext(AuthContext);
   const [tickets, setTickets] = useState<TicketType[]>([]);
   const [loading, setLoading] = useState(true);
@@ -210,59 +214,129 @@ const DashboardPage: React.FC = () => {
     const resolvedTickets = tickets.filter(t => ['ROZWIAZANE', 'ZAMKNIETE'].includes(t.status));
 
     return (
-      <div className="w-full space-y-8 animate-in fade-in duration-500">
-        {/* Baner CTA */}
-        <div className="bg-gradient-to-r from-blue-600 to-indigo-700 rounded-3xl p-8 md:p-10 text-white shadow-xl shadow-blue-900/10 flex flex-col md:flex-row items-center justify-between gap-6 overflow-hidden relative">
-          <div className="absolute top-0 right-0 -mt-10 -mr-10 w-40 h-40 bg-white/10 blur-3xl rounded-full pointer-events-none"></div>
-          <div className="relative z-10 text-center md:text-left">
-            <h1 className="text-3xl md:text-4xl font-extrabold mb-3 tracking-tight">Cześć, {authContext?.user?.first_name}! 👋</h1>
-            <p className="text-blue-100 text-lg max-w-lg font-medium">Potrzebujesz pomocy IT, wsparcia technicznego lub coś nie działa poprawnie?</p>
+      <div className="w-full space-y-5 md:space-y-6 animate-in fade-in duration-700">
+        {/* Page header — greeting IS the main h1, CTA top-right */}
+        <div className="flex flex-col md:flex-row md:items-start justify-between gap-4 pt-[22px]">
+          <div>
+            <h1 className="text-2xl md:text-3xl font-extrabold text-gray-900 dark:text-white tracking-tight">
+              Cześć, {authContext?.user?.first_name}! 👋
+            </h1>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+              Potrzebujesz pomocy IT lub coś nie działa? Utwórz zgłoszenie.
+            </p>
           </div>
-          <div className="relative z-10">
+          <div className="flex flex-col sm:flex-row items-center gap-3 flex-shrink-0">
             <Link
               to="/create-ticket"
-              className="px-6 py-3.5 bg-white text-blue-700 font-extrabold rounded-xl shadow-lg hover:bg-gray-50 flex items-center whitespace-nowrap"
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl shadow-sm hover:shadow-md shadow-blue-600/10 transition-all text-sm whitespace-nowrap"
             >
-              <Plus className="w-5 h-5 mr-2" />
-              Utwórz nowe zgłoszenie
+              <Plus className="w-4 h-4" />
+              Nowe zgłoszenie
             </Link>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
+        {/* Quick Actions — Zgłoś problem */}
+        <div className="space-y-3 pt-1">
+          <h2 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+            Zgłoś problem
+          </h2>
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+            {[
+              {
+                label: 'Problem z logowaniem',
+                sub: 'Hasło, konto, dostęp do systemu',
+                icon: <KeyRound className="w-5 h-5" />,
+                category: 'Dostęp do konta',
+                color: 'text-rose-600 dark:text-rose-400',
+                bg: 'bg-rose-50 dark:bg-rose-500/10',
+              },
+              {
+                label: 'Problem z programem',
+                sub: 'Aplikacje, oprogramowanie, błędy',
+                icon: <Monitor className="w-5 h-5" />,
+                category: 'Oprogramowanie',
+                color: 'text-blue-600 dark:text-blue-400',
+                bg: 'bg-blue-50 dark:bg-blue-500/10',
+              },
+              {
+                label: 'Brak internetu',
+                sub: 'Wi-Fi, sieć, VPN',
+                icon: <Globe className="w-5 h-5" />,
+                category: 'Sieć i internet',
+                color: 'text-teal-600 dark:text-teal-400',
+                bg: 'bg-teal-50 dark:bg-teal-500/10',
+              },
+              {
+                label: 'Problem ze sprzętem',
+                sub: 'Komputer, drukarka, urządzenia',
+                icon: <Printer className="w-5 h-5" />,
+                category: 'Sprzęt',
+                color: 'text-amber-600 dark:text-amber-400',
+                bg: 'bg-amber-50 dark:bg-amber-500/10',
+              },
+            ].map(action => (
+              <Link
+                key={action.label}
+                to={`/create-ticket?category=${encodeURIComponent(action.category)}`}
+                className="flex items-center gap-3 px-4 py-3.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl hover:border-blue-300 dark:hover:border-blue-600 hover:shadow-sm transition-all group"
+              >
+                <div className={`w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 ${action.bg} ${action.color} group-hover:scale-105 transition-transform`}>
+                  {action.icon}
+                </div>
+                <div className="min-w-0">
+                  <p className="text-[13px] font-semibold text-gray-900 dark:text-white leading-snug truncate group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                    {action.label}
+                  </p>
+                  <p className="text-[11px] text-gray-400 dark:text-gray-500 mt-0.5 truncate">
+                    {action.sub}
+                  </p>
+                </div>
+              </Link>
+            ))}
+          </div>
+        </div>
+
+        {/* Grid: Aktywne + Ostatnio zamknięte */}
+        <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
           {/* Aktywne Zgłoszenia */}
-          <div className="xl:col-span-2 space-y-4">
-            <h2 className="text-xl font-bold text-gray-900 flex items-center">
-              <Clock className="w-5 h-5 text-blue-600 mr-2" /> Twoje aktywne zgłoszenia
+          <div className="xl:col-span-2 space-y-3">
+            <h2 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider flex items-center gap-2">
+              <Clock className="w-4 h-4" /> Aktywne zgłoszenia
             </h2>
-            <div className="bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden">
+            <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-3xl shadow-sm overflow-hidden">
               {activeTickets.length === 0 ? (
-                <div className="p-12 pl-10 text-center flex flex-col items-center">
-                  <div className="w-16 h-16 bg-green-50 rounded-full flex items-center justify-center mb-4 text-green-600">
+                <div className="p-12 text-center flex flex-col items-center">
+                  <div className="w-16 h-16 bg-green-50 dark:bg-green-900/20 rounded-full flex items-center justify-center mb-4 text-green-600 dark:text-green-400">
                     <CheckCircle2 className="w-8 h-8" />
                   </div>
-                  <h3 className="text-lg font-bold text-gray-900">Brak otwartych spraw</h3>
-                  <p className="text-sm text-gray-500 mt-1 max-w-sm">Wygląda na to, że wszystko działa bez zarzutu. Jeśli pojawią się problemy, użyj przycisku u góry.</p>
+                  <h3 className="text-lg font-bold text-gray-900 dark:text-white">Brak otwartych spraw</h3>
+                  <p className="text-sm text-gray-500 dark:text-gray-400 mt-1 max-w-sm">Wygląda na to, że wszystko działa bez zarzutu. Jeśli pojawią się problemy, użyj przycisku u góry.</p>
                 </div>
               ) : (
-                <div className="divide-y divide-gray-50">
+                <div className="divide-y divide-gray-100 dark:divide-gray-700/50">
                   {activeTickets.map(ticket => (
-                    <Link to={`/tickets/${ticket.id}`} key={ticket.id} className="p-6 flex items-start hover:bg-gray-50 transition-colors block group cursor-pointer">
-                      <div className="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center flex-shrink-0 group-hover:bg-blue-100 transition-colors">
-                        <TicketIcon className="w-5 h-5 text-blue-600" />
+                    <Link
+                      to={`/tickets/${ticket.id}`}
+                      key={ticket.id}
+                      className="flex items-center px-5 py-4 hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors group"
+                    >
+                      <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 mr-4 bg-blue-50 dark:bg-blue-500/10 text-blue-500 group-hover:scale-105 transition-transform">
+                        <TicketIcon className="w-4 h-4" />
                       </div>
-                      <div className="ml-4 flex-1">
-                        <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-1 gap-2">
-                          <h3 className="font-bold text-gray-900 group-hover:text-blue-600 transition-colors">{ticket.title}</h3>
-                          <span className={`px-2.5 py-1 text-[10px] font-bold rounded-lg uppercase whitespace-nowrap self-start sm:self-auto ${ticket.status === 'W_TOKU' ? 'bg-amber-100 text-amber-700' : 'bg-blue-100 text-blue-700'}`}>
-                            {ticket.status === 'W_TOKU' ? 'W TOKU' : 'NOWE'}
-                          </span>
-                        </div>
-                        <p className="text-sm text-gray-500 line-clamp-2 max-w-2xl">{ticket.description}</p>
-                        <div className="flex items-center text-xs font-medium text-gray-400 mt-3">
+                      <div className="flex-1 min-w-0 mr-3">
+                        <p className="text-[13px] text-gray-700 dark:text-gray-200 truncate leading-snug group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                          <span className="font-bold text-gray-900 dark:text-white">#{ticket.id}</span>
+                          <span className="mx-1.5 text-gray-300 dark:text-gray-600">·</span>
+                          {ticket.title}
+                        </p>
+                        <p className="text-[11px] text-gray-400 dark:text-gray-500 mt-0.5">
                           Aktualizacja: {dayjs(ticket.updated_at).fromNow()}
-                        </div>
+                        </p>
                       </div>
+                      <span className={`px-2.5 py-1 rounded-lg text-[11px] font-semibold whitespace-nowrap flex-shrink-0 ${ticket.status === 'W_TOKU' ? 'bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400' : 'bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400'}`}>
+                        {ticket.status === 'W_TOKU' ? 'W TOKU' : 'NOWE'}
+                      </span>
                     </Link>
                   ))}
                 </div>
@@ -271,29 +345,45 @@ const DashboardPage: React.FC = () => {
           </div>
 
           {/* Ostatnio Rozwiązane */}
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <h2 className="text-xl font-bold text-gray-900 flex items-center">
-                <CheckCircle2 className="w-5 h-5 text-green-600 mr-2" /> Ostatnio zamknięte
-              </h2>
-              <Link to="/tickets" className="text-xs font-bold text-blue-600 hover:text-blue-800 transition-colors">
-                Wszystkie
-              </Link>
-            </div>
-
-            <div className="bg-white border border-gray-200 rounded-2xl shadow-sm p-5 space-y-3">
+          <div className="space-y-3">
+            <h2 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider flex items-center gap-2">
+              <CheckCircle2 className="w-4 h-4" /> Ostatnio zamknięte
+            </h2>
+            <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-3xl shadow-sm overflow-hidden">
               {resolvedTickets.length === 0 ? (
-                <p className="text-sm text-gray-500 italic text-center py-6">Brak w historii.</p>
+                <div className="flex items-center gap-3 px-5 py-5 text-gray-400 dark:text-gray-500">
+                  <CheckCircle2 className="w-4 h-4 flex-shrink-0" />
+                  <p className="text-sm">Brak zamkniętych zgłoszeń.</p>
+                </div>
               ) : (
-                resolvedTickets.slice(0, 5).map(ticket => (
-                  <Link to={`/tickets/${ticket.id}`} key={ticket.id} className="block p-4 border border-gray-100 bg-gray-50/50 rounded-xl hover:border-blue-200 hover:bg-blue-50/30 hover:shadow-sm transition-all group">
-                    <p className="text-sm font-semibold text-gray-800 truncate mb-1 group-hover:text-blue-700 transition-colors">{ticket.title}</p>
-                    <div className="flex items-center justify-between">
-                      <p className="text-[11px] text-green-600 font-bold uppercase tracking-wider">{ticket.status === 'ROZWIAZANE' ? 'Rozwiązane' : 'Zamknięte'}</p>
-                      <p className="text-[10px] text-gray-400">{dayjs(ticket.updated_at).format('DD.MM.YYYY')}</p>
-                    </div>
+                <div className="divide-y divide-gray-100 dark:divide-gray-700/50">
+                  {resolvedTickets.slice(0, 5).map(ticket => (
+                    <Link
+                      to={`/tickets/${ticket.id}`}
+                      key={ticket.id}
+                      className="flex items-center px-5 py-3.5 hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors group"
+                    >
+                      <div className="flex-1 min-w-0 mr-3">
+                        <p className="text-[13px] font-medium text-gray-800 dark:text-gray-200 truncate group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                          {ticket.title}
+                        </p>
+                        <p className="text-[11px] text-gray-400 dark:text-gray-500 mt-0.5">
+                          {dayjs(ticket.updated_at).format('DD.MM.YYYY')}
+                        </p>
+                      </div>
+                      <span className="px-2 py-0.5 rounded text-[10px] font-semibold whitespace-nowrap flex-shrink-0 bg-green-50 dark:bg-green-500/10 text-green-600 dark:text-green-400 uppercase tracking-wide">
+                        {ticket.status === 'ROZWIAZANE' ? 'Rozwiązane' : 'Zamknięte'}
+                      </span>
+                    </Link>
+                  ))}
+                </div>
+              )}
+              {resolvedTickets.length > 0 && (
+                <div className="px-5 py-3 border-t border-gray-100 dark:border-gray-700/50">
+                  <Link to="/tickets" className="text-xs font-semibold text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 transition-colors">
+                    Wszystkie zgłoszenia →
                   </Link>
-                ))
+                </div>
               )}
             </div>
           </div>
