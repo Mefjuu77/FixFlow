@@ -164,7 +164,7 @@ const MultiSelect: React.FC<MultiSelectProps> = ({ label, icon, options, selecte
 
 // === Premium Page ===
 const ReportsPage: React.FC = () => {
-  useTitle('Raporty');
+  useTitle('Eksport danych');
   const authContext = useContext(AuthContext);
 
   // Dane pomocnicze
@@ -317,8 +317,8 @@ const ReportsPage: React.FC = () => {
             <FileBarChart className="w-6 h-6 text-white" />
           </div>
           <div>
-            <h1 className="text-2xl font-extrabold text-slate-800 dark:text-white tracking-tight">Raporty</h1>
-            <p className="text-slate-500 text-sm font-medium">Kreator eksportu zgłoszeń</p>
+            <h1 className="text-2xl font-extrabold text-slate-800 dark:text-white tracking-tight">Eksport danych</h1>
+            <p className="text-slate-500 text-sm font-medium">Generowanie zestawień zgłoszeń</p>
           </div>
         </div>
 
