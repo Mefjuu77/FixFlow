@@ -329,7 +329,7 @@ const TicketsPage: React.FC = () => {
     }
   };
 
-  const renderSortableHeader = (field: SortField, label: string) => {
+  const renderSortableHeader = (field: SortField, label: string, extraClassName?: string) => {
     const isActive = sortConfig.key === field;
     const direction = sortConfig.direction;
     const isAsc = direction === 'asc';
@@ -337,7 +337,7 @@ const TicketsPage: React.FC = () => {
     return (
       <th
         key={field}
-        className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100/80 transition-colors group/th"
+        className={`px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100/80 transition-colors group/th ${extraClassName || ''}`}
         onClick={() => handleSort(field)}
       >
         <div className="flex items-center gap-1 relative w-max">
@@ -347,7 +347,7 @@ const TicketsPage: React.FC = () => {
           </span>
 
           {/* Custom Tooltip */}
-          <div className={`absolute top-full mt-2 z-[60] pointer-events-none opacity-0 group-hover/th:opacity-100 transition-opacity duration-200 ${field === 'created_at' ? '-right-3' : 'left-1/2 -translate-x-1/2'}`}>
+          <div className={`absolute top-full mt-2 z-[60] pointer-events-none opacity-0 group-hover/th:opacity-100 transition-opacity duration-200 ${field === 'created_at' ? '-right-3' : (field === 'id' && isEmployee) ? '-left-4' : 'left-1/2 -translate-x-1/2'}`}>
             <div className="bg-[#24272f] text-white text-[11.5px] font-medium px-3 py-2 rounded shadow-lg w-max max-w-[160px] whitespace-normal normal-case tracking-normal text-left leading-snug">
               {getSortTooltip(field, label)}
             </div>
@@ -614,16 +614,18 @@ const TicketsPage: React.FC = () => {
                 </tr>
               ) : (
                 <tr className="border-b-2 border-gray-200 bg-gray-50/50 transition-colors animate-in fade-in">
-                  <th className="py-4 pl-5 pr-3 w-10 text-center align-middle">
-                    <input
-                      type="checkbox"
-                      className="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500 cursor-pointer translate-y-[2px]"
-                      onChange={handleSelectAll}
-                      checked={filteredTickets.length > 0 && selectedTicketIds.length === filteredTickets.length}
-                    />
-                  </th>
-                  {renderSortableHeader('id', 'ID')}
-                  {renderSortableHeader('title', 'Tytuł')}
+                  {(isAdmin || isTechnician) && (
+                    <th className="py-4 pl-5 pr-3 w-10 text-center align-middle">
+                      <input
+                        type="checkbox"
+                        className="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500 cursor-pointer translate-y-[2px]"
+                        onChange={handleSelectAll}
+                        checked={filteredTickets.length > 0 && selectedTicketIds.length === filteredTickets.length}
+                      />
+                    </th>
+                  )}
+                  {renderSortableHeader('id', 'ID', 'w-24')}
+                  {renderSortableHeader('title', 'Tytuł', 'min-w-[300px]')}
                   {renderSortableHeader('category_name', 'Kategoria')}
                   {!isEmployee && renderSortableHeader('priority', 'Priorytet')}
                   {renderSortableHeader('creator', 'Zgłaszający')}
@@ -636,7 +638,7 @@ const TicketsPage: React.FC = () => {
             <tbody className="divide-y divide-gray-50">
               {filteredTickets.length === 0 ? (
                 <tr>
-                  <td colSpan={isAdmin ? 8 : 6} className="px-6 py-12 text-center text-gray-500 text-sm italic">
+                  <td colSpan={(isAdmin || isTechnician) ? 9 : 6} className="px-6 py-12 text-center text-gray-500 text-sm italic">
                     Brak zgłoszeń spełniających kryteria.
                   </td>
                 </tr>
@@ -646,14 +648,16 @@ const TicketsPage: React.FC = () => {
                     ? 'bg-blue-50/60 hover:bg-blue-100/60 dark:bg-blue-900/50 dark:hover:bg-blue-800/60'
                     : 'hover:bg-gray-50/60 dark:hover:bg-gray-700/30'
                     }`}>
-                    <td className="py-4 pl-5 pr-3 w-10 text-center align-middle">
-                      <input
-                        type="checkbox"
-                        className="w-4 h-4 text-blue-600 rounded border-gray-300 dark:border-gray-600 dark:bg-gray-700 focus:ring-blue-500 cursor-pointer translate-y-[2px]"
-                        checked={selectedTicketIds.includes(ticket.id)}
-                        onChange={() => handleSelectTicket(ticket.id)}
-                      />
-                    </td>
+                    {(isAdmin || isTechnician) && (
+                      <td className="py-4 pl-5 pr-3 w-10 text-center align-middle">
+                        <input
+                          type="checkbox"
+                          className="w-4 h-4 text-blue-600 rounded border-gray-300 dark:border-gray-600 dark:bg-gray-700 focus:ring-blue-500 cursor-pointer translate-y-[2px]"
+                          checked={selectedTicketIds.includes(ticket.id)}
+                          onChange={() => handleSelectTicket(ticket.id)}
+                        />
+                      </td>
+                    )}
                     <td className="px-6 py-4 text-sm font-medium text-gray-400 dark:text-gray-500 whitespace-nowrap">#{ticket.id}</td>
                     <td className="px-6 py-4 text-sm max-w-[200px] sm:max-w-[250px] lg:max-w-[350px]">
                       {selectedTicketIds.length > 0 ? (
