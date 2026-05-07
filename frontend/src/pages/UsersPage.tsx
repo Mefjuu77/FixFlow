@@ -361,11 +361,15 @@ const UsersPage: React.FC = () => {
                 className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-[11px] font-medium transition-all whitespace-nowrap ${
                   statusFilter === tab.value
                     ? tab.value === 'inactive'
-                      ? 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400'
+                      ? 'bg-amber-100 dark:bg-amber-500/20 text-amber-700 dark:text-amber-400'
                       : tab.value === 'active'
-                        ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400'
-                        : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300'
-                    : 'text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700/50'
+                        ? 'bg-green-100 dark:bg-green-500/20 text-green-700 dark:text-green-400'
+                        : 'bg-gray-200 dark:bg-gray-600 text-gray-800 dark:text-gray-100 shadow-sm'
+                    : tab.value === 'inactive'
+                      ? 'text-gray-500 dark:text-gray-400 hover:bg-amber-50 dark:hover:bg-amber-500/10 hover:text-amber-600 dark:hover:text-amber-400'
+                      : tab.value === 'active'
+                        ? 'text-gray-500 dark:text-gray-400 hover:bg-green-50 dark:hover:bg-green-500/10 hover:text-green-600 dark:hover:text-green-400'
+                        : 'text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700/50 hover:text-gray-700 dark:hover:text-gray-200'
                 }`}
               >
                 {tab.icon}
@@ -376,12 +380,14 @@ const UsersPage: React.FC = () => {
 
           {/* Clear filters */}
           {hasActiveFilters && (
-            <button
-              onClick={clearFilters}
-              className="ml-auto px-2 py-1 rounded-md text-[11px] font-medium text-gray-400 dark:text-gray-500 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors flex items-center gap-1"
-            >
-              <X className="w-3 h-3" /> Wyczyść filtry
-            </button>
+            <div className="flex items-center gap-2 ml-4 pl-4 border-l border-gray-200 dark:border-gray-700">
+              <button
+                onClick={clearFilters}
+                className="px-2 py-1 rounded-md text-[11px] font-medium text-gray-400 dark:text-gray-500 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors flex items-center gap-1"
+              >
+                <X className="w-3 h-3" /> Wyczyść filtry
+              </button>
+            </div>
           )}
         </div>
       </div>
@@ -490,7 +496,7 @@ const UsersPage: React.FC = () => {
                       </div>
                     </td>
                     <td className="px-6 py-4">
-                      <span className={`text-sm ${inactive ? 'text-gray-500 dark:text-gray-400' : 'text-gray-600 dark:text-gray-300'}`}>{user.email}</span>
+                      <span className={`text-sm ${inactive ? 'text-gray-400 dark:text-gray-500' : 'text-gray-600 dark:text-gray-300'}`}>{user.email}</span>
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-2">
@@ -510,7 +516,7 @@ const UsersPage: React.FC = () => {
                       <div className="flex items-center justify-end gap-1.5">
                         <button
                           onClick={() => openEditModal(user)}
-                          className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-gray-600 dark:text-gray-300 hover:text-blue-700 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-500/10 rounded-lg border border-gray-200 dark:border-gray-700 hover:border-blue-200 dark:hover:border-blue-800 transition-colors"
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-800 hover:text-blue-700 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-500/10 rounded-lg border border-gray-300 dark:border-gray-600 hover:border-blue-200 dark:hover:border-blue-800 transition-colors shadow-sm"
                         >
                           <Settings className="w-3.5 h-3.5" />
                           Zarządzaj
@@ -518,10 +524,10 @@ const UsersPage: React.FC = () => {
                         <button
                           onClick={() => handleToggleActive(user)}
                           disabled={isToggling === user.id}
-                          className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg border transition-colors ${
+                          className={`inline-flex items-center justify-center gap-1.5 w-28 px-3 py-1.5 text-xs font-medium rounded-lg border bg-white dark:bg-gray-800 shadow-sm transition-colors ${
                             inactive
-                              ? 'text-gray-500 dark:text-gray-400 border-gray-200 dark:border-gray-700 hover:text-green-700 dark:hover:text-green-400 hover:bg-green-50 dark:hover:bg-green-500/10 hover:border-green-200 dark:hover:border-green-800/60'
-                              : 'text-gray-500 dark:text-gray-400 border-gray-200 dark:border-gray-700 hover:text-amber-700 dark:hover:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-500/10 hover:border-amber-200 dark:hover:border-amber-800/60'
+                              ? 'text-gray-600 dark:text-gray-300 border-gray-300 dark:border-gray-600 hover:text-green-700 dark:hover:text-green-400 hover:bg-green-50 dark:hover:bg-green-500/10 hover:border-green-200 dark:hover:border-green-800/60'
+                              : 'text-gray-600 dark:text-gray-300 border-gray-300 dark:border-gray-600 hover:text-amber-700 dark:hover:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-500/10 hover:border-amber-200 dark:hover:border-amber-800/60'
                           } disabled:opacity-40`}
                         >
                           {isToggling === user.id ? (
@@ -611,7 +617,11 @@ const UsersPage: React.FC = () => {
                       onClick={() => setFormData({ ...formData, role: r })}
                       className={`flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl text-sm font-semibold border transition-all ${formData.role === r
                           ? `${ROLE_STYLES[r]} ring-2 ring-offset-1 dark:ring-offset-gray-800 ${r === 'ADMIN' ? 'ring-violet-400 dark:ring-violet-500' : r === 'TECHNICIAN' ? 'ring-blue-400 dark:ring-blue-500' : 'ring-gray-400 dark:ring-gray-500'}`
-                          : 'border-gray-200 dark:border-gray-700 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700'
+                          : `border-gray-200 dark:border-gray-700 text-gray-500 dark:text-gray-400 ${
+                              r === 'ADMIN' ? 'hover:bg-violet-50 dark:hover:bg-violet-500/10 hover:text-violet-600 dark:hover:text-violet-400 hover:border-violet-200 dark:hover:border-violet-800/60' :
+                              r === 'TECHNICIAN' ? 'hover:bg-blue-50 dark:hover:bg-blue-500/10 hover:text-blue-600 dark:hover:text-blue-400 hover:border-blue-200 dark:hover:border-blue-800/60' :
+                              'hover:bg-gray-50 dark:hover:bg-gray-700/50 hover:text-gray-700 dark:hover:text-gray-300'
+                            }`
                         }`}
                     >
                       {ROLE_ICONS[r]}
