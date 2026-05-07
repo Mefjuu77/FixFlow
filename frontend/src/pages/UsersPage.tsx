@@ -263,7 +263,7 @@ const UsersPage: React.FC = () => {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Zarządzanie użytkownikami</h1>
-          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+          <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
             {users.length} {users.length === 1 ? 'użytkownik' : 'użytkowników'} w systemie
           </p>
         </div>
@@ -302,14 +302,14 @@ const UsersPage: React.FC = () => {
               onClick={() => setRoleFilter(tab.value)}
               className={`inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-sm font-semibold transition-all whitespace-nowrap ${
                 roleFilter === tab.value
-                  ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 border border-blue-200 dark:border-blue-800/60 shadow-sm'
+                  ? 'bg-blue-600 text-white border border-blue-600 shadow-sm'
                   : 'text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700/50 border border-transparent'
               }`}
             >
               {tab.icon}
               {tab.label}
               <span className={`tabular-nums text-xs ${
-                roleFilter === tab.value ? 'text-blue-500 dark:text-blue-400' : 'text-gray-400 dark:text-gray-500'
+                roleFilter === tab.value ? 'text-blue-200' : 'text-gray-400 dark:text-gray-500'
               }`}>({tab.count})</span>
             </button>
           ))}
@@ -437,24 +437,24 @@ const UsersPage: React.FC = () => {
                       </span>
                     </td>
                     <td className="px-6 py-4 text-right">
-                      <div className="flex items-center justify-end gap-0.5 opacity-60 group-hover/row:opacity-100 transition-opacity">
+                      <div className="flex items-center justify-end gap-0.5 opacity-[0.45] group-hover/row:opacity-100 transition-opacity">
                         <button
                           onClick={() => openEditModal(user)}
-                          className="p-2 text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-500/10 rounded-lg transition-all hover:scale-110"
+                          className="p-2.5 text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-500/10 rounded-lg transition-colors"
                           title="Edytuj"
                         >
                           <Edit3 className="w-4 h-4" />
                         </button>
                         <button
                           onClick={() => openResetPasswordModal(user)}
-                          className="p-2 text-gray-500 dark:text-gray-400 hover:text-amber-600 dark:hover:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-500/10 rounded-lg transition-all hover:scale-110"
+                          className="p-2.5 text-gray-500 dark:text-gray-400 hover:text-amber-600 dark:hover:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-500/10 rounded-lg transition-colors"
                           title="Resetuj hasło"
                         >
                           <KeyRound className="w-4 h-4" />
                         </button>
                         <button
                           onClick={() => setDeleteTarget(user)}
-                          className="p-2 text-gray-500 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg transition-all hover:scale-110"
+                          className="p-2.5 text-gray-500 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg transition-colors"
                           title="Usuń"
                         >
                           <Trash2 className="w-4 h-4" />
