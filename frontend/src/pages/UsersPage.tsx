@@ -27,37 +27,11 @@ const ROLE_LABELS: Record<string, string> = {
   ADMIN: 'Administrator',
 };
 
-const getRolePlural = (role: string, count: number): string => {
-  if (count === 1) return ROLE_LABELS[role];
-  
-  const lastDigit = count % 10;
-  const lastTwoDigits = count % 100;
-  
-  const forms: Record<string, [string, string]> = {
-    EMPLOYEE: ['Pracownicy', 'Pracowników'],
-    TECHNICIAN: ['Technicy', 'Techników'],
-    ADMIN: ['Administratorzy', 'Administratorów'],
-  };
-  
-  const roleForms = forms[role];
-  if (!roleForms) return '';
-  
-  if (lastDigit >= 2 && lastDigit <= 4 && (lastTwoDigits < 10 || lastTwoDigits >= 20)) {
-    return roleForms[0];
-  }
-  return roleForms[1];
-};
 
 const ROLE_STYLES: Record<string, string> = {
   EMPLOYEE: 'bg-gray-100 dark:bg-gray-700/50 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-gray-600',
   TECHNICIAN: 'bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400 border-blue-200 dark:border-blue-800/60',
   ADMIN: 'bg-violet-50 dark:bg-violet-900/20 text-violet-700 dark:text-violet-400 border-violet-200 dark:border-violet-800/60',
-};
-
-const ROLE_CARD_STYLES: Record<string, { bg: string; border: string; icon: string }> = {
-  EMPLOYEE: { bg: 'bg-gray-50 dark:bg-gray-800', border: 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600', icon: 'text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-gray-700/50' },
-  TECHNICIAN: { bg: 'bg-blue-50/50 dark:bg-blue-900/20', border: 'border-blue-200 dark:border-blue-800 hover:border-blue-300 dark:hover:border-blue-700', icon: 'text-blue-600 dark:text-blue-400 bg-blue-100 dark:bg-blue-900/50' },
-  ADMIN: { bg: 'bg-violet-50/50 dark:bg-violet-900/20', border: 'border-violet-200 dark:border-violet-800 hover:border-violet-300 dark:hover:border-violet-700', icon: 'text-violet-600 dark:text-violet-400 bg-violet-100 dark:bg-violet-900/50' },
 };
 
 const ROLE_ICONS: Record<string, React.ReactNode> = {
@@ -66,11 +40,6 @@ const ROLE_ICONS: Record<string, React.ReactNode> = {
   ADMIN: <Shield className="w-3.5 h-3.5" />,
 };
 
-const ROLE_ICONS_LG: Record<string, React.ReactNode> = {
-  EMPLOYEE: <UserIcon className="w-4.5 h-4.5" />,
-  TECHNICIAN: <Wrench className="w-4.5 h-4.5" />,
-  ADMIN: <Shield className="w-4.5 h-4.5" />,
-};
 
 interface UserForm {
   email: string;
@@ -119,8 +88,8 @@ const UsersPage: React.FC = () => {
 
   const location = useLocation();
 
-  useEffect(() => { 
-    fetchUsers(); 
+  useEffect(() => {
+    fetchUsers();
     // Sprawdzamy czy przekazano state wymuszający otwarcie modala (np. z Palety Komend)
     if (location.state?.openCreateModal) {
       // Z opóźnieniem by upewnić się, że komponent się w pełni zamontował
@@ -148,13 +117,13 @@ const UsersPage: React.FC = () => {
   const getSortTooltip = (field: 'name' | 'email', label: string) => {
     const isActive = sortConfig.key === field;
     let sortLegend = '';
-    
+
     if (!isActive) {
       sortLegend = 'Sortuj A → Z';
     } else {
       sortLegend = sortConfig.direction === 'asc' ? 'Posortowane A → Z' : 'Posortowane Z → A';
     }
-    
+
     return `${label} • ${sortLegend}`;
   };
 
@@ -306,29 +275,6 @@ const UsersPage: React.FC = () => {
         </button>
       </div>
 
-      {/* ============ Role Summary Strip (secondary) ============ */}
-      <div className="grid grid-cols-3 gap-2">
-        {(['EMPLOYEE', 'TECHNICIAN', 'ADMIN'] as const).map(role => {
-          const styles = ROLE_CARD_STYLES[role];
-          const isActive = roleFilter === role;
-          return (
-            <button
-              key={role}
-              onClick={() => setRoleFilter(roleFilter === role ? 'all' : role)}
-              className={`flex items-center gap-2.5 px-3 py-2.5 rounded-xl border transition-all text-left ${styles.bg} ${isActive ? `${styles.border} ring-2 ring-offset-1 dark:ring-offset-gray-900 ${role === 'ADMIN' ? 'ring-violet-300 dark:ring-violet-600' : role === 'TECHNICIAN' ? 'ring-blue-300 dark:ring-blue-600' : 'ring-gray-300 dark:ring-gray-500'}` : `${styles.border}`} hover:shadow-sm`}
-            >
-              <div className={`w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 ${styles.icon}`}>
-                {ROLE_ICONS[role]}
-              </div>
-              <div className="min-w-0">
-                <p className="text-lg font-bold text-gray-900 dark:text-white leading-none">{roleCounts[role]}</p>
-                <p className="text-[11px] text-gray-500 dark:text-gray-400 mt-0.5 leading-tight">{getRolePlural(role, roleCounts[role])}</p>
-              </div>
-            </button>
-          );
-        })}
-      </div>
-
       {/* ============ Filter Bar ============ */}
       <div className="flex flex-col sm:flex-row gap-3 p-4 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-sm">
         {/* Search */}
@@ -343,24 +289,28 @@ const UsersPage: React.FC = () => {
           />
         </div>
 
-        {/* Role tabs — primary filter control */}
-        <div className="flex items-center gap-1.5 flex-wrap">
+        {/* Role tabs */}
+        <div className="flex items-center gap-1 flex-wrap">
           {([
-            { value: 'all', label: 'Wszyscy', count: roleCounts.all },
-            { value: 'EMPLOYEE', label: 'Pracownicy', count: roleCounts.EMPLOYEE },
-            { value: 'TECHNICIAN', label: 'Technicy', count: roleCounts.TECHNICIAN },
-            { value: 'ADMIN', label: 'Administratorzy', count: roleCounts.ADMIN },
+            { value: 'all', label: 'Wszyscy', count: roleCounts.all, icon: null },
+            { value: 'EMPLOYEE', label: 'Pracownicy', count: roleCounts.EMPLOYEE, icon: <UserIcon className="w-3.5 h-3.5" /> },
+            { value: 'TECHNICIAN', label: 'Technicy', count: roleCounts.TECHNICIAN, icon: <Wrench className="w-3.5 h-3.5" /> },
+            { value: 'ADMIN', label: 'Administratorzy', count: roleCounts.ADMIN, icon: <Shield className="w-3.5 h-3.5" /> },
           ] as const).map(tab => (
             <button
               key={tab.value}
               onClick={() => setRoleFilter(tab.value)}
-              className={`px-3.5 py-2 rounded-lg text-sm font-semibold transition-all whitespace-nowrap ${
+              className={`inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-sm font-semibold transition-all whitespace-nowrap ${
                 roleFilter === tab.value
                   ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 border border-blue-200 dark:border-blue-800/60 shadow-sm'
                   : 'text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700/50 border border-transparent'
               }`}
             >
-              {tab.label} <span className={`ml-0.5 tabular-nums ${roleFilter === tab.value ? 'text-blue-500 dark:text-blue-400' : 'text-gray-400 dark:text-gray-500'}`}>({tab.count})</span>
+              {tab.icon}
+              {tab.label}
+              <span className={`tabular-nums text-xs ${
+                roleFilter === tab.value ? 'text-blue-500 dark:text-blue-400' : 'text-gray-400 dark:text-gray-500'
+              }`}>({tab.count})</span>
             </button>
           ))}
 
@@ -584,11 +534,10 @@ const UsersPage: React.FC = () => {
                       key={r}
                       type="button"
                       onClick={() => setFormData({ ...formData, role: r })}
-                      className={`flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl text-sm font-semibold border transition-all ${
-                        formData.role === r
+                      className={`flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl text-sm font-semibold border transition-all ${formData.role === r
                           ? `${ROLE_STYLES[r]} ring-2 ring-offset-1 dark:ring-offset-gray-800 ${r === 'ADMIN' ? 'ring-violet-400 dark:ring-violet-500' : r === 'TECHNICIAN' ? 'ring-blue-400 dark:ring-blue-500' : 'ring-gray-400 dark:ring-gray-500'}`
                           : 'border-gray-200 dark:border-gray-700 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700'
-                      }`}
+                        }`}
                     >
                       {ROLE_ICONS[r]}
                       {ROLE_LABELS[r]}
