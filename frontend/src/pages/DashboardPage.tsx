@@ -90,8 +90,9 @@ const groupBulkLogs = (logs: any[]): any[] => {
 };
 
 const DashboardPage: React.FC = () => {
-  useTitle('Start');
   const authContext = useContext(AuthContext);
+  const isTechOrAdmin = authContext?.user?.role === 'ADMIN' || authContext?.user?.role === 'TECHNICIAN';
+  useTitle(isTechOrAdmin ? 'Pulpit' : 'Start');
   const [tickets, setTickets] = useState<TicketType[]>([]);
   const [loading, setLoading] = useState(true);
   const [activityTab, setActivityTab] = useState('Wszystkie');
