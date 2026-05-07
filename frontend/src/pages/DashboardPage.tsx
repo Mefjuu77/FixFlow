@@ -293,7 +293,7 @@ const DashboardPage: React.FC = () => {
               <Link
                 key={action.label}
                 to={`/create-ticket?category=${encodeURIComponent(action.category)}`}
-                className="flex items-center gap-3 px-4 py-3.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl hover:border-blue-300 dark:hover:border-blue-600 hover:shadow-sm transition-all group"
+                className="flex items-center gap-3 px-4 py-3.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl hover:bg-blue-50 dark:hover:!bg-gray-700/50 hover:border-blue-300 dark:hover:!border-blue-500/50 hover:shadow-md transition-all duration-200 group"
               >
                 <div className={`w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 ${action.bg} ${action.color} group-hover:scale-105 transition-transform`}>
                   {action.icon}
