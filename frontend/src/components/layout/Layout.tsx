@@ -46,7 +46,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
       label: 'ANALITYKA',
       items: [
         { name: 'Statystyki', path: '/statistics', icon: <BarChart2 size={20} strokeWidth={1.75} /> },
-        ...(isAdmin ? [{ name: 'Eksport danych', path: '/reports', icon: <FileText size={20} strokeWidth={1.75} /> }] : []),
+        ...(isAdmin ? [{ name: 'Eksport danych', path: '/export', icon: <FileText size={20} strokeWidth={1.75} /> }] : []),
       ],
     }] : []),
     ...(isAdmin ? [{

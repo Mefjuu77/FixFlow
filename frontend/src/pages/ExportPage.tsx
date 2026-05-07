@@ -163,7 +163,7 @@ const MultiSelect: React.FC<MultiSelectProps> = ({ label, icon, options, selecte
 };
 
 // === Premium Page ===
-const ReportsPage: React.FC = () => {
+const ExportPage: React.FC = () => {
   useTitle('Eksport danych');
   const authContext = useContext(AuthContext);
 
@@ -313,15 +313,12 @@ const ReportsPage: React.FC = () => {
   return (
     <div className="min-h-[calc(100vh-6rem)] flex flex-col gap-8 pb-10">
       {/* Nowy prosty nagłówek z pobieraniem w prawym górnym rogu */}
-      <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-        <div className="flex items-center gap-4">
-          <div className="w-12 h-12 rounded-2xl bg-indigo-600 flex items-center justify-center shadow-lg shadow-indigo-600/20">
-            <FileBarChart className="w-6 h-6 text-white" />
-          </div>
-          <div>
-            <h1 className="text-2xl font-extrabold text-slate-800 dark:text-white tracking-tight">Eksport danych</h1>
-            <p className="text-slate-500 text-sm font-medium">Generowanie zestawień zgłoszeń</p>
-          </div>
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Eksport danych</h1>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1 font-medium">
+            Generuj i pobieraj zestawienia zgłoszeń na podstawie wybranych filtrów
+          </p>
         </div>
 
         <div className="flex flex-col sm:flex-row items-center gap-3">
@@ -341,7 +338,7 @@ const ReportsPage: React.FC = () => {
             className="flex items-center justify-center gap-2 py-2.5 bg-blue-600 text-white rounded-xl text-sm font-bold transition-all hover:bg-blue-700 active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none shadow-lg shadow-blue-600/20 w-[220px] shrink-0"
           >
             {downloading ? <RefreshCw className="w-4 h-4 animate-spin" /> : <ArrowDownToLine className="w-4 h-4" />}
-            {downloading ? 'Pobieranie...' : `Pobierz raport ${exportFormat.toUpperCase()}`}
+            {downloading ? 'Generowanie...' : `Eksportuj do ${exportFormat.toUpperCase()}`}
           </button>
         </div>
       </div>
@@ -414,7 +411,6 @@ const ReportsPage: React.FC = () => {
                     </div>
                   </>
                 )}
-                {dateFrom && <p className="text-[10px] text-slate-400 font-medium ml-1 mt-0.5">{dayjs(dateFrom).format('DD MMMM YYYY')}</p>}
               </div>
               <div className="space-y-1 relative">
                 <label className="flex items-center gap-1 text-[10px] text-indigo-500/70 font-extrabold uppercase ml-1 tracking-wider">
@@ -463,7 +459,6 @@ const ReportsPage: React.FC = () => {
                     </div>
                   </>
                 )}
-                {dateTo && <p className="text-[10px] text-slate-400 font-medium ml-1 mt-0.5">{dayjs(dateTo).format('DD MMMM YYYY')}</p>}
               </div>
             </div>
 
@@ -621,7 +616,7 @@ const ReportsPage: React.FC = () => {
                 Pokazuję <strong className="text-slate-700 dark:text-slate-300">10</strong> z <strong className="text-slate-700 dark:text-slate-300">{total}</strong> wyników.
               </p>
               <p className="text-xs font-bold text-indigo-600 cursor-pointer hover:underline" onClick={handleDownload}>
-                Pobierz pełny raport →
+                Eksportuj pełną listę →
               </p>
             </div>
           )}
@@ -631,4 +626,4 @@ const ReportsPage: React.FC = () => {
   );
 };
 
-export default ReportsPage;
+export default ExportPage;

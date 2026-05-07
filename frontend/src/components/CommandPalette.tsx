@@ -99,7 +99,7 @@ const CommandPalette: React.FC = () => {
 
     if (isAdmin) {
       items.push(
-        { id: 'nav-reports', label: 'Eksport danych', icon: <FileText className="w-4 h-4" />, action: () => runAndClose(() => navigate('/reports')), group: 'Nawigacja', keywords: 'eksport raporty pdf csv' },
+        { id: 'nav-reports', label: 'Eksport danych', icon: <FileText className="w-4 h-4" />, action: () => runAndClose(() => navigate('/export')), group: 'Nawigacja', keywords: 'eksport raporty pdf csv' },
         { id: 'nav-users', label: 'Użytkownicy', icon: <Users className="w-4 h-4" />, action: () => runAndClose(() => navigate('/users')), group: 'Nawigacja', keywords: 'pracownicy technicy administracja' },
       );
     }
