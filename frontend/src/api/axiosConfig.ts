@@ -89,9 +89,12 @@ api.interceptors.response.use(
         localStorage.removeItem('access_token');
         localStorage.removeItem('refresh_token');
 
-        // Nasz CustomTokenRefreshSerializer zwraca code='user_inactive' tylko gdy
-        // konto jest zdezaktywowane — reszta to normalne wygaśnięcie sesji.
-        const isDeactivated = refreshError.response?.data?.code === 'user_inactive';
+        // Nasz CustomTokenRefreshSerializer zwraca code='user_inactive' gdy
+        // konto jest zdezaktywowane. Sprawdzamy też detail jako fallback.
+        const data = refreshError.response?.data;
+        const isDeactivated =
+          data?.code === 'user_inactive' ||
+          (typeof data?.detail === 'string' && data.detail.includes('zdezaktywowane'));
         window.location.href = isDeactivated
           ? '/login?account_deactivated=true'
           : '/login?session_expired=true';
