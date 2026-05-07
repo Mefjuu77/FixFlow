@@ -20,7 +20,10 @@ const LoginPage: React.FC = () => {
     const params = new URLSearchParams(location.search);
     if (params.get('session_expired') === 'true') {
       setError('Twoja sesja wygasła. Ze względów bezpieczeństwa zostaniesz poproszony o ponowne logowanie.');
-      // Czyścimy parametr z paska adresu, aby po ewentualnym odświeżeniu błąd zniknął
+      window.history.replaceState({}, document.title, '/login');
+    }
+    if (params.get('account_deactivated') === 'true') {
+      setError('Twoje konto zostało zdezaktywowane w trakcie trwania sesji. Zostałeś automatycznie wylogowany.');
       window.history.replaceState({}, document.title, '/login');
     }
   }, [location.search]);
@@ -37,7 +40,9 @@ const LoginPage: React.FC = () => {
         navigate('/dashboard');
       }
     } catch (err: any) {
-      if (err.response?.status === 401) {
+      if (err.response?.data?.code === 'user_inactive') {
+        setError(err.response.data.detail || 'Twoje konto zostało zdezaktywowane. Skontaktuj się z administratorem.');
+      } else if (err.response?.status === 401) {
         setError('Błędny e-mail lub hasło.');
       } else {
         setError(err.response?.data?.detail || 'Wystąpił błąd logowania. Spróbuj ponownie.');

@@ -1,4 +1,7 @@
-from rest_framework import serializers
+from rest_framework import serializers, exceptions
+from rest_framework_simplejwt.serializers import TokenObtainPairSerializer, TokenRefreshSerializer
+from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework_simplejwt.exceptions import TokenError
 from rest_framework.validators import UniqueValidator
 from django.contrib.auth import get_user_model
 import re
@@ -13,6 +16,48 @@ def validate_name(value):
     if re.search(r'(.)\1{2,}', value):
         raise serializers.ValidationError("Podano nieprawidłowy ciąg powtarzających się znaków.")
     return value.strip()
+
+class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
+    def validate(self, attrs):
+        email = attrs.get('email')
+        password = attrs.get('password')
+
+        if email and password:
+            try:
+                user = User.objects.get(email=email)
+                if not user.is_active and user.check_password(password):
+                    raise exceptions.AuthenticationFailed({
+                        'detail': 'Twoje konto zostało zdezaktywowane. Skontaktuj się z administratorem.',
+                        'code': 'user_inactive',
+                    })
+            except User.DoesNotExist:
+                pass
+        
+        return super().validate(attrs)
+
+class CustomTokenRefreshSerializer(TokenRefreshSerializer):
+    """Nadpisuje odświeżanie tokena — gdy użytkownik jest nieaktywny,
+    zwraca code='user_inactive' zamiast generycznego błędu."""
+    def validate(self, attrs):
+        try:
+            # Dekodujemy token refresh żeby wyciągnąć user_id
+            raw_token = attrs.get('refresh')
+            token = RefreshToken(raw_token)
+            user_id = token.payload.get('user_id')
+            if user_id:
+                try:
+                    user = User.objects.get(id=user_id)
+                    if not user.is_active:
+                        raise exceptions.AuthenticationFailed({
+                            'detail': 'Twoje konto zostało zdezaktywowane. Skontaktuj się z administratorem.',
+                            'code': 'user_inactive',
+                        })
+                except User.DoesNotExist:
+                    pass
+        except TokenError:
+            pass  # Nieważny token — standardowy błąd z super().validate()
+
+        return super().validate(attrs)
 
 class UserSerializer(serializers.ModelSerializer):
     class Meta:

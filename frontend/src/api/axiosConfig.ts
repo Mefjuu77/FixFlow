@@ -84,12 +84,18 @@ api.interceptors.response.use(
         processQueue(null, newToken);
         originalRequest.headers.Authorization = `Bearer ${newToken}`;
         return api(originalRequest);
-      } catch (refreshError) {
+      } catch (refreshError: any) {
         processQueue(refreshError, null);
-        // Refresh nie powiódł się — wyloguj
         localStorage.removeItem('access_token');
         localStorage.removeItem('refresh_token');
-        window.location.href = '/login?session_expired=true';
+
+        // Nasz CustomTokenRefreshSerializer zwraca code='user_inactive' tylko gdy
+        // konto jest zdezaktywowane — reszta to normalne wygaśnięcie sesji.
+        const isDeactivated = refreshError.response?.data?.code === 'user_inactive';
+        window.location.href = isDeactivated
+          ? '/login?account_deactivated=true'
+          : '/login?session_expired=true';
+
         return Promise.reject(refreshError);
       } finally {
         isRefreshing = false;
