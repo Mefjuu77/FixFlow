@@ -286,8 +286,9 @@ const UsersPage: React.FC = () => {
   }
 
   return (
-    <div className="w-full space-y-6 animate-in fade-in duration-500">
-      {/* ============ Header ============ */}
+    <>
+      <div className="w-full space-y-6 animate-in fade-in duration-500">
+        {/* ============ Header ============ */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Zarządzanie użytkownikami</h1>
@@ -435,7 +436,7 @@ const UsersPage: React.FC = () => {
                   </div>
                 </th>
                 <th className="px-6 py-4 text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Rola</th>
-                <th className="px-6 py-4 text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider text-right">Akcje</th>
+                <th className="px-6 py-4 text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Akcje</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100 dark:divide-gray-700/50">
@@ -499,7 +500,7 @@ const UsersPage: React.FC = () => {
                       <span className={`text-sm ${inactive ? 'text-gray-400 dark:text-gray-500' : 'text-gray-600 dark:text-gray-300'}`}>{user.email}</span>
                     </td>
                     <td className="px-6 py-4">
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center justify-start gap-2">
                         <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold rounded-lg border ${inactive ? 'opacity-50' : ''} ${ROLE_STYLES[user.role]}`}>
                           {ROLE_ICONS[user.role]}
                           {ROLE_LABELS[user.role]}
@@ -512,8 +513,8 @@ const UsersPage: React.FC = () => {
                         )}
                       </div>
                     </td>
-                    <td className="px-6 py-4 text-right">
-                      <div className="flex items-center justify-end gap-1.5">
+                    <td className="px-6 py-4">
+                      <div className="flex items-center justify-start gap-1.5">
                         <button
                           onClick={() => openEditModal(user)}
                           className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-800 hover:text-blue-700 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-500/10 rounded-lg border border-gray-300 dark:border-gray-600 hover:border-blue-200 dark:hover:border-blue-800 transition-colors shadow-sm"
@@ -548,6 +549,7 @@ const UsersPage: React.FC = () => {
             </tbody>
           </table>
         </div>
+      </div>
       </div>
 
       {/* ========== Modal: Tworzenie / Edycja ========== */}
@@ -663,7 +665,7 @@ const UsersPage: React.FC = () => {
                   <button
                     type="button"
                     onClick={() => { setIsModalOpen(false); openDeleteModal(users.find(u => u.id === editUserId)!); }}
-                    className="text-xs text-gray-400 dark:text-gray-500 hover:text-red-600 dark:hover:text-red-400 transition-colors flex items-center gap-1"
+                    className="text-xs font-semibold text-gray-400 dark:text-gray-500 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors flex items-center gap-1.5 px-2 py-1.5 rounded-lg -ml-2"
                   >
                     <Trash2 className="w-3 h-3" />
                     Usuń konto trwale
@@ -737,7 +739,7 @@ const UsersPage: React.FC = () => {
           </div>
         </div>
       )}
-    </div>
+    </>
   );
 };
 
