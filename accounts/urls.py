@@ -4,7 +4,7 @@ from rest_framework_simplejwt.views import (
     TokenObtainPairView,
     TokenRefreshView,
 )
-from .views import CurrentUserView, TechnicianListView, UserListView, UserCreateView, UserDetailView, LogoutView, ChangePasswordView
+from .views import CurrentUserView, TechnicianListView, UserListView, UserCreateView, UserDetailView, UserToggleActiveView, LogoutView, ChangePasswordView
 
 urlpatterns = [
     path('login/', TokenObtainPairView.as_view(permission_classes=[AllowAny]), name='token_obtain_pair'),
@@ -16,4 +16,5 @@ urlpatterns = [
     path('list/', UserListView.as_view(), name='user_list'),
     path('create/', UserCreateView.as_view(), name='user_create'),
     path('<int:pk>/', UserDetailView.as_view(), name='user_detail'),
+    path('<int:pk>/toggle-active/', UserToggleActiveView.as_view(), name='user_toggle_active'),
 ]

@@ -17,7 +17,7 @@ def validate_name(value):
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ('id', 'email', 'role', 'first_name', 'last_name', 'avatar', 
+        fields = ('id', 'email', 'role', 'first_name', 'last_name', 'avatar', 'is_active',
                   'notify_new_ticket', 'notify_ticket_comment', 'notify_ticket_status_change')
 
 class UserCreateSerializer(serializers.ModelSerializer):
@@ -59,7 +59,7 @@ class UserUpdateSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ('id', 'email', 'password', 'role', 'first_name', 'last_name', 'avatar')
+        fields = ('id', 'email', 'password', 'role', 'first_name', 'last_name', 'avatar', 'is_active')
 
     def update(self, instance, validated_data):
         password = validated_data.pop('password', None)

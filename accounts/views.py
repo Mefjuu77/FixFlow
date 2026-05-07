@@ -116,3 +116,36 @@ class UserDetailView(generics.RetrieveUpdateDestroyAPIView):
         if self.request.method in ('PUT', 'PATCH'):
             return UserUpdateSerializer
         return UserSerializer
+
+
+class UserToggleActiveView(APIView):
+    """
+    POST: Przełącza status is_active użytkownika (aktywuj/dezaktywuj).
+    Tylko dla administratorów. Admin nie może dezaktywować samego siebie.
+    """
+    permission_classes = [IsAuthenticated, IsAdmin]
+
+    def post(self, request, pk):
+        try:
+            user = CustomUser.objects.get(pk=pk)
+        except CustomUser.DoesNotExist:
+            return Response(
+                {'detail': 'Użytkownik nie został znaleziony.'},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        if user.pk == request.user.pk:
+            return Response(
+                {'detail': 'Nie możesz dezaktywować własnego konta.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        user.is_active = not user.is_active
+        user.save(update_fields=['is_active'])
+
+        action = 'aktywowane' if user.is_active else 'dezaktywowane'
+        serializer = UserSerializer(user, context={'request': request})
+        return Response({
+            'detail': f'Konto zostało {action}.',
+            'user': serializer.data,
+        })

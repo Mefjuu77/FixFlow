@@ -6,7 +6,6 @@ import useTitle from '../hooks/useTitle';
 import {
   Plus,
   Search,
-  Edit3,
   Trash2,
   X,
   Shield,
@@ -15,10 +14,12 @@ import {
   Mail,
   Eye,
   EyeOff,
-  KeyRound,
   ArrowUp,
   ArrowDown,
   Users,
+  UserX,
+  UserCheck,
+  Settings,
 } from 'lucide-react';
 
 const ROLE_LABELS: Record<string, string> = {
@@ -60,6 +61,7 @@ const UsersPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [roleFilter, setRoleFilter] = useState<string>('all');
+  const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive'>('active');
   const [sortConfig, setSortConfig] = useState<{ key: SortField; direction: SortDirection }>({ key: 'name', direction: 'asc' });
 
   // Modal
@@ -73,7 +75,11 @@ const UsersPage: React.FC = () => {
 
   // Delete
   const [deleteTarget, setDeleteTarget] = useState<User | null>(null);
+  const [deleteConfirmEmail, setDeleteConfirmEmail] = useState('');
   const [isDeleting, setIsDeleting] = useState(false);
+
+  // Toggle active
+  const [isToggling, setIsToggling] = useState<number | null>(null);
 
   const fetchUsers = async () => {
     try {
@@ -107,11 +113,12 @@ const UsersPage: React.FC = () => {
     ADMIN: users.filter(u => u.role === 'ADMIN').length,
   };
 
-  const hasActiveFilters = searchQuery !== '' || roleFilter !== 'all';
+  const hasActiveFilters = searchQuery !== '' || roleFilter !== 'all' || statusFilter !== 'active';
 
   const clearFilters = () => {
     setSearchQuery('');
     setRoleFilter('all');
+    setStatusFilter('active');
   };
 
   const getSortTooltip = (field: 'name' | 'email', label: string) => {
@@ -127,9 +134,11 @@ const UsersPage: React.FC = () => {
     return `${label} • ${sortLegend}`;
   };
 
-  // Filter: search ∩ role
+  // Filter: search ∩ role ∩ status
   const filteredUsers = [...users]
     .filter(u => {
+      if (statusFilter === 'active' && u.is_active === false) return false;
+      if (statusFilter === 'inactive' && u.is_active !== false) return false;
       if (roleFilter !== 'all' && u.role !== roleFilter) return false;
       if (searchQuery) {
         const q = searchQuery.toLowerCase();
@@ -232,7 +241,26 @@ const UsersPage: React.FC = () => {
     }
   };
 
+  // ---------- Toggle Active ----------
+  const handleToggleActive = async (user: User) => {
+    setIsToggling(user.id);
+    try {
+      await api.post(`users/${user.id}/toggle-active/`);
+      await fetchUsers();
+    } catch (err: any) {
+      const msg = err.response?.data?.detail || 'Nie udało się zmienić statusu.';
+      alert(msg);
+    } finally {
+      setIsToggling(null);
+    }
+  };
+
   // ---------- Delete ----------
+  const openDeleteModal = (user: User) => {
+    setDeleteTarget(user);
+    setDeleteConfirmEmail('');
+  };
+
   const handleDelete = async () => {
     if (!deleteTarget) return;
     setIsDeleting(true);
@@ -276,51 +304,83 @@ const UsersPage: React.FC = () => {
       </div>
 
       {/* ============ Filter Bar ============ */}
-      <div className="flex flex-col sm:flex-row gap-3 p-4 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-sm">
-        {/* Search */}
-        <div className="relative flex-1 max-w-sm">
-          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-          <input
-            type="text"
-            className="w-full pl-10 pr-4 py-2 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none dark:text-white"
-            placeholder="Szukaj po imieniu, nazwisku lub email..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-          />
+      <div className="flex flex-col gap-2.5 p-4 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-sm">
+        {/* Row 1: Search + Role tabs (primary) */}
+        <div className="flex flex-col sm:flex-row gap-2.5">
+          {/* Search */}
+          <div className="relative flex-1 max-w-sm">
+            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+            <input
+              type="text"
+              className="w-full pl-10 pr-4 py-2 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none dark:text-white"
+              placeholder="Szukaj po imieniu, nazwisku lub email..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+          </div>
+
+          {/* Role tabs (primary) */}
+          <div className="flex items-center gap-1 flex-wrap">
+            {([
+              { value: 'all', label: 'Wszyscy', count: roleCounts.all, icon: null },
+              { value: 'EMPLOYEE', label: 'Pracownicy', count: roleCounts.EMPLOYEE, icon: <UserIcon className="w-3.5 h-3.5" /> },
+              { value: 'TECHNICIAN', label: 'Technicy', count: roleCounts.TECHNICIAN, icon: <Wrench className="w-3.5 h-3.5" /> },
+              { value: 'ADMIN', label: 'Administratorzy', count: roleCounts.ADMIN, icon: <Shield className="w-3.5 h-3.5" /> },
+            ] as const).map(tab => (
+              <button
+                key={tab.value}
+                onClick={() => setRoleFilter(tab.value)}
+                className={`inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-sm font-semibold transition-all whitespace-nowrap ${
+                  roleFilter === tab.value
+                    ? 'bg-blue-600 text-white border border-blue-600 shadow-sm'
+                    : 'text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700/50 border border-transparent'
+                }`}
+              >
+                {tab.icon}
+                {tab.label}
+                <span className={`tabular-nums text-xs ${
+                  roleFilter === tab.value ? 'text-blue-200' : 'text-gray-400 dark:text-gray-500'
+                }`}>({tab.count})</span>
+              </button>
+            ))}
+          </div>
         </div>
 
-        {/* Role tabs */}
-        <div className="flex items-center gap-1 flex-wrap">
-          {([
-            { value: 'all', label: 'Wszyscy', count: roleCounts.all, icon: null },
-            { value: 'EMPLOYEE', label: 'Pracownicy', count: roleCounts.EMPLOYEE, icon: <UserIcon className="w-3.5 h-3.5" /> },
-            { value: 'TECHNICIAN', label: 'Technicy', count: roleCounts.TECHNICIAN, icon: <Wrench className="w-3.5 h-3.5" /> },
-            { value: 'ADMIN', label: 'Administratorzy', count: roleCounts.ADMIN, icon: <Shield className="w-3.5 h-3.5" /> },
-          ] as const).map(tab => (
-            <button
-              key={tab.value}
-              onClick={() => setRoleFilter(tab.value)}
-              className={`inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-sm font-semibold transition-all whitespace-nowrap ${
-                roleFilter === tab.value
-                  ? 'bg-blue-600 text-white border border-blue-600 shadow-sm'
-                  : 'text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700/50 border border-transparent'
-              }`}
-            >
-              {tab.icon}
-              {tab.label}
-              <span className={`tabular-nums text-xs ${
-                roleFilter === tab.value ? 'text-blue-200' : 'text-gray-400 dark:text-gray-500'
-              }`}>({tab.count})</span>
-            </button>
-          ))}
+        {/* Row 2: Status filter (secondary) */}
+        <div className="flex items-center gap-2 pt-1 border-t border-gray-100 dark:border-gray-700/60">
+          <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400 dark:text-gray-500 whitespace-nowrap select-none">Status</span>
+          <div className="flex items-center gap-1">
+            {([
+              { value: 'active' as const, label: 'Aktywni', icon: <UserCheck className="w-3 h-3" /> },
+              { value: 'inactive' as const, label: 'Nieaktywni', icon: <UserX className="w-3 h-3" /> },
+              { value: 'all' as const, label: 'Wszyscy', icon: null },
+            ]).map(tab => (
+              <button
+                key={`status-${tab.value}`}
+                onClick={() => setStatusFilter(tab.value)}
+                className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-[11px] font-medium transition-all whitespace-nowrap ${
+                  statusFilter === tab.value
+                    ? tab.value === 'inactive'
+                      ? 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400'
+                      : tab.value === 'active'
+                        ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400'
+                        : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300'
+                    : 'text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700/50'
+                }`}
+              >
+                {tab.icon}
+                {tab.label}
+              </button>
+            ))}
+          </div>
 
           {/* Clear filters */}
           {hasActiveFilters && (
             <button
               onClick={clearFilters}
-              className="ml-1 px-2.5 py-1.5 rounded-lg text-xs font-medium text-gray-500 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 border border-transparent transition-colors flex items-center gap-1"
+              className="ml-auto px-2 py-1 rounded-md text-[11px] font-medium text-gray-400 dark:text-gray-500 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors flex items-center gap-1"
             >
-              <X className="w-3.5 h-3.5" /> Wyczyść
+              <X className="w-3 h-3" /> Wyczyść filtry
             </button>
           )}
         </div>
@@ -410,59 +470,74 @@ const UsersPage: React.FC = () => {
                   </td>
                 </tr>
               ) : (
-                filteredUsers.map(user => (
-                  <tr key={user.id} className="group/row hover:bg-gray-50/60 dark:hover:bg-gray-700/30 transition-colors">
+                filteredUsers.map(user => {
+                  const inactive = user.is_active === false;
+                  return (
+                  <tr key={user.id} className={`group/row transition-colors ${inactive ? 'bg-gray-50/40 dark:bg-gray-800/40' : 'hover:bg-gray-50/60 dark:hover:bg-gray-700/30'}`}>
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
-                        <div className="w-9 h-9 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center overflow-hidden outline outline-1 outline-gray-200 text-white font-bold text-sm flex-shrink-0">
+                        <div className={`w-9 h-9 rounded-full flex items-center justify-center overflow-hidden outline outline-1 outline-gray-200 text-white font-bold text-sm flex-shrink-0 ${inactive ? 'bg-gray-400 dark:bg-gray-600' : 'bg-gradient-to-br from-blue-500 to-indigo-600'}`}>
                           {user.avatar ? (
-                            <img src={user.avatar} alt="Avatar" className="w-full h-full object-cover" />
+                            <img src={user.avatar} alt="Avatar" className={`w-full h-full object-cover ${inactive ? 'opacity-50 grayscale' : ''}`} />
                           ) : (
                             user.first_name ? user.first_name.charAt(0).toUpperCase() : '?'
                           )}
                         </div>
                         <div>
-                          <p className="text-sm font-bold text-gray-900 dark:text-white">{user.first_name} {user.last_name}</p>
+                          <p className={`text-sm font-bold ${inactive ? 'text-gray-400 dark:text-gray-500' : 'text-gray-900 dark:text-white'}`}>{user.first_name} {user.last_name}</p>
                           <p className="text-xs text-gray-400 dark:text-gray-500 font-mono">#{user.id}</p>
                         </div>
                       </div>
                     </td>
                     <td className="px-6 py-4">
-                      <span className="text-sm text-gray-600 dark:text-gray-300">{user.email}</span>
+                      <span className={`text-sm ${inactive ? 'text-gray-400 dark:text-gray-500' : 'text-gray-600 dark:text-gray-300'}`}>{user.email}</span>
                     </td>
                     <td className="px-6 py-4">
-                      <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold rounded-lg border ${ROLE_STYLES[user.role]}`}>
-                        {ROLE_ICONS[user.role]}
-                        {ROLE_LABELS[user.role]}
-                      </span>
+                      <div className="flex items-center gap-2">
+                        <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold rounded-lg border ${inactive ? 'opacity-50' : ''} ${ROLE_STYLES[user.role]}`}>
+                          {ROLE_ICONS[user.role]}
+                          {ROLE_LABELS[user.role]}
+                        </span>
+                        {inactive && (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-bold rounded-md bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-800/50">
+                            <UserX className="w-3 h-3" />
+                            Nieaktywny
+                          </span>
+                        )}
+                      </div>
                     </td>
                     <td className="px-6 py-4 text-right">
-                      <div className="flex items-center justify-end gap-0.5 opacity-[0.45] group-hover/row:opacity-100 transition-opacity">
+                      <div className="flex items-center justify-end gap-1.5">
                         <button
                           onClick={() => openEditModal(user)}
-                          className="p-2.5 text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-500/10 rounded-lg transition-colors"
-                          title="Edytuj"
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-gray-600 dark:text-gray-300 hover:text-blue-700 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-500/10 rounded-lg border border-gray-200 dark:border-gray-700 hover:border-blue-200 dark:hover:border-blue-800 transition-colors"
                         >
-                          <Edit3 className="w-4 h-4" />
+                          <Settings className="w-3.5 h-3.5" />
+                          Zarządzaj
                         </button>
                         <button
-                          onClick={() => openResetPasswordModal(user)}
-                          className="p-2.5 text-gray-500 dark:text-gray-400 hover:text-amber-600 dark:hover:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-500/10 rounded-lg transition-colors"
-                          title="Resetuj hasło"
+                          onClick={() => handleToggleActive(user)}
+                          disabled={isToggling === user.id}
+                          className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg transition-colors ${
+                            inactive
+                              ? 'text-gray-400 dark:text-gray-500 hover:text-green-700 dark:hover:text-green-400 hover:bg-green-50 dark:hover:bg-green-500/10'
+                              : 'text-gray-400 dark:text-gray-500 hover:text-amber-700 dark:hover:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-500/10'
+                          } disabled:opacity-40`}
                         >
-                          <KeyRound className="w-4 h-4" />
-                        </button>
-                        <button
-                          onClick={() => setDeleteTarget(user)}
-                          className="p-2.5 text-gray-500 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg transition-colors"
-                          title="Usuń"
-                        >
-                          <Trash2 className="w-4 h-4" />
+                          {isToggling === user.id ? (
+                            <div className="w-3.5 h-3.5 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                          ) : inactive ? (
+                            <UserCheck className="w-3.5 h-3.5" />
+                          ) : (
+                            <UserX className="w-3.5 h-3.5" />
+                          )}
+                          {inactive ? 'Aktywuj' : 'Dezaktywuj'}
                         </button>
                       </div>
                     </td>
                   </tr>
-                ))
+                  );
+                })
               )}
             </tbody>
           </table>
@@ -572,21 +647,35 @@ const UsersPage: React.FC = () => {
               </div>
             </div>
 
-            <div className="px-6 py-4 border-t border-gray-100 dark:border-gray-700 flex justify-end gap-3">
-              <button
-                onClick={() => setIsModalOpen(false)}
-                className="px-4 py-2 text-sm font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-xl transition-colors"
-              >
-                Anuluj
-              </button>
-              <button
-                onClick={handleSubmit}
-                disabled={isSubmitting}
-                className="px-5 py-2 text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-xl shadow-sm transition-all disabled:opacity-50 flex items-center"
-              >
-                {isSubmitting && <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />}
-                {editUserId ? 'Zapisz zmiany' : 'Utwórz użytkownika'}
-              </button>
+            <div className="px-6 py-4 border-t border-gray-100 dark:border-gray-700">
+              <div className="flex justify-between items-center">
+                {editUserId ? (
+                  <button
+                    type="button"
+                    onClick={() => { setIsModalOpen(false); openDeleteModal(users.find(u => u.id === editUserId)!); }}
+                    className="text-xs text-gray-400 dark:text-gray-500 hover:text-red-600 dark:hover:text-red-400 transition-colors flex items-center gap-1"
+                  >
+                    <Trash2 className="w-3 h-3" />
+                    Usuń konto trwale
+                  </button>
+                ) : <div />}
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => setIsModalOpen(false)}
+                    className="px-4 py-2 text-sm font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-xl transition-colors"
+                  >
+                    Anuluj
+                  </button>
+                  <button
+                    onClick={handleSubmit}
+                    disabled={isSubmitting}
+                    className="px-5 py-2 text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-xl shadow-sm transition-all disabled:opacity-50 flex items-center"
+                  >
+                    {isSubmitting && <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />}
+                    {editUserId ? 'Zapisz zmiany' : 'Utwórz użytkownika'}
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -595,16 +684,31 @@ const UsersPage: React.FC = () => {
       {/* ========== Modal: Potwierdzenie usunięcia ========== */}
       {deleteTarget && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 animate-in fade-in duration-200">
-          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-sm mx-4 p-6 text-center">
-            <div className="w-14 h-14 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
-              <Trash2 className="w-7 h-7 text-red-600 dark:text-red-400" />
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-md mx-4 p-6">
+            <div className="text-center">
+              <div className="w-14 h-14 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Trash2 className="w-7 h-7 text-red-600 dark:text-red-400" />
+              </div>
+              <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-1">Trwale usunąć konto?</h3>
+              <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">
+                Usuwasz <span className="font-semibold text-gray-700 dark:text-gray-200">{deleteTarget.first_name} {deleteTarget.last_name}</span>.
+              </p>
+              <div className="text-xs text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800/50 rounded-lg p-3 mb-4 text-left">
+                <p className="font-bold mb-1">⚠️ Ta operacja jest nieodwracalna</p>
+                <p>Wszystkie dane użytkownika zostaną usunięte. Jeśli chcesz jedynie zablokować dostęp, użyj opcji <strong>Dezaktywuj</strong>.</p>
+              </div>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mb-2 text-left">
+                Wpisz adres e-mail użytkownika, aby potwierdzić:
+              </p>
+              <input
+                type="text"
+                value={deleteConfirmEmail}
+                onChange={e => setDeleteConfirmEmail(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-200 dark:border-gray-700 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-red-500 bg-white dark:bg-gray-900 dark:text-white mb-4"
+                placeholder={deleteTarget.email}
+              />
             </div>
-            <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-1">Usunąć użytkownika?</h3>
-            <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">
-              Czy na pewno chcesz usunąć <span className="font-semibold text-gray-700 dark:text-gray-200">{deleteTarget.first_name} {deleteTarget.last_name}</span>?
-              <br />Tej operacji nie można cofnąć.
-            </p>
-            <div className="flex gap-3 justify-center">
+            <div className="flex gap-3 justify-end">
               <button
                 onClick={() => setDeleteTarget(null)}
                 className="px-4 py-2 text-sm font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-xl transition-colors"
@@ -613,11 +717,11 @@ const UsersPage: React.FC = () => {
               </button>
               <button
                 onClick={handleDelete}
-                disabled={isDeleting}
-                className="px-5 py-2 text-sm font-bold text-white bg-red-600 hover:bg-red-700 rounded-xl shadow-sm transition-all disabled:opacity-50 flex items-center"
+                disabled={isDeleting || deleteConfirmEmail !== deleteTarget.email}
+                className="px-5 py-2 text-sm font-bold text-white bg-red-600 hover:bg-red-700 rounded-xl shadow-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
               >
                 {isDeleting && <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />}
-                Usuń
+                Usuń trwale
               </button>
             </div>
           </div>
