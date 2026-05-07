@@ -1310,7 +1310,7 @@ const DashboardPage: React.FC = () => {
                 Pulpit
               </h1>
               <p className="text-sm text-gray-500 dark:text-gray-400 mt-1 font-medium">
-                Przegląd obciążenia zespołu i wydajności
+                Przegląd najważniejszych danych z systemu
               </p>
             </div>
 

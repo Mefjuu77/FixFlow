@@ -5,7 +5,7 @@ import api from '../api/axiosConfig';
 import { ticketService } from '../api/ticketService';
 import { Ticket, User } from '../types';
 import dayjs from 'dayjs';
-import { Plus, PlusCircle, Search, ChevronDown, ArrowUp, ArrowDown, UserMinus, Circle, CheckCircle2, XCircle, Loader2, Trash2 } from 'lucide-react';
+import { Plus, PlusCircle, Search, ChevronDown, ArrowUp, ArrowDown, UserMinus, Circle, CheckCircle2, XCircle, Loader2, Trash2, X } from 'lucide-react';
 import useTitle from '../hooks/useTitle';
 import { getCategoryIcon, STATUS_LABELS, STATUS_STYLES, PRIORITY_LABELS, PRIORITY_ICONS } from '../utils/ticketConstants';
 import UserAvatar from '../components/UserAvatar';
@@ -134,6 +134,16 @@ const TicketsPage: React.FC = () => {
   };
 
   // ---------- Logika filtrowania i sortowania (memoizowana) ----------
+  const hasActiveFilters = searchQuery !== '' || statusFilter !== 'all' || categoryFilter !== 'all' || priorityFilter !== 'all' || assignmentFilter !== 'all';
+
+  const clearFilters = () => {
+    setSearchQuery('');
+    setStatusFilter('all');
+    setCategoryFilter('all');
+    setPriorityFilter('all');
+    setAssignmentFilter('all');
+  };
+
   const filteredTickets = useMemo(() => {
     let result = tickets.filter(t => {
       const q = searchQuery.toLowerCase();
@@ -504,6 +514,18 @@ const TicketsPage: React.FC = () => {
             ]}
             className="w-44 sm:w-56"
           />
+        )}
+
+        {/* Przycisk Wyczyść filtry */}
+        {hasActiveFilters && (
+          <div className="flex items-center pl-2 sm:pl-4 border-l border-gray-200 dark:border-gray-700">
+            <button
+              onClick={clearFilters}
+              className="px-3 py-2 rounded-xl text-sm font-medium text-gray-500 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors flex items-center gap-1.5 whitespace-nowrap"
+            >
+              <X className="w-4 h-4" /> Wyczyść filtry
+            </button>
+          </div>
         )}
       </div>
 
