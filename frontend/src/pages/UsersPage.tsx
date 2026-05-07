@@ -484,13 +484,13 @@ const UsersPage: React.FC = () => {
                           )}
                         </div>
                         <div>
-                          <p className={`text-sm font-bold ${inactive ? 'text-gray-400 dark:text-gray-500' : 'text-gray-900 dark:text-white'}`}>{user.first_name} {user.last_name}</p>
+                          <p className={`text-sm font-bold ${inactive ? 'text-gray-500 dark:text-gray-400' : 'text-gray-900 dark:text-white'}`}>{user.first_name} {user.last_name}</p>
                           <p className="text-xs text-gray-400 dark:text-gray-500 font-mono">#{user.id}</p>
                         </div>
                       </div>
                     </td>
                     <td className="px-6 py-4">
-                      <span className={`text-sm ${inactive ? 'text-gray-400 dark:text-gray-500' : 'text-gray-600 dark:text-gray-300'}`}>{user.email}</span>
+                      <span className={`text-sm ${inactive ? 'text-gray-500 dark:text-gray-400' : 'text-gray-600 dark:text-gray-300'}`}>{user.email}</span>
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-2">
@@ -518,10 +518,10 @@ const UsersPage: React.FC = () => {
                         <button
                           onClick={() => handleToggleActive(user)}
                           disabled={isToggling === user.id}
-                          className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg transition-colors ${
+                          className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg border transition-colors ${
                             inactive
-                              ? 'text-gray-400 dark:text-gray-500 hover:text-green-700 dark:hover:text-green-400 hover:bg-green-50 dark:hover:bg-green-500/10'
-                              : 'text-gray-400 dark:text-gray-500 hover:text-amber-700 dark:hover:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-500/10'
+                              ? 'text-gray-500 dark:text-gray-400 border-gray-200 dark:border-gray-700 hover:text-green-700 dark:hover:text-green-400 hover:bg-green-50 dark:hover:bg-green-500/10 hover:border-green-200 dark:hover:border-green-800/60'
+                              : 'text-gray-500 dark:text-gray-400 border-gray-200 dark:border-gray-700 hover:text-amber-700 dark:hover:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-500/10 hover:border-amber-200 dark:hover:border-amber-800/60'
                           } disabled:opacity-40`}
                         >
                           {isToggling === user.id ? (
