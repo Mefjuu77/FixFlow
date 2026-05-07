@@ -63,6 +63,8 @@ const UsersPage: React.FC = () => {
   const [roleFilter, setRoleFilter] = useState<string>('all');
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive'>('active');
   const [sortConfig, setSortConfig] = useState<{ key: SortField; direction: SortDirection }>({ key: 'name', direction: 'asc' });
+  const [currentPage, setCurrentPage] = useState(1);
+  const ITEMS_PER_PAGE = 10;
 
   // Modal
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -104,6 +106,10 @@ const UsersPage: React.FC = () => {
       window.history.replaceState({}, document.title);
     }
   }, [location.state]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, roleFilter, statusFilter, sortConfig]);
 
   // Role counts
   const roleCounts = {
@@ -160,6 +166,12 @@ const UsersPage: React.FC = () => {
       }
       return a.email.localeCompare(b.email, 'pl') * dir;
     });
+
+  const totalPages = Math.ceil(filteredUsers.length / ITEMS_PER_PAGE);
+  const paginatedUsers = filteredUsers.slice(
+    (currentPage - 1) * ITEMS_PER_PAGE,
+    currentPage * ITEMS_PER_PAGE
+  );
 
   const handleSort = (field: SortField) => {
     setSortConfig(prev => ({
@@ -440,7 +452,7 @@ const UsersPage: React.FC = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100 dark:divide-gray-700/50">
-              {filteredUsers.length === 0 ? (
+              {paginatedUsers.length === 0 ? (
                 <tr>
                   <td colSpan={4} className="px-6 py-16 text-center">
                     {users.length === 0 ? (
@@ -477,7 +489,7 @@ const UsersPage: React.FC = () => {
                   </td>
                 </tr>
               ) : (
-                filteredUsers.map(user => {
+                paginatedUsers.map(user => {
                   const inactive = user.is_active === false;
                   return (
                   <tr key={user.id} className={`group/row transition-colors ${inactive ? 'bg-gray-50/40 dark:bg-gray-800/40' : 'hover:bg-gray-50/60 dark:hover:bg-gray-700/30'}`}>
@@ -548,6 +560,68 @@ const UsersPage: React.FC = () => {
               )}
             </tbody>
           </table>
+        </div>
+        
+        {/* Footer z informacją o liczbie wyników i paginacją */}
+        <div className="px-6 py-4 border-t border-gray-100 dark:border-gray-700/50 bg-gray-50/50 dark:bg-gray-800/50 flex flex-col sm:flex-row items-center justify-between gap-4">
+          <p className="text-xs font-medium text-slate-500">
+            Pokazuję <strong className="text-slate-700 dark:text-slate-300">
+              {filteredUsers.length > 0 ? (currentPage - 1) * ITEMS_PER_PAGE + 1 : 0}
+            </strong> do <strong className="text-slate-700 dark:text-slate-300">
+              {Math.min(currentPage * ITEMS_PER_PAGE, filteredUsers.length)}
+            </strong> z <strong className="text-slate-700 dark:text-slate-300">{filteredUsers.length}</strong> wyników.
+          </p>
+
+          {totalPages > 1 && (
+            <div className="flex items-center gap-1">
+              <button
+                onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                disabled={currentPage === 1}
+                className="px-3 py-1.5 rounded-lg text-xs font-semibold border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-sm"
+              >
+                Poprzednia
+              </button>
+              
+              <div className="flex items-center px-1 gap-1">
+                {Array.from({ length: totalPages }).map((_, i) => {
+                  const pageNum = i + 1;
+                  if (
+                    pageNum === 1 || 
+                    pageNum === totalPages || 
+                    (pageNum >= currentPage - 1 && pageNum <= currentPage + 1)
+                  ) {
+                    return (
+                      <button
+                        key={pageNum}
+                        onClick={() => setCurrentPage(pageNum)}
+                        className={`w-8 h-8 rounded-lg text-xs font-bold transition-all flex items-center justify-center border ${
+                          currentPage === pageNum 
+                            ? 'bg-blue-600 text-white border-blue-600 shadow-md shadow-blue-600/20' 
+                            : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
+                        }`}
+                      >
+                        {pageNum}
+                      </button>
+                    );
+                  } else if (
+                    pageNum === currentPage - 2 || 
+                    pageNum === currentPage + 2
+                  ) {
+                    return <span key={`ellipsis-${pageNum}`} className="text-gray-400 dark:text-gray-500 text-xs tracking-widest px-1">...</span>;
+                  }
+                  return null;
+                })}
+              </div>
+
+              <button
+                onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                disabled={currentPage === totalPages}
+                className="px-3 py-1.5 rounded-lg text-xs font-semibold border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-sm"
+              >
+                Następna
+              </button>
+            </div>
+          )}
         </div>
       </div>
       </div>
