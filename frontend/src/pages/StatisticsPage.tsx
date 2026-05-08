@@ -9,9 +9,21 @@ import {
   ArrowUpRight,
   Lightbulb,
   UserMinus,
+  Calendar,
+  ChevronDown,
+  TrendingUp,
+  TrendingDown,
+  Ticket as TicketIcon,
+  CheckCircle2,
 } from 'lucide-react';
 import dayjs from 'dayjs';
+import isBetween from 'dayjs/plugin/isBetween';
 import { getCategoryIcon } from '../utils/ticketConstants';
+
+dayjs.extend(isBetween);
+
+const plMonthsShort = ['sty', 'lut', 'mar', 'kwi', 'maj', 'cze', 'lip', 'sie', 'wrz', 'paź', 'lis', 'gru'];
+const plMonthsFull = ['Styczeń', 'Luty', 'Marzec', 'Kwiecień', 'Maj', 'Czerwiec', 'Lipiec', 'Sierpień', 'Wrzesień', 'Październik', 'Listopad', 'Grudzień'];
 
 // ==================== DONUT CHART (czysty SVG) ====================
 interface DonutSegment {
@@ -207,6 +219,82 @@ const StatisticsPage: React.FC = () => {
   const isAdmin = role === 'ADMIN';
   const isTechnician = role === 'TECHNICIAN';
 
+  // ========== DATE PICKER STATE ==========
+  const [dateRange, setDateRange] = useState<{ start: dayjs.Dayjs; end: dayjs.Dayjs }>({
+    start: dayjs().subtract(6, 'day').startOf('day'),
+    end: dayjs().endOf('day'),
+  });
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [pickerView, setPickerView] = useState<{ year: number; month: number }>({
+    year: dayjs().year(),
+    month: dayjs().month(),
+  });
+  const [customStart, setCustomStart] = useState<dayjs.Dayjs | null>(null);
+  const [hoverDate, setHoverDate] = useState<dayjs.Dayjs | null>(null);
+  const datePickerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (datePickerRef.current && !datePickerRef.current.contains(e.target as Node)) {
+        setShowDatePicker(false);
+        setCustomStart(null);
+      }
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, []);
+
+  const applyPreset = (days: number) => {
+    setDateRange({ start: dayjs().subtract(days - 1, 'day').startOf('day'), end: dayjs().endOf('day') });
+    setShowDatePicker(false);
+    setCustomStart(null);
+    setHoverDate(null);
+  };
+
+  const applyToday = () => {
+    setDateRange({ start: dayjs().startOf('day'), end: dayjs().endOf('day') });
+    setShowDatePicker(false);
+    setCustomStart(null);
+    setHoverDate(null);
+  };
+
+  const applyThisMonth = () => {
+    setDateRange({ start: dayjs().startOf('month'), end: dayjs().endOf('day') });
+    setShowDatePicker(false);
+    setCustomStart(null);
+    setHoverDate(null);
+  };
+
+  const applyLastMonth = () => {
+    const last = dayjs().subtract(1, 'month');
+    setDateRange({ start: last.startOf('month'), end: last.endOf('month') });
+    setShowDatePicker(false);
+    setCustomStart(null);
+    setHoverDate(null);
+  };
+
+  const handleDayClick = (d: dayjs.Dayjs) => {
+    if (d.isAfter(dayjs(), 'day')) return; // blokuj przyszłe daty
+    if (!customStart) {
+      setCustomStart(d);
+    } else {
+      const [s, e] = d.isBefore(customStart) ? [d, customStart] : [customStart, d];
+      setDateRange({ start: s.startOf('day'), end: e.endOf('day') });
+      setShowDatePicker(false);
+      setCustomStart(null);
+      setHoverDate(null);
+    }
+  };
+
+  const dateRangeLabel = (() => {
+    const { start, end } = dateRange;
+    if (start.month() === end.month() && start.year() === end.year()) {
+      return `${start.date()}–${end.date()} ${plMonthsShort[end.month()]} ${end.year()}`;
+    }
+    return `${start.date()} ${plMonthsShort[start.month()]} – ${end.date()} ${plMonthsShort[end.month()]} ${end.year()}`;
+  })();
+  // =======================================
+
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -230,15 +318,38 @@ const StatisticsPage: React.FC = () => {
   }
 
   // ---------- Dane wspólne ----------
-  const activeTickets = tickets.filter(t => !['ROZWIAZANE', 'ZAMKNIETE'].includes(t.status));
-  const allCount = tickets.length;
+  const filteredTickets = tickets.filter(t => dayjs(t.created_at).isBetween(dateRange.start, dateRange.end, 'day', '[]'));
+
+  // Poprzedni okres dla trendów
+  const rangeDays = dateRange.end.diff(dateRange.start, 'day') + 1;
+  const prevStart = dateRange.start.subtract(rangeDays, 'day');
+  const prevEnd = dateRange.start.subtract(1, 'day').endOf('day');
+  const prevTickets = tickets.filter(t => dayjs(t.created_at).isBetween(prevStart, prevEnd, 'day', '[]'));
+
+  const calcTrend = (current: number, prev: number) => {
+    if (prev === 0 && current === 0) return { value: 0, direction: 'up' as const };
+    if (prev === 0) return { value: 100, direction: 'up' as const };
+    const pct = ((current - prev) / prev) * 100;
+    return {
+      value: Math.abs(pct),
+      direction: pct >= 0 ? 'up' as const : 'down' as const,
+    };
+  };
+
+  const activeTickets = filteredTickets.filter(t => !['ROZWIAZANE', 'ZAMKNIETE'].includes(t.status));
+  const allCount = filteredTickets.length;
+
+  const prevActiveCount = prevTickets.filter(t => !['ROZWIAZANE', 'ZAMKNIETE'].includes(t.status)).length;
+  const prevAllCount = prevTickets.length;
+  const prevResolvedCount = prevTickets.filter(t => t.status === 'ROZWIAZANE').length;
+  const prevClosedCount = prevTickets.filter(t => t.status === 'ZAMKNIETE').length;
 
   // Statusy
   const statusData: DonutSegment[] = [
-    { label: 'Nowe', value: tickets.filter(t => t.status === 'NOWE').length, color: '#3b82f6', filterValue: 'NOWE' },
-    { label: 'W toku', value: tickets.filter(t => t.status === 'W_TOKU').length, color: '#f59e0b', filterValue: 'W_TOKU' },
-    { label: 'Rozwiązane', value: tickets.filter(t => t.status === 'ROZWIAZANE').length, color: '#22c55e', filterValue: 'ROZWIAZANE' },
-    { label: 'Zamknięte', value: tickets.filter(t => t.status === 'ZAMKNIETE').length, color: '#14b8a6', filterValue: 'ZAMKNIETE' },
+    { label: 'Nowe', value: filteredTickets.filter(t => t.status === 'NOWE').length, color: '#3b82f6', filterValue: 'NOWE' },
+    { label: 'W toku', value: filteredTickets.filter(t => t.status === 'W_TOKU').length, color: '#f59e0b', filterValue: 'W_TOKU' },
+    { label: 'Rozwiązane', value: filteredTickets.filter(t => t.status === 'ROZWIAZANE').length, color: '#22c55e', filterValue: 'ROZWIAZANE' },
+    { label: 'Zamknięte', value: filteredTickets.filter(t => t.status === 'ZAMKNIETE').length, color: '#14b8a6', filterValue: 'ZAMKNIETE' },
   ];
 
   // Kategorie
@@ -249,7 +360,7 @@ const StatisticsPage: React.FC = () => {
   });
   const categorySorted = [...categoryMap.entries()].sort((a, b) => b[1] - a[1]);
   const maxCategoryVal = categorySorted.length > 0 ? categorySorted[0][1] : 1;
-  const categoryColors = ['#3b82f6', '#6366f1', '#8b5cf6', '#ec4899', '#f59e0b', '#22c55e', '#14b8a6'];
+  const categoryColors = ['#1d4ed8', '#2563eb', '#3b82f6', '#60a5fa', '#93c5fd', '#bfdbfe', '#dbeafe'];
 
   // Priorytety
   const priorityData: DonutSegment[] = [
@@ -278,12 +389,13 @@ const StatisticsPage: React.FC = () => {
   const maxWorkload = Math.max(unassignedCount, ...(workloadEntries.map(e => e[1].count)), 1);
 
   // Sugestie
-  const suggestions: { text: string; severity: 'warning' | 'info' | 'success' }[] = [];
+  const suggestions: { text: string; severity: 'warning' | 'info' | 'success', link?: string }[] = [];
 
   if (unassignedCount > 0) {
     suggestions.push({
       text: `${unassignedCount} zgłosze${unassignedCount === 1 ? 'nie nie jest przypisane' : (unassignedCount < 5 ? 'nia nie są przypisane' : 'ń nie jest przypisanych')} do żadnego technika.`,
-      severity: 'warning'
+      severity: 'warning',
+      link: '/tickets?assignment=unassigned'
     });
   }
 
@@ -291,7 +403,8 @@ const StatisticsPage: React.FC = () => {
   if (highPriorityOpen.length > 0) {
     suggestions.push({
       text: `${highPriorityOpen.length} otwart${highPriorityOpen.length === 1 ? 'e zgłoszenie' : (highPriorityOpen.length < 5 ? 'e zgłoszenia' : 'ych zgłoszeń')} z wysokim priorytetem wymaga uwagi.`,
-      severity: 'warning'
+      severity: 'warning',
+      link: '/tickets?priority=WYSOKI'
     });
   }
 
@@ -299,7 +412,8 @@ const StatisticsPage: React.FC = () => {
   if (oldTickets.length > 0) {
     suggestions.push({
       text: `${oldTickets.length} zgłosze${oldTickets.length === 1 ? 'nie jest' : (oldTickets.length < 5 ? 'nia są' : 'ń jest')} otwart${oldTickets.length === 1 ? 'e' : (oldTickets.length < 5 ? 'e' : 'ych')} dłużej niż 7 dni.`,
-      severity: 'info'
+      severity: 'info',
+      link: '/tickets?sort=-created_at'
     });
   }
 
@@ -453,8 +567,53 @@ const StatisticsPage: React.FC = () => {
 
   // ==================== ADMIN ====================
   if (isAdmin) {
-    const totalResolved = tickets.filter(t => t.status === 'ROZWIAZANE').length;
-    const totalClosed = tickets.filter(t => t.status === 'ZAMKNIETE').length;
+    const totalResolved = filteredTickets.filter(t => t.status === 'ROZWIAZANE').length;
+    const totalClosed = filteredTickets.filter(t => t.status === 'ZAMKNIETE').length;
+
+    const trendAll = calcTrend(allCount, prevAllCount);
+    const trendActive = calcTrend(activeTickets.length, prevActiveCount);
+    const trendResolved = calcTrend(totalResolved, prevResolvedCount);
+    const trendClosed = calcTrend(totalClosed, prevClosedCount);
+
+    const formatTrend = (trendData: ReturnType<typeof calcTrend>, isGoodWhenUp: boolean) => {
+      const isGood = trendData.direction === 'up' ? isGoodWhenUp : !isGoodWhenUp;
+      return { ...trendData, isGood };
+    };
+
+    const adminKpis = [
+      {
+        label: 'Wszystkie',
+        value: allCount,
+        icon: <TicketIcon className="w-5 h-5" />,
+        iconColor: 'text-blue-600 dark:text-blue-400',
+        iconBg: 'bg-blue-50 dark:bg-blue-500/10 ring-1 ring-blue-100/50 dark:ring-blue-500/20',
+        trend: formatTrend(trendAll, false), // more tickets = not necessarily bad, but usually red? Let's say false = down is good
+      },
+      {
+        label: 'Aktywne',
+        value: activeTickets.length,
+        icon: <AlertTriangle className="w-5 h-5" />,
+        iconColor: 'text-amber-600 dark:text-amber-400',
+        iconBg: 'bg-amber-50 dark:bg-amber-500/10 ring-1 ring-amber-100/50 dark:ring-amber-500/20',
+        trend: formatTrend(trendActive, false), // less active = good
+      },
+      {
+        label: 'Rozwiązane',
+        value: totalResolved,
+        icon: <CheckCircle2 className="w-5 h-5" />,
+        iconColor: 'text-emerald-600 dark:text-emerald-400',
+        iconBg: 'bg-emerald-50 dark:bg-emerald-500/10 ring-1 ring-emerald-100/50 dark:ring-emerald-500/20',
+        trend: formatTrend(trendResolved, true), // more resolved = good
+      },
+      {
+        label: 'Zamknięte',
+        value: totalClosed,
+        icon: <CheckCircle2 className="w-5 h-5" />,
+        iconColor: 'text-teal-600 dark:text-teal-400',
+        iconBg: 'bg-teal-50 dark:bg-teal-500/10 ring-1 ring-teal-100/50 dark:ring-teal-500/20',
+        trend: formatTrend(trendClosed, true), // more closed = good
+      },
+    ];
 
     return (
       <div className="w-full space-y-6 animate-in fade-in duration-500">
@@ -466,26 +625,136 @@ const StatisticsPage: React.FC = () => {
               Analiza zgłoszeń, statusów oraz efektywności zespołu
             </p>
           </div>
+          
+          {/* DATE PICKER (Admin) */}
+          <div className="relative" ref={datePickerRef}>
+            <button
+              onClick={() => setShowDatePicker(!showDatePicker)}
+              className="flex items-center gap-2 px-4 py-2.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-sm hover:shadow-md hover:border-gray-300 dark:hover:border-gray-600 transition-all text-sm font-semibold text-gray-700 dark:text-gray-300"
+            >
+              <Calendar className="w-4 h-4 text-gray-500 dark:text-gray-400" />
+              <span>{dateRangeLabel}</span>
+              <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform ${showDatePicker ? 'rotate-180' : ''}`} />
+            </button>
+
+            {/* Dropdown kalendarza */}
+            {showDatePicker && (
+              <div className="absolute top-full right-0 mt-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-xl z-50 p-3 flex flex-col md:flex-row gap-4 animate-in fade-in slide-in-from-top-2">
+                <div className="flex flex-col gap-1 min-w-[160px] pr-4 md:border-r border-gray-100 dark:border-gray-700">
+                  <button onClick={applyToday} className="text-left px-4 py-2 text-sm font-medium text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-500/10 rounded-xl transition-colors font-semibold">Dzisiaj</button>
+                  <div className="h-px bg-gray-100 dark:bg-gray-700 my-1"></div>
+                  <button onClick={() => applyPreset(7)} className="text-left px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-xl transition-colors">Ostatnie 7 dni</button>
+                  <button onClick={() => applyPreset(14)} className="text-left px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-xl transition-colors">Ostatnie 14 dni</button>
+                  <button onClick={() => applyPreset(30)} className="text-left px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-xl transition-colors">Ostatnie 30 dni</button>
+                  <div className="h-px bg-gray-100 dark:bg-gray-700 my-1"></div>
+                  <button onClick={applyThisMonth} className="text-left px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-xl transition-colors">Ten miesiąc</button>
+                  <button onClick={applyLastMonth} className="text-left px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-xl transition-colors">Poprzedni miesiąc</button>
+                </div>
+
+                <div className="w-64">
+                  <div className="flex justify-between items-center mb-3 px-1">
+                    <button onClick={() => setPickerView(p => ({ ...p, year: p.year - 1 }))} className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full text-gray-400 dark:text-gray-500 text-xs font-bold" title="Poprzedni rok">«</button>
+                    <button onClick={() => setPickerView(p => p.month === 0 ? { year: p.year - 1, month: 11 } : { ...p, month: p.month - 1 })} className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full text-gray-600 dark:text-gray-400">
+                      <ChevronDown className="w-4 h-4 rotate-90" />
+                    </button>
+                    <span className="font-semibold text-gray-900 dark:text-white text-sm select-none">
+                      {plMonthsFull[pickerView.month]} {pickerView.year}
+                    </span>
+                    <button onClick={() => setPickerView(p => p.month === 11 ? { year: p.year + 1, month: 0 } : { ...p, month: p.month + 1 })} disabled={pickerView.year === dayjs().year() && pickerView.month >= dayjs().month()} className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full text-gray-600 dark:text-gray-400 disabled:opacity-30 disabled:cursor-not-allowed">
+                      <ChevronDown className="w-4 h-4 -rotate-90" />
+                    </button>
+                    <button onClick={() => setPickerView(p => ({ ...p, year: p.year + 1 }))} disabled={pickerView.year >= dayjs().year()} className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full text-gray-400 dark:text-gray-500 text-xs font-bold disabled:opacity-30 disabled:cursor-not-allowed" title="Następny rok">»</button>
+                  </div>
+                  <div className="grid grid-cols-7 gap-1 mb-1">
+                    {['Pn', 'Wt', 'Śr', 'Cz', 'Pt', 'Sb', 'Nd'].map(d => (
+                      <div key={d} className="text-center text-xs font-medium text-gray-400 py-1">{d}</div>
+                    ))}
+                  </div>
+                  <div className="grid grid-cols-7 gap-1">
+                    {(() => {
+                      const today = dayjs();
+                      const firstDay = dayjs().year(pickerView.year).month(pickerView.month).startOf('month');
+                      const daysInMonth = firstDay.daysInMonth();
+                      const startPadding = firstDay.day() === 0 ? 6 : firstDay.day() - 1;
+                      const days = [];
+                      for (let i = 0; i < startPadding; i++) days.push(<div key={`pad-${i}`} className="h-8"></div>);
+                      for (let i = 1; i <= daysInMonth; i++) {
+                        const d = dayjs().year(pickerView.year).month(pickerView.month).date(i);
+                        const isFuture = d.isAfter(today, 'day');
+                        const isToday = d.isSame(today, 'day');
+                        let isSelected = false;
+                        let isInRange = false;
+                        let isStart = false;
+                        let isEnd = false;
+                        if (customStart && !isFuture) {
+                          if (d.isSame(customStart, 'day')) { isSelected = true; isStart = true; }
+                          if (hoverDate) {
+                            const [hStart, hEnd] = hoverDate.isBefore(customStart) ? [hoverDate, customStart] : [customStart, hoverDate];
+                            if (d.isSame(hEnd, 'day')) { isSelected = true; isEnd = true; }
+                            if (d.isAfter(hStart, 'day') && d.isBefore(hEnd, 'day')) isInRange = true;
+                          }
+                        } else if (!customStart) {
+                          if (d.isSame(dateRange.start, 'day')) { isSelected = true; isStart = true; }
+                          if (d.isSame(dateRange.end, 'day')) { isSelected = true; isEnd = true; }
+                          if (d.isAfter(dateRange.start, 'day') && d.isBefore(dateRange.end, 'day')) isInRange = true;
+                          if (d.isSame(dateRange.start, 'day') && d.isSame(dateRange.end, 'day')) { isStart = true; isEnd = true; }
+                        }
+                        let cls = "h-8 relative flex items-center justify-center text-sm rounded-lg transition-colors ";
+                        if (isFuture) cls += "text-gray-300 dark:text-gray-600 cursor-not-allowed";
+                        else if (isSelected) {
+                          cls += "bg-blue-600 text-white font-bold cursor-pointer z-10";
+                          if (isStart && !isEnd) cls += " rounded-r-none";
+                          if (!isStart && isEnd) cls += " rounded-l-none";
+                        } else if (isInRange) cls += "bg-blue-50 dark:bg-blue-900/30 text-blue-800 dark:text-blue-200 rounded-none cursor-pointer";
+                        else cls += "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer";
+                        days.push(
+                          <div key={`day-${i}`} onClick={() => handleDayClick(d)} onMouseEnter={() => customStart && !isFuture && setHoverDate(d)} onMouseLeave={() => customStart && setHoverDate(null)} className={cls}>
+                            {i}
+                            {isToday && !isSelected && <span className="absolute bottom-0.5 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-blue-500"></span>}
+                          </div>
+                        );
+                      }
+                      return days;
+                    })()}
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Kafelki podsumowania */}
-        <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
-          <div className="bg-white border border-blue-100 rounded-2xl p-5 shadow-sm">
-            <p className="text-sm font-medium text-gray-500">Wszystkie</p>
-            <p className="text-3xl font-extrabold text-blue-600 mt-1">{allCount}</p>
-          </div>
-          <div className="bg-white border border-amber-100 rounded-2xl p-5 shadow-sm">
-            <p className="text-sm font-medium text-gray-500">Aktywne</p>
-            <p className="text-3xl font-extrabold text-amber-600 mt-1">{activeTickets.length}</p>
-          </div>
-          <div className="bg-white border border-green-100 rounded-2xl p-5 shadow-sm">
-            <p className="text-sm font-medium text-gray-500">Rozwiązane</p>
-            <p className="text-3xl font-extrabold text-green-600 mt-1">{totalResolved}</p>
-          </div>
-          <div className="bg-white border border-teal-100 rounded-2xl p-5 shadow-sm">
-            <p className="text-sm font-medium text-gray-500">Zamknięte</p>
-            <p className="text-3xl font-extrabold text-teal-600 mt-1">{totalClosed}</p>
-          </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-5">
+          {adminKpis.map((kpi, index) => {
+            const trendColor = kpi.trend.isGood ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400';
+            const trendBg = kpi.trend.isGood ? 'bg-emerald-50 dark:bg-emerald-500/10' : 'bg-rose-50 dark:bg-rose-500/10';
+            const TrendIcon = kpi.trend.direction === 'up' ? TrendingUp : TrendingDown;
+
+            return (
+              <div key={index} className="group relative flex flex-col p-5 bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700/60 rounded-2xl shadow-sm hover:shadow-md transition-all duration-300">
+                <div className="flex items-start justify-between mb-3">
+                  <p className="text-sm font-medium text-gray-500 dark:text-gray-400 leading-tight">
+                    {kpi.label}
+                  </p>
+                  <div className={`w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 ${kpi.iconBg} ${kpi.iconColor}`}>
+                    {kpi.icon}
+                  </div>
+                </div>
+                <p className="text-3xl font-bold text-gray-900 dark:text-white tracking-tight mb-4">
+                  {kpi.value}
+                </p>
+                <div className="flex items-center mt-auto">
+                  <div className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-xs font-semibold ${trendColor} ${trendBg}`}>
+                    <TrendIcon className="w-3.5 h-3.5" />
+                    <span>{kpi.trend.value.toFixed(1).replace('.', ',')}%</span>
+                  </div>
+                  <span className="text-xs font-medium text-gray-400 dark:text-gray-500 ml-2">
+                    vs poprz. okres
+                  </span>
+                </div>
+              </div>
+            );
+          })}
         </div>
 
         {/* Siatka statystyk */}
@@ -576,16 +845,21 @@ const StatisticsPage: React.FC = () => {
               {suggestions.map((s, i) => (
                 <div
                   key={i}
-                  className={`flex items-start gap-3 p-3 rounded-xl text-sm font-medium ${s.severity === 'warning'
-                    ? 'bg-amber-50 text-amber-800 border border-amber-200'
+                  className={`flex items-center gap-3 p-3 rounded-xl text-sm font-medium transition-colors ${s.severity === 'warning'
+                    ? 'bg-amber-50 text-amber-800 border border-amber-200 hover:bg-amber-100'
                     : s.severity === 'info'
-                      ? 'bg-blue-50 text-blue-800 border border-blue-200'
-                      : 'bg-green-50 text-green-800 border border-green-200'
+                      ? 'bg-blue-50 text-blue-800 border border-blue-200 hover:bg-blue-100'
+                      : 'bg-green-50 text-green-800 border border-green-200 hover:bg-green-100'
                     }`}
                 >
-                  <AlertTriangle className={`w-4 h-4 mt-0.5 flex-shrink-0 ${s.severity === 'warning' ? 'text-amber-500' : s.severity === 'info' ? 'text-blue-500' : 'text-green-500'
-                    }`} />
-                  {s.text}
+                  <AlertTriangle className={`w-4 h-4 flex-shrink-0 ${s.severity === 'warning' ? 'text-amber-500' : s.severity === 'info' ? 'text-blue-500' : 'text-green-500'}`} />
+                  <span className="flex-1">{s.text}</span>
+                  {s.link && (
+                    <Link to={s.link} className="flex-shrink-0 flex items-center text-xs font-bold px-3 py-1.5 bg-white/60 hover:bg-white text-gray-800 rounded-lg shadow-sm border border-black/5 hover:shadow transition-all group">
+                      Zobacz
+                      <ArrowUpRight className="w-3 h-3 ml-1 text-gray-500 group-hover:text-gray-800 transition-colors" />
+                    </Link>
+                  )}
                 </div>
               ))}
             </div>
