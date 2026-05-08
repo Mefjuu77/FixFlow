@@ -343,7 +343,7 @@ const ExportPage: React.FC = () => {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 xl:grid-cols-[380px_1fr] gap-8 items-start">
+      <div className="grid grid-cols-1 xl:grid-cols-[380px_1fr] gap-8 items-stretch">
         {/* 🎛️ Filtr Sidebar */}
         <div className="flex flex-col gap-6">
           {/* Karta: Zakres Dat */}
@@ -503,8 +503,9 @@ const ExportPage: React.FC = () => {
         </div>
 
         {/* 📊 Tabela Podglądu */}
-        <div className="bg-white dark:bg-slate-800 rounded-3xl shadow-xl shadow-slate-200/40 dark:shadow-none border border-slate-100 dark:border-slate-700 flex flex-col overflow-hidden h-[calc(100vh-16rem)] min-h-[500px]">
-          <div className="px-6 py-5 border-b border-slate-100 dark:border-slate-700 flex items-center justify-between bg-slate-50/50 dark:bg-slate-800/50 backdrop-blur-xl">
+        <div className="relative min-h-[500px] xl:min-h-0">
+          <div className="absolute inset-0 bg-white dark:bg-slate-800 rounded-3xl shadow-xl shadow-slate-200/40 dark:shadow-none border border-slate-100 dark:border-slate-700 flex flex-col overflow-hidden">
+          <div className="px-6 py-3 border-b border-slate-100 dark:border-slate-700 flex items-center justify-between bg-slate-50/50 dark:bg-slate-800/50 backdrop-blur-xl">
             <div className="flex items-center gap-3">
               <h3 className="font-bold text-slate-800 dark:text-white text-base">Podgląd wyników</h3>
               {total !== null && (
@@ -533,28 +534,28 @@ const ExportPage: React.FC = () => {
               <table className="w-full text-sm text-left">
                 <thead className="bg-white dark:bg-slate-800 sticky top-0 z-10 shadow-sm dark:shadow-slate-900/50">
                   <tr className="text-[11px] font-extrabold text-slate-400 uppercase tracking-widest">
-                    <th className="px-5 py-4 w-16">ID</th>
-                    <th className="px-5 py-4">Tytuł</th>
-                    <th className="px-5 py-4 hidden md:table-cell">Kategoria</th>
-                    <th className="px-5 py-4 w-32">Priorytet</th>
-                    <th className="px-5 py-4 hidden lg:table-cell">Zgłaszający</th>
-                    <th className="px-5 py-4 hidden lg:table-cell">Technik</th>
-                    <th className="px-5 py-4 w-32">Status</th>
-                    <th className="px-5 py-4 w-40">Utworzono</th>
+                    <th className="px-5 py-3 w-16">ID</th>
+                    <th className="px-5 py-3">Tytuł</th>
+                    <th className="px-5 py-3 hidden md:table-cell">Kategoria</th>
+                    <th className="px-5 py-3 w-32">Priorytet</th>
+                    <th className="px-5 py-3 hidden lg:table-cell">Zgłaszający</th>
+                    <th className="px-5 py-3 hidden lg:table-cell">Technik</th>
+                    <th className="px-5 py-3 w-32">Status</th>
+                    <th className="px-5 py-3 w-40">Utworzono</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100/80 dark:divide-slate-700/80">
                   {preview.map((row) => (
                     <tr key={row.id} className="group hover:bg-indigo-50/40 dark:hover:bg-indigo-500/5 transition-colors duration-200">
-                      <td className="px-5 py-4 text-slate-400 font-mono text-xs">{row.id}</td>
-                      <td className="px-5 py-4 font-bold text-slate-700 dark:text-slate-300 max-w-[200px] truncate group-hover:text-indigo-700 dark:group-hover:text-indigo-400 transition-colors">{row.title}</td>
-                      <td className="px-5 py-4 text-slate-500 dark:text-slate-400 font-medium hidden md:table-cell">
+                      <td className="px-5 py-3 text-slate-400 font-mono text-xs">{row.id}</td>
+                      <td className="px-5 py-3 font-bold text-slate-700 dark:text-slate-300 max-w-[200px] truncate group-hover:text-indigo-700 dark:group-hover:text-indigo-400 transition-colors">{row.title}</td>
+                      <td className="px-5 py-3 text-slate-500 dark:text-slate-400 font-medium hidden md:table-cell">
                         <span className="flex items-center gap-1.5 font-medium">
                           {getCategoryIcon(row.category || '')}
                           {row.category || '—'}
                         </span>
                       </td>
-                      <td className="px-5 py-4 whitespace-nowrap">
+                      <td className="px-5 py-3 whitespace-nowrap">
                         <span className="flex items-center gap-1.5 text-sm font-medium">
                           {row.priority === 'Wysoki' ? <ChevronsUp className="w-4 h-4 text-red-500" /> : row.priority === 'Normalny' ? <Equal className="w-4 h-4 text-blue-500" /> : <ChevronsDown className="w-4 h-4 text-gray-400" />}
                           <span className={row.priority === 'Wysoki' ? 'text-red-600' : row.priority === 'Normalny' ? 'text-blue-600' : 'text-gray-500'}>
@@ -562,13 +563,13 @@ const ExportPage: React.FC = () => {
                           </span>
                         </span>
                       </td>
-                      <td className="px-5 py-4 text-slate-500 dark:text-slate-400 font-medium hidden lg:table-cell">
+                      <td className="px-5 py-3 text-slate-500 dark:text-slate-400 font-medium hidden lg:table-cell">
                         <div className="flex items-center gap-2">
                           <UserAvatar avatar={row.creator_avatar} name={row.creator} size="md" />
                           {row.creator}
                         </div>
                       </td>
-                      <td className="px-5 py-4 text-slate-500 dark:text-slate-400 font-medium hidden lg:table-cell">
+                      <td className="px-5 py-3 text-slate-500 dark:text-slate-400 font-medium hidden lg:table-cell">
                         {row.technician !== 'Brak' ? (
                           <div className="flex items-center gap-2">
                             <UserAvatar avatar={row.technician_avatar} name={row.technician} size="md" />
@@ -583,7 +584,7 @@ const ExportPage: React.FC = () => {
                           </span>
                         )}
                       </td>
-                      <td className="px-5 py-4 whitespace-nowrap">
+                      <td className="px-5 py-3 whitespace-nowrap">
                         <span className={`px-2.5 py-1 inline-flex text-xs leading-5 font-bold rounded-lg ${row.status === 'Nowe' ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300' :
                           row.status === 'W toku' ? 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300' :
                             row.status === 'Rozwiązane' ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300' :
@@ -592,7 +593,7 @@ const ExportPage: React.FC = () => {
                           {row.status}
                         </span>
                       </td>
-                      <td className="px-5 py-4 text-slate-400 text-xs font-medium whitespace-nowrap">{dayjs(row.created_at).format('DD MMM YYYY, HH:mm')}</td>
+                      <td className="px-5 py-3 text-slate-400 text-xs font-medium whitespace-nowrap">{dayjs(row.created_at).format('DD MMM YYYY, HH:mm')}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -615,11 +616,9 @@ const ExportPage: React.FC = () => {
               <p className="text-xs font-medium text-slate-500">
                 Pokazuję <strong className="text-slate-700 dark:text-slate-300">10</strong> z <strong className="text-slate-700 dark:text-slate-300">{total}</strong> wyników.
               </p>
-              <p className="text-xs font-bold text-indigo-600 cursor-pointer hover:underline" onClick={handleDownload}>
-                Eksportuj pełną listę →
-              </p>
             </div>
           )}
+          </div>
         </div>
       </div>
     </div>

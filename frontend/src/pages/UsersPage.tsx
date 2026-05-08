@@ -75,11 +75,6 @@ const UsersPage: React.FC = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [focusPassword, setFocusPassword] = useState(false);
 
-  // Delete
-  const [deleteTarget, setDeleteTarget] = useState<User | null>(null);
-  const [deleteConfirmEmail, setDeleteConfirmEmail] = useState('');
-  const [isDeleting, setIsDeleting] = useState(false);
-
   // Toggle active
   const [isToggling, setIsToggling] = useState<number | null>(null);
 
@@ -264,27 +259,6 @@ const UsersPage: React.FC = () => {
       alert(msg);
     } finally {
       setIsToggling(null);
-    }
-  };
-
-  // ---------- Delete ----------
-  const openDeleteModal = (user: User) => {
-    setDeleteTarget(user);
-    setDeleteConfirmEmail('');
-  };
-
-  const handleDelete = async () => {
-    if (!deleteTarget) return;
-    setIsDeleting(true);
-    try {
-      await api.delete(`users/${deleteTarget.id}/`);
-      setDeleteTarget(null);
-      await fetchUsers();
-    } catch (err) {
-      console.error('Błąd usuwania:', err);
-      alert('Nie udało się usunąć użytkownika.');
-    } finally {
-      setIsDeleting(false);
     }
   };
 
@@ -732,16 +706,7 @@ const UsersPage: React.FC = () => {
 
             <div className="px-6 py-4 border-t border-gray-100 dark:border-gray-700">
               <div className="flex justify-between items-center">
-                {editUserId ? (
-                  <button
-                    type="button"
-                    onClick={() => { setIsModalOpen(false); openDeleteModal(users.find(u => u.id === editUserId)!); }}
-                    className="text-xs font-semibold text-gray-400 dark:text-gray-500 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors flex items-center gap-1.5 px-2 py-1.5 rounded-lg -ml-2"
-                  >
-                    <Trash2 className="w-3 h-3" />
-                    Usuń konto trwale
-                  </button>
-                ) : <div />}
+                <div />
                 <div className="flex gap-3">
                   <button
                     onClick={() => setIsModalOpen(false)}
@@ -764,52 +729,6 @@ const UsersPage: React.FC = () => {
         </div>
       )}
 
-      {/* ========== Modal: Potwierdzenie usunięcia ========== */}
-      {deleteTarget && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 animate-in fade-in duration-200">
-          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-md mx-4 p-6">
-            <div className="text-center">
-              <div className="w-14 h-14 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Trash2 className="w-7 h-7 text-red-600 dark:text-red-400" />
-              </div>
-              <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-1">Trwale usunąć konto?</h3>
-              <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">
-                Usuwasz <span className="font-semibold text-gray-700 dark:text-gray-200">{deleteTarget.first_name} {deleteTarget.last_name}</span>.
-              </p>
-              <div className="text-xs text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800/50 rounded-lg p-3 mb-4 text-left">
-                <p className="font-bold mb-1">⚠️ Ta operacja jest nieodwracalna</p>
-                <p>Wszystkie dane użytkownika zostaną usunięte. Jeśli chcesz jedynie zablokować dostęp, użyj opcji <strong>Dezaktywuj</strong>.</p>
-              </div>
-              <p className="text-xs text-gray-500 dark:text-gray-400 mb-2 text-left">
-                Wpisz adres e-mail użytkownika, aby potwierdzić:
-              </p>
-              <input
-                type="text"
-                value={deleteConfirmEmail}
-                onChange={e => setDeleteConfirmEmail(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-200 dark:border-gray-700 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-red-500 bg-white dark:bg-gray-900 dark:text-white mb-4"
-                placeholder={deleteTarget.email}
-              />
-            </div>
-            <div className="flex gap-3 justify-end">
-              <button
-                onClick={() => setDeleteTarget(null)}
-                className="px-4 py-2 text-sm font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-xl transition-colors"
-              >
-                Anuluj
-              </button>
-              <button
-                onClick={handleDelete}
-                disabled={isDeleting || deleteConfirmEmail !== deleteTarget.email}
-                className="px-5 py-2 text-sm font-bold text-white bg-red-600 hover:bg-red-700 rounded-xl shadow-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
-              >
-                {isDeleting && <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />}
-                Usuń trwale
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </>
   );
 };

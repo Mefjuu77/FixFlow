@@ -113,9 +113,9 @@ class UserCreateView(generics.CreateAPIView):
     serializer_class = UserCreateSerializer
     permission_classes = [IsAuthenticated, IsAdmin]
 
-class UserDetailView(generics.RetrieveUpdateDestroyAPIView):
+class UserDetailView(generics.RetrieveUpdateAPIView):
     """
-    Pobiera, aktualizuje lub usuwa użytkownika. Tylko dla administratorów.
+    Pobiera lub aktualizuje użytkownika. Tylko dla administratorów. (Usuwanie zostało wyłączone)
     """
     queryset = CustomUser.objects.all()
     permission_classes = [IsAuthenticated, IsAdmin]
