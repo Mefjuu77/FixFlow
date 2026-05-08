@@ -54,7 +54,7 @@ const DonutChart: React.FC<{ segments: DonutSegment[]; total: number; filterType
   let accumulated = 0;
 
   return (
-    <div className="flex items-center justify-center gap-8 w-full">
+    <div className="flex-1 flex items-center justify-center gap-8 w-full">
       <div className="relative flex-shrink-0" style={{ width: size + 16, height: size + 16 }}>
         <svg
           width={size + 16} height={size + 16} viewBox={`-8 -8 ${size + 16} ${size + 16}`}
@@ -635,7 +635,7 @@ const StatisticsPage: React.FC = () => {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
 
           {/* Przegląd statusów (moje) */}
-          <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700/60 rounded-2xl shadow-sm p-6">
+          <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700/60 rounded-2xl shadow-sm p-6 flex flex-col h-[380px]">
             <div className="flex items-center justify-between mb-1">
               <h3 className="font-bold text-gray-900 dark:text-white">Przegląd statusów</h3>
               <Link to="/tickets" className="text-xs font-bold text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 flex items-center">
@@ -647,7 +647,7 @@ const StatisticsPage: React.FC = () => {
           </div>
 
           {/* Rodzaj zgłoszeń */}
-          <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700/60 rounded-2xl shadow-sm p-6">
+          <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700/60 rounded-2xl shadow-sm p-6 flex flex-col h-[380px]">
             <div className="flex items-center justify-between mb-1">
               <h3 className="font-bold text-gray-900 dark:text-white">Rodzaj zgłoszeń</h3>
               <Link to="/tickets" className="text-xs font-bold text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 flex items-center">
@@ -655,7 +655,7 @@ const StatisticsPage: React.FC = () => {
               </Link>
             </div>
             <p className="text-xs text-gray-500 dark:text-gray-400 mb-5">Otwarte zgłoszenia według kategorii.</p>
-            <div className="space-y-1 overflow-y-auto pr-1" style={{ maxHeight: '260px', scrollbarWidth: 'auto', scrollbarColor: '#cbd5e1 transparent' }}>
+            <div className="flex-1 space-y-1 overflow-y-auto pr-1" style={{ scrollbarWidth: 'thin', scrollbarColor: '#cbd5e1 transparent' }}>
               {categorySorted.length === 0 ? (
                 <p className="text-sm text-gray-500 dark:text-gray-400 italic text-center py-6">Brak otwartych zgłoszeń.</p>
               ) : (
@@ -841,27 +841,27 @@ const StatisticsPage: React.FC = () => {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
 
           {/* Przegląd statusów */}
-          <div className="bg-white border border-gray-200 rounded-2xl shadow-sm p-6">
+          <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700/60 rounded-2xl shadow-sm p-6 flex flex-col h-[380px]">
             <div className="flex items-center justify-between mb-1">
-              <h3 className="font-bold text-gray-900">Przegląd statusów</h3>
-              <Link to="/tickets" className="text-xs font-bold text-blue-600 hover:text-blue-800 flex items-center">
+              <h3 className="font-bold text-gray-900 dark:text-white">Przegląd statusów</h3>
+              <Link to="/tickets" className="text-xs font-bold text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 flex items-center">
                 Wyświetl wszystkie zgłoszenia <ArrowUpRight className="w-3 h-3 ml-1" />
               </Link>
             </div>
-            <p className="text-xs text-gray-500 mb-5">Szybki wgląd w status wszystkich zgłoszeń.</p>
+            <p className="text-xs text-gray-500 dark:text-gray-400 mb-5">Szybki wgląd w status wszystkich zgłoszeń.</p>
             <DonutChart segments={statusData} total={allCount} filterType="status" />
           </div>
 
           {/* Rodzaj zgłoszeń */}
-          <div className="bg-white border border-gray-200 rounded-2xl shadow-sm p-6">
+          <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700/60 rounded-2xl shadow-sm p-6 flex flex-col h-[380px]">
             <div className="flex items-center justify-between mb-1">
-              <h3 className="font-bold text-gray-900">Rodzaj zgłoszeń</h3>
-              <Link to="/tickets" className="text-xs font-bold text-blue-600 hover:text-blue-800 flex items-center">
+              <h3 className="font-bold text-gray-900 dark:text-white">Rodzaj zgłoszeń</h3>
+              <Link to="/tickets" className="text-xs font-bold text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 flex items-center">
                 Wyświetl wszystkie zgłoszenia <ArrowUpRight className="w-3 h-3 ml-1" />
               </Link>
             </div>
-            <p className="text-xs text-gray-500 mb-5">Otwarte zgłoszenia według kategorii.</p>
-            <div className="space-y-1 overflow-y-auto pr-1" style={{ maxHeight: '260px', scrollbarWidth: 'thin', scrollbarColor: '#cbd5e1 transparent' }}>
+            <p className="text-xs text-gray-500 dark:text-gray-400 mb-5">Otwarte zgłoszenia według kategorii.</p>
+            <div className="flex-1 space-y-1 overflow-y-auto pr-1" style={{ scrollbarWidth: 'thin', scrollbarColor: '#cbd5e1 transparent' }}>
               {categorySorted.length === 0 ? (
                 <p className="text-sm text-gray-500 italic text-center py-6">Brak otwartych zgłoszeń.</p>
               ) : (
@@ -873,29 +873,29 @@ const StatisticsPage: React.FC = () => {
           </div>
 
           {/* Podział priorytetów */}
-          <div className="bg-white border border-gray-200 rounded-2xl shadow-sm p-6">
+          <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700/60 rounded-2xl shadow-sm p-6 flex flex-col h-[380px]">
             <div className="flex items-center justify-between mb-1">
-              <h3 className="font-bold text-gray-900">Priorytety zgłoszeń</h3>
+              <h3 className="font-bold text-gray-900 dark:text-white">Priorytety zgłoszeń</h3>
             </div>
-            <p className="text-xs text-gray-500 mb-5">Rozkład aktywnych zgłoszeń według priorytetu.</p>
+            <p className="text-xs text-gray-500 dark:text-gray-400 mb-5">Rozkład aktywnych zgłoszeń według priorytetu.</p>
             <DonutChart segments={priorityData} total={activeTickets.length} filterType="priority" />
           </div>
 
           {/* Obciążenie zespołu */}
-          <div className="bg-white border border-gray-200 rounded-2xl shadow-sm p-6">
+          <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700/60 rounded-2xl shadow-sm p-6 flex flex-col h-[380px]">
             <div className="flex items-center justify-between mb-1">
-              <h3 className="font-bold text-gray-900">Obciążenie zespołu</h3>
+              <h3 className="font-bold text-gray-900 dark:text-white">Obciążenie zespołu</h3>
             </div>
-            <p className="text-xs text-gray-500 mb-5">Monitoruj potencjał wykonawczy swojego zespołu.</p>
+            <p className="text-xs text-gray-500 dark:text-gray-400 mb-5">Monitoruj potencjał wykonawczy swojego zespołu.</p>
 
             <div className="space-y-1 mb-4">
               <div className="flex items-center justify-between text-sm">
-                <span className="text-gray-600 font-medium">Osoba przypisana</span>
-                <span className="text-gray-600 font-medium">Rozkład prac</span>
+                <span className="text-gray-600 dark:text-gray-300 font-medium">Osoba przypisana</span>
+                <span className="text-gray-600 dark:text-gray-300 font-medium">Rozkład prac</span>
               </div>
             </div>
 
-            <div className="space-y-1 overflow-y-auto pr-1" style={{ maxHeight: '260px', scrollbarWidth: 'thin', scrollbarColor: '#cbd5e1 transparent' }}>
+            <div className="flex-1 space-y-1 overflow-y-auto pr-1" style={{ scrollbarWidth: 'thin', scrollbarColor: '#cbd5e1 transparent' }}>
               {unassignedCount > 0 && (
                 <HorizontalBar label="Nie przypisano" value={unassignedCount} max={maxWorkload} color="#f87171" total={activeTickets.length} icon={<UserMinus className="w-4 h-4 text-gray-400" />} onClick={() => navigate('/tickets?assignment=unassigned')} />
               )}
