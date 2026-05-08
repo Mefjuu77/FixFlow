@@ -1973,48 +1973,35 @@ const TicketDetailsPage: React.FC = () => {
       {/* Delete Attachment Modal */}
       {attachmentToDelete && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in"
+          className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 animate-in fade-in duration-200"
           onClick={() => !isDeletingAttachment && setAttachmentToDelete(null)}
         >
           <div
-            className="bg-[#2A2B2D] border border-gray-700 rounded-xl shadow-2xl w-full max-w-[420px] overflow-hidden flex flex-col"
+            className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-sm mx-4 p-6 text-center"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="p-5">
-              <div className="flex items-start justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="text-red-500">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-                      <path d="M12 2L22 19H2L12 2ZM11 15V17H13V15H11ZM11 10V14H13V10H11Z" />
-                    </svg>
-                  </div>
-                  <h3 className="text-xl font-semibold text-white">Czy usunąć ten załącznik?</h3>
-                </div>
-                <button
-                  onClick={() => setAttachmentToDelete(null)}
-                  className="p-1 text-gray-400 hover:text-white rounded-lg transition-colors bg-[#3A3B3D] hover:bg-[#4A4B4D] border border-gray-600"
-                >
-                  <X className="w-5 h-5" />
-                </button>
-              </div>
-              <p className="mt-4 text-[15px] text-gray-300">
-                Po usunięciu nie będzie można go przywrócić.
-              </p>
+            <div className="w-14 h-14 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
+              <Trash2 className="w-7 h-7 text-red-600 dark:text-red-400" />
             </div>
-            <div className="p-4 flex justify-end gap-3 items-center">
+            <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100 mb-1">Usunąć załącznik?</h3>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">
+              Czy na pewno chcesz usunąć plik <span className="font-semibold text-gray-700 dark:text-gray-300">{attachmentToDelete.filename}</span>?
+              <br />Tej operacji nie można cofnąć.
+            </p>
+            <div className="flex gap-3 justify-center">
+              <button
+                onClick={() => setAttachmentToDelete(null)}
+                className="px-4 py-2 text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-xl transition-colors"
+              >
+                Anuluj
+              </button>
               <button
                 onClick={confirmDeleteAttachment}
                 disabled={isDeletingAttachment}
-                className="px-4 py-1.5 bg-[#FF7369] hover:bg-[#FF6359] text-[#2A2B2D] font-medium rounded-sm transition-colors flex items-center disabled:opacity-50 min-w-[60px] justify-center"
+                className="px-5 py-2 text-sm font-bold text-white bg-red-600 hover:bg-red-700 rounded-xl shadow-sm transition-all disabled:opacity-50 flex items-center"
               >
-                {isDeletingAttachment ? <div className="w-4 h-4 border-2 border-[#2A2B2D] border-t-transparent rounded-full animate-spin"></div> : 'OK'}
-              </button>
-              <button
-                onClick={() => setAttachmentToDelete(null)}
-                disabled={isDeletingAttachment}
-                className="px-4 py-1.5 text-gray-300 hover:text-white hover:bg-white/5 rounded-sm transition-colors font-medium cursor-pointer"
-              >
-                Anuluj
+                {isDeletingAttachment && <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />}
+                Usuń
               </button>
             </div>
           </div>
