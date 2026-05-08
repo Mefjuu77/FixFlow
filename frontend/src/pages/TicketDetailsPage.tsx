@@ -6,6 +6,7 @@ import 'dayjs/locale/pl';
 dayjs.extend(relativeTime);
 dayjs.locale('pl');
 import { ticketService } from '../api/ticketService';
+import api from '../api/axiosConfig';
 import { Ticket, User as UserType, Comment, Category, TicketLog, WorkLog } from '../types';
 import { AuthContext } from '../context/AuthContext';
 import useTitle from '../hooks/useTitle';
@@ -257,6 +258,25 @@ const TicketDetailsPage: React.FC = () => {
     setAttachmentToDelete({ id: attachmentId, filename });
   };
 
+  const handleDownloadFile = async (e: React.MouseEvent, url: string, filename: string) => {
+    e.preventDefault();
+    e.stopPropagation();
+    try {
+      const response = await api.get(url, { responseType: 'blob' });
+      const blobUrl = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = blobUrl;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(blobUrl);
+    } catch (err) {
+      console.error('Błąd pobierania pliku:', err);
+      alert('Nie udało się pobrać pliku.');
+    }
+  };
+
   const confirmDeleteAttachment = async () => {
     if (!attachmentToDelete) return;
     setIsDeletingAttachment(true);
@@ -394,7 +414,16 @@ const TicketDetailsPage: React.FC = () => {
 
   return (
     <div className="w-full pb-12 animate-in fade-in duration-500">
-      <button onClick={() => navigate(-1)} className="flex items-center text-gray-500 dark:text-gray-400 hover:!text-blue-600 dark:hover:!text-blue-400 font-semibold mb-6 transition-colors">
+      <button 
+        onClick={() => {
+          if (window.history.state && window.history.state.idx > 0) {
+            navigate(-1);
+          } else {
+            navigate('/tickets');
+          }
+        }} 
+        className="flex items-center text-gray-500 dark:text-gray-400 hover:!text-blue-600 dark:hover:!text-blue-400 font-semibold mb-6 transition-colors"
+      >
         <ArrowLeft className="w-4 h-4 mr-1" /> Wstecz
       </button>
 
@@ -744,18 +773,27 @@ const TicketDetailsPage: React.FC = () => {
                           {imageAtts.map(att => (
                             <div
                               key={att.id}
-                              className="group relative flex-shrink-0 w-[220px] rounded-xl overflow-hidden border border-gray-200 hover:border-blue-400 bg-gray-50 cursor-pointer transition-all hover:shadow-lg"
+                              className="group relative flex-shrink-0 w-[220px] rounded-xl overflow-hidden border border-gray-200 dark:border-gray-700 hover:border-blue-400 dark:hover:border-blue-500 bg-gray-50 dark:bg-gray-800/50 cursor-pointer transition-all hover:shadow-lg"
                               onClick={() => setLightboxUrl(att.url)}
                             >
-                              {isTechnicianOrAdmin && (
+                              <div className="absolute top-2 right-2 z-10 flex gap-1.5 opacity-0 group-hover:opacity-100 transition-all scale-95 group-hover:scale-100">
                                 <button
-                                  onClick={(e) => { e.stopPropagation(); handleDeleteAttachment(att.id, att.filename); }}
-                                  className="absolute top-2 right-2 z-10 p-1.5 bg-red-500/80 hover:bg-red-600 text-white rounded-md opacity-60 group-hover:opacity-100 transition-all shadow-md scale-95 group-hover:scale-100"
-                                  title="Usuń załącznik"
+                                  onClick={(e) => handleDownloadFile(e, att.url, att.filename)}
+                                  className="p-1.5 bg-gray-900/60 hover:bg-gray-900 text-white rounded-md backdrop-blur-sm transition-all shadow-md"
+                                  title="Pobierz"
                                 >
-                                  <Trash2 className="w-4 h-4" />
+                                  <Download className="w-4 h-4" />
                                 </button>
-                              )}
+                                {isTechnicianOrAdmin && (
+                                  <button
+                                    onClick={(e) => { e.stopPropagation(); handleDeleteAttachment(att.id, att.filename); }}
+                                    className="p-1.5 bg-red-500/80 hover:bg-red-600 text-white rounded-md backdrop-blur-sm transition-all shadow-md"
+                                    title="Usuń załącznik"
+                                  >
+                                    <Trash2 className="w-4 h-4" />
+                                  </button>
+                                )}
+                              </div>
                               <div className="aspect-[4/3] overflow-hidden">
                                 <img
                                   src={att.url}
@@ -764,8 +802,8 @@ const TicketDetailsPage: React.FC = () => {
                                   loading="lazy"
                                 />
                               </div>
-                              <div className="px-2 py-1.5 bg-white border-t border-gray-100">
-                                <p className="text-[11px] text-gray-600 truncate font-medium">{att.filename}</p>
+                              <div className="px-2 py-1.5 bg-white dark:bg-gray-800 border-t border-gray-100 dark:border-gray-700">
+                                <p className="text-[11px] text-gray-600 dark:text-gray-400 truncate font-medium">{att.filename}</p>
                               </div>
                             </div>
                           ))}
@@ -777,19 +815,28 @@ const TicketDetailsPage: React.FC = () => {
                   {ticket.attachments.filter(att => !att.url?.toLowerCase().match(/\.(jpeg|jpg|gif|png|webp)$/)).length > 0 && (
                     <div className="flex flex-wrap gap-2">
                       {ticket.attachments.filter(att => !att.url?.toLowerCase().match(/\.(jpeg|jpg|gif|png|webp)$/)).map(att => (
-                        <div key={att.id} className="flex items-center gap-2 p-2 pr-3 bg-gray-50 hover:bg-blue-50 border border-gray-200 hover:border-blue-300 rounded-lg transition-colors group">
-                          <FileText className="w-4 h-4 text-gray-400" />
-                          <a href={att.url} target="_blank" rel="noopener noreferrer" className="text-sm font-medium text-gray-700 group-hover:text-blue-700 truncate max-w-[200px]">{att.filename}</a>
-                          <Download className="w-3.5 h-3.5 text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity ml-1" />
-                          {isTechnicianOrAdmin && (
-                            <button
-                              onClick={() => handleDeleteAttachment(att.id, att.filename)}
-                              className="p-1 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded transition-all opacity-0 group-hover:opacity-100 ml-auto"
-                              title="Usuń załącznik"
+                        <div key={att.id} className="flex items-center gap-2 p-2 pr-2 bg-gray-50 dark:bg-gray-800/50 hover:bg-blue-50 dark:hover:bg-blue-900/20 border border-gray-200 dark:border-gray-700 hover:border-blue-300 dark:hover:border-blue-500 rounded-lg transition-colors group">
+                          <FileText className="w-4 h-4 text-gray-400 dark:text-gray-500" />
+                          <a href={att.url} target="_blank" rel="noopener noreferrer" className="text-sm font-medium text-gray-700 dark:text-gray-300 group-hover:text-blue-700 dark:group-hover:text-blue-400 truncate max-w-[200px] text-left">{att.filename}</a>
+                          
+                          <div className="flex items-center ml-auto opacity-0 group-hover:opacity-100 transition-all">
+                            <button 
+                              onClick={(e) => handleDownloadFile(e, att.url, att.filename)} 
+                              className="p-1.5 text-gray-400 dark:text-gray-500 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-100/50 dark:hover:bg-blue-900/30 rounded-md transition-all" 
+                              title="Pobierz"
                             >
-                              <Trash2 className="w-3.5 h-3.5" />
+                              <Download className="w-4 h-4" />
                             </button>
-                          )}
+                            {isTechnicianOrAdmin && (
+                              <button
+                                onClick={() => handleDeleteAttachment(att.id, att.filename)}
+                                className="p-1.5 text-gray-400 dark:text-gray-500 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-md transition-all"
+                                title="Usuń załącznik"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            )}
+                          </div>
                         </div>
                       ))}
                     </div>
@@ -883,9 +930,18 @@ const TicketDetailsPage: React.FC = () => {
                                         {commentImageAtts.map(att => (
                                           <div
                                             key={att.id}
-                                            className="group relative flex-shrink-0 w-[180px] rounded-lg overflow-hidden border border-gray-200 hover:border-blue-400 bg-gray-50 cursor-pointer transition-all hover:shadow-md"
+                                            className="group relative flex-shrink-0 w-[180px] rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700 hover:border-blue-400 dark:hover:border-blue-500 bg-gray-50 dark:bg-gray-800/50 cursor-pointer transition-all hover:shadow-md"
                                             onClick={() => setLightboxUrl(att.url)}
                                           >
+                                            <div className="absolute top-1.5 right-1.5 z-10 flex gap-1 opacity-0 group-hover:opacity-100 transition-all scale-95 group-hover:scale-100">
+                                              <button
+                                                onClick={(e) => handleDownloadFile(e, att.url, att.filename)}
+                                                className="p-1.5 bg-gray-900/60 hover:bg-gray-900 text-white rounded-md backdrop-blur-sm transition-all shadow-md"
+                                                title="Pobierz"
+                                              >
+                                                <Download className="w-3.5 h-3.5" />
+                                              </button>
+                                            </div>
                                             <div className="aspect-[4/3] overflow-hidden">
                                               <img
                                                 src={att.url}
@@ -894,8 +950,8 @@ const TicketDetailsPage: React.FC = () => {
                                                 loading="lazy"
                                               />
                                             </div>
-                                            <div className="px-1.5 py-1 bg-white border-t border-gray-100">
-                                              <p className="text-[10px] text-gray-600 truncate font-medium">{att.filename}</p>
+                                            <div className="px-1.5 py-1 bg-white dark:bg-gray-800 border-t border-gray-100 dark:border-gray-700">
+                                              <p className="text-[10px] text-gray-600 dark:text-gray-400 truncate font-medium">{att.filename}</p>
                                             </div>
                                           </div>
                                         ))}
@@ -907,11 +963,17 @@ const TicketDetailsPage: React.FC = () => {
                                 {comment.attachments.filter(att => !att.url?.toLowerCase().match(/\.(jpeg|jpg|gif|png|webp)$/)).length > 0 && (
                                   <div className="flex flex-wrap gap-2">
                                     {comment.attachments.filter(att => !att.url?.toLowerCase().match(/\.(jpeg|jpg|gif|png|webp)$/)).map(att => (
-                                      <a key={att.id} href={att.url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 px-2.5 py-1.5 bg-white border border-gray-200 rounded-lg text-xs hover:border-blue-400 hover:bg-blue-50 transition-colors group text-gray-700">
-                                        <FileText className="w-3.5 h-3.5 text-gray-400" />
-                                        <span className="truncate max-w-[150px]">{att.filename}</span>
-                                        <Download className="w-3 h-3 text-gray-400 opacity-0 group-hover:opacity-100 ml-1 transition-opacity" />
-                                      </a>
+                                      <div key={att.id} className="flex items-center gap-1.5 pr-1.5 pl-2.5 py-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-xs hover:border-blue-400 dark:hover:border-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors group text-gray-700 dark:text-gray-300">
+                                        <FileText className="w-3.5 h-3.5 text-gray-400 dark:text-gray-500" />
+                                        <a href={att.url} target="_blank" rel="noopener noreferrer" className="truncate max-w-[150px] group-hover:text-blue-700 dark:group-hover:text-blue-400 py-0.5">{att.filename}</a>
+                                        <button 
+                                          onClick={(e) => handleDownloadFile(e, att.url, att.filename)}
+                                          className="p-1 ml-0.5 text-gray-400 dark:text-gray-500 opacity-0 group-hover:opacity-100 transition-opacity hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-100/50 dark:hover:bg-blue-900/30 rounded"
+                                          title="Pobierz"
+                                        >
+                                          <Download className="w-3.5 h-3.5" />
+                                        </button>
+                                      </div>
                                     ))}
                                   </div>
                                 )}
@@ -1949,15 +2011,16 @@ const TicketDetailsPage: React.FC = () => {
               >
                 <ExternalLink className="w-5 h-5" />
               </a>
-              <a
-                href={lightboxUrl}
-                download
-                onClick={(e) => e.stopPropagation()}
+              <button
+                onClick={(e) => {
+                  const filename = lightboxUrl.split('/').pop() || 'zalacznik';
+                  handleDownloadFile(e, lightboxUrl, filename);
+                }}
                 className="p-2 bg-black/60 hover:bg-black/80 shadow-md backdrop-blur-md rounded-lg transition-all text-white border border-white/10"
                 title="Pobierz"
               >
                 <Download className="w-5 h-5" />
-              </a>
+              </button>
               <button
                 onClick={() => setLightboxUrl(null)}
                 className="p-2 bg-black/60 hover:bg-black/80 shadow-md backdrop-blur-md rounded-lg transition-all text-white border border-white/10"
