@@ -114,6 +114,10 @@ const TicketsPage: React.FC = () => {
   const isAdmin = role === 'ADMIN';
   const isTechnician = role === 'TECHNICIAN';
 
+  // Paginacja
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(25);
+
   useEffect(() => {
     fetchTickets();
     if (isAdmin || isTechnician) {
@@ -225,6 +229,16 @@ const TicketsPage: React.FC = () => {
       return 0;
     });
   }, [tickets, searchQuery, statusFilter, categoryFilter, priorityFilter, assignmentFilter, sortConfig, isAdmin, isTechnician, authContext?.user?.id]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, statusFilter, categoryFilter, priorityFilter, assignmentFilter, sortConfig, itemsPerPage]);
+
+  const totalPages = Math.ceil(filteredTickets.length / itemsPerPage);
+  const paginatedTickets = filteredTickets.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
 
   if (loading) return (
     <div className="flex items-center justify-center h-full">
@@ -347,7 +361,7 @@ const TicketsPage: React.FC = () => {
     return (
       <th
         key={field}
-        className={`px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100/80 transition-colors group/th ${extraClassName || ''}`}
+        className={`px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100/80 dark:hover:bg-gray-700/50 transition-colors group/th ${extraClassName || ''}`}
         onClick={() => handleSort(field)}
       >
         <div className="flex items-center gap-1 relative w-max">
@@ -646,7 +660,7 @@ const TicketsPage: React.FC = () => {
                       />
                     </th>
                   )}
-                  {renderSortableHeader('id', 'ID', 'w-24')}
+                  {renderSortableHeader('id', 'ID', 'w-20')}
                   {renderSortableHeader('title', 'Tytuł', 'min-w-[300px]')}
                   {renderSortableHeader('category_name', 'Kategoria')}
                   {!isEmployee && renderSortableHeader('priority', 'Priorytet')}
@@ -665,13 +679,13 @@ const TicketsPage: React.FC = () => {
                   </td>
                 </tr>
               ) : (
-                filteredTickets.map(ticket => (
+                paginatedTickets.map(ticket => (
                   <tr key={ticket.id} className={`transition-colors ${selectedTicketIds.includes(ticket.id)
                     ? 'bg-blue-50/60 hover:bg-blue-100/60 dark:bg-blue-900/50 dark:hover:bg-blue-800/60'
                     : 'hover:bg-gray-50/60 dark:hover:bg-gray-700/30'
                     }`}>
                     {(isAdmin || isTechnician) && (
-                      <td className="py-4 pl-5 pr-3 w-10 text-center align-middle">
+                      <td className="py-3 pl-5 pr-3 w-10 text-center align-middle">
                         <input
                           type="checkbox"
                           className="w-4 h-4 text-blue-600 rounded border-gray-300 dark:border-gray-600 dark:bg-gray-700 focus:ring-blue-500 cursor-pointer translate-y-[2px]"
@@ -680,8 +694,8 @@ const TicketsPage: React.FC = () => {
                         />
                       </td>
                     )}
-                    <td className="px-6 py-4 text-sm font-medium text-gray-400 dark:text-gray-500 whitespace-nowrap">#{ticket.id}</td>
-                    <td className="px-6 py-4 text-sm max-w-[200px] sm:max-w-[250px] lg:max-w-[350px]">
+                    <td className="px-6 py-3 text-sm font-medium text-gray-400 dark:text-gray-500 whitespace-nowrap">#{ticket.id}</td>
+                    <td className="px-6 py-3 text-sm max-w-[200px] sm:max-w-[250px] lg:max-w-[350px]">
                       {selectedTicketIds.length > 0 ? (
                         <div
                           title={ticket.title}
@@ -700,14 +714,14 @@ const TicketsPage: React.FC = () => {
                         </Link>
                       )}
                     </td>
-                    <td className="px-6 py-4 text-sm text-gray-600 whitespace-nowrap">
+                    <td className="px-6 py-3 text-sm text-gray-600 whitespace-nowrap">
                       <span className="flex items-center gap-1.5 font-medium">
                         {getCategoryIcon(ticket.category_name || '')}
                         {ticket.category_name || '—'}
                       </span>
                     </td>
                     {!isEmployee && (
-                      <td className="px-6 py-4 whitespace-nowrap">
+                      <td className="px-6 py-3 whitespace-nowrap">
                         <span className="flex items-center gap-1.5 text-sm font-medium">
                           {PRIORITY_ICONS[ticket.priority]}
                           <span className={ticket.priority === 'WYSOKI' ? 'text-red-600' : ticket.priority === 'NORMALNY' ? 'text-blue-600' : 'text-gray-500'}>
@@ -716,7 +730,7 @@ const TicketsPage: React.FC = () => {
                         </span>
                       </td>
                     )}
-                    <td className="px-6 py-4 text-sm text-gray-700 dark:text-gray-300 whitespace-nowrap font-medium">
+                    <td className="px-6 py-3 text-sm text-gray-700 dark:text-gray-300 whitespace-nowrap font-medium">
                       {ticket.creator_details ? (
                         <span className="flex items-center gap-2">
                           <div className="w-5 h-5 rounded-full bg-blue-600 text-white flex items-center justify-center flex-shrink-0 overflow-hidden">
@@ -726,12 +740,14 @@ const TicketsPage: React.FC = () => {
                               <span className="text-[10px] font-bold uppercase">{ticket.creator_details.first_name?.charAt(0) || 'U'}</span>
                             )}
                           </div>
-                          {ticket.creator_details.first_name} {ticket.creator_details.last_name}
+                          <span className="truncate max-w-[120px] xl:max-w-[180px]" title={`${ticket.creator_details.first_name} ${ticket.creator_details.last_name}`}>
+                            {ticket.creator_details.first_name} {ticket.creator_details.last_name}
+                          </span>
                         </span>
                       ) : <span className="text-gray-400 italic">Nieznany</span>}
                     </td>
                     {!isEmployee && (
-                      <td className="px-6 py-4 text-sm whitespace-nowrap">
+                      <td className="px-6 py-3 text-sm whitespace-nowrap">
                         {ticket.technician_details ? (
                           <span className="flex items-center gap-2 text-gray-900 dark:text-gray-200 font-medium">
                             <div className="w-5 h-5 rounded-full bg-blue-600 text-white flex items-center justify-center flex-shrink-0 overflow-hidden">
@@ -741,7 +757,9 @@ const TicketsPage: React.FC = () => {
                                 <span className="text-[10px] font-bold uppercase">{ticket.technician_details.first_name?.charAt(0) || 'U'}</span>
                               )}
                             </div>
-                            {ticket.technician_details.first_name} {ticket.technician_details.last_name}
+                            <span className="truncate max-w-[120px] xl:max-w-[180px]" title={`${ticket.technician_details.first_name} ${ticket.technician_details.last_name}`}>
+                              {ticket.technician_details.first_name} {ticket.technician_details.last_name}
+                            </span>
                           </span>
                         ) : (
                           <span className="flex items-center gap-2 text-gray-500 italic">
@@ -753,12 +771,12 @@ const TicketsPage: React.FC = () => {
                         )}
                       </td>
                     )}
-                    <td className="px-6 py-4 whitespace-nowrap">
+                    <td className="px-6 py-3 whitespace-nowrap">
                       <span className={`px-2.5 py-1 inline-flex text-xs leading-5 font-bold rounded-lg ${STATUS_STYLES[ticket.status] || 'bg-gray-100 text-gray-800'}`}>
                         {STATUS_LABELS[ticket.status] || ticket.status}
                       </span>
                     </td>
-                    <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
+                    <td className="px-6 py-3 text-sm text-gray-500 whitespace-nowrap">
                       {dayjs(ticket.created_at).format('DD MMM YYYY, HH:mm')}
                     </td>
                   </tr>
@@ -766,6 +784,76 @@ const TicketsPage: React.FC = () => {
               )}
             </tbody>
           </table>
+        </div>
+
+        {/* Footer z informacją o liczbie wyników i paginacją */}
+        <div className="px-6 py-4 border-t border-gray-100 dark:border-gray-700/50 bg-gray-50/50 dark:bg-gray-800/50 flex flex-col md:flex-row items-center justify-between gap-4 rounded-b-2xl">
+          
+          {/* Lewa: Licznik */}
+          <div className="flex items-center">
+            <p className="text-xs font-medium text-slate-500">
+              Pokazuję <strong className="text-slate-700 dark:text-slate-300">
+                {filteredTickets.length > 0 ? (currentPage - 1) * itemsPerPage + 1 : 0}
+              </strong> do <strong className="text-slate-700 dark:text-slate-300">
+                {Math.min(currentPage * itemsPerPage, filteredTickets.length)}
+              </strong> z <strong className="text-slate-700 dark:text-slate-300">{filteredTickets.length}</strong> wyników.
+            </p>
+          </div>
+
+          {/* Prawa: Nawigacja po stronach */}
+          <div className="flex items-center">
+            {totalPages > 1 && (
+              <div className="flex items-center gap-1">
+                <button
+                  onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                  disabled={currentPage === 1}
+                  className="px-3 py-1.5 rounded-lg text-xs font-semibold border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-sm"
+                >
+                  Poprzednia
+                </button>
+                
+                <div className="flex items-center px-1 gap-1">
+                  {Array.from({ length: totalPages }).map((_, i) => {
+                    const pageNum = i + 1;
+                    if (
+                      pageNum === 1 || 
+                      pageNum === totalPages || 
+                      (pageNum >= currentPage - 1 && pageNum <= currentPage + 1)
+                    ) {
+                      return (
+                        <button
+                          key={pageNum}
+                          onClick={() => setCurrentPage(pageNum)}
+                          className={`w-8 h-8 rounded-lg text-xs font-bold transition-all flex items-center justify-center border ${
+                            currentPage === pageNum 
+                              ? 'bg-blue-600 text-white border-blue-600 shadow-md shadow-blue-600/20' 
+                              : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
+                          }`}
+                        >
+                          {pageNum}
+                        </button>
+                      );
+                    }
+                    if (
+                      (pageNum === currentPage - 2 && pageNum > 1) ||
+                      (pageNum === currentPage + 2 && pageNum < totalPages)
+                    ) {
+                      return <span key={pageNum} className="text-gray-400 dark:text-gray-500 px-1">...</span>;
+                    }
+                    return null;
+                  })}
+                </div>
+
+                <button
+                  onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                  disabled={currentPage === totalPages}
+                  className="px-3 py-1.5 rounded-lg text-xs font-semibold border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-sm"
+                >
+                  Następna
+                </button>
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
