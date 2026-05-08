@@ -15,6 +15,7 @@ import {
   TrendingDown,
   Ticket as TicketIcon,
   CheckCircle2,
+  Clock,
 } from 'lucide-react';
 import dayjs from 'dayjs';
 import isBetween from 'dayjs/plugin/isBetween';
@@ -221,7 +222,7 @@ const StatisticsPage: React.FC = () => {
 
   // ========== DATE PICKER STATE ==========
   const [dateRange, setDateRange] = useState<{ start: dayjs.Dayjs; end: dayjs.Dayjs }>({
-    start: dayjs().subtract(6, 'day').startOf('day'),
+    start: dayjs().subtract(29, 'day').startOf('day'),
     end: dayjs().endOf('day'),
   });
   const [showDatePicker, setShowDatePicker] = useState(false);
@@ -327,12 +328,13 @@ const StatisticsPage: React.FC = () => {
   const prevTickets = tickets.filter(t => dayjs(t.created_at).isBetween(prevStart, prevEnd, 'day', '[]'));
 
   const calcTrend = (current: number, prev: number) => {
-    if (prev === 0 && current === 0) return { value: 0, direction: 'up' as const };
-    if (prev === 0) return { value: 100, direction: 'up' as const };
+    if (prev < 5) return { value: 0, direction: 'up' as const, invalid: true };
     const pct = ((current - prev) / prev) * 100;
+    if (Math.abs(pct) > 300) return { value: 0, direction: 'up' as const, invalid: true };
     return {
       value: Math.abs(pct),
       direction: pct >= 0 ? 'up' as const : 'down' as const,
+      invalid: false
     };
   };
 
@@ -424,11 +426,148 @@ const StatisticsPage: React.FC = () => {
     });
   }
 
+  const datePickerElement = (
+    <div className="relative" ref={datePickerRef}>
+      <button
+        onClick={() => setShowDatePicker(!showDatePicker)}
+        className="flex items-center gap-2 px-4 py-2.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-sm hover:shadow-md hover:border-gray-300 dark:hover:border-gray-600 transition-all text-sm font-semibold text-gray-700 dark:text-gray-300"
+      >
+        <Calendar className="w-4 h-4 text-gray-500 dark:text-gray-400" />
+        <span>{dateRangeLabel}</span>
+        <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform ${showDatePicker ? 'rotate-180' : ''}`} />
+      </button>
+
+      {showDatePicker && (
+        <div className="absolute top-full right-0 mt-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-xl z-50 p-3 flex flex-col md:flex-row gap-4 animate-in fade-in slide-in-from-top-2">
+          <div className="flex flex-col gap-1 min-w-[160px] pr-4 md:border-r border-gray-100 dark:border-gray-700">
+            <button onClick={applyToday} className="text-left px-4 py-2 text-sm font-medium text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-500/10 rounded-xl transition-colors font-semibold">Dzisiaj</button>
+            <div className="h-px bg-gray-100 dark:bg-gray-700 my-1"></div>
+            <button onClick={() => applyPreset(7)} className="text-left px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-xl transition-colors">Ostatnie 7 dni</button>
+            <button onClick={() => applyPreset(14)} className="text-left px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-xl transition-colors">Ostatnie 14 dni</button>
+            <button onClick={() => applyPreset(30)} className="text-left px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-xl transition-colors">Ostatnie 30 dni</button>
+            <div className="h-px bg-gray-100 dark:bg-gray-700 my-1"></div>
+            <button onClick={applyThisMonth} className="text-left px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-xl transition-colors">Ten miesiąc</button>
+            <button onClick={applyLastMonth} className="text-left px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-xl transition-colors">Poprzedni miesiąc</button>
+          </div>
+
+          <div className="w-64">
+            <div className="flex justify-between items-center mb-3 px-1">
+              <button onClick={() => setPickerView(p => ({ ...p, year: p.year - 1 }))} className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full text-gray-400 dark:text-gray-500 text-xs font-bold" title="Poprzedni rok">«</button>
+              <button onClick={() => setPickerView(p => p.month === 0 ? { year: p.year - 1, month: 11 } : { ...p, month: p.month - 1 })} className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full text-gray-600 dark:text-gray-400">
+                <ChevronDown className="w-4 h-4 rotate-90" />
+              </button>
+              <span className="font-semibold text-gray-900 dark:text-white text-sm select-none">
+                {plMonthsFull[pickerView.month]} {pickerView.year}
+              </span>
+              <button onClick={() => setPickerView(p => p.month === 11 ? { year: p.year + 1, month: 0 } : { ...p, month: p.month + 1 })} disabled={pickerView.year === dayjs().year() && pickerView.month >= dayjs().month()} className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full text-gray-600 dark:text-gray-400 disabled:opacity-30 disabled:cursor-not-allowed">
+                <ChevronDown className="w-4 h-4 -rotate-90" />
+              </button>
+              <button onClick={() => setPickerView(p => ({ ...p, year: p.year + 1 }))} disabled={pickerView.year >= dayjs().year()} className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full text-gray-400 dark:text-gray-500 text-xs font-bold disabled:opacity-30 disabled:cursor-not-allowed" title="Następny rok">»</button>
+            </div>
+            <div className="grid grid-cols-7 gap-1 mb-1">
+              {['Pn', 'Wt', 'Śr', 'Cz', 'Pt', 'Sb', 'Nd'].map(d => (
+                <div key={d} className="text-center text-xs font-medium text-gray-400 py-1">{d}</div>
+              ))}
+            </div>
+            <div className="grid grid-cols-7 gap-1">
+              {(() => {
+                const today = dayjs();
+                const firstDay = dayjs().year(pickerView.year).month(pickerView.month).startOf('month');
+                const daysInMonth = firstDay.daysInMonth();
+                const startPadding = firstDay.day() === 0 ? 6 : firstDay.day() - 1;
+                const days = [];
+                for (let i = 0; i < startPadding; i++) days.push(<div key={`pad-${i}`} className="h-8"></div>);
+                for (let i = 1; i <= daysInMonth; i++) {
+                  const d = dayjs().year(pickerView.year).month(pickerView.month).date(i);
+                  const isFuture = d.isAfter(today, 'day');
+                  const isToday = d.isSame(today, 'day');
+                  let isSelected = false;
+                  let isInRange = false;
+                  let isStart = false;
+                  let isEnd = false;
+                  if (customStart && !isFuture) {
+                    if (d.isSame(customStart, 'day')) { isSelected = true; isStart = true; }
+                    if (hoverDate) {
+                      const [hStart, hEnd] = hoverDate.isBefore(customStart) ? [hoverDate, customStart] : [customStart, hoverDate];
+                      if (d.isSame(hEnd, 'day')) { isSelected = true; isEnd = true; }
+                      if (d.isAfter(hStart, 'day') && d.isBefore(hEnd, 'day')) isInRange = true;
+                    }
+                  } else if (!customStart) {
+                    if (d.isSame(dateRange.start, 'day')) { isSelected = true; isStart = true; }
+                    if (d.isSame(dateRange.end, 'day')) { isSelected = true; isEnd = true; }
+                    if (d.isAfter(dateRange.start, 'day') && d.isBefore(dateRange.end, 'day')) isInRange = true;
+                    if (d.isSame(dateRange.start, 'day') && d.isSame(dateRange.end, 'day')) { isStart = true; isEnd = true; }
+                  }
+                  let cls = "h-8 relative flex items-center justify-center text-sm rounded-lg transition-colors ";
+                  if (isFuture) cls += "text-gray-300 dark:text-gray-600 cursor-not-allowed";
+                  else if (isSelected) {
+                    cls += "bg-blue-600 text-white font-bold cursor-pointer z-10";
+                    if (isStart && !isEnd) cls += " rounded-r-none";
+                    if (!isStart && isEnd) cls += " rounded-l-none";
+                  } else if (isInRange) cls += "bg-blue-50 dark:bg-blue-900/30 text-blue-800 dark:text-blue-200 rounded-none cursor-pointer";
+                  else cls += "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer";
+                  days.push(
+                    <div key={`day-${i}`} onClick={() => handleDayClick(d)} onMouseEnter={() => customStart && !isFuture && setHoverDate(d)} onMouseLeave={() => customStart && setHoverDate(null)} className={cls}>
+                      {i}
+                      {isToday && !isSelected && <span className="absolute bottom-0.5 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-blue-500"></span>}
+                    </div>
+                  );
+                }
+                return days;
+              })()}
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+
   // ==================== TECHNIK ====================
   if (isTechnician) {
-    const myTickets = tickets.filter(t => t.technician === authContext?.user?.id);
+    const myTickets = filteredTickets.filter(t => t.technician === authContext?.user?.id);
     const myActive = myTickets.filter(t => !['ROZWIAZANE', 'ZAMKNIETE'].includes(t.status));
     const myResolved = myTickets.filter(t => ['ROZWIAZANE', 'ZAMKNIETE'].includes(t.status));
+
+    const prevMyTickets = prevTickets.filter(t => t.technician === authContext?.user?.id);
+    const prevMyActiveCount = prevMyTickets.filter(t => !['ROZWIAZANE', 'ZAMKNIETE'].includes(t.status)).length;
+    const prevMyResolvedCount = prevMyTickets.filter(t => ['ROZWIAZANE', 'ZAMKNIETE'].includes(t.status)).length;
+    const prevUnassignedCount = prevTickets.filter(t => !t.technician_details && !['ROZWIAZANE', 'ZAMKNIETE'].includes(t.status)).length;
+
+    const trendMyActive = calcTrend(myActive.length, prevMyActiveCount);
+    const trendMyResolved = calcTrend(myResolved.length, prevMyResolvedCount);
+    const trendUnassigned = calcTrend(unassignedCount, prevUnassignedCount);
+
+    const formatTrend = (trendData: ReturnType<typeof calcTrend>, isGoodWhenUp: boolean) => {
+      const isGood = trendData.direction === 'up' ? isGoodWhenUp : !isGoodWhenUp;
+      return { ...trendData, isGood };
+    };
+
+    const techKpis = [
+      {
+        label: 'Moje aktywne',
+        value: myActive.length,
+        icon: <Clock className="w-5 h-5" />,
+        iconColor: 'text-blue-600 dark:text-blue-400',
+        iconBg: 'bg-blue-50 dark:bg-blue-500/10 ring-1 ring-blue-100/50 dark:ring-blue-500/20',
+        trend: formatTrend(trendMyActive, false),
+      },
+      {
+        label: 'Moje rozwiązane',
+        value: myResolved.length,
+        icon: <CheckCircle2 className="w-5 h-5" />,
+        iconColor: 'text-emerald-600 dark:text-emerald-400',
+        iconBg: 'bg-emerald-50 dark:bg-emerald-500/10 ring-1 ring-emerald-100/50 dark:ring-emerald-500/20',
+        trend: formatTrend(trendMyResolved, true),
+      },
+      {
+        label: 'Nieprzypisane w systemie',
+        value: unassignedCount,
+        icon: <UserMinus className="w-5 h-5" />,
+        iconColor: 'text-amber-600 dark:text-amber-400',
+        iconBg: 'bg-amber-50 dark:bg-amber-500/10 ring-1 ring-amber-100/50 dark:ring-amber-500/20',
+        trend: formatTrend(trendUnassigned, false),
+      },
+    ];
 
     const myStatusData: DonutSegment[] = [
       { label: 'Nowe', value: myTickets.filter(t => t.status === 'NOWE').length, color: '#3b82f6', filterValue: 'NOWE' },
@@ -447,51 +586,78 @@ const StatisticsPage: React.FC = () => {
               Szczegółowa analiza Twojej pracy i przypisanych zadań
             </p>
           </div>
+          {datePickerElement}
         </div>
 
         {/* Kafelki podsumowania */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <div className="bg-white border border-blue-100 rounded-2xl p-5 shadow-sm">
-            <p className="text-sm font-medium text-gray-500">Moje aktywne</p>
-            <p className="text-3xl font-extrabold text-blue-600 mt-1">{myActive.length}</p>
-          </div>
-          <div className="bg-white border border-green-100 rounded-2xl p-5 shadow-sm">
-            <p className="text-sm font-medium text-gray-500">Moje rozwiązane</p>
-            <p className="text-3xl font-extrabold text-green-600 mt-1">{myResolved.length}</p>
-          </div>
-          <div className="bg-white border border-amber-100 rounded-2xl p-5 shadow-sm">
-            <p className="text-sm font-medium text-gray-500">Nieprzypisane w systemie</p>
-            <p className="text-3xl font-extrabold text-amber-600 mt-1">{unassignedCount}</p>
-          </div>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 md:gap-5">
+          {techKpis.map((kpi, index) => {
+            const trendColor = kpi.trend.isGood ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400';
+            const trendBg = kpi.trend.isGood ? 'bg-emerald-50 dark:bg-emerald-500/10' : 'bg-rose-50 dark:bg-rose-500/10';
+            const TrendIcon = kpi.trend.direction === 'up' ? TrendingUp : TrendingDown;
+
+            return (
+              <div key={index} className="group relative flex flex-col p-5 bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700/60 rounded-2xl shadow-sm hover:shadow-md transition-all duration-300">
+                <div className="flex items-start justify-between mb-3">
+                  <p className="text-sm font-medium text-gray-500 dark:text-gray-400 leading-tight">
+                    {kpi.label}
+                  </p>
+                  <div className={`w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 ${kpi.iconBg} ${kpi.iconColor}`}>
+                    {kpi.icon}
+                  </div>
+                </div>
+                <p className="text-3xl font-bold text-gray-900 dark:text-white tracking-tight mb-4">
+                  {kpi.value}
+                </p>
+                <div className="flex items-center mt-auto">
+                  {kpi.trend.invalid ? (
+                    <span className="text-xs font-medium text-gray-400 dark:text-gray-500">
+                      — brak danych
+                    </span>
+                  ) : (
+                    <>
+                      <div className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-xs font-semibold ${trendColor} ${trendBg}`}>
+                        <TrendIcon className="w-3.5 h-3.5" />
+                        <span>{kpi.trend.value.toFixed(1).replace('.', ',')}%</span>
+                      </div>
+                      <span className="text-xs font-medium text-gray-400 dark:text-gray-500 ml-2">
+                        vs poprz. okres
+                      </span>
+                    </>
+                  )}
+                </div>
+              </div>
+            );
+          })}
         </div>
 
         {/* Siatka statystyk */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
 
           {/* Przegląd statusów (moje) */}
-          <div className="bg-white border border-gray-200 rounded-2xl shadow-sm p-6">
+          <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700/60 rounded-2xl shadow-sm p-6">
             <div className="flex items-center justify-between mb-1">
-              <h3 className="font-bold text-gray-900">Przegląd statusów</h3>
-              <Link to="/tickets" className="text-xs font-bold text-blue-600 hover:text-blue-800 flex items-center">
+              <h3 className="font-bold text-gray-900 dark:text-white">Przegląd statusów</h3>
+              <Link to="/tickets" className="text-xs font-bold text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 flex items-center">
                 Wyświetl zgłoszenia <ArrowUpRight className="w-3 h-3 ml-1" />
               </Link>
             </div>
-            <p className="text-xs text-gray-500 mb-5">Rozkład statusów Twoich zgłoszeń.</p>
+            <p className="text-xs text-gray-500 dark:text-gray-400 mb-5">Rozkład statusów Twoich zgłoszeń.</p>
             <DonutChart segments={myStatusData} total={myTickets.length} filterType="status" />
           </div>
 
           {/* Rodzaj zgłoszeń */}
-          <div className="bg-white border border-gray-200 rounded-2xl shadow-sm p-6">
+          <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700/60 rounded-2xl shadow-sm p-6">
             <div className="flex items-center justify-between mb-1">
-              <h3 className="font-bold text-gray-900">Rodzaj zgłoszeń</h3>
-              <Link to="/tickets" className="text-xs font-bold text-blue-600 hover:text-blue-800 flex items-center">
+              <h3 className="font-bold text-gray-900 dark:text-white">Rodzaj zgłoszeń</h3>
+              <Link to="/tickets" className="text-xs font-bold text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 flex items-center">
                 Wyświetl zgłoszenia <ArrowUpRight className="w-3 h-3 ml-1" />
               </Link>
             </div>
-            <p className="text-xs text-gray-500 mb-5">Otwarte zgłoszenia według kategorii.</p>
+            <p className="text-xs text-gray-500 dark:text-gray-400 mb-5">Otwarte zgłoszenia według kategorii.</p>
             <div className="space-y-1 overflow-y-auto pr-1" style={{ maxHeight: '260px', scrollbarWidth: 'auto', scrollbarColor: '#cbd5e1 transparent' }}>
               {categorySorted.length === 0 ? (
-                <p className="text-sm text-gray-500 italic text-center py-6">Brak otwartych zgłoszeń.</p>
+                <p className="text-sm text-gray-500 dark:text-gray-400 italic text-center py-6">Brak otwartych zgłoszeń.</p>
               ) : (
                 categorySorted.map(([cat, count], i) => (
                   <HorizontalBar key={cat} label={cat} value={count} max={maxCategoryVal} color={categoryColors[i % categoryColors.length]} total={activeTickets.length} icon={getCategoryIcon(cat)} onClick={() => navigate(`/tickets?category=${encodeURIComponent(cat)}`)} />
@@ -592,7 +758,7 @@ const StatisticsPage: React.FC = () => {
       {
         label: 'Aktywne',
         value: activeTickets.length,
-        icon: <AlertTriangle className="w-5 h-5" />,
+        icon: <Clock className="w-5 h-5" />,
         iconColor: 'text-amber-600 dark:text-amber-400',
         iconBg: 'bg-amber-50 dark:bg-amber-500/10 ring-1 ring-amber-100/50 dark:ring-amber-500/20',
         trend: formatTrend(trendActive, false), // less active = good
@@ -626,101 +792,7 @@ const StatisticsPage: React.FC = () => {
             </p>
           </div>
           
-          {/* DATE PICKER (Admin) */}
-          <div className="relative" ref={datePickerRef}>
-            <button
-              onClick={() => setShowDatePicker(!showDatePicker)}
-              className="flex items-center gap-2 px-4 py-2.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-sm hover:shadow-md hover:border-gray-300 dark:hover:border-gray-600 transition-all text-sm font-semibold text-gray-700 dark:text-gray-300"
-            >
-              <Calendar className="w-4 h-4 text-gray-500 dark:text-gray-400" />
-              <span>{dateRangeLabel}</span>
-              <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform ${showDatePicker ? 'rotate-180' : ''}`} />
-            </button>
-
-            {/* Dropdown kalendarza */}
-            {showDatePicker && (
-              <div className="absolute top-full right-0 mt-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-xl z-50 p-3 flex flex-col md:flex-row gap-4 animate-in fade-in slide-in-from-top-2">
-                <div className="flex flex-col gap-1 min-w-[160px] pr-4 md:border-r border-gray-100 dark:border-gray-700">
-                  <button onClick={applyToday} className="text-left px-4 py-2 text-sm font-medium text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-500/10 rounded-xl transition-colors font-semibold">Dzisiaj</button>
-                  <div className="h-px bg-gray-100 dark:bg-gray-700 my-1"></div>
-                  <button onClick={() => applyPreset(7)} className="text-left px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-xl transition-colors">Ostatnie 7 dni</button>
-                  <button onClick={() => applyPreset(14)} className="text-left px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-xl transition-colors">Ostatnie 14 dni</button>
-                  <button onClick={() => applyPreset(30)} className="text-left px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-xl transition-colors">Ostatnie 30 dni</button>
-                  <div className="h-px bg-gray-100 dark:bg-gray-700 my-1"></div>
-                  <button onClick={applyThisMonth} className="text-left px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-xl transition-colors">Ten miesiąc</button>
-                  <button onClick={applyLastMonth} className="text-left px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-xl transition-colors">Poprzedni miesiąc</button>
-                </div>
-
-                <div className="w-64">
-                  <div className="flex justify-between items-center mb-3 px-1">
-                    <button onClick={() => setPickerView(p => ({ ...p, year: p.year - 1 }))} className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full text-gray-400 dark:text-gray-500 text-xs font-bold" title="Poprzedni rok">«</button>
-                    <button onClick={() => setPickerView(p => p.month === 0 ? { year: p.year - 1, month: 11 } : { ...p, month: p.month - 1 })} className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full text-gray-600 dark:text-gray-400">
-                      <ChevronDown className="w-4 h-4 rotate-90" />
-                    </button>
-                    <span className="font-semibold text-gray-900 dark:text-white text-sm select-none">
-                      {plMonthsFull[pickerView.month]} {pickerView.year}
-                    </span>
-                    <button onClick={() => setPickerView(p => p.month === 11 ? { year: p.year + 1, month: 0 } : { ...p, month: p.month + 1 })} disabled={pickerView.year === dayjs().year() && pickerView.month >= dayjs().month()} className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full text-gray-600 dark:text-gray-400 disabled:opacity-30 disabled:cursor-not-allowed">
-                      <ChevronDown className="w-4 h-4 -rotate-90" />
-                    </button>
-                    <button onClick={() => setPickerView(p => ({ ...p, year: p.year + 1 }))} disabled={pickerView.year >= dayjs().year()} className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full text-gray-400 dark:text-gray-500 text-xs font-bold disabled:opacity-30 disabled:cursor-not-allowed" title="Następny rok">»</button>
-                  </div>
-                  <div className="grid grid-cols-7 gap-1 mb-1">
-                    {['Pn', 'Wt', 'Śr', 'Cz', 'Pt', 'Sb', 'Nd'].map(d => (
-                      <div key={d} className="text-center text-xs font-medium text-gray-400 py-1">{d}</div>
-                    ))}
-                  </div>
-                  <div className="grid grid-cols-7 gap-1">
-                    {(() => {
-                      const today = dayjs();
-                      const firstDay = dayjs().year(pickerView.year).month(pickerView.month).startOf('month');
-                      const daysInMonth = firstDay.daysInMonth();
-                      const startPadding = firstDay.day() === 0 ? 6 : firstDay.day() - 1;
-                      const days = [];
-                      for (let i = 0; i < startPadding; i++) days.push(<div key={`pad-${i}`} className="h-8"></div>);
-                      for (let i = 1; i <= daysInMonth; i++) {
-                        const d = dayjs().year(pickerView.year).month(pickerView.month).date(i);
-                        const isFuture = d.isAfter(today, 'day');
-                        const isToday = d.isSame(today, 'day');
-                        let isSelected = false;
-                        let isInRange = false;
-                        let isStart = false;
-                        let isEnd = false;
-                        if (customStart && !isFuture) {
-                          if (d.isSame(customStart, 'day')) { isSelected = true; isStart = true; }
-                          if (hoverDate) {
-                            const [hStart, hEnd] = hoverDate.isBefore(customStart) ? [hoverDate, customStart] : [customStart, hoverDate];
-                            if (d.isSame(hEnd, 'day')) { isSelected = true; isEnd = true; }
-                            if (d.isAfter(hStart, 'day') && d.isBefore(hEnd, 'day')) isInRange = true;
-                          }
-                        } else if (!customStart) {
-                          if (d.isSame(dateRange.start, 'day')) { isSelected = true; isStart = true; }
-                          if (d.isSame(dateRange.end, 'day')) { isSelected = true; isEnd = true; }
-                          if (d.isAfter(dateRange.start, 'day') && d.isBefore(dateRange.end, 'day')) isInRange = true;
-                          if (d.isSame(dateRange.start, 'day') && d.isSame(dateRange.end, 'day')) { isStart = true; isEnd = true; }
-                        }
-                        let cls = "h-8 relative flex items-center justify-center text-sm rounded-lg transition-colors ";
-                        if (isFuture) cls += "text-gray-300 dark:text-gray-600 cursor-not-allowed";
-                        else if (isSelected) {
-                          cls += "bg-blue-600 text-white font-bold cursor-pointer z-10";
-                          if (isStart && !isEnd) cls += " rounded-r-none";
-                          if (!isStart && isEnd) cls += " rounded-l-none";
-                        } else if (isInRange) cls += "bg-blue-50 dark:bg-blue-900/30 text-blue-800 dark:text-blue-200 rounded-none cursor-pointer";
-                        else cls += "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer";
-                        days.push(
-                          <div key={`day-${i}`} onClick={() => handleDayClick(d)} onMouseEnter={() => customStart && !isFuture && setHoverDate(d)} onMouseLeave={() => customStart && setHoverDate(null)} className={cls}>
-                            {i}
-                            {isToday && !isSelected && <span className="absolute bottom-0.5 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-blue-500"></span>}
-                          </div>
-                        );
-                      }
-                      return days;
-                    })()}
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
+          {datePickerElement}
         </div>
 
         {/* Kafelki podsumowania */}
@@ -744,13 +816,21 @@ const StatisticsPage: React.FC = () => {
                   {kpi.value}
                 </p>
                 <div className="flex items-center mt-auto">
-                  <div className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-xs font-semibold ${trendColor} ${trendBg}`}>
-                    <TrendIcon className="w-3.5 h-3.5" />
-                    <span>{kpi.trend.value.toFixed(1).replace('.', ',')}%</span>
-                  </div>
-                  <span className="text-xs font-medium text-gray-400 dark:text-gray-500 ml-2">
-                    vs poprz. okres
-                  </span>
+                  {kpi.trend.invalid ? (
+                    <span className="text-xs font-medium text-gray-400 dark:text-gray-500">
+                      — brak danych
+                    </span>
+                  ) : (
+                    <>
+                      <div className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-xs font-semibold ${trendColor} ${trendBg}`}>
+                        <TrendIcon className="w-3.5 h-3.5" />
+                        <span>{kpi.trend.value.toFixed(1).replace('.', ',')}%</span>
+                      </div>
+                      <span className="text-xs font-medium text-gray-400 dark:text-gray-500 ml-2">
+                        vs poprz. okres
+                      </span>
+                    </>
+                  )}
                 </div>
               </div>
             );
@@ -835,29 +915,29 @@ const StatisticsPage: React.FC = () => {
           </div>
 
           {/* Sugestie */}
-          <div className="bg-white border border-gray-200 rounded-2xl shadow-sm p-6">
+          <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700/60 rounded-2xl shadow-sm p-6">
             <div className="flex items-center gap-2 mb-1">
               <Lightbulb className="w-5 h-5 text-amber-500" />
-              <h3 className="font-bold text-gray-900">Sugestie</h3>
+              <h3 className="font-bold text-gray-900 dark:text-white">Sugestie</h3>
             </div>
-            <p className="text-xs text-gray-500 mb-5">Automatyczne wskazówki na podstawie danych.</p>
+            <p className="text-xs text-gray-500 dark:text-gray-400 mb-5">Automatyczne wskazówki na podstawie danych.</p>
             <div className="space-y-3">
               {suggestions.map((s, i) => (
                 <div
                   key={i}
                   className={`flex items-center gap-3 p-3 rounded-xl text-sm font-medium transition-colors ${s.severity === 'warning'
-                    ? 'bg-amber-50 text-amber-800 border border-amber-200 hover:bg-amber-100'
+                    ? 'bg-amber-50 dark:bg-amber-500/10 text-amber-800 dark:text-amber-400 border border-amber-200 dark:border-amber-500/20 hover:bg-amber-100 dark:hover:bg-amber-500/20'
                     : s.severity === 'info'
-                      ? 'bg-blue-50 text-blue-800 border border-blue-200 hover:bg-blue-100'
-                      : 'bg-green-50 text-green-800 border border-green-200 hover:bg-green-100'
+                      ? 'bg-blue-50 dark:bg-blue-500/10 text-blue-800 dark:text-blue-400 border border-blue-200 dark:border-blue-500/20 hover:bg-blue-100 dark:hover:bg-blue-500/20'
+                      : 'bg-green-50 dark:bg-green-500/10 text-green-800 dark:text-green-400 border border-green-200 dark:border-green-500/20 hover:bg-green-100 dark:hover:bg-green-500/20'
                     }`}
                 >
                   <AlertTriangle className={`w-4 h-4 flex-shrink-0 ${s.severity === 'warning' ? 'text-amber-500' : s.severity === 'info' ? 'text-blue-500' : 'text-green-500'}`} />
                   <span className="flex-1">{s.text}</span>
                   {s.link && (
-                    <Link to={s.link} className="flex-shrink-0 flex items-center text-xs font-bold px-3 py-1.5 bg-white/60 hover:bg-white text-gray-800 rounded-lg shadow-sm border border-black/5 hover:shadow transition-all group">
+                    <Link to={s.link} className="flex-shrink-0 flex items-center text-xs font-bold px-3 py-1.5 bg-white/60 dark:bg-gray-800/60 hover:bg-white dark:hover:bg-gray-700 text-gray-800 dark:text-gray-200 rounded-lg shadow-sm border border-black/5 dark:border-white/5 hover:shadow transition-all group">
                       Zobacz
-                      <ArrowUpRight className="w-3 h-3 ml-1 text-gray-500 group-hover:text-gray-800 transition-colors" />
+                      <ArrowUpRight className="w-3 h-3 ml-1 text-gray-500 dark:text-gray-400 group-hover:text-gray-800 dark:group-hover:text-gray-200 transition-colors" />
                     </Link>
                   )}
                 </div>
