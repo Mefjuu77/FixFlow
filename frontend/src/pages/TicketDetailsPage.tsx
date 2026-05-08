@@ -95,6 +95,11 @@ const TicketDetailsPage: React.FC = () => {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [isDeletingTicket, setIsDeletingTicket] = useState(false);
   const [showToast, setShowToast] = useState(false);
+  
+  const attachmentsMenuRef = useRef<HTMLDivElement>(null);
+  const [isAttachmentsMenuOpen, setIsAttachmentsMenuOpen] = useState(false);
+  const [showDeleteAllAttachmentsModal, setShowDeleteAllAttachmentsModal] = useState(false);
+  const [isDeletingAllAttachments, setIsDeletingAllAttachments] = useState(false);
 
   const [isAcceptingResolution, setIsAcceptingResolution] = useState(false);
   const [resolutionAccepted, setResolutionAccepted] = useState(false);
@@ -142,6 +147,9 @@ const TicketDetailsPage: React.FC = () => {
       }
       if (transitionAssigneeDropdownRef.current && !transitionAssigneeDropdownRef.current.contains(target)) {
         setIsTransitionAssigneeDropdownOpen(false);
+      }
+      if (attachmentsMenuRef.current && !attachmentsMenuRef.current.contains(target)) {
+        setIsAttachmentsMenuOpen(false);
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
@@ -274,6 +282,44 @@ const TicketDetailsPage: React.FC = () => {
     } catch (err) {
       console.error('Błąd pobierania pliku:', err);
       alert('Nie udało się pobrać pliku.');
+    }
+  };
+
+  const handleDownloadAllAttachments = async () => {
+    setIsAttachmentsMenuOpen(false);
+    if (!ticket || !ticket.attachments.length) return;
+    for (const att of ticket.attachments) {
+      try {
+        const response = await api.get(att.url, { responseType: 'blob' });
+        const blobUrl = window.URL.createObjectURL(new Blob([response.data]));
+        const link = document.createElement('a');
+        link.href = blobUrl;
+        link.download = att.filename;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(blobUrl);
+        await new Promise(resolve => setTimeout(resolve, 300));
+      } catch (err) {
+        console.error('Błąd pobierania pliku:', err);
+      }
+    }
+  };
+
+  const confirmDeleteAllAttachments = async () => {
+    setIsDeletingAllAttachments(true);
+    try {
+      if (ticket && ticket.attachments.length > 0) {
+        await Promise.all(ticket.attachments.map(att => ticketService.deleteAttachment(id!, att.id)));
+        await fetchTicket();
+        fetchLogs();
+      }
+    } catch (err) {
+      console.error('Błąd usuwania wszystkich załączników:', err);
+      alert('Nie udało się usunąć wszystkich załączników.');
+    } finally {
+      setIsDeletingAllAttachments(false);
+      setShowDeleteAllAttachmentsModal(false);
     }
   };
 
@@ -733,8 +779,45 @@ const TicketDetailsPage: React.FC = () => {
               )}
 
               {ticket.attachments && ticket.attachments.length > 0 && (
-                <div className="mt-4 pt-4 border-t border-gray-100">
-                  <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">Załączniki do zgłoszenia</h3>
+                <div className="mt-4 pt-4 border-t border-gray-100 dark:border-gray-700">
+                  <div className="flex items-center justify-between mb-3">
+                    <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider flex items-center">
+                      Załączniki do zgłoszenia
+                      <span className="bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 px-1.5 py-0.5 rounded-md ml-2 text-[10px] font-bold">{ticket.attachments.length}</span>
+                    </h3>
+                    
+                    <div className="relative" ref={attachmentsMenuRef}>
+                      <button 
+                        onClick={() => setIsAttachmentsMenuOpen(!isAttachmentsMenuOpen)}
+                        className="p-1 border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-md transition-colors shadow-sm"
+                      >
+                        <MoreHorizontal className="w-4 h-4" />
+                      </button>
+                      
+                      {isAttachmentsMenuOpen && (
+                        <div className="absolute right-0 top-full mt-1 w-48 bg-white dark:bg-[#1e2128] rounded-xl shadow-lg border border-gray-100 dark:border-gray-700 py-1.5 z-[20]">
+                          <button 
+                            onClick={handleDownloadAllAttachments}
+                            className="w-full text-left px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700/50 flex items-center justify-between"
+                          >
+                            Pobierz wszystko
+                            <span className="bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 text-[10px] px-1.5 py-0.5 rounded-md font-medium">{ticket.attachments.length}</span>
+                          </button>
+                          {isTechnicianOrAdmin && (
+                            <button 
+                              onClick={() => {
+                                setIsAttachmentsMenuOpen(false);
+                                setShowDeleteAllAttachmentsModal(true);
+                              }}
+                              className="w-full text-left px-3 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20"
+                            >
+                              Usuń wszystkie
+                            </button>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  </div>
                   {/* Image attachments - horizontal carousel */}
                   {(() => {
                     const imageAtts = ticket.attachments.filter(att => att.url?.toLowerCase().match(/\.(jpeg|jpg|gif|png|webp)$/));
@@ -2103,6 +2186,43 @@ const TicketDetailsPage: React.FC = () => {
               >
                 {isDeletingTicket && <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />}
                 Usuń
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete All Attachments Modal */}
+      {showDeleteAllAttachmentsModal && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-0">
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm transition-opacity" onClick={() => setShowDeleteAllAttachmentsModal(false)}></div>
+          
+          <div
+            className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-sm mx-4 p-6 text-center transform transition-all scale-100"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="w-14 h-14 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center mx-auto mb-4 border border-red-200 dark:border-red-800">
+              <Trash2 className="w-7 h-7 text-red-600 dark:text-red-400" />
+            </div>
+            <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100 mb-2">Usunąć wszystkie załączniki?</h3>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">
+              Czy na pewno chcesz bezpowrotnie usunąć wszystkie ({ticket?.attachments?.length}) załączniki?
+              <br />Tej operacji nie można cofnąć.
+            </p>
+            <div className="flex gap-3 justify-center">
+              <button
+                onClick={() => setShowDeleteAllAttachmentsModal(false)}
+                className="px-4 py-2 text-sm font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-xl transition-colors"
+              >
+                Anuluj
+              </button>
+              <button
+                onClick={confirmDeleteAllAttachments}
+                disabled={isDeletingAllAttachments}
+                className="px-5 py-2 text-sm font-bold text-white bg-red-600 hover:bg-red-700 dark:bg-red-500 dark:hover:bg-red-600 rounded-xl shadow-sm transition-all disabled:opacity-50 flex items-center"
+              >
+                {isDeletingAllAttachments && <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />}
+                Usuń wszystkie
               </button>
             </div>
           </div>
