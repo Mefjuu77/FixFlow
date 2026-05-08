@@ -293,7 +293,10 @@ const UsersPage: React.FC = () => {
         {/* ============ Header ============ */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Zarządzanie użytkownikami</h1>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Użytkownicy</h1>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1 font-medium">
+            Dodawaj nowych członków zespołu, ustalaj ich role i zarządzaj dostępem
+          </p>
         </div>
         <button
           onClick={openCreateModal}

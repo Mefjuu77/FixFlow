@@ -408,11 +408,13 @@ const TicketsPage: React.FC = () => {
       {/* Header */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">
-            {isEmployee ? 'Moje zgłoszenia' : isAdmin ? 'Zarządzanie zgłoszeniami' : 'Zgłoszenia'}
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+            {isEmployee ? 'Moje zgłoszenia' : 'Zgłoszenia'}
           </h1>
-          <p className="text-sm text-gray-500 mt-0.5">
-            {filteredTickets.length} z {tickets.length} zgłoszeń
+          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1 font-medium">
+            {isEmployee 
+              ? 'Śledź status swoich wniosków i sprawdzaj ich postępy' 
+              : 'Przeglądaj zgłoszenia, zmieniaj ich statusy i zarządzaj przypisaniami'}
           </p>
         </div>
         <Link
