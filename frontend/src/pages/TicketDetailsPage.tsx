@@ -1222,6 +1222,14 @@ const TicketDetailsPage: React.FC = () => {
                             NOWE: 'Nowe', W_TOKU: 'W toku', ROZWIAZANE: 'Rozwiązane', ZAMKNIETE: 'Zamknięte',
                             NISKI: 'Niski', NORMALNY: 'Normalny', WYSOKI: 'Wysoki',
                           };
+                          const priorityColors: Record<string, string> = {
+                            NISKI: 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300',
+                            NORMALNY: 'bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400',
+                            WYSOKI: 'bg-red-50 text-red-700 dark:bg-red-900/30 dark:text-red-400',
+                            'Niski': 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300',
+                            'Normalny': 'bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400',
+                            'Wysoki': 'bg-red-50 text-red-700 dark:bg-red-900/30 dark:text-red-400',
+                          };
                           const displayOld = statusLabels[log.old_value] || log.old_value;
                           const displayNew = statusLabels[log.new_value] || log.new_value;
                           const userName = log.user_details ? `${log.user_details.first_name} ${log.user_details.last_name}` : 'System';
@@ -1295,9 +1303,9 @@ const TicketDetailsPage: React.FC = () => {
                                 {log.action === 'PRIORITY_CHANGED' && (
                                   <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
                                     <span className="font-medium text-gray-700 dark:text-gray-300">{userName}</span> zmienił(a) priorytet:{' '}
-                                    <span className="bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 px-1.5 py-0.5 rounded">{displayOld}</span>
+                                    <span className={`${priorityColors[log.old_value] || 'bg-gray-50 text-gray-600'} px-1.5 py-0.5 rounded border dark:border-gray-600`}>{displayOld}</span>
                                     {' → '}
-                                    <span className="bg-green-50 dark:bg-green-900/30 text-green-600 dark:text-green-400 px-1.5 py-0.5 rounded">{displayNew}</span>
+                                    <span className={`${priorityColors[log.new_value] || 'bg-gray-50 text-gray-600'} px-1.5 py-0.5 rounded border dark:border-gray-600`}>{displayNew}</span>
                                   </p>
                                 )}
                                 {log.action === 'CATEGORY_CHANGED' && (
@@ -1374,7 +1382,9 @@ const TicketDetailsPage: React.FC = () => {
                                   </span>
                                   <span className="text-xs text-gray-400">{dayjs(comment.created_at).format('DD MMM YYYY, HH:mm')}</span>
                                 </div>
-                                <p className="mt-1 text-sm text-gray-700 dark:text-gray-300 line-clamp-2">{comment.content}</p>
+                                <div className="mt-1 text-sm text-gray-700 dark:text-gray-300 line-clamp-2 [&>p]:!mb-0">
+                                  <MarkdownRenderer content={comment.content} />
+                                </div>
                                 {comment.author_details && (
                                   <div className="mt-1.5 flex items-center gap-1.5 text-xs text-gray-400">
                                     {comment.author_details.avatar ? (
