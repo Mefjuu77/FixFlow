@@ -1,8 +1,9 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useContext } from 'react';
 import { useLocation } from 'react-router-dom';
 import api from '../api/axiosConfig';
 import { User } from '../types';
 import useTitle from '../hooks/useTitle';
+import { AuthContext } from '../context/AuthContext';
 import {
   Plus,
   Search,
@@ -20,6 +21,7 @@ import {
   UserX,
   UserCheck,
   Settings,
+  AlertTriangle,
 } from 'lucide-react';
 
 const ROLE_LABELS: Record<string, string> = {
@@ -57,6 +59,8 @@ const emptyForm: UserForm = { email: '', first_name: '', last_name: '', role: 'E
 
 const UsersPage: React.FC = () => {
   useTitle('Użytkownicy');
+  const authContext = useContext(AuthContext);
+  const currentUser = authContext?.user;
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -77,6 +81,13 @@ const UsersPage: React.FC = () => {
 
   // Toggle active
   const [isToggling, setIsToggling] = useState<number | null>(null);
+
+  // Toast
+  const [toastMessage, setToastMessage] = useState<{ text: string, type: 'error' | 'success' } | null>(null);
+  const showToast = (text: string, type: 'error' | 'success' = 'error') => {
+    setToastMessage({ text, type });
+    setTimeout(() => setToastMessage(null), 4000);
+  };
 
   const fetchUsers = async () => {
     try {
@@ -250,13 +261,18 @@ const UsersPage: React.FC = () => {
 
   // ---------- Toggle Active ----------
   const handleToggleActive = async (user: User) => {
+    if (user.id === currentUser?.id) {
+      showToast('Nie możesz zmienić statusu własnego konta!');
+      return;
+    }
+
     setIsToggling(user.id);
     try {
       await api.post(`users/${user.id}/toggle-active/`);
       await fetchUsers();
     } catch (err: any) {
       const msg = err.response?.data?.detail || 'Nie udało się zmienić statusu.';
-      alert(msg);
+      showToast(msg);
     } finally {
       setIsToggling(null);
     }
@@ -500,7 +516,7 @@ const UsersPage: React.FC = () => {
                       <div className="flex items-center justify-start gap-1.5">
                         <button
                           onClick={() => openEditModal(user)}
-                          className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-800 hover:text-blue-700 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-500/10 rounded-lg border border-gray-300 dark:border-gray-600 hover:border-blue-200 dark:hover:border-blue-800 transition-colors shadow-sm"
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-800 hover:text-blue-700 dark:hover:!text-blue-400 hover:bg-blue-50 dark:hover:!bg-blue-500/20 rounded-lg border border-gray-300 dark:border-gray-600 hover:border-blue-200 dark:hover:!border-blue-500/50 transition-colors shadow-sm"
                         >
                           <Settings className="w-3.5 h-3.5" />
                           Zarządzaj
@@ -510,8 +526,8 @@ const UsersPage: React.FC = () => {
                           disabled={isToggling === user.id}
                           className={`inline-flex items-center justify-center gap-1.5 w-28 px-3 py-1.5 text-xs font-medium rounded-lg border bg-white dark:bg-gray-800 shadow-sm transition-colors ${
                             inactive
-                              ? 'text-gray-600 dark:text-gray-300 border-gray-300 dark:border-gray-600 hover:text-green-700 dark:hover:text-green-400 hover:bg-green-50 dark:hover:bg-green-500/10 hover:border-green-200 dark:hover:border-green-800/60'
-                              : 'text-gray-600 dark:text-gray-300 border-gray-300 dark:border-gray-600 hover:text-amber-700 dark:hover:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-500/10 hover:border-amber-200 dark:hover:border-amber-800/60'
+                              ? 'text-gray-600 dark:text-gray-300 border-gray-300 dark:border-gray-600 hover:text-green-700 dark:hover:!text-green-400 hover:bg-green-50 dark:hover:!bg-green-500/20 hover:border-green-200 dark:hover:!border-green-500/50'
+                              : 'text-gray-600 dark:text-gray-300 border-gray-300 dark:border-gray-600 hover:text-amber-700 dark:hover:!text-amber-400 hover:bg-amber-50 dark:hover:!bg-amber-500/20 hover:border-amber-200 dark:hover:!border-amber-500/50'
                           } disabled:opacity-40`}
                         >
                           {isToggling === user.id ? (
@@ -725,6 +741,23 @@ const UsersPage: React.FC = () => {
                 </div>
               </div>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* ========== Toast Notification ========== */}
+      {toastMessage && (
+        <div className="fixed bottom-6 right-6 z-[200] animate-in slide-in-from-bottom-5 fade-in duration-300">
+          <div className={`flex items-center gap-3 px-4 py-3 rounded-xl shadow-xl border ${
+            toastMessage.type === 'error' 
+              ? 'bg-red-50 dark:bg-red-900/30 border-red-200 dark:border-red-800/50 text-red-700 dark:text-red-400' 
+              : 'bg-green-50 dark:bg-green-900/30 border-green-200 dark:border-green-800/50 text-green-700 dark:text-green-400'
+          }`}>
+            {toastMessage.type === 'error' ? <AlertTriangle className="w-5 h-5 flex-shrink-0" /> : <UserCheck className="w-5 h-5 flex-shrink-0" />}
+            <p className="text-sm font-semibold pr-2">{toastMessage.text}</p>
+            <button onClick={() => setToastMessage(null)} className="p-1 hover:bg-black/5 dark:hover:bg-white/10 rounded-lg transition-colors ml-2">
+              <X className="w-4 h-4" />
+            </button>
           </div>
         </div>
       )}
