@@ -60,15 +60,16 @@ PRIORITY_LABELS = {
 def _badge(label, bg_color, text_color):
     """Generuje inline badge HTML."""
     return (
-        f'<span style="display:inline-block;padding:3px 10px;border-radius:20px;'
-        f'font-size:12px;font-weight:600;color:{text_color};background-color:{bg_color};'
-        f'letter-spacing:0.3px;">{label}</span>'
+        f'<span style="display:inline-block;padding:4px 12px;border-radius:6px;'
+        f'font-size:12px;font-weight:700;color:{text_color};background-color:{bg_color};'
+        f'letter-spacing:0.3px;line-height:1.4;">{label}</span>'
     )
 
 
 def _build_html_email(title, greeting, body_html, ticket=None, accent_color='#2563EB'):
     """
     Buduje kompletny HTML e-maila z inline CSS.
+    Design dopasowany do systemu FixFlow — nowoczesny, czytelny, responsywny.
 
     Args:
         title: Nagłówek widoczny w headerze e-maila
@@ -96,38 +97,53 @@ def _build_html_email(title, greeting, body_html, ticket=None, accent_color='#25
             technician_name = f'{ticket.technician.first_name} {ticket.technician.last_name}'
 
         ticket_card = f'''
-        <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:24px 0 8px 0;">
+        <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:28px 0 12px 0;">
           <tr>
-            <td style="background-color:#F8FAFC;border:1px solid #E2E8F0;border-radius:12px;padding:20px;">
+            <td style="background-color:#FFFFFF;border:1px solid #E2E8F0;border-radius:16px;padding:0;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.04);">
+              <!-- Ticket card header -->
               <table width="100%" cellpadding="0" cellspacing="0" border="0">
                 <tr>
-                  <td style="padding-bottom:12px;border-bottom:1px solid #E2E8F0;">
-                    <span style="font-size:13px;color:#64748B;font-weight:500;">Zgłoszenie</span>
-                    <span style="font-size:13px;color:#94A3B8;font-weight:400;"> · </span>
-                    <span style="font-size:13px;color:{accent_color};font-weight:700;">#{ticket.id}</span>
-                    <div style="margin-top:4px;font-size:16px;font-weight:700;color:#1E293B;line-height:1.4;">
+                  <td style="padding:18px 24px 14px 24px;border-bottom:1px solid #F1F5F9;">
+                    <table width="100%" cellpadding="0" cellspacing="0" border="0">
+                      <tr>
+                        <td>
+                          <span style="font-size:12px;color:#94A3B8;font-weight:600;letter-spacing:0.5px;text-transform:uppercase;">Zgłoszenie</span>
+                          <span style="font-size:12px;color:#CBD5E1;"> &bull; </span>
+                          <span style="font-size:12px;color:{accent_color};font-weight:800;">#{ticket.id}</span>
+                        </td>
+                        <td align="right">
+                          {_badge(status_label, status_bg, status_text)}
+                        </td>
+                      </tr>
+                    </table>
+                    <div style="margin-top:8px;font-size:17px;font-weight:800;color:#0F172A;line-height:1.4;letter-spacing:-0.2px;">
                       {ticket.title}
                     </div>
                   </td>
                 </tr>
+              </table>
+              <!-- Ticket card body -->
+              <table width="100%" cellpadding="0" cellspacing="0" border="0">
                 <tr>
-                  <td style="padding-top:14px;">
+                  <td style="padding:16px 24px 20px 24px;">
                     <table width="100%" cellpadding="0" cellspacing="0" border="0">
                       <tr>
-                        <td width="50%" style="vertical-align:top;padding-right:8px;">
-                          <div style="font-size:11px;color:#94A3B8;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;">Status</div>
-                          {_badge(status_label, status_bg, status_text)}
-                        </td>
-                        <td width="50%" style="vertical-align:top;padding-left:8px;">
-                          <div style="font-size:11px;color:#94A3B8;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;">Priorytet</div>
+                        <td width="33%" style="vertical-align:top;padding-right:12px;">
+                          <div style="font-size:10px;color:#94A3B8;font-weight:700;text-transform:uppercase;letter-spacing:0.8px;margin-bottom:6px;">Priorytet</div>
                           {_badge(priority_label, priority_bg, priority_text)}
+                        </td>
+                        <td width="33%" style="vertical-align:top;padding-right:12px;">
+                          <div style="font-size:10px;color:#94A3B8;font-weight:700;text-transform:uppercase;letter-spacing:0.8px;margin-bottom:6px;">Zgłaszający</div>
+                          <div style="font-size:13px;color:#334155;font-weight:600;">{creator_name or '—'}</div>
+                        </td>
+                        <td width="33%" style="vertical-align:top;">
+                          <div style="font-size:10px;color:#94A3B8;font-weight:700;text-transform:uppercase;letter-spacing:0.8px;margin-bottom:6px;">Technik</div>
+                          <div style="font-size:13px;color:#334155;font-weight:600;">{technician_name or '<span style="color:#94A3B8;font-style:italic;font-weight:400;">Nie przypisano</span>'}</div>
                         </td>
                       </tr>
                     </table>
                   </td>
                 </tr>
-                {"<tr><td style='padding-top:12px;'><div style='font-size:11px;color:#94A3B8;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:2px;'>Zgłaszający</div><div style='font-size:13px;color:#334155;font-weight:500;'>" + creator_name + "</div></td></tr>" if creator_name else ""}
-                {"<tr><td style='padding-top:8px;'><div style='font-size:11px;color:#94A3B8;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:2px;'>Przypisany technik</div><div style='font-size:13px;color:#334155;font-weight:500;'>" + technician_name + "</div></td></tr>" if technician_name else ""}
               </table>
             </td>
           </tr>
@@ -139,60 +155,144 @@ def _build_html_email(title, greeting, body_html, ticket=None, accent_color='#25
         <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:24px 0 8px 0;">
           <tr>
             <td align="center">
-              <a href="{ticket_url}" target="_blank" style="display:inline-block;padding:12px 32px;background-color:{accent_color};color:#ffffff;font-size:14px;font-weight:700;text-decoration:none;border-radius:8px;letter-spacing:0.3px;">
-                Otwórz zgłoszenie &rarr;
-              </a>
+              <table cellpadding="0" cellspacing="0" border="0">
+                <tr>
+                  <td style="border-radius:10px;background-color:{accent_color};box-shadow:0 4px 14px rgba(37,99,235,0.25);">
+                    <a href="{ticket_url}" target="_blank" style="display:inline-block;padding:14px 36px;color:#ffffff;font-size:14px;font-weight:700;text-decoration:none;letter-spacing:0.3px;line-height:1;">
+                      Otwórz zgłoszenie &rarr;
+                    </a>
+                  </td>
+                </tr>
+              </table>
             </td>
           </tr>
         </table>
         '''
 
+    # Preheader — tekst widoczny w podglądzie skrzynki
+    preheader = title
+    if ticket:
+        preheader = f'{title} — #{ticket.id}: {ticket.title}'
+
     html = f'''<!DOCTYPE html>
-<html lang="pl">
+<html lang="pl" xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <title>{title}</title>
+  <!--[if mso]>
+  <noscript>
+    <xml>
+      <o:OfficeDocumentSettings>
+        <o:PixelsPerInch>96</o:PixelsPerInch>
+      </o:OfficeDocumentSettings>
+    </xml>
+  </noscript>
+  <![endif]-->
 </head>
-<body style="margin:0;padding:0;background-color:#F1F5F9;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;">
-  <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#F1F5F9;padding:32px 16px;">
+<body style="margin:0;padding:0;background-color:#F1F5F9;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;">
+  <!-- Preheader (ukryty tekst widoczny w podglądzie) -->
+  <div style="display:none;font-size:1px;color:#F1F5F9;line-height:1px;max-height:0px;max-width:0px;opacity:0;overflow:hidden;">
+    {preheader}
+    &#847; &#847; &#847; &#847; &#847; &#847; &#847; &#847; &#847; &#847; &#847; &#847; &#847; &#847; &#847;
+  </div>
+
+  <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#F1F5F9;padding:40px 16px;">
     <tr>
       <td align="center">
-        <table width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:560px;">
+        <table width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:580px;">
 
-          <!-- Header -->
+          <!-- Logo / Brand bar -->
           <tr>
-            <td style="background:linear-gradient(135deg, {accent_color} 0%, #1E40AF 100%);border-radius:12px 12px 0 0;padding:28px 32px;text-align:center;">
-              <div style="font-size:24px;font-weight:800;color:#ffffff;letter-spacing:-0.5px;">
-                &#9881; FixFlow
-              </div>
-              <div style="font-size:12px;color:rgba(255,255,255,0.75);font-weight:500;margin-top:4px;letter-spacing:0.5px;text-transform:uppercase;">
-                System zgłoszeń IT
-              </div>
+            <td align="center" style="padding-bottom:24px;">
+              <table cellpadding="0" cellspacing="0" border="0">
+                <tr>
+                  <td style="vertical-align:middle;padding-right:10px;">
+                    <div style="width:36px;height:36px;background-color:{accent_color};border-radius:10px;text-align:center;line-height:36px;">
+                      <span style="font-size:18px;color:#ffffff;">&#9881;</span>
+                    </div>
+                  </td>
+                  <td style="vertical-align:middle;">
+                    <span style="font-size:20px;font-weight:800;color:#0F172A;letter-spacing:-0.5px;">FixFlow</span>
+                  </td>
+                </tr>
+              </table>
             </td>
           </tr>
 
-          <!-- Body -->
+          <!-- Main card -->
           <tr>
-            <td style="background-color:#ffffff;padding:32px;border-left:1px solid #E2E8F0;border-right:1px solid #E2E8F0;">
-              <div style="font-size:18px;font-weight:700;color:#1E293B;margin-bottom:6px;">
-                {greeting}
-              </div>
-              <div style="font-size:14px;color:#475569;line-height:1.7;margin-top:16px;">
-                {body_html}
-              </div>
+            <td style="background-color:#ffffff;border-radius:16px;border:1px solid #E2E8F0;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.04);">
+              <!-- Accent top bar -->
+              <table width="100%" cellpadding="0" cellspacing="0" border="0">
+                <tr>
+                  <td style="height:4px;background-color:{accent_color};font-size:0;line-height:0;">&nbsp;</td>
+                </tr>
+              </table>
 
-              {ticket_card}
-              {cta_button}
+              <!-- Content -->
+              <table width="100%" cellpadding="0" cellspacing="0" border="0">
+                <tr>
+                  <td style="padding:36px 36px 12px 36px;">
+                    <!-- Title pill -->
+                    <table cellpadding="0" cellspacing="0" border="0" style="margin-bottom:20px;">
+                      <tr>
+                        <td style="background-color:#F1F5F9;border-radius:6px;padding:6px 14px;">
+                          <span style="font-size:11px;font-weight:700;color:#64748B;text-transform:uppercase;letter-spacing:0.8px;">{title}</span>
+                        </td>
+                      </tr>
+                    </table>
+
+                    <!-- Greeting -->
+                    <div style="font-size:20px;font-weight:800;color:#0F172A;margin-bottom:16px;letter-spacing:-0.3px;line-height:1.3;">
+                      {greeting}
+                    </div>
+
+                    <!-- Body -->
+                    <div style="font-size:15px;color:#475569;line-height:1.75;margin-bottom:4px;">
+                      {body_html}
+                    </div>
+
+                    {ticket_card}
+                    {cta_button}
+                  </td>
+                </tr>
+              </table>
+
+              <!-- Divider -->
+              <table width="100%" cellpadding="0" cellspacing="0" border="0">
+                <tr>
+                  <td style="padding:0 36px;">
+                    <div style="border-top:1px solid #F1F5F9;"></div>
+                  </td>
+                </tr>
+              </table>
+
+              <!-- Help text -->
+              <table width="100%" cellpadding="0" cellspacing="0" border="0">
+                <tr>
+                  <td style="padding:20px 36px 28px 36px;">
+                    <div style="font-size:13px;color:#94A3B8;line-height:1.6;">
+                      Jeśli potrzebujesz pomocy, zaloguj się do
+                      <a href="{FRONTEND_URL}" style="color:{accent_color};font-weight:600;text-decoration:none;">panelu FixFlow</a>
+                      lub skontaktuj się z administratorem systemu.
+                    </div>
+                  </td>
+                </tr>
+              </table>
             </td>
           </tr>
 
           <!-- Footer -->
           <tr>
-            <td style="background-color:#F8FAFC;border:1px solid #E2E8F0;border-top:none;border-radius:0 0 12px 12px;padding:20px 32px;text-align:center;">
-              <div style="font-size:12px;color:#94A3B8;line-height:1.6;">
-                <strong style="color:#64748B;">FixFlow</strong> &middot; System zgłoszeń IT<br>
-                Ta wiadomość została wygenerowana automatycznie. Nie odpowiadaj na nią.
+            <td style="padding:28px 16px 0 16px;text-align:center;">
+              <div style="font-size:12px;color:#94A3B8;line-height:1.7;">
+                <strong style="color:#64748B;font-weight:700;">FixFlow</strong> &middot; System zgłoszeń IT<br>
+                Ta wiadomość została wygenerowana automatycznie &mdash; nie odpowiadaj na nią.
+              </div>
+              <div style="margin-top:12px;font-size:11px;color:#CBD5E1;">
+                &copy; 2026 FixFlow. Wszelkie prawa zastrzeżone.
               </div>
             </td>
           </tr>
@@ -281,12 +381,12 @@ class TicketEmailAccumulator:
             new_bg, new_text = STATUS_BADGE_COLORS.get(new_s, ('#F3F4F6', '#1F2937'))
 
             sections_html += (
-                f'<div style="margin:12px 0;padding:14px 18px;background-color:#F8FAFC;'
-                f'border-radius:10px;border:1px solid #E2E8F0;">'
-                f'<div style="font-size:11px;color:#94A3B8;font-weight:600;text-transform:uppercase;'
-                f'letter-spacing:0.5px;margin-bottom:8px;">Zmiana statusu</div>'
+                f'<div style="margin:16px 0;padding:16px 20px;background-color:#F8FAFC;'
+                f'border-radius:12px;border:1px solid #E2E8F0;">'
+                f'<div style="font-size:10px;color:#94A3B8;font-weight:700;text-transform:uppercase;'
+                f'letter-spacing:0.8px;margin-bottom:10px;">Zmiana statusu</div>'
                 f'{_badge(old_label, old_bg, old_text)}'
-                f'<span style="display:inline-block;margin:0 10px;color:#94A3B8;font-size:16px;'
+                f'<span style="display:inline-block;margin:0 10px;color:#CBD5E1;font-size:16px;'
                 f'vertical-align:middle;">&rarr;</span>'
                 f'{_badge(new_label, new_bg, new_text)}'
                 f'</div>'
@@ -299,20 +399,20 @@ class TicketEmailAccumulator:
             if new_tech:
                 tech_name = f'{new_tech.first_name} {new_tech.last_name}'
                 sections_html += (
-                    f'<div style="margin:12px 0;padding:14px 18px;background-color:#F8FAFC;'
-                    f'border-radius:10px;border:1px solid #E2E8F0;">'
-                    f'<div style="font-size:11px;color:#94A3B8;font-weight:600;text-transform:uppercase;'
-                    f'letter-spacing:0.5px;margin-bottom:6px;">Przypisany technik</div>'
+                    f'<div style="margin:16px 0;padding:16px 20px;background-color:#F8FAFC;'
+                    f'border-radius:12px;border:1px solid #E2E8F0;">'
+                    f'<div style="font-size:10px;color:#94A3B8;font-weight:700;text-transform:uppercase;'
+                    f'letter-spacing:0.8px;margin-bottom:8px;">Przypisany technik</div>'
                     f'<span style="font-size:14px;font-weight:700;color:#1E40AF;">'
                     f'&#128736; {tech_name}</span></div>'
                 )
                 sections_plain += f'Przypisany technik: {tech_name}\n'
             else:
                 sections_html += (
-                    f'<div style="margin:12px 0;padding:14px 18px;background-color:#F8FAFC;'
-                    f'border-radius:10px;border:1px solid #E2E8F0;">'
-                    f'<div style="font-size:11px;color:#94A3B8;font-weight:600;text-transform:uppercase;'
-                    f'letter-spacing:0.5px;margin-bottom:6px;">Przypisany technik</div>'
+                    f'<div style="margin:16px 0;padding:16px 20px;background-color:#F8FAFC;'
+                    f'border-radius:12px;border:1px solid #E2E8F0;">'
+                    f'<div style="font-size:10px;color:#94A3B8;font-weight:700;text-transform:uppercase;'
+                    f'letter-spacing:0.8px;margin-bottom:8px;">Przypisany technik</div>'
                     f'<span style="font-size:13px;color:#6B7280;font-style:italic;">'
                     f'Usunięto przypisanie</span></div>'
                 )
@@ -324,11 +424,11 @@ class TicketEmailAccumulator:
             if comment_type != 'INTERNAL':
                 author_name = f'{author.first_name} {author.last_name}' if author else 'System'
                 sections_html += (
-                    f'<div style="margin:12px 0;padding:14px 18px;background-color:#F8FAFC;'
-                    f'border-left:4px solid #2563EB;border-radius:0 8px 8px 0;">'
-                    f'<div style="font-size:11px;color:#94A3B8;font-weight:600;text-transform:uppercase;'
-                    f'letter-spacing:0.5px;margin-bottom:6px;">Komentarz od {author_name}</div>'
-                    f'<div style="font-size:14px;color:#334155;line-height:1.6;white-space:pre-wrap;">'
+                    f'<div style="margin:16px 0;padding:16px 20px;background-color:#F8FAFC;'
+                    f'border-left:4px solid #2563EB;border-radius:0 12px 12px 0;">'
+                    f'<div style="font-size:10px;color:#94A3B8;font-weight:700;text-transform:uppercase;'
+                    f'letter-spacing:0.8px;margin-bottom:8px;">Komentarz od {author_name}</div>'
+                    f'<div style="font-size:14px;color:#334155;line-height:1.7;white-space:pre-wrap;">'
                     f'{content}</div></div>'
                 )
                 sections_plain += f'Komentarz od {author_name}:\n{content}\n'
@@ -350,16 +450,30 @@ class TicketEmailAccumulator:
                 accept_url = f'{BACKEND_URL}/api/tickets/resolve/{ticket.resolution_token}/accept/'
                 reject_url = f'{BACKEND_URL}/api/tickets/resolve/{ticket.resolution_token}/reject/'
                 resolution_buttons_html = f'''
-                <div style="margin:20px 0;padding:20px;background-color:#F0FDF4;border:1px solid #BBF7D0;border-radius:12px;text-align:center;">
-                    <div style="font-size:14px;color:#166534;font-weight:600;margin-bottom:6px;">Czy rozwiązanie jest poprawne?</div>
-                    <div style="font-size:13px;color:#4B5563;margin-bottom:16px;">Jeśli nie zareagujesz w ciągu {AUTO_CLOSE_DAYS} dni, zgłoszenie zostanie automatycznie zamknięte.</div>
+                <div style="margin:24px 0;padding:24px;background-color:#F0FDF4;border:1px solid #BBF7D0;border-radius:14px;text-align:center;">
+                    <div style="font-size:15px;color:#166534;font-weight:700;margin-bottom:6px;">Czy rozwiązanie jest poprawne?</div>
+                    <div style="font-size:13px;color:#4B5563;margin-bottom:20px;line-height:1.5;">Jeśli nie zareagujesz w ciągu {AUTO_CLOSE_DAYS} dni, zgłoszenie zostanie automatycznie zamknięte.</div>
                     <table width="100%" cellpadding="0" cellspacing="0" border="0">
                         <tr>
-                            <td align="center" style="padding:0 6px;">
-                                <a href="{accept_url}" style="display:inline-block;padding:12px 28px;background-color:#16A34A;color:#ffffff;font-size:14px;font-weight:700;text-decoration:none;border-radius:8px;">✓ Akceptuję rozwiązanie</a>
+                            <td align="center" style="padding:4px;">
+                                <table cellpadding="0" cellspacing="0" border="0">
+                                    <tr>
+                                        <td style="border-radius:8px;background-color:#16A34A;box-shadow:0 2px 8px rgba(22,163,74,0.25);">
+                                            <a href="{accept_url}" style="display:inline-block;padding:14px 28px;color:#ffffff;font-size:14px;font-weight:700;text-decoration:none;line-height:1;">&#10003; Akceptuję rozwiązanie</a>
+                                        </td>
+                                    </tr>
+                                </table>
                             </td>
-                            <td align="center" style="padding:0 6px;">
-                                <a href="{reject_url}" style="display:inline-block;padding:12px 28px;background-color:#DC2626;color:#ffffff;font-size:14px;font-weight:700;text-decoration:none;border-radius:8px;">✗ To nie rozwiązuje problemu</a>
+                        </tr>
+                        <tr>
+                            <td align="center" style="padding:4px;padding-top:10px;">
+                                <table cellpadding="0" cellspacing="0" border="0">
+                                    <tr>
+                                        <td style="border-radius:8px;background-color:#DC2626;box-shadow:0 2px 8px rgba(220,38,38,0.2);">
+                                            <a href="{reject_url}" style="display:inline-block;padding:14px 28px;color:#ffffff;font-size:14px;font-weight:700;text-decoration:none;line-height:1;">&#10007; To nie rozwiązuje problemu</a>
+                                        </td>
+                                    </tr>
+                                </table>
                             </td>
                         </tr>
                     </table>
@@ -532,9 +646,9 @@ def send_status_change_notification(ticket, old_status, new_status):
     new_accent = STATUS_COLORS.get(new_status, '#2563EB')
 
     status_change_html = (
-        f'<div style="margin:16px 0;padding:16px 20px;background-color:#F8FAFC;border-radius:10px;border:1px solid #E2E8F0;text-align:center;">'
+        f'<div style="margin:20px 0;padding:18px 24px;background-color:#F8FAFC;border-radius:12px;border:1px solid #E2E8F0;text-align:center;">'
         f'  {_badge(old_label, old_bg, old_text)}'
-        f'  <span style="display:inline-block;margin:0 12px;color:#94A3B8;font-size:18px;vertical-align:middle;">&rarr;</span>'
+        f'  <span style="display:inline-block;margin:0 14px;color:#CBD5E1;font-size:18px;vertical-align:middle;">&rarr;</span>'
         f'  {_badge(new_label, new_bg, new_text)}'
         f'</div>'
     )
@@ -701,11 +815,11 @@ def send_comment_notification(comment):
 
     # Fragment komentarza w ładnym bloku
     comment_block = (
-        f'<div style="margin:16px 0;padding:16px 20px;background-color:#F8FAFC;border-left:4px solid #2563EB;border-radius:0 8px 8px 0;">'
-        f'  <div style="font-size:11px;color:#94A3B8;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">'
+        f'<div style="margin:16px 0;padding:16px 20px;background-color:#F8FAFC;border-left:4px solid #2563EB;border-radius:0 12px 12px 0;">'
+        f'  <div style="font-size:10px;color:#94A3B8;font-weight:700;text-transform:uppercase;letter-spacing:0.8px;margin-bottom:8px;">'
         f'    Odpowiedź od {author.first_name} {author.last_name}'
         f'  </div>'
-        f'  <div style="font-size:14px;color:#334155;line-height:1.6;white-space:pre-wrap;">'
+        f'  <div style="font-size:14px;color:#334155;line-height:1.7;white-space:pre-wrap;">'
         f'    {comment.content}'
         f'  </div>'
         f'</div>'
