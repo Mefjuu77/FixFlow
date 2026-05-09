@@ -242,13 +242,12 @@ const ExportPage: React.FC = () => {
     try {
       const p = buildParams();
       p.append('file_format', exportFormat);
-      const token = localStorage.getItem('access_token');
-      const res = await fetch(`http://127.0.0.1:8000/api/reports/export/?${p.toString()}`, {
-        headers: { Authorization: `Bearer ${token}` },
+      const res = await api.get(`reports/export/?${p.toString()}`, {
+        responseType: 'blob'
       });
-      if (!res.ok) throw new Error('Download failed');
-      const blob = await res.blob();
-      const contentDisposition = res.headers.get('Content-Disposition');
+      
+      const blob = new Blob([res.data]);
+      const contentDisposition = res.headers['content-disposition'];
       let filename = `fixflow_raport_${dayjs().format('YYYYMMDD_HHmm')}.${exportFormat}`;
       if (contentDisposition) {
         const match = contentDisposition.match(/filename="?(.+?)"?$/);
