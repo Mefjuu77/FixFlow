@@ -372,7 +372,7 @@ const TicketsPage: React.FC = () => {
 
           {/* Custom Tooltip */}
           <div className={`absolute top-full mt-2 z-[60] pointer-events-none opacity-0 group-hover/th:opacity-100 transition-opacity duration-200 ${field === 'created_at' ? '-right-3' : (field === 'id' && isEmployee) ? '-left-4' : 'left-1/2 -translate-x-1/2'}`}>
-            <div className="bg-[#24272f] text-white text-[11.5px] font-medium px-3 py-2 rounded shadow-lg w-max max-w-[160px] whitespace-normal normal-case tracking-normal text-left leading-snug">
+            <div className="bg-[#24272f] text-white text-[11.5px] font-medium px-3 py-2 rounded shadow-lg w-max max-w-[200px] whitespace-normal normal-case tracking-normal text-left leading-snug">
               {getSortTooltip(field, label)}
             </div>
           </div>
@@ -628,8 +628,8 @@ const TicketsPage: React.FC = () => {
                           onClick={() => !bulkDeleteSuccessMessage && setShowDeleteModal(true)}
                           disabled={bulkDeleteSuccessMessage}
                           className={`px-5 py-2 rounded-xl text-sm font-bold flex items-center gap-2 transition-colors ml-2 shadow-sm ${bulkDeleteSuccessMessage
-                              ? 'bg-green-500 hover:bg-green-600 text-white shadow-green-200 dark:shadow-none pointer-events-none'
-                              : 'text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 bg-red-50 dark:bg-red-900/30 hover:bg-red-100 dark:hover:bg-red-900/50'
+                            ? 'bg-green-500 hover:bg-green-600 text-white shadow-green-200 dark:shadow-none pointer-events-none'
+                            : 'text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 bg-red-50 dark:bg-red-900/30 hover:bg-red-100 dark:hover:bg-red-900/50'
                             }`}
                           title="Usuń wybrane zgłoszenia"
                         >
@@ -826,8 +826,8 @@ const TicketsPage: React.FC = () => {
                           key={pageNum}
                           onClick={() => setCurrentPage(pageNum)}
                           className={`w-8 h-8 rounded-lg text-xs font-bold transition-all flex items-center justify-center border ${currentPage === pageNum
-                              ? 'bg-blue-600 text-white border-blue-600 shadow-md shadow-blue-600/20'
-                              : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
+                            ? 'bg-blue-600 text-white border-blue-600 shadow-md shadow-blue-600/20'
+                            : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
                             }`}
                         >
                           {pageNum}
