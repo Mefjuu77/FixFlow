@@ -34,7 +34,7 @@ interface DonutSegment {
   filterValue?: string;
 }
 
-const DonutChart: React.FC<{ segments: DonutSegment[]; total: number; filterType?: string; dateRange?: { start: dayjs.Dayjs; end: dayjs.Dayjs } }> = ({ segments, total, filterType, dateRange }) => {
+const DonutChart: React.FC<{ segments: DonutSegment[]; total: number; filterType?: string; dateRange?: { start: dayjs.Dayjs; end: dayjs.Dayjs }; extraParams?: Record<string, string> }> = ({ segments, total, filterType, dateRange, extraParams }) => {
   const navigate = useNavigate();
   const [hovered, setHovered] = useState<number | null>(null);
   const size = 200;
@@ -49,6 +49,9 @@ const DonutChart: React.FC<{ segments: DonutSegment[]; total: number; filterType
     if (dateRange) {
       params.set('dateFrom', dateRange.start.format('YYYY-MM-DD'));
       params.set('dateTo', dateRange.end.format('YYYY-MM-DD'));
+    }
+    if (extraParams) {
+      Object.entries(extraParams).forEach(([k, v]) => params.set(k, v));
     }
     return `/tickets?${params.toString()}`;
   };
@@ -654,7 +657,7 @@ const StatisticsPage: React.FC = () => {
               </Link>
             </div>
             <p className="text-xs text-gray-500 dark:text-gray-400 mb-5">Rozkład statusów Twoich zgłoszeń.</p>
-            <DonutChart segments={myStatusData} total={myTickets.length} filterType="status" dateRange={dateRange} />
+            <DonutChart segments={myStatusData} total={myTickets.length} filterType="status" dateRange={dateRange} extraParams={{ assignment: String(authContext?.user?.id) }} />
           </div>
 
           {/* Rodzaj zgłoszeń */}
