@@ -5,7 +5,7 @@ import api from '../api/axiosConfig';
 import { ticketService } from '../api/ticketService';
 import { Ticket, User } from '../types';
 import dayjs from 'dayjs';
-import { Plus, PlusCircle, Search, ChevronDown, ArrowUp, ArrowDown, UserMinus, Circle, CheckCircle2, XCircle, Loader2, Trash2, X } from 'lucide-react';
+import { Plus, Search, ChevronDown, ArrowUp, ArrowDown, UserMinus, Circle, CheckCircle2, XCircle, Loader2, Trash2, X } from 'lucide-react';
 import useTitle from '../hooks/useTitle';
 import { getCategoryIcon, STATUS_LABELS, STATUS_STYLES, PRIORITY_LABELS, PRIORITY_ICONS } from '../utils/ticketConstants';
 import UserAvatar from '../components/UserAvatar';
@@ -103,7 +103,7 @@ const TicketsPage: React.FC = () => {
   const [bulkAssignee, setBulkAssignee] = useState<string>('');
   const [bulkSuccessMessage, setBulkSuccessMessage] = useState<string>('');
   const [bulkDeleteSuccessMessage, setBulkDeleteSuccessMessage] = useState(false);
-  
+
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [isDeletingBulk, setIsDeletingBulk] = useState(false);
 
@@ -335,10 +335,10 @@ const TicketsPage: React.FC = () => {
     setIsDeletingBulk(true);
     try {
       await Promise.all(selectedTicketIds.map(id => ticketService.deleteTicket(id)));
-      
+
       const response = await api.get('tickets/');
       setTickets(response.data);
-      
+
       setShowDeleteModal(false);
       setBulkDeleteSuccessMessage(true);
       setTimeout(() => {
@@ -412,8 +412,8 @@ const TicketsPage: React.FC = () => {
             {isEmployee ? 'Moje zgłoszenia' : 'Zgłoszenia'}
           </h1>
           <p className="text-sm text-gray-500 dark:text-gray-400 mt-1 font-medium">
-            {isEmployee 
-              ? 'Śledź status swoich wniosków i sprawdzaj ich postępy' 
+            {isEmployee
+              ? 'Śledź status swoich wniosków i sprawdzaj ich postępy'
               : 'Przeglądaj zgłoszenia, zmieniaj ich statusy i zarządzaj przypisaniami'}
           </p>
         </div>
@@ -627,11 +627,10 @@ const TicketsPage: React.FC = () => {
                         <button
                           onClick={() => !bulkDeleteSuccessMessage && setShowDeleteModal(true)}
                           disabled={bulkDeleteSuccessMessage}
-                          className={`px-5 py-2 rounded-xl text-sm font-bold flex items-center gap-2 transition-colors ml-2 shadow-sm ${
-                            bulkDeleteSuccessMessage
+                          className={`px-5 py-2 rounded-xl text-sm font-bold flex items-center gap-2 transition-colors ml-2 shadow-sm ${bulkDeleteSuccessMessage
                               ? 'bg-green-500 hover:bg-green-600 text-white shadow-green-200 dark:shadow-none pointer-events-none'
                               : 'text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 bg-red-50 dark:bg-red-900/30 hover:bg-red-100 dark:hover:bg-red-900/50'
-                          }`}
+                            }`}
                           title="Usuń wybrane zgłoszenia"
                         >
                           {bulkDeleteSuccessMessage ? (
@@ -790,7 +789,7 @@ const TicketsPage: React.FC = () => {
 
         {/* Footer z informacją o liczbie wyników i paginacją */}
         <div className="px-6 py-4 border-t border-gray-100 dark:border-gray-700/50 bg-gray-50/50 dark:bg-gray-800/50 flex flex-col md:flex-row items-center justify-between gap-4 rounded-b-2xl">
-          
+
           {/* Lewa: Licznik */}
           <div className="flex items-center">
             <p className="text-xs font-medium text-slate-500">
@@ -813,24 +812,23 @@ const TicketsPage: React.FC = () => {
                 >
                   Poprzednia
                 </button>
-                
+
                 <div className="flex items-center px-1 gap-1">
                   {Array.from({ length: totalPages }).map((_, i) => {
                     const pageNum = i + 1;
                     if (
-                      pageNum === 1 || 
-                      pageNum === totalPages || 
+                      pageNum === 1 ||
+                      pageNum === totalPages ||
                       (pageNum >= currentPage - 1 && pageNum <= currentPage + 1)
                     ) {
                       return (
                         <button
                           key={pageNum}
                           onClick={() => setCurrentPage(pageNum)}
-                          className={`w-8 h-8 rounded-lg text-xs font-bold transition-all flex items-center justify-center border ${
-                            currentPage === pageNum 
-                              ? 'bg-blue-600 text-white border-blue-600 shadow-md shadow-blue-600/20' 
+                          className={`w-8 h-8 rounded-lg text-xs font-bold transition-all flex items-center justify-center border ${currentPage === pageNum
+                              ? 'bg-blue-600 text-white border-blue-600 shadow-md shadow-blue-600/20'
                               : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
-                          }`}
+                            }`}
                         >
                           {pageNum}
                         </button>

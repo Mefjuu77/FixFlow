@@ -309,7 +309,7 @@ const TicketDetailsPage: React.FC = () => {
   const confirmDeleteAllAttachments = async () => {
     setIsDeletingAllAttachments(true);
     try {
-      if (ticket && ticket.attachments.length > 0) {
+      if (ticket && ticket.attachments && ticket.attachments.length > 0) {
         await Promise.all(ticket.attachments.map(att => ticketService.deleteAttachment(id!, att.id)));
         await fetchTicket();
         fetchLogs();
