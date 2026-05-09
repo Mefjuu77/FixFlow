@@ -47,6 +47,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   // Synchronizacja sesji między kartami przeglądarki
   useEffect(() => {
+    // 1. StorageEvent - dla localStorage (zapamiętaj mnie)
     const handleStorageChange = (e: StorageEvent) => {
       if (e.key === 'access_token') {
         if (!e.newValue) {
@@ -61,11 +62,37 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       }
     };
     window.addEventListener('storage', handleStorageChange);
-    return () => window.removeEventListener('storage', handleStorageChange);
+
+    // 2. BroadcastChannel - dla sessionStorage (bez zapamiętaj mnie)
+    // Synchronizuje stan logowania we wszystkich kartach nawet przy sessionStorage
+    const channel = new BroadcastChannel('auth_sync_channel');
+    channel.onmessage = (event) => {
+      if (event.data.type === 'LOGIN') {
+        const { access, refresh, rememberMe } = event.data;
+        storeTokens(access, refresh, rememberMe);
+        fetchCurrentUser();
+      } else if (event.data.type === 'LOGOUT') {
+        clearTokens();
+        setUser(null);
+        setIsAuthenticated(false);
+        setIsLoading(false);
+      }
+    };
+
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      channel.close();
+    };
   }, []);
 
   const login = async (accessToken: string, refreshToken: string, rememberMe: boolean = true) => {
     storeTokens(accessToken, refreshToken, rememberMe);
+    
+    // Powiadom inne karty o logowaniu
+    const channel = new BroadcastChannel('auth_sync_channel');
+    channel.postMessage({ type: 'LOGIN', access: accessToken, refresh: refreshToken, rememberMe });
+    channel.close();
+
     setIsLoading(true);
     await fetchCurrentUser();
   };
@@ -80,6 +107,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         // Kontynuuj logout nawet jeśli serwer nie odpowiedział
       }
     }
+    
+    // Powiadom inne karty o wylogowaniu
+    const channel = new BroadcastChannel('auth_sync_channel');
+    channel.postMessage({ type: 'LOGOUT' });
+    channel.close();
+
     clearTokens();
     setUser(null);
     setIsAuthenticated(false);
