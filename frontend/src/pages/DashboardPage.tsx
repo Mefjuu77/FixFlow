@@ -1285,7 +1285,7 @@ const DashboardPage: React.FC = () => {
         tooltip: `Bieżący: ${resolvedTickets.length} | Poprzedni (${prevPeriodLabel}): ${prevResolved}`,
       },
       {
-        label: 'Śr. czas odpowiedzi',
+        label: 'Śr. czas rozwiązania',
         value: currentAvgMin,
         displayValue: formatMinutes(currentAvgMin),
         icon: <Timer className="w-5 h-5" />,
