@@ -287,7 +287,7 @@ const TicketDetailsPage: React.FC = () => {
 
   const handleDownloadAllAttachments = async () => {
     setIsAttachmentsMenuOpen(false);
-    if (!ticket || !ticket.attachments.length) return;
+    if (!ticket || !ticket.attachments?.length) return;
     for (const att of ticket.attachments) {
       try {
         const response = await api.get(att.url, { responseType: 'blob' });
