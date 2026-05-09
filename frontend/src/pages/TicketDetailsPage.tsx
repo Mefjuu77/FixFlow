@@ -2004,6 +2004,8 @@ const TicketDetailsPage: React.FC = () => {
 
             </div>
           </div>
+        </div>
+      </div>
 
       {/* Modal Zmiany Statusu */}
       {transitionModalConfig.isOpen && (

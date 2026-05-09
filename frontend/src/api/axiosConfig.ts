@@ -1,5 +1,28 @@
 import axios from 'axios';
 
+// Odczytuje access token z localStorage lub sessionStorage
+export const getAccessToken = (): string | null =>
+  localStorage.getItem('access_token') ?? sessionStorage.getItem('access_token');
+
+// Odczytuje refresh token z localStorage lub sessionStorage
+export const getRefreshToken = (): string | null =>
+  localStorage.getItem('refresh_token') ?? sessionStorage.getItem('refresh_token');
+
+// Zapisuje tokeny w odpowiednim storage
+export const storeTokens = (access: string, refresh: string, remember: boolean) => {
+  const storage = remember ? localStorage : sessionStorage;
+  storage.setItem('access_token', access);
+  storage.setItem('refresh_token', refresh);
+};
+
+// Usuwa tokeny z obu storage
+export const clearTokens = () => {
+  localStorage.removeItem('access_token');
+  localStorage.removeItem('refresh_token');
+  sessionStorage.removeItem('access_token');
+  sessionStorage.removeItem('refresh_token');
+};
+
 const api = axios.create({
   baseURL: 'http://127.0.0.1:8000/api/',
 });
@@ -7,7 +30,7 @@ const api = axios.create({
 // Interceptor dołączający token JWT do każdego zapytania
 api.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('access_token');
+    const token = getAccessToken();
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -35,7 +58,7 @@ const processQueue = (error: any, token: string | null = null) => {
 
 // Funkcja odświeżania tokena
 const refreshAccessToken = async (): Promise<string> => {
-  const refreshToken = localStorage.getItem('refresh_token');
+  const refreshToken = getRefreshToken();
   if (!refreshToken) throw new Error('Brak refresh tokena');
 
   const response = await axios.post('http://127.0.0.1:8000/api/users/refresh/', {
@@ -43,11 +66,15 @@ const refreshAccessToken = async (): Promise<string> => {
   });
 
   const newAccessToken = response.data.access;
-  localStorage.setItem('access_token', newAccessToken);
+
+  // Zachowaj ten sam storage co poprzednio
+  const inLocal = !!localStorage.getItem('refresh_token');
+  const storage = inLocal ? localStorage : sessionStorage;
+  storage.setItem('access_token', newAccessToken);
 
   // Po rotacji serwer zwraca nowy refresh token
   if (response.data.refresh) {
-    localStorage.setItem('refresh_token', response.data.refresh);
+    storage.setItem('refresh_token', response.data.refresh);
   }
 
   return newAccessToken;
@@ -86,8 +113,7 @@ api.interceptors.response.use(
         return api(originalRequest);
       } catch (refreshError: any) {
         processQueue(refreshError, null);
-        localStorage.removeItem('access_token');
-        localStorage.removeItem('refresh_token');
+        clearTokens();
 
         // Nasz CustomTokenRefreshSerializer zwraca code='user_inactive' gdy
         // konto jest zdezaktywowane. Sprawdzamy też detail jako fallback.
@@ -113,7 +139,7 @@ api.interceptors.response.use(
 const TOKEN_REFRESH_INTERVAL = 14 * 60 * 1000; // 14 minut
 
 const refreshIntervalId = setInterval(async () => {
-  const refreshToken = localStorage.getItem('refresh_token');
+  const refreshToken = getRefreshToken();
   if (refreshToken) {
     try {
       await refreshAccessToken();

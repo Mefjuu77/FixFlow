@@ -1,12 +1,12 @@
 import React, { createContext, useState, useEffect, ReactNode } from 'react';
 import { User } from '../types';
-import api from '../api/axiosConfig';
+import api, { getAccessToken, getRefreshToken, storeTokens, clearTokens } from '../api/axiosConfig';
 
 interface AuthContextType {
   user: User | null;
   isAuthenticated: boolean;
   isLoading: boolean;
-  login: (accessToken: string, refreshToken: string) => Promise<void>;
+  login: (accessToken: string, refreshToken: string, rememberMe?: boolean) => Promise<void>;
   logout: () => void;
   refreshUser: () => Promise<void>;
 }
@@ -37,7 +37,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   };
 
   useEffect(() => {
-    const token = localStorage.getItem('access_token');
+    const token = getAccessToken();
     if (token) {
       fetchCurrentUser();
     } else {
@@ -64,16 +64,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     return () => window.removeEventListener('storage', handleStorageChange);
   }, []);
 
-  const login = async (accessToken: string, refreshToken: string) => {
-    localStorage.setItem('access_token', accessToken);
-    localStorage.setItem('refresh_token', refreshToken);
+  const login = async (accessToken: string, refreshToken: string, rememberMe: boolean = true) => {
+    storeTokens(accessToken, refreshToken, rememberMe);
     setIsLoading(true);
     await fetchCurrentUser();
   };
 
   const logout = async () => {
     // Blacklistuj refresh token na serwerze
-    const refreshToken = localStorage.getItem('refresh_token');
+    const refreshToken = getRefreshToken();
     if (refreshToken) {
       try {
         await api.post('users/logout/', { refresh: refreshToken });
@@ -81,8 +80,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         // Kontynuuj logout nawet jeśli serwer nie odpowiedział
       }
     }
-    localStorage.removeItem('access_token');
-    localStorage.removeItem('refresh_token');
+    clearTokens();
     setUser(null);
     setIsAuthenticated(false);
     setIsLoading(false);

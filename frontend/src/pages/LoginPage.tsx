@@ -23,6 +23,7 @@ const LoginPage: React.FC = () => {
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [rememberMe, setRememberMe] = useState(false);
 
   const authContext = useContext(AuthContext);
   const themeContext = useContext(ThemeContext);
@@ -49,7 +50,7 @@ const LoginPage: React.FC = () => {
     try {
       const response = await api.post('users/login/', { email, password });
       if (authContext) {
-        await authContext.login(response.data.access, response.data.refresh);
+        await authContext.login(response.data.access, response.data.refresh, rememberMe);
         navigate('/dashboard');
       }
     } catch (err: any) {
@@ -169,6 +170,8 @@ const LoginPage: React.FC = () => {
                 <input
                   id="remember-me"
                   type="checkbox"
+                  checked={rememberMe}
+                  onChange={(e) => setRememberMe(e.target.checked)}
                   className="w-4 h-4 text-blue-600 border-gray-300 dark:border-gray-600 rounded focus:ring-blue-500 focus:ring-offset-0 bg-white dark:bg-gray-900"
                 />
                 <label htmlFor="remember-me" className="ml-2.5 text-sm font-medium text-gray-600 dark:text-gray-400 select-none cursor-pointer">
