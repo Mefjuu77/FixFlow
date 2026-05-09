@@ -5,10 +5,13 @@ import api from '../api/axiosConfig';
 import { ticketService } from '../api/ticketService';
 import { Ticket, User } from '../types';
 import dayjs from 'dayjs';
-import { Plus, Search, ChevronDown, ArrowUp, ArrowDown, UserMinus, Circle, CheckCircle2, XCircle, Loader2, Trash2, X } from 'lucide-react';
+import isBetween from 'dayjs/plugin/isBetween';
+import { Plus, Search, ChevronDown, ArrowUp, ArrowDown, UserMinus, Circle, CheckCircle2, XCircle, Loader2, Trash2, X, Calendar } from 'lucide-react';
 import useTitle from '../hooks/useTitle';
 import { getCategoryIcon, STATUS_LABELS, STATUS_STYLES, PRIORITY_LABELS, PRIORITY_ICONS } from '../utils/ticketConstants';
 import UserAvatar from '../components/UserAvatar';
+
+dayjs.extend(isBetween);
 
 type SortField = 'id' | 'title' | 'category_name' | 'priority' | 'creator' | 'technician' | 'status' | 'created_at';
 
@@ -95,6 +98,9 @@ const TicketsPage: React.FC = () => {
   const [priorityFilter, setPriorityFilter] = useState<string>(searchParams.get('priority') || 'all');
   const [assignmentFilter, setAssignmentFilter] = useState<string>(searchParams.get('assignment') || 'all');
   const [categoryFilter, setCategoryFilter] = useState<string>(searchParams.get('category') || 'all');
+  // Date range filter — populated from URL params when navigating from charts
+  const [dateFromFilter, setDateFromFilter] = useState<string>(searchParams.get('dateFrom') || '');
+  const [dateToFilter, setDateToFilter] = useState<string>(searchParams.get('dateTo') || '');
   const [sortConfig, setSortConfig] = useState<{ key: SortField, direction: 'asc' | 'desc' }>({ key: 'created_at', direction: 'desc' });
 
   const [isBulkSubmitting, setIsBulkSubmitting] = useState(false);
@@ -138,7 +144,7 @@ const TicketsPage: React.FC = () => {
   };
 
   // ---------- Logika filtrowania i sortowania (memoizowana) ----------
-  const hasActiveFilters = searchQuery !== '' || statusFilter !== 'all' || categoryFilter !== 'all' || priorityFilter !== 'all' || assignmentFilter !== 'all';
+  const hasActiveFilters = searchQuery !== '' || statusFilter !== 'all' || categoryFilter !== 'all' || priorityFilter !== 'all' || assignmentFilter !== 'all' || !!dateFromFilter || !!dateToFilter;
 
   const clearFilters = () => {
     setSearchQuery('');
@@ -146,6 +152,8 @@ const TicketsPage: React.FC = () => {
     setCategoryFilter('all');
     setPriorityFilter('all');
     setAssignmentFilter('all');
+    setDateFromFilter('');
+    setDateToFilter('');
   };
 
   const filteredTickets = useMemo(() => {
@@ -164,6 +172,15 @@ const TicketsPage: React.FC = () => {
     }
     if (categoryFilter !== 'all') {
       result = result.filter(t => t.category_name === categoryFilter);
+    }
+    // Date range filter (from chart click-through)
+    if (dateFromFilter) {
+      const from = dayjs(dateFromFilter).startOf('day');
+      result = result.filter(t => !dayjs(t.created_at).isBefore(from, 'day'));
+    }
+    if (dateToFilter) {
+      const to = dayjs(dateToFilter).endOf('day');
+      result = result.filter(t => !dayjs(t.created_at).isAfter(to, 'day'));
     }
 
     // Filtry tylko dla technika i admina
@@ -228,11 +245,11 @@ const TicketsPage: React.FC = () => {
       if (aValue > bValue) return sortConfig.direction === 'asc' ? 1 : -1;
       return 0;
     });
-  }, [tickets, searchQuery, statusFilter, categoryFilter, priorityFilter, assignmentFilter, sortConfig, isAdmin, isTechnician, authContext?.user?.id]);
+  }, [tickets, searchQuery, statusFilter, categoryFilter, priorityFilter, assignmentFilter, sortConfig, isAdmin, isTechnician, authContext?.user?.id, dateFromFilter, dateToFilter]);
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchQuery, statusFilter, categoryFilter, priorityFilter, assignmentFilter, sortConfig, itemsPerPage]);
+  }, [searchQuery, statusFilter, categoryFilter, priorityFilter, assignmentFilter, sortConfig, itemsPerPage, dateFromFilter, dateToFilter]);
 
   const totalPages = Math.ceil(filteredTickets.length / itemsPerPage);
   const paginatedTickets = filteredTickets.slice(
@@ -534,7 +551,27 @@ const TicketsPage: React.FC = () => {
 
         {/* Przycisk Wyczyść filtry */}
         {hasActiveFilters && (
-          <div className="flex items-center pl-2 sm:pl-4 border-l border-gray-200 dark:border-gray-700">
+          <div className="flex items-center gap-2 pl-2 sm:pl-4 border-l border-gray-200 dark:border-gray-700 flex-wrap">
+            {/* Date range badge — shown when navigated from charts */}
+            {(dateFromFilter || dateToFilter) && (
+              <div className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-medium bg-blue-50 dark:bg-blue-500/10 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-500/30 whitespace-nowrap">
+                <Calendar className="w-3.5 h-3.5 flex-shrink-0" />
+                <span>
+                  {dateFromFilter && dateToFilter
+                    ? `${dayjs(dateFromFilter).format('DD.MM.YYYY')} – ${dayjs(dateToFilter).format('DD.MM.YYYY')}`
+                    : dateFromFilter
+                      ? `od ${dayjs(dateFromFilter).format('DD.MM.YYYY')}`
+                      : `do ${dayjs(dateToFilter).format('DD.MM.YYYY')}`}
+                </span>
+                <button
+                  onClick={() => { setDateFromFilter(''); setDateToFilter(''); }}
+                  className="ml-0.5 text-blue-400 hover:text-blue-700 dark:hover:text-blue-200 transition-colors"
+                  aria-label="Usuń filtr dat"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            )}
             <button
               onClick={clearFilters}
               className="px-3 py-2 rounded-xl text-sm font-medium text-gray-500 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors flex items-center gap-1.5 whitespace-nowrap"

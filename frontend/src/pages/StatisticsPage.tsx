@@ -34,13 +34,24 @@ interface DonutSegment {
   filterValue?: string;
 }
 
-const DonutChart: React.FC<{ segments: DonutSegment[]; total: number; filterType?: string }> = ({ segments, total, filterType }) => {
+const DonutChart: React.FC<{ segments: DonutSegment[]; total: number; filterType?: string; dateRange?: { start: dayjs.Dayjs; end: dayjs.Dayjs } }> = ({ segments, total, filterType, dateRange }) => {
   const navigate = useNavigate();
   const [hovered, setHovered] = useState<number | null>(null);
   const size = 200;
   const strokeWidth = 34;
   const radius = (size - strokeWidth) / 2;
   const circumference = 2 * Math.PI * radius;
+
+  const buildUrl = (filterValue: string) => {
+    if (!filterType) return '/tickets';
+    const params = new URLSearchParams();
+    params.set(filterType, filterValue);
+    if (dateRange) {
+      params.set('dateFrom', dateRange.start.format('YYYY-MM-DD'));
+      params.set('dateTo', dateRange.end.format('YYYY-MM-DD'));
+    }
+    return `/tickets?${params.toString()}`;
+  };
 
   // Precompute segment angles for mouse hit detection
   const segmentAngles: { start: number; end: number }[] = [];
@@ -77,7 +88,7 @@ const DonutChart: React.FC<{ segments: DonutSegment[]; total: number; filterType
           onMouseLeave={() => setHovered(null)}
           onClick={() => {
             if (hovered !== null && filterType && segments[hovered]?.filterValue) {
-              navigate(`/tickets?${filterType}=${segments[hovered].filterValue}`);
+              navigate(buildUrl(segments[hovered].filterValue!));
             }
           }}
           className="cursor-pointer overflow-visible"
@@ -132,7 +143,7 @@ const DonutChart: React.FC<{ segments: DonutSegment[]; total: number; filterType
               className={`flex items-center gap-2.5 px-3 py-1.5 rounded-lg cursor-pointer transition-all duration-200 ${isActive ? 'bg-gray-100 scale-[1.03]' : 'hover:bg-gray-50'}`}
               onMouseEnter={() => setHovered(i)}
               onMouseLeave={() => setHovered(null)}
-              onClick={() => { if (filterType && seg.filterValue) navigate(`/tickets?${filterType}=${seg.filterValue}`); }}
+              onClick={() => { if (filterType && seg.filterValue) navigate(buildUrl(seg.filterValue)); }}
             >
               <span className={`w-3 h-3 rounded-sm flex-shrink-0 transition-transform duration-200 ${isActive ? 'scale-125' : ''}`} style={{ backgroundColor: seg.color }} />
               <span className={`text-sm font-medium transition-colors ${isActive ? 'text-gray-900' : 'text-gray-600'}`}>{seg.label}:</span>
@@ -643,7 +654,7 @@ const StatisticsPage: React.FC = () => {
               </Link>
             </div>
             <p className="text-xs text-gray-500 dark:text-gray-400 mb-5">Rozkład statusów Twoich zgłoszeń.</p>
-            <DonutChart segments={myStatusData} total={myTickets.length} filterType="status" />
+            <DonutChart segments={myStatusData} total={myTickets.length} filterType="status" dateRange={dateRange} />
           </div>
 
           {/* Rodzaj zgłoszeń */}
@@ -660,7 +671,10 @@ const StatisticsPage: React.FC = () => {
                 <p className="text-sm text-gray-500 dark:text-gray-400 italic text-center py-6">Brak otwartych zgłoszeń.</p>
               ) : (
                 categorySorted.map(([cat, count], i) => (
-                  <HorizontalBar key={cat} label={cat} value={count} max={maxCategoryVal} color={categoryColors[i % categoryColors.length]} total={activeTickets.length} icon={getCategoryIcon(cat)} onClick={() => navigate(`/tickets?category=${encodeURIComponent(cat)}`)} />
+                  <HorizontalBar key={cat} label={cat} value={count} max={maxCategoryVal} color={categoryColors[i % categoryColors.length]} total={activeTickets.length} icon={getCategoryIcon(cat)} onClick={() => {
+                    const params = new URLSearchParams({ category: cat, dateFrom: dateRange.start.format('YYYY-MM-DD'), dateTo: dateRange.end.format('YYYY-MM-DD') });
+                    navigate(`/tickets?${params.toString()}`);
+                  }} />
                 ))
               )}
             </div>
@@ -672,7 +686,7 @@ const StatisticsPage: React.FC = () => {
               <h3 className="font-bold text-gray-900">Priorytety zgłoszeń</h3>
             </div>
             <p className="text-xs text-gray-500 mb-5">Rozkład aktywnych zgłoszeń według priorytetu.</p>
-            <DonutChart segments={priorityData} total={activeTickets.length} filterType="priority" />
+            <DonutChart segments={priorityData} total={activeTickets.length} filterType="priority" dateRange={dateRange} />
           </div>
 
           {/* Obciążenie zespołu */}
@@ -849,7 +863,7 @@ const StatisticsPage: React.FC = () => {
               </Link>
             </div>
             <p className="text-xs text-gray-500 dark:text-gray-400 mb-5">Szybki wgląd w status wszystkich zgłoszeń.</p>
-            <DonutChart segments={statusData} total={allCount} filterType="status" />
+            <DonutChart segments={statusData} total={allCount} filterType="status" dateRange={dateRange} />
           </div>
 
           {/* Rodzaj zgłoszeń */}
@@ -866,7 +880,10 @@ const StatisticsPage: React.FC = () => {
                 <p className="text-sm text-gray-500 italic text-center py-6">Brak otwartych zgłoszeń.</p>
               ) : (
                 categorySorted.map(([cat, count], i) => (
-                  <HorizontalBar key={cat} label={cat} value={count} max={maxCategoryVal} color={categoryColors[i % categoryColors.length]} total={activeTickets.length} icon={getCategoryIcon(cat)} onClick={() => navigate(`/tickets?category=${encodeURIComponent(cat)}`)} />
+                  <HorizontalBar key={cat} label={cat} value={count} max={maxCategoryVal} color={categoryColors[i % categoryColors.length]} total={activeTickets.length} icon={getCategoryIcon(cat)} onClick={() => {
+                    const params = new URLSearchParams({ category: cat, dateFrom: dateRange.start.format('YYYY-MM-DD'), dateTo: dateRange.end.format('YYYY-MM-DD') });
+                    navigate(`/tickets?${params.toString()}`);
+                  }} />
                 ))
               )}
             </div>
@@ -878,7 +895,7 @@ const StatisticsPage: React.FC = () => {
               <h3 className="font-bold text-gray-900 dark:text-white">Priorytety zgłoszeń</h3>
             </div>
             <p className="text-xs text-gray-500 dark:text-gray-400 mb-5">Rozkład aktywnych zgłoszeń według priorytetu.</p>
-            <DonutChart segments={priorityData} total={activeTickets.length} filterType="priority" />
+            <DonutChart segments={priorityData} total={activeTickets.length} filterType="priority" dateRange={dateRange} />
           </div>
 
           {/* Obciążenie zespołu */}
