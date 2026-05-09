@@ -224,11 +224,15 @@ const DashboardPage: React.FC = () => {
   }
 
   if (isEmployee) {
-    const activeTickets = tickets.filter(t => ['NOWE', 'W_TOKU'].includes(t.status));
-    const resolvedTickets = tickets.filter(t => ['ROZWIAZANE', 'ZAMKNIETE'].includes(t.status));
+    const activeTickets = tickets
+      .filter(t => ['NOWE', 'W_TOKU'].includes(t.status))
+      .sort((a, b) => dayjs(b.updated_at).diff(dayjs(a.updated_at)));
+    const resolvedTickets = tickets
+      .filter(t => ['ROZWIAZANE', 'ZAMKNIETE'].includes(t.status))
+      .sort((a, b) => dayjs(b.updated_at).diff(dayjs(a.updated_at)));
 
     return (
-      <div className="w-full space-y-5 md:space-y-6 animate-in fade-in duration-700">
+      <div className="w-full h-[calc(100vh-2.5rem)] flex flex-col space-y-4 md:space-y-5 animate-in fade-in duration-700 pb-2">
         {/* Page header — greeting IS the main h1, CTA top-right */}
         <div className="flex flex-col md:flex-row md:items-start justify-between gap-4 pt-[22px]">
           <div>
@@ -312,13 +316,13 @@ const DashboardPage: React.FC = () => {
         </div>
 
         {/* Grid: Aktywne + Ostatnio zamknięte */}
-        <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 flex-1 min-h-0 pt-4 md:pt-6">
           {/* Aktywne Zgłoszenia */}
-          <div className="xl:col-span-2 space-y-3">
+          <div className="xl:col-span-2 flex flex-col space-y-3 min-h-0">
             <h2 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider flex items-center gap-2">
               <Clock className="w-4 h-4" /> Aktywne zgłoszenia
             </h2>
-            <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-3xl shadow-sm overflow-hidden">
+            <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-3xl shadow-sm flex-1 flex flex-col min-h-0">
               {activeTickets.length === 0 ? (
                 <div className="p-12 text-center flex flex-col items-center">
                   <div className="w-16 h-16 bg-green-50 dark:bg-green-900/20 rounded-full flex items-center justify-center mb-4 text-green-600 dark:text-green-400">
@@ -328,7 +332,7 @@ const DashboardPage: React.FC = () => {
                   <p className="text-sm text-gray-500 dark:text-gray-400 mt-1 max-w-sm">Wygląda na to, że wszystko działa bez zarzutu. Jeśli pojawią się problemy, użyj przycisku u góry.</p>
                 </div>
               ) : (
-                <div className="divide-y divide-gray-100 dark:divide-gray-700/50">
+                <div className="divide-y divide-gray-100 dark:divide-gray-700/50 flex-1 overflow-y-auto custom-scrollbar">
                   {activeTickets.map(ticket => (
                     <Link
                       to={`/tickets/${ticket.id}`}
@@ -359,19 +363,19 @@ const DashboardPage: React.FC = () => {
           </div>
 
           {/* Ostatnio Rozwiązane */}
-          <div className="space-y-3">
+          <div className="flex flex-col space-y-3 min-h-0">
             <h2 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider flex items-center gap-2">
               <CheckCircle2 className="w-4 h-4" /> Ostatnio zamknięte
             </h2>
-            <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-3xl shadow-sm overflow-hidden">
+            <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-3xl shadow-sm flex-1 flex flex-col min-h-0">
               {resolvedTickets.length === 0 ? (
                 <div className="flex items-center gap-3 px-5 py-5 text-gray-400 dark:text-gray-500">
                   <CheckCircle2 className="w-4 h-4 flex-shrink-0" />
                   <p className="text-sm">Brak zamkniętych zgłoszeń.</p>
                 </div>
               ) : (
-                <div className="divide-y divide-gray-100 dark:divide-gray-700/50">
-                  {resolvedTickets.slice(0, 5).map(ticket => (
+                <div className="divide-y divide-gray-100 dark:divide-gray-700/50 flex-1 overflow-y-auto custom-scrollbar">
+                  {resolvedTickets.slice(0, 30).map(ticket => (
                     <Link
                       to={`/tickets/${ticket.id}`}
                       key={ticket.id}
@@ -585,9 +589,9 @@ const DashboardPage: React.FC = () => {
                   text: 'text-amber-600 dark:text-amber-400',
                 },
                 stale_mine: {
-                  bg: 'bg-gray-100 dark:bg-gray-700/50',
-                  icon: 'text-gray-500 dark:text-gray-400',
-                  text: 'text-gray-500 dark:text-gray-400',
+                  bg: 'bg-slate-100 dark:bg-slate-700/60',
+                  icon: 'text-slate-600 dark:text-slate-300',
+                  text: 'text-slate-700 dark:text-slate-200',
                 },
               };
 
@@ -595,7 +599,7 @@ const DashboardPage: React.FC = () => {
                 const styles: Record<string, string> = {
                   WYSOKI: 'bg-rose-100 text-rose-700 dark:bg-rose-500/15 dark:text-rose-400',
                   NORMALNY: 'bg-blue-100 text-blue-700 dark:bg-blue-500/15 dark:text-blue-400',
-                  NISKI: 'bg-gray-100 text-gray-600 dark:bg-gray-700/50 dark:text-gray-400',
+                  NISKI: 'bg-slate-100 text-slate-700 dark:bg-slate-700/60 dark:text-slate-200',
                 };
                 const labels: Record<string, string> = { WYSOKI: 'Wysoki', NORMALNY: 'Normalny', NISKI: 'Niski' };
                 return (
@@ -774,8 +778,8 @@ const DashboardPage: React.FC = () => {
                                       {priorityBadge(t.priority)}
                                       {statusBadge(t.status)}
                                       {riskFilter === null && (
-                                        <span className="text-[10px] text-gray-400/80 dark:text-gray-500/60 ml-1 flex items-center gap-1.5">
-                                          <span className="w-0.5 h-0.5 rounded-full bg-gray-300 dark:bg-gray-600"></span>
+                                        <span className="text-[10px] font-medium text-gray-500 dark:text-gray-400 ml-1 flex items-center gap-1.5">
+                                          <span className="w-1 h-1 rounded-full bg-gray-300 dark:bg-gray-500"></span>
                                           {ownershipTag}
                                         </span>
                                       )}
@@ -828,7 +832,12 @@ const DashboardPage: React.FC = () => {
                 const user = log.user_details;
                 const userName = user ? `${user.first_name} ${user.last_name}` : 'System';
                 const isMe = user?.id === myId;
-                const youLabel = isMe ? 'Ty' : userName;
+                                const capitalize = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
+                const formatAction = (verbBase: string, systemVerb?: string) => {
+                  if (!user) return `System ${systemVerb || verbBase + 'ł(a)'}`;
+                  if (isMe) return `${capitalize(verbBase)}łeś(aś)`;
+                  return `${userName} ${verbBase}ł(a)`;
+                };
                 const bulk = log._bulkCount;
                 const bulkLabel = bulk ? `${bulk} zgłoszeń` : null;
 
@@ -837,8 +846,8 @@ const DashboardPage: React.FC = () => {
                     return {
                       type: 'GREEN', icon: Plus, tab: 'Moje',
                       text: bulk
-                        ? (<span>{youLabel} utworzył(a) <strong>{bulkLabel}</strong></span>)
-                        : (<span>{youLabel} utworzył(a) zgłoszenie <strong>#{ticketId}</strong></span>),
+                        ? (<span>{formatAction('utworzy')} <strong>{bulkLabel}</strong></span>)
+                        : (<span>{formatAction('utworzy')} zgłoszenie <strong>#{ticketId}</strong></span>),
                       unread: true,
                     };
 
@@ -852,8 +861,8 @@ const DashboardPage: React.FC = () => {
                       icon: isResolved ? CheckCircle2 : Activity,
                       tab: 'Moje',
                       text: bulk
-                        ? (<span>{youLabel} zmienił(a) status <strong>{bulkLabel}</strong>{newS ? ` → ${newS}` : ''}</span>)
-                        : (<span>{youLabel} zmienił(a) status <strong>#{ticketId}</strong>{arrow}</span>),
+                        ? (<span>{formatAction('zmieni')} status <strong>{bulkLabel}</strong>{newS ? ` → ${newS}` : ''}</span>)
+                        : (<span>{formatAction('zmieni')} status <strong>#{ticketId}</strong>{arrow}</span>),
                       unread: !isResolved,
                     };
                   }
@@ -865,8 +874,8 @@ const DashboardPage: React.FC = () => {
                     return {
                       type: 'ORANGE', icon: AlertTriangle, tab: 'Moje',
                       text: bulk
-                        ? (<span>{youLabel} zmienił(a) priorytet <strong>{bulkLabel}</strong>{newP ? ` → ${newP}` : ''}</span>)
-                        : (<span>{youLabel} zmienił(a) priorytet <strong>#{ticketId}</strong>{arrow}</span>),
+                        ? (<span>{formatAction('zmieni')} priorytet <strong>{bulkLabel}</strong>{newP ? ` → ${newP}` : ''}</span>)
+                        : (<span>{formatAction('zmieni')} priorytet <strong>#{ticketId}</strong>{arrow}</span>),
                       unread: true,
                     };
                   }
@@ -878,8 +887,8 @@ const DashboardPage: React.FC = () => {
                     return {
                       type: 'ORANGE', icon: ClipboardList, tab: 'Moje',
                       text: bulk
-                        ? (<span>{youLabel} zmienił(a) kategorię <strong>{bulkLabel}</strong>{newC ? ` → ${newC}` : ''}</span>)
-                        : (<span>{youLabel} zmienił(a) kategorię <strong>#{ticketId}</strong>{arrow}</span>),
+                        ? (<span>{formatAction('zmieni')} kategorię <strong>{bulkLabel}</strong>{newC ? ` → ${newC}` : ''}</span>)
+                        : (<span>{formatAction('zmieni')} kategorię <strong>#{ticketId}</strong>{arrow}</span>),
                       unread: false,
                     };
                   }
@@ -890,7 +899,7 @@ const DashboardPage: React.FC = () => {
                     const detail = oldT && newT ? `: ${oldT} → ${newT}` : newT ? ` → ${newT}` : '';
                     return {
                       type: 'ORANGE', icon: FileText, tab: '_edycje',
-                      text: (<span>{youLabel} zmienił(a) tytuł <strong>#{ticketId}</strong>{detail}</span>),
+                      text: (<span>{formatAction('zmieni')} tytuł <strong>#{ticketId}</strong>{detail}</span>),
                       unread: false,
                     };
                   }
@@ -898,7 +907,7 @@ const DashboardPage: React.FC = () => {
                   case 'DESCRIPTION_CHANGED':
                     return {
                       type: 'ORANGE', icon: FileText, tab: '_edycje',
-                      text: (<span>{youLabel} zaktualizował(a) opis zgłoszenia <strong>#{ticketId}</strong></span>),
+                      text: (<span>{formatAction('zaktualizowa')} opis zgłoszenia <strong>#{ticketId}</strong></span>),
                       unread: false,
                     };
 
@@ -906,8 +915,8 @@ const DashboardPage: React.FC = () => {
                     return {
                       type: 'ORANGE', icon: Activity, tab: 'Moje',
                       text: bulk
-                        ? (<span>{youLabel} ponownie otworzył(a) <strong>{bulkLabel}</strong></span>)
-                        : (<span>{youLabel} ponownie otworzył(a) <strong>#{ticketId}</strong></span>),
+                        ? (<span>{formatAction('ponownie otworzy')} <strong>{bulkLabel}</strong></span>)
+                        : (<span>{formatAction('ponownie otworzy')} <strong>#{ticketId}</strong></span>),
                       unread: true,
                     };
 
@@ -923,8 +932,8 @@ const DashboardPage: React.FC = () => {
                     return {
                       type: 'BLUE', icon: Users, tab: 'Pula',
                       text: bulk
-                        ? (<span>{youLabel} przypisał(a) technika do <strong>{bulkLabel}</strong>{tech ? `: ${tech}` : ''}</span>)
-                        : (<span>{youLabel} przypisał(a) technika do <strong>#{ticketId}</strong>{tech ? `: ${tech}` : ''}</span>),
+                        ? (<span>{formatAction('przypisa')} technika do <strong>{bulkLabel}</strong>{tech ? `: ${tech}` : ''}</span>)
+                        : (<span>{formatAction('przypisa')} technika do <strong>#{ticketId}</strong>{tech ? `: ${tech}` : ''}</span>),
                       unread: false,
                     };
                   }
@@ -934,8 +943,8 @@ const DashboardPage: React.FC = () => {
                     return {
                       type: 'BLUE', icon: Users, tab: 'Pula',
                       text: bulk
-                        ? (<span>{youLabel} usunął(a) technika z <strong>{bulkLabel}</strong>{tech ? `: ${tech}` : ''}</span>)
-                        : (<span>{youLabel} usunął(a) technika z <strong>#{ticketId}</strong>{tech ? `: ${tech}` : ''}</span>),
+                        ? (<span>{formatAction('usuną')} technika z <strong>{bulkLabel}</strong>{tech ? `: ${tech}` : ''}</span>)
+                        : (<span>{formatAction('usuną')} technika z <strong>#{ticketId}</strong>{tech ? `: ${tech}` : ''}</span>),
                       unread: false,
                     };
                   }
@@ -943,7 +952,7 @@ const DashboardPage: React.FC = () => {
                   case 'CREATOR_CHANGED':
                     return {
                       type: 'BLUE', icon: Users, tab: 'Moje',
-                      text: (<span>{youLabel} zmienił(a) zgłaszającego w <strong>#{ticketId}</strong>{log.new_value ? ` → ${log.new_value}` : ''}</span>),
+                      text: (<span>{formatAction('zmieni')} zgłaszającego w <strong>#{ticketId}</strong>{log.new_value ? ` → ${log.new_value}` : ''}</span>),
                       unread: false,
                     };
 
@@ -951,7 +960,7 @@ const DashboardPage: React.FC = () => {
                     return {
                       type: 'BLUE', icon: MessageSquare,
                       tab: log.new_value === 'INTERNAL' ? 'Pula' : 'Moje',
-                      text: (<span>{youLabel} skomentował(a) <strong>#{ticketId}</strong></span>),
+                      text: (<span>{formatAction('skomentowa')} <strong>#{ticketId}</strong></span>),
                       unread: true,
                     };
 
@@ -960,8 +969,8 @@ const DashboardPage: React.FC = () => {
                     return {
                       type: 'PURPLE', icon: Paperclip, tab: 'Moje',
                       text: isMultiple
-                        ? (<span>{youLabel} dodał(a) {log.new_value} do <strong>#{ticketId}</strong></span>)
-                        : (<span>{youLabel} dodał(a) załącznik do <strong>#{ticketId}</strong>{log.new_value ? `: ${log.new_value}` : ''}</span>),
+                        ? (<span>{formatAction('doda')} {log.new_value} do <strong>#{ticketId}</strong></span>)
+                        : (<span>{formatAction('doda')} załącznik do <strong>#{ticketId}</strong>{log.new_value ? `: ${log.new_value}` : ''}</span>),
                       unread: false,
                     };
                   }
@@ -969,21 +978,21 @@ const DashboardPage: React.FC = () => {
                   case 'ATTACHMENT_DELETED':
                     return {
                       type: 'PURPLE', icon: Paperclip, tab: 'Moje',
-                      text: (<span>{youLabel} usunął(a) załącznik z <strong>#{ticketId}</strong>{log.old_value ? `: ${log.old_value}` : ''}</span>),
+                      text: (<span>{formatAction('usuną')} załącznik z <strong>#{ticketId}</strong>{log.old_value ? `: ${log.old_value}` : ''}</span>),
                       unread: false,
                     };
 
                   case 'WORK_LOGGED':
                     return {
                       type: 'PURPLE', icon: Timer, tab: 'Moje',
-                      text: (<span>{youLabel} zarejestrował(a) czas pracy w <strong>#{ticketId}</strong>{log.new_value ? ` (${log.new_value})` : ''}</span>),
+                      text: (<span>{formatAction('zarejestrowa')} czas pracy w <strong>#{ticketId}</strong>{log.new_value ? ` (${log.new_value})` : ''}</span>),
                       unread: false,
                     };
 
                   default:
                     return {
                       type: 'ORANGE', icon: ClipboardList, tab: 'Moje',
-                      text: (<span>{youLabel}: aktualizacja <strong>#{ticketId}</strong></span>),
+                      text: (<span>{isMe ? 'Twoja' : (user ? `${userName}:` : 'System:')} aktualizacja <strong>#{ticketId}</strong></span>),
                       unread: false,
                     };
                 }
@@ -1168,7 +1177,7 @@ const DashboardPage: React.FC = () => {
     const riskReasonColor: Record<RiskReason, { text: string; bg: string; icon: string }> = {
       critical_unassigned: { text: 'text-rose-600 dark:text-rose-400', bg: 'bg-rose-50 dark:bg-rose-500/10', icon: 'text-rose-500' },
       stale_unassigned: { text: 'text-amber-600 dark:text-amber-400', bg: 'bg-amber-50 dark:bg-amber-500/10', icon: 'text-amber-500' },
-      frozen_progress: { text: 'text-gray-600 dark:text-gray-400', bg: 'bg-gray-100 dark:bg-gray-700/50', icon: 'text-gray-500 dark:text-gray-400' },
+      frozen_progress: { text: 'text-slate-700 dark:text-slate-200', bg: 'bg-slate-100 dark:bg-slate-700/60', icon: 'text-slate-600 dark:text-slate-300' },
     };
 
     const riskItems: RiskItem[] = [];
@@ -1525,12 +1534,17 @@ const DashboardPage: React.FC = () => {
                 const getUrgencyDays = (r: RiskItem) =>
                   r.reason === 'frozen_progress' ? r.idle : r.age;
 
-                // Filtrowane risk items wg wybranego chipa, zawsze sortowane wg urgencyDays malejąco
-                // (żeby czerwone były na górze niezależnie od kategorii)
                 const visibleRisks = (riskFilter
                   ? riskItems.filter(r => r.reason === riskFilter)
                   : riskItems
-                ).slice().sort((a, b) => getUrgencyDays(b) - getUrgencyDays(a));
+                ).slice().sort((a, b) => {
+                  if (!riskFilter) {
+                    const groupOrder: Record<RiskReason, number> = { critical_unassigned: 0, stale_unassigned: 1, frozen_progress: 2 };
+                    const groupDiff = groupOrder[a.reason] - groupOrder[b.reason];
+                    if (groupDiff !== 0) return groupDiff;
+                  }
+                  return getUrgencyDays(b) - getUrgencyDays(a);
+                });
 
 
                 const chipConfig: { reason: RiskReason; label: string; activeStyle: string; inactiveStyle: string }[] = [
@@ -1558,7 +1572,7 @@ const DashboardPage: React.FC = () => {
                   const styles: Record<string, string> = {
                     WYSOKI: 'bg-rose-100 text-rose-700 dark:bg-rose-500/15 dark:text-rose-400',
                     NORMALNY: 'bg-blue-100 text-blue-700 dark:bg-blue-500/15 dark:text-blue-400',
-                    NISKI: 'bg-gray-100 text-gray-600 dark:bg-gray-700/50 dark:text-gray-400',
+                    NISKI: 'bg-slate-100 text-slate-700 dark:bg-slate-700/60 dark:text-slate-200',
                   };
                   const labels: Record<string, string> = { WYSOKI: 'Wysoki', NORMALNY: 'Normalny', NISKI: 'Niski' };
                   return (
@@ -1645,37 +1659,61 @@ const DashboardPage: React.FC = () => {
                         </div>
                       ) : (
                         <div className="space-y-0.5">
-                          {visibleRisks.map((risk) => {
-                            const colors = riskReasonColor[risk.reason];
-                            const t = risk.ticket;
+                          {(() => {
+                            const groupLabels: Record<RiskReason, string> = {
+                              critical_unassigned: '🔴 Krytyczne',
+                              stale_unassigned: '🟠 Nieprzypisane',
+                              frozen_progress: '🟡 Zamrożone',
+                            };
+                            let lastGroup: RiskReason | null = null;
 
-                            const RiskIcon = risk.reason === 'critical_unassigned'
-                              ? AlertTriangle
-                              : risk.reason === 'stale_unassigned'
-                                ? Users
-                                : Clock;
-
-                            const idleLabel =
-                              risk.reason === 'frozen_progress'
-                                ? `${risk.idle}d ciszy`
+                            return visibleRisks.map((risk) => {
+                              const colors = riskReasonColor[risk.reason];
+                              const t = risk.ticket;
+  
+                              const RiskIcon = risk.reason === 'critical_unassigned'
+                                ? AlertTriangle
                                 : risk.reason === 'stale_unassigned'
-                                  ? `${risk.age}d czeka`
-                                  : `${risk.age}d`;
+                                  ? Users
+                                  : Clock;
+  
+                              const idleLabel =
+                                risk.reason === 'frozen_progress'
+                                  ? `${risk.idle}d ciszy`
+                                  : risk.reason === 'stale_unassigned'
+                                    ? `${risk.age}d czeka`
+                                    : `${risk.age}d`;
+  
+                              // Urgency days — shared helper ensures consistency with sort order
+                              const urgencyDays = getUrgencyDays(risk);
+  
+                              // Severity bar color based on wait time
+                              const severityBarColor =
+                                urgencyDays >= 15
+                                  ? 'bg-rose-500/60'
+                                  : urgencyDays >= 8
+                                    ? 'bg-orange-400/60'
+                                    : urgencyDays >= 4
+                                      ? 'bg-amber-400/60'
+                                      : 'bg-emerald-400/60';
 
-                            // Urgency days — shared helper ensures consistency with sort order
-                            const urgencyDays = getUrgencyDays(risk);
-
-                            // Severity bar color based on wait time
-                            const severityBarColor =
-                              urgencyDays >= 15
-                                ? 'bg-rose-500/60'
-                                : urgencyDays >= 8
-                                  ? 'bg-orange-400/60'
-                                  : urgencyDays >= 4
-                                    ? 'bg-amber-400/60'
-                                    : 'bg-emerald-400/60';
-
-                            return (
+                              // Group separator
+                              let groupHeader: React.ReactNode = null;
+                              if (riskFilter === null && risk.reason !== lastGroup) {
+                                lastGroup = risk.reason;
+                                groupHeader = (
+                                  <div className="flex items-center gap-3 px-4 pt-4 pb-2">
+                                    <span className="text-[11px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-widest">
+                                      {groupLabels[risk.reason]}
+                                    </span>
+                                    <div className="flex-1 h-px bg-gray-200/60 dark:bg-gray-700/60" />
+                                  </div>
+                                );
+                              }
+  
+                              return (
+                                <React.Fragment key={t.id}>
+                                  {groupHeader}
                               <Link
                                 to={`/tickets/${t.id}`}
                                 key={t.id}
@@ -1720,8 +1758,9 @@ const DashboardPage: React.FC = () => {
                                   </span>
                                 </div>
                               </Link>
+                              </React.Fragment>
                             );
-                          })}
+                          })})()}
                         </div>
                       )}
                     </div>
@@ -1753,6 +1792,13 @@ const DashboardPage: React.FC = () => {
                   const user = log.user_details;
                   const userName = user ? `${user.first_name} ${user.last_name}` : 'System';
                   const bulk = log._bulkCount;
+                  const isMe = user?.id === authContext?.user?.id;
+                  const capitalize = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
+                  const formatAction = (verbBase: string, systemVerb?: string) => {
+                    if (!user) return `System ${systemVerb || verbBase + 'ł(a)'}`;
+                    if (isMe) return `${capitalize(verbBase)}łeś(aś)`;
+                    return `${userName} ${verbBase}ł(a)`;
+                  };
                   const bulkLabel = bulk ? `${bulk} zgłoszeń` : null;
 
                   switch (action) {
@@ -1760,8 +1806,8 @@ const DashboardPage: React.FC = () => {
                       return {
                         type: 'GREEN', icon: Plus, tab: 'Zgłoszenia',
                         text: bulk
-                          ? (<span>{userName} utworzył(a) <strong>{bulkLabel}</strong></span>)
-                          : (<span>{userName} utworzył(a) zgłoszenie <strong>#{ticketId}</strong></span>),
+                          ? (<span>{formatAction('utworzy')} <strong>{bulkLabel}</strong></span>)
+                          : (<span>{formatAction('utworzy')} zgłoszenie <strong>#{ticketId}</strong></span>),
                         unread: true,
                       };
 
@@ -1775,8 +1821,8 @@ const DashboardPage: React.FC = () => {
                         icon: isResolved ? CheckCircle2 : Activity,
                         tab: 'Zgłoszenia',
                         text: bulk
-                          ? (<span>{userName} zmienił(a) status <strong>{bulkLabel}</strong>{newS ? ` → ${newS}` : ''}</span>)
-                          : (<span>{userName} zmienił(a) status <strong>#{ticketId}</strong>{arrow}</span>),
+                          ? (<span>{formatAction('zmieni')} status <strong>{bulkLabel}</strong>{newS ? ` → ${newS}` : ''}</span>)
+                          : (<span>{formatAction('zmieni')} status <strong>#{ticketId}</strong>{arrow}</span>),
                         unread: !isResolved,
                       };
                     }
@@ -1788,8 +1834,8 @@ const DashboardPage: React.FC = () => {
                       return {
                         type: 'ORANGE', icon: AlertTriangle, tab: 'Zgłoszenia',
                         text: bulk
-                          ? (<span>{userName} zmienił(a) priorytet <strong>{bulkLabel}</strong>{newP ? ` → ${newP}` : ''}</span>)
-                          : (<span>{userName} zmienił(a) priorytet <strong>#{ticketId}</strong>{arrow}</span>),
+                          ? (<span>{formatAction('zmieni')} priorytet <strong>{bulkLabel}</strong>{newP ? ` → ${newP}` : ''}</span>)
+                          : (<span>{formatAction('zmieni')} priorytet <strong>#{ticketId}</strong>{arrow}</span>),
                         unread: true,
                       };
                     }
@@ -1801,8 +1847,8 @@ const DashboardPage: React.FC = () => {
                       return {
                         type: 'ORANGE', icon: ClipboardList, tab: 'Zgłoszenia',
                         text: bulk
-                          ? (<span>{userName} zmienił(a) kategorię <strong>{bulkLabel}</strong>{newC ? ` → ${newC}` : ''}</span>)
-                          : (<span>{userName} zmienił(a) kategorię <strong>#{ticketId}</strong>{arrow}</span>),
+                          ? (<span>{formatAction('zmieni')} kategorię <strong>{bulkLabel}</strong>{newC ? ` → ${newC}` : ''}</span>)
+                          : (<span>{formatAction('zmieni')} kategorię <strong>#{ticketId}</strong>{arrow}</span>),
                         unread: false,
                       };
                     }
@@ -1813,7 +1859,7 @@ const DashboardPage: React.FC = () => {
                       const detail = oldT && newT ? `: ${oldT} → ${newT}` : newT ? ` → ${newT}` : '';
                       return {
                         type: 'ORANGE', icon: FileText, tab: '_edycje',
-                        text: (<span>{userName} zmienił(a) tytuł <strong>#{ticketId}</strong>{detail}</span>),
+                        text: (<span>{formatAction('zmieni')} tytuł <strong>#{ticketId}</strong>{detail}</span>),
                         unread: false,
                       };
                     }
@@ -1821,7 +1867,7 @@ const DashboardPage: React.FC = () => {
                     case 'DESCRIPTION_CHANGED':
                       return {
                         type: 'ORANGE', icon: FileText, tab: '_edycje',
-                        text: (<span>{userName} zaktualizował(a) opis zgłoszenia <strong>#{ticketId}</strong></span>),
+                        text: (<span>{formatAction('zaktualizowa')} opis zgłoszenia <strong>#{ticketId}</strong></span>),
                         unread: false,
                       };
 
@@ -1829,8 +1875,8 @@ const DashboardPage: React.FC = () => {
                       return {
                         type: 'ORANGE', icon: Activity, tab: 'Zgłoszenia',
                         text: bulk
-                          ? (<span>{userName} ponownie otworzył(a) <strong>{bulkLabel}</strong></span>)
-                          : (<span>{userName} ponownie otworzył(a) <strong>#{ticketId}</strong></span>),
+                          ? (<span>{formatAction('ponownie otworzy')} <strong>{bulkLabel}</strong></span>)
+                          : (<span>{formatAction('ponownie otworzy')} <strong>#{ticketId}</strong></span>),
                         unread: true,
                       };
 
@@ -1846,8 +1892,8 @@ const DashboardPage: React.FC = () => {
                       return {
                         type: 'BLUE', icon: Users, tab: 'Zespół',
                         text: bulk
-                          ? (<span>{userName} przypisał(a) technika do <strong>{bulkLabel}</strong>{tech ? `: ${tech}` : ''}</span>)
-                          : (<span>{userName} przypisał(a) technika do <strong>#{ticketId}</strong>{tech ? `: ${tech}` : ''}</span>),
+                          ? (<span>{formatAction('przypisa')} technika do <strong>{bulkLabel}</strong>{tech ? `: ${tech}` : ''}</span>)
+                          : (<span>{formatAction('przypisa')} technika do <strong>#{ticketId}</strong>{tech ? `: ${tech}` : ''}</span>),
                         unread: false,
                       };
                     }
@@ -1857,8 +1903,8 @@ const DashboardPage: React.FC = () => {
                       return {
                         type: 'BLUE', icon: Users, tab: 'Zespół',
                         text: bulk
-                          ? (<span>{userName} usunął(a) technika z <strong>{bulkLabel}</strong>{tech ? `: ${tech}` : ''}</span>)
-                          : (<span>{userName} usunął(a) technika z <strong>#{ticketId}</strong>{tech ? `: ${tech}` : ''}</span>),
+                          ? (<span>{formatAction('usuną')} technika z <strong>{bulkLabel}</strong>{tech ? `: ${tech}` : ''}</span>)
+                          : (<span>{formatAction('usuną')} technika z <strong>#{ticketId}</strong>{tech ? `: ${tech}` : ''}</span>),
                         unread: false,
                       };
                     }
@@ -1866,7 +1912,7 @@ const DashboardPage: React.FC = () => {
                     case 'CREATOR_CHANGED':
                       return {
                         type: 'BLUE', icon: Users, tab: 'Zgłoszenia',
-                        text: (<span>{userName} zmienił(a) zgłaszającego w <strong>#{ticketId}</strong>{log.new_value ? ` → ${log.new_value}` : ''}</span>),
+                        text: (<span>{formatAction('zmieni')} zgłaszającego w <strong>#{ticketId}</strong>{log.new_value ? ` → ${log.new_value}` : ''}</span>),
                         unread: false,
                       };
 
@@ -1874,7 +1920,7 @@ const DashboardPage: React.FC = () => {
                       return {
                         type: 'BLUE', icon: MessageSquare,
                         tab: log.new_value === 'INTERNAL' ? 'Zespół' : 'Zgłoszenia',
-                        text: (<span>{userName} skomentował(a) <strong>#{ticketId}</strong></span>),
+                        text: (<span>{formatAction('skomentowa')} <strong>#{ticketId}</strong></span>),
                         unread: true,
                       };
 
@@ -1883,8 +1929,8 @@ const DashboardPage: React.FC = () => {
                       return {
                         type: 'PURPLE', icon: Paperclip, tab: 'Zgłoszenia',
                         text: isMultiple
-                          ? (<span>{userName} dodał(a) {log.new_value} do <strong>#{ticketId}</strong></span>)
-                          : (<span>{userName} dodał(a) załącznik do <strong>#{ticketId}</strong>{log.new_value ? `: ${log.new_value}` : ''}</span>),
+                          ? (<span>{formatAction('doda')} {log.new_value} do <strong>#{ticketId}</strong></span>)
+                          : (<span>{formatAction('doda')} załącznik do <strong>#{ticketId}</strong>{log.new_value ? `: ${log.new_value}` : ''}</span>),
                         unread: false,
                       };
                     }
@@ -1892,21 +1938,21 @@ const DashboardPage: React.FC = () => {
                     case 'ATTACHMENT_DELETED':
                       return {
                         type: 'PURPLE', icon: Paperclip, tab: 'Zgłoszenia',
-                        text: (<span>{userName} usunął(a) załącznik z <strong>#{ticketId}</strong>{log.old_value ? `: ${log.old_value}` : ''}</span>),
+                        text: (<span>{formatAction('usuną')} załącznik z <strong>#{ticketId}</strong>{log.old_value ? `: ${log.old_value}` : ''}</span>),
                         unread: false,
                       };
 
                     case 'WORK_LOGGED':
                       return {
                         type: 'PURPLE', icon: Timer, tab: 'Zespół',
-                        text: (<span>{userName} zarejestrował(a) czas pracy w <strong>#{ticketId}</strong>{log.new_value ? ` (${log.new_value})` : ''}</span>),
+                        text: (<span>{formatAction('zarejestrowa')} czas pracy w <strong>#{ticketId}</strong>{log.new_value ? ` (${log.new_value})` : ''}</span>),
                         unread: false,
                       };
 
                     default:
                       return {
                         type: 'ORANGE', icon: ClipboardList, tab: 'Zgłoszenia',
-                        text: (<span>{userName}: aktualizacja <strong>#{ticketId}</strong></span>),
+                        text: (<span>{isMe ? 'Twoja' : (user ? `${userName}:` : 'System:')} aktualizacja <strong>#{ticketId}</strong></span>),
                         unread: false,
                       };
                   }
