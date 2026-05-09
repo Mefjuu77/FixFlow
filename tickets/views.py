@@ -329,6 +329,44 @@ class WorkLogListCreateView(generics.ListCreateAPIView):
         )
 
 
+class WorkLogDetailView(APIView):
+    """Edycja i usuwanie pojedynczego wpisu rejestru prac."""
+    permission_classes = [IsAuthenticated]
+
+    def _get_worklog(self, ticket_id, wl_id):
+        try:
+            return WorkLog.objects.get(id=wl_id, ticket_id=ticket_id)
+        except WorkLog.DoesNotExist:
+            return None
+
+    def _check_permission(self, request, worklog):
+        """Tylko autor wpisu lub admin może go edytować/usuwać."""
+        if request.user.role == 'EMPLOYEE':
+            raise PermissionDenied('Nie masz uprawnień do tej operacji.')
+        if request.user.role != 'ADMIN' and worklog.author != request.user:
+            raise PermissionDenied('Możesz edytować lub usuwać tylko własne wpisy.')
+
+    def patch(self, request, ticket_id, wl_id):
+        worklog = self._get_worklog(ticket_id, wl_id)
+        if not worklog:
+            return Response({'detail': 'Wpis nie istnieje.'}, status=status.HTTP_404_NOT_FOUND)
+        self._check_permission(request, worklog)
+
+        serializer = WorkLogSerializer(worklog, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def delete(self, request, ticket_id, wl_id):
+        worklog = self._get_worklog(ticket_id, wl_id)
+        if not worklog:
+            return Response({'detail': 'Wpis nie istnieje.'}, status=status.HTTP_404_NOT_FOUND)
+        self._check_permission(request, worklog)
+        worklog.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+
 class TicketAttachmentView(APIView):
     """
     Upload załączników do zgłoszenia.

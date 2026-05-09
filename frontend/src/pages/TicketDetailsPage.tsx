@@ -59,6 +59,13 @@ const TicketDetailsPage: React.FC = () => {
   const [newWorkLogDesc, setNewWorkLogDesc] = useState('');
   const [newWorkLogMinutes, setNewWorkLogMinutes] = useState('');
   const [isSubmittingWorkLog, setIsSubmittingWorkLog] = useState(false);
+  // WorkLog edit/delete state
+  const [editingWorkLogId, setEditingWorkLogId] = useState<number | null>(null);
+  const [editWorkLogDesc, setEditWorkLogDesc] = useState('');
+  const [editWorkLogMinutes, setEditWorkLogMinutes] = useState('');
+  const [isSavingWorkLog, setIsSavingWorkLog] = useState(false);
+  const [workLogToDelete, setWorkLogToDelete] = useState<WorkLog | null>(null);
+  const [isDeletingWorkLog, setIsDeletingWorkLog] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [commentError, setCommentError] = useState('');
@@ -1508,31 +1515,123 @@ const TicketDetailsPage: React.FC = () => {
                   </div>
                 ) : (
                   <div className="space-y-3">
-                    {workLogs.map(wl => (
-                      <div key={wl.id} className="bg-gray-50 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-700 rounded-lg p-4">
-                        <div className="flex items-start justify-between gap-3">
-                          <p className="text-sm text-gray-800 dark:text-gray-200 flex-1">{wl.description}</p>
-                          <div className="flex items-center gap-1.5 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 px-2 py-1 rounded-md flex-shrink-0">
-                            <Clock className="w-3.5 h-3.5" />
-                            <span className="text-xs font-bold">
-                              {wl.duration_minutes >= 60 ? `${Math.floor(wl.duration_minutes / 60)}h ${wl.duration_minutes % 60}min` : `${wl.duration_minutes}min`}
-                            </span>
-                          </div>
-                        </div>
-                        <div className="mt-2 flex items-center gap-2 text-xs text-gray-400">
-                          {wl.author_details?.avatar ? (
-                            <img src={wl.author_details.avatar} alt="" className="w-4 h-4 rounded-full object-cover" />
-                          ) : (
-                            <div className="w-4 h-4 rounded-full bg-blue-100 flex items-center justify-center">
-                              <span className="text-[8px] font-bold text-blue-600">{wl.author_details?.first_name?.charAt(0)}</span>
+                    {workLogs.map(wl => {
+                      const isAuthor = authContext?.user?.id === wl.author;
+                      const canEdit = isAuthor || isAdmin;
+                      const isEditing = editingWorkLogId === wl.id;
+
+                      return (
+                        <div key={wl.id} className="bg-gray-50 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-700 rounded-lg p-4">
+                          {isEditing ? (
+                            /* ── Inline edit form ── */
+                            <div className="space-y-3">
+                              <textarea
+                                value={editWorkLogDesc}
+                                onChange={(e) => setEditWorkLogDesc(e.target.value)}
+                                className="w-full border border-blue-300 dark:border-blue-600 rounded-lg p-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 min-h-[72px] resize-none bg-white dark:bg-gray-900"
+                                autoFocus
+                              />
+                              <div className="flex items-center gap-3">
+                                <div className="flex items-center gap-2">
+                                  <Clock className="w-4 h-4 text-gray-400" />
+                                  <input
+                                    type="number"
+                                    min="1"
+                                    max="1440"
+                                    value={editWorkLogMinutes}
+                                    onChange={(e) => setEditWorkLogMinutes(e.target.value)}
+                                    className="w-24 border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-900"
+                                  />
+                                  <span className="text-xs text-gray-400">min</span>
+                                </div>
+                                <div className="ml-auto flex items-center gap-2">
+                                  <button
+                                    onClick={() => setEditingWorkLogId(null)}
+                                    className="px-3 py-1.5 text-sm font-medium text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 transition-colors"
+                                  >
+                                    Anuluj
+                                  </button>
+                                  <button
+                                    onClick={async () => {
+                                      const trimmed = editWorkLogDesc.trim();
+                                      const mins = parseInt(editWorkLogMinutes);
+                                      if (!trimmed || isNaN(mins) || mins <= 0 || mins > 1440) return;
+                                      setIsSavingWorkLog(true);
+                                      try {
+                                        await ticketService.updateWorkLog(id!, wl.id, {
+                                          description: trimmed,
+                                          duration_minutes: mins,
+                                        });
+                                        setEditingWorkLogId(null);
+                                        fetchWorkLogs();
+                                      } catch (err) {
+                                        console.error('Błąd edycji wpisu:', err);
+                                      } finally {
+                                        setIsSavingWorkLog(false);
+                                      }
+                                    }}
+                                    disabled={isSavingWorkLog || !editWorkLogDesc.trim() || !editWorkLogMinutes || parseInt(editWorkLogMinutes) <= 0}
+                                    className="px-4 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold rounded-lg transition-all shadow-sm disabled:opacity-50 flex items-center gap-1.5"
+                                  >
+                                    {isSavingWorkLog ? <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <Check className="w-3.5 h-3.5" />}
+                                    Zapisz
+                                  </button>
+                                </div>
+                              </div>
                             </div>
+                          ) : (
+                            /* ── Normal view ── */
+                            <>
+                              <div className="flex items-start justify-between gap-3">
+                                <p className="text-sm text-gray-800 dark:text-gray-200 flex-1">{wl.description}</p>
+                                <div className="flex items-center gap-1.5 flex-shrink-0">
+                                  <div className="flex items-center gap-1.5 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 px-2 py-1 rounded-md">
+                                    <Clock className="w-3.5 h-3.5" />
+                                    <span className="text-xs font-bold">
+                                      {wl.duration_minutes >= 60 ? `${Math.floor(wl.duration_minutes / 60)}h ${wl.duration_minutes % 60}min` : `${wl.duration_minutes}min`}
+                                    </span>
+                                  </div>
+                                  {canEdit && (
+                                    <>
+                                      <button
+                                        onClick={() => {
+                                          setEditingWorkLogId(wl.id);
+                                          setEditWorkLogDesc(wl.description);
+                                          setEditWorkLogMinutes(String(wl.duration_minutes));
+                                        }}
+                                        className="p-1.5 text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-md transition-colors"
+                                        title="Edytuj wpis"
+                                      >
+                                        <Pencil className="w-3.5 h-3.5" />
+                                      </button>
+                                      <button
+                                        onClick={() => setWorkLogToDelete(wl)}
+                                        className="p-1.5 text-gray-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-md transition-colors"
+                                        title="Usuń wpis"
+                                      >
+                                        <Trash2 className="w-3.5 h-3.5" />
+                                      </button>
+                                    </>
+                                  )}
+                                </div>
+                              </div>
+                              <div className="mt-2 flex items-center gap-2 text-xs text-gray-400">
+                                {wl.author_details?.avatar ? (
+                                  <img src={wl.author_details.avatar} alt="" className="w-4 h-4 rounded-full object-cover" />
+                                ) : (
+                                  <div className="w-4 h-4 rounded-full bg-blue-100 flex items-center justify-center">
+                                    <span className="text-[8px] font-bold text-blue-600">{wl.author_details?.first_name?.charAt(0)}</span>
+                                  </div>
+                                )}
+                                <span>{wl.author_details?.first_name} {wl.author_details?.last_name}</span>
+                                <span>•</span>
+                                <span>{dayjs(wl.created_at).format('DD MMM YYYY, HH:mm')}</span>
+                              </div>
+                            </>
                           )}
-                          <span>{wl.author_details?.first_name} {wl.author_details?.last_name}</span>
-                          <span>•</span>
-                          <span>{dayjs(wl.created_at).format('DD MMM YYYY, HH:mm')}</span>
                         </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 )}
               </div>
@@ -1885,11 +1984,26 @@ const TicketDetailsPage: React.FC = () => {
                 </div>
               </div>
 
+              {/* Łączny czas pracy — widoczny bez przełączania na zakładkę */}
+              {isTechnicianOrAdmin && workLogs.length > 0 && (() => {
+                const totalMin = workLogs.reduce((sum, wl) => sum + wl.duration_minutes, 0);
+                const h = Math.floor(totalMin / 60);
+                const m = totalMin % 60;
+                const label = h > 0 ? `${h}h ${m > 0 ? `${m}min` : ''}`.trim() : `${m}min`;
+                return (
+                  <div className="grid grid-cols-[160px_1fr] items-center mt-4 pt-4 border-t border-gray-100">
+                    <span className="text-sm text-gray-500 font-medium">Czas pracy</span>
+                    <div className="flex items-center gap-1.5">
+                      <FileClock className="w-3.5 h-3.5 text-indigo-500 flex-shrink-0" />
+                      <span className="text-sm font-semibold text-indigo-600 dark:text-indigo-400">{label}</span>
+                      <span className="text-xs text-gray-400">({workLogs.length} {workLogs.length === 1 ? 'wpis' : workLogs.length < 5 ? 'wpisy' : 'wpisów'})</span>
+                    </div>
+                  </div>
+                );
+              })()}
+
             </div>
           </div>
-
-        </div>
-      </div>
 
       {/* Modal Zmiany Statusu */}
       {transitionModalConfig.isOpen && (
@@ -2120,6 +2234,56 @@ const TicketDetailsPage: React.FC = () => {
                 title="Zamknij"
               >
                 <X className="w-5 h-5" />
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete WorkLog Modal */}
+      {workLogToDelete && (
+        <div
+          className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 animate-in fade-in duration-200"
+          onClick={() => !isDeletingWorkLog && setWorkLogToDelete(null)}
+        >
+          <div
+            className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-sm mx-4 p-6 text-center"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="w-14 h-14 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
+              <Trash2 className="w-7 h-7 text-red-600 dark:text-red-400" />
+            </div>
+            <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100 mb-1">Usunąć wpis?</h3>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">
+              Czy na pewno chcesz usunąć ten wpis rejestru prac?
+              <br />Tej operacji nie można cofnąć.
+            </p>
+            <div className="flex gap-3 justify-center">
+              <button
+                onClick={() => setWorkLogToDelete(null)}
+                className="px-4 py-2 text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-xl transition-colors"
+              >
+                Anuluj
+              </button>
+              <button
+                onClick={async () => {
+                  if (!workLogToDelete) return;
+                  setIsDeletingWorkLog(true);
+                  try {
+                    await ticketService.deleteWorkLog(id!, workLogToDelete.id);
+                    setWorkLogToDelete(null);
+                    fetchWorkLogs();
+                  } catch (err) {
+                    console.error('Błąd usuwania wpisu:', err);
+                  } finally {
+                    setIsDeletingWorkLog(false);
+                  }
+                }}
+                disabled={isDeletingWorkLog}
+                className="px-5 py-2 text-sm font-bold text-white bg-red-600 hover:bg-red-700 rounded-xl shadow-sm transition-all disabled:opacity-50 flex items-center"
+              >
+                {isDeletingWorkLog && <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />}
+                Usuń
               </button>
             </div>
           </div>

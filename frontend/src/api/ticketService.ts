@@ -93,6 +93,17 @@ export const ticketService = {
     return response.data;
   },
 
+  // Aktualizuje wpis rejestru prac
+  updateWorkLog: async (ticketId: string | number, wlId: number, data: { description?: string; duration_minutes?: number }): Promise<WorkLog> => {
+    const response = await api.patch<WorkLog>(`tickets/${ticketId}/work-logs/${wlId}/`, data);
+    return response.data;
+  },
+
+  // Usuwa wpis rejestru prac
+  deleteWorkLog: async (ticketId: string | number, wlId: number): Promise<void> => {
+    await api.delete(`tickets/${ticketId}/work-logs/${wlId}/`);
+  },
+
   // Usuwanie załącznika
   deleteAttachment: async (ticketId: string | number, attachmentId: number): Promise<void> => {
     await api.delete(`tickets/${ticketId}/attachments/${attachmentId}/`);
