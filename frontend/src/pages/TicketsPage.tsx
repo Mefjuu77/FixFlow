@@ -597,7 +597,7 @@ const TicketsPage: React.FC = () => {
                       checked={filteredTickets.length > 0 && selectedTicketIds.length === filteredTickets.length}
                     />
                   </th>
-                  <th colSpan={isEmployee ? 6 : 8} className="px-2 lg:px-3 py-2 font-normal text-left">
+                  <th colSpan={isEmployee ? 6 : 8} className="px-6 py-2 font-normal text-left">
                     <div className="flex items-center gap-4">
                       <div className="px-3 py-1.5 bg-white dark:bg-gray-800 text-blue-700 dark:text-blue-400 rounded-xl font-bold text-sm border border-blue-100 dark:border-blue-800 whitespace-nowrap shadow-sm flex items-center">
                         <span className="w-5 h-5 bg-blue-100 dark:bg-blue-900/50 text-blue-800 dark:text-blue-300 rounded-md flex items-center justify-center text-xs mr-2">{selectedTicketIds.length}</span>
@@ -698,8 +698,8 @@ const TicketsPage: React.FC = () => {
                       />
                     </th>
                   )}
-                  {renderSortableHeader('id', 'ID', 'w-16')}
-                  {renderSortableHeader('title', 'Tytuł', 'min-w-[200px] lg:min-w-[220px] xl:min-w-[250px]')}
+                  {renderSortableHeader('id', 'ID', 'w-20')}
+                  {renderSortableHeader('title', 'Tytuł', 'min-w-[300px]')}
                   {renderSortableHeader('category_name', 'Kategoria')}
                   {!isEmployee && renderSortableHeader('priority', 'Priorytet')}
                   {renderSortableHeader('creator', 'Zgłaszający')}
@@ -712,7 +712,7 @@ const TicketsPage: React.FC = () => {
             <tbody className="divide-y divide-gray-50">
               {filteredTickets.length === 0 ? (
                 <tr>
-                  <td colSpan={(isAdmin || isTechnician) ? 9 : 6} className="px-2 lg:px-3 py-12 text-center text-gray-500 text-sm italic">
+                  <td colSpan={(isAdmin || isTechnician) ? 9 : 6} className="px-6 py-12 text-center text-gray-500 text-sm italic">
                     Brak zgłoszeń spełniających kryteria.
                   </td>
                 </tr>
@@ -732,8 +732,8 @@ const TicketsPage: React.FC = () => {
                         />
                       </td>
                     )}
-                    <td className="px-2 lg:px-3 py-2.5 text-sm font-medium text-gray-400 dark:text-gray-500 whitespace-nowrap">#{ticket.id}</td>
-                    <td className="px-2 lg:px-3 py-2.5 text-sm max-w-[200px] sm:max-w-[250px] lg:max-w-[280px] xl:max-w-[350px]">
+                    <td className="px-6 py-3 text-sm font-medium text-gray-400 dark:text-gray-500 whitespace-nowrap">#{ticket.id}</td>
+                    <td className="px-6 py-3 text-sm max-w-[200px] sm:max-w-[250px] lg:max-w-[350px]">
                       {selectedTicketIds.length > 0 ? (
                         <div
                           title={ticket.title}
@@ -752,14 +752,14 @@ const TicketsPage: React.FC = () => {
                         </Link>
                       )}
                     </td>
-                    <td className="px-2 lg:px-3 py-2.5 text-sm text-gray-600 whitespace-nowrap">
+                    <td className="px-6 py-3 text-sm text-gray-600 whitespace-nowrap">
                       <span className="flex items-center gap-1.5 font-medium">
                         {getCategoryIcon(ticket.category_name || '')}
                         {ticket.category_name || '—'}
                       </span>
                     </td>
                     {!isEmployee && (
-                      <td className="px-2 lg:px-3 py-2.5 whitespace-nowrap">
+                      <td className="px-6 py-3 whitespace-nowrap">
                         <span className="flex items-center gap-1.5 text-sm font-medium">
                           {PRIORITY_ICONS[ticket.priority]}
                           <span className={ticket.priority === 'WYSOKI' ? 'text-red-600' : ticket.priority === 'NORMALNY' ? 'text-blue-600' : 'text-gray-500'}>
@@ -768,7 +768,7 @@ const TicketsPage: React.FC = () => {
                         </span>
                       </td>
                     )}
-                    <td className="px-2 lg:px-3 py-2.5 text-sm text-gray-700 dark:text-gray-300 whitespace-nowrap font-medium">
+                    <td className="px-6 py-3 text-sm text-gray-700 dark:text-gray-300 whitespace-nowrap font-medium">
                       {ticket.creator_details ? (
                         <span className="flex items-center gap-2">
                           <div className="w-5 h-5 rounded-full bg-blue-600 text-white flex items-center justify-center flex-shrink-0 overflow-hidden">
@@ -778,14 +778,14 @@ const TicketsPage: React.FC = () => {
                               <span className="text-[10px] font-bold uppercase">{ticket.creator_details.first_name?.charAt(0) || 'U'}</span>
                             )}
                           </div>
-                          <span className="truncate max-w-[120px] lg:max-w-[140px]" title={`${ticket.creator_details.first_name} ${ticket.creator_details.last_name}`}>
+                          <span className="truncate max-w-[120px] xl:max-w-[180px]" title={`${ticket.creator_details.first_name} ${ticket.creator_details.last_name}`}>
                             {ticket.creator_details.first_name} {ticket.creator_details.last_name}
                           </span>
                         </span>
                       ) : <span className="text-gray-400 italic">Nieznany</span>}
                     </td>
                     {!isEmployee && (
-                      <td className="px-2 lg:px-3 py-2.5 text-sm whitespace-nowrap">
+                      <td className="px-6 py-3 text-sm whitespace-nowrap">
                         {ticket.technician_details ? (
                           <span className="flex items-center gap-2 text-gray-900 dark:text-gray-200 font-medium">
                             <div className="w-5 h-5 rounded-full bg-blue-600 text-white flex items-center justify-center flex-shrink-0 overflow-hidden">
@@ -795,7 +795,7 @@ const TicketsPage: React.FC = () => {
                                 <span className="text-[10px] font-bold uppercase">{ticket.technician_details.first_name?.charAt(0) || 'U'}</span>
                               )}
                             </div>
-                            <span className="truncate max-w-[120px] lg:max-w-[140px]" title={`${ticket.technician_details.first_name} ${ticket.technician_details.last_name}`}>
+                            <span className="truncate max-w-[120px] xl:max-w-[180px]" title={`${ticket.technician_details.first_name} ${ticket.technician_details.last_name}`}>
                               {ticket.technician_details.first_name} {ticket.technician_details.last_name}
                             </span>
                           </span>
@@ -809,12 +809,12 @@ const TicketsPage: React.FC = () => {
                         )}
                       </td>
                     )}
-                    <td className="px-2 lg:px-3 py-2.5 whitespace-nowrap">
+                    <td className="px-6 py-3 whitespace-nowrap">
                       <span className={`px-2.5 py-1 inline-flex text-xs leading-5 font-bold rounded-lg ${STATUS_STYLES[ticket.status] || 'bg-gray-100 text-gray-800'}`}>
                         {STATUS_LABELS[ticket.status] || ticket.status}
                       </span>
                     </td>
-                    <td className="px-2 lg:px-3 py-2.5 text-sm text-gray-500 whitespace-nowrap">
+                    <td className="px-6 py-3 text-sm text-gray-500 whitespace-nowrap">
                       {dayjs(ticket.created_at).format('DD MMM YYYY, HH:mm')}
                     </td>
                   </tr>
