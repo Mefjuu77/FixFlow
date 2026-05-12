@@ -310,7 +310,7 @@ const ExportPage: React.FC = () => {
   ];
 
   return (
-    <div className="min-h-[calc(100vh-6rem)] flex flex-col gap-8 pb-10">
+    <div className="min-h-[calc(100vh-6rem)] flex flex-col gap-5 lg:gap-6 pb-8">
       {/* Nowy prosty nagłówek z pobieraniem w prawym górnym rogu */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
@@ -320,29 +320,29 @@ const ExportPage: React.FC = () => {
           </p>
         </div>
 
-        <div className="flex flex-col sm:flex-row items-center gap-3">
+        <div className="flex flex-wrap items-center gap-2">
           <div className="flex gap-2">
             <button onClick={() => setExportFormat('xlsx')}
-              className={`flex items-center justify-center gap-2 px-4 py-2 rounded-xl text-sm font-bold transition-all duration-200 border-2 ${exportFormat === 'xlsx' ? 'bg-emerald-50 dark:bg-emerald-500/20 border-emerald-400 dark:border-emerald-500 text-emerald-700 dark:text-emerald-400 shadow-sm' : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:border-emerald-300 dark:hover:border-emerald-500 hover:bg-emerald-50/50 dark:hover:bg-emerald-500/10 hover:text-emerald-600 dark:hover:text-emerald-400'}`}
+              className={`flex items-center justify-center gap-2 px-3 py-2 rounded-xl text-sm font-bold transition-all duration-200 border-2 ${exportFormat === 'xlsx' ? 'bg-emerald-50 dark:bg-emerald-500/20 border-emerald-400 dark:border-emerald-500 text-emerald-700 dark:text-emerald-400 shadow-sm' : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:border-emerald-300 dark:hover:border-emerald-500 hover:bg-emerald-50/50 dark:hover:bg-emerald-500/10 hover:text-emerald-600 dark:hover:text-emerald-400'}`}
             >
               <FileSpreadsheet className="w-4 h-4" /> XLSX
             </button>
             <button onClick={() => setExportFormat('csv')}
-              className={`flex items-center justify-center gap-2 px-4 py-2 rounded-xl text-sm font-bold transition-all duration-200 border-2 ${exportFormat === 'csv' ? 'bg-indigo-50 dark:bg-indigo-500/20 border-indigo-400 dark:border-indigo-500 text-indigo-700 dark:text-indigo-400 shadow-sm' : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:border-indigo-300 dark:hover:border-indigo-500 hover:bg-indigo-50/50 dark:hover:bg-indigo-500/10 hover:text-indigo-600 dark:hover:text-indigo-400'}`}
+              className={`flex items-center justify-center gap-2 px-3 py-2 rounded-xl text-sm font-bold transition-all duration-200 border-2 ${exportFormat === 'csv' ? 'bg-indigo-50 dark:bg-indigo-500/20 border-indigo-400 dark:border-indigo-500 text-indigo-700 dark:text-indigo-400 shadow-sm' : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:border-indigo-300 dark:hover:border-indigo-500 hover:bg-indigo-50/50 dark:hover:bg-indigo-500/10 hover:text-indigo-600 dark:hover:text-indigo-400'}`}
             >
               <FileText className="w-4 h-4" /> CSV
             </button>
           </div>
           <button onClick={handleDownload} disabled={downloading || total === 0 || (dateFrom > dateTo)}
-            className="flex items-center justify-center gap-2 py-2.5 bg-blue-600 text-white rounded-xl text-sm font-bold transition-all hover:bg-blue-700 active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none shadow-lg shadow-blue-600/20 w-[220px] shrink-0"
+            className="flex items-center justify-center gap-2 px-5 py-2 bg-blue-600 text-white rounded-xl text-sm font-bold transition-all hover:bg-blue-700 active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none shadow-lg shadow-blue-600/20 whitespace-nowrap shrink-0"
           >
             {downloading ? <RefreshCw className="w-4 h-4 animate-spin" /> : <ArrowDownToLine className="w-4 h-4" />}
-            {downloading ? 'Generowanie...' : `Eksportuj do ${exportFormat.toUpperCase()}`}
+            {downloading ? 'Generowanie...' : `Eksportuj ${exportFormat.toUpperCase()}`}
           </button>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 xl:grid-cols-[380px_1fr] gap-8 items-stretch">
+      <div className="grid grid-cols-1 lg:grid-cols-[320px_1fr] 2xl:grid-cols-[380px_1fr] gap-5 lg:gap-6 2xl:gap-8 items-stretch">
         {/* 🎛️ Filtr Sidebar */}
         <div className="flex flex-col gap-6">
           {/* Karta: Zakres Dat */}
@@ -491,7 +491,7 @@ const ExportPage: React.FC = () => {
               </button>
             </div>
 
-            <div className="space-y-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2 2xl:grid-cols-1 gap-3 2xl:space-y-1">
               <MultiSelect label="Kategoria" options={categoryOptions} selected={selectedCategories} onChange={setSelectedCategories} />
               <MultiSelect label="Priorytet" options={priorityOptions} selected={priorities} onChange={setPriorities} />
               <MultiSelect label="Zgłaszający" options={creatorOptions} selected={selectedCreators} onChange={setSelectedCreators} position="top" />
@@ -533,58 +533,58 @@ const ExportPage: React.FC = () => {
               <table className="w-full text-sm text-left">
                 <thead className="bg-white dark:bg-slate-800 sticky top-0 z-10 shadow-sm dark:shadow-slate-900/50">
                   <tr className="text-[11px] font-extrabold text-slate-400 uppercase tracking-widest">
-                    <th className="px-5 py-3 w-16">ID</th>
-                    <th className="px-5 py-3">Tytuł</th>
-                    <th className="px-5 py-3 hidden md:table-cell">Kategoria</th>
-                    <th className="px-5 py-3 w-32">Priorytet</th>
-                    <th className="px-5 py-3 hidden lg:table-cell">Zgłaszający</th>
-                    <th className="px-5 py-3 hidden lg:table-cell">Technik</th>
-                    <th className="px-5 py-3 w-32">Status</th>
-                    <th className="px-5 py-3 w-40">Utworzono</th>
+                    <th className="px-3 lg:px-4 2xl:px-5 py-3 w-14 2xl:w-16">ID</th>
+                    <th className="px-3 lg:px-4 2xl:px-5 py-3">Tytuł</th>
+                    <th className="px-3 lg:px-4 2xl:px-5 py-3 hidden 2xl:table-cell">Kategoria</th>
+                    <th className="px-3 lg:px-4 2xl:px-5 py-3 w-24 2xl:w-32">Priorytet</th>
+                    <th className="px-3 lg:px-4 2xl:px-5 py-3 hidden 2xl:table-cell">Zgłaszający</th>
+                    <th className="px-3 lg:px-4 2xl:px-5 py-3 hidden 2xl:table-cell">Technik</th>
+                    <th className="px-3 lg:px-4 2xl:px-5 py-3 w-28 2xl:w-32">Status</th>
+                    <th className="px-3 lg:px-4 2xl:px-5 py-3 w-32 2xl:w-40">Data</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100/80 dark:divide-slate-700/80">
                   {preview.map((row) => (
                     <tr key={row.id} className="group hover:bg-indigo-50/40 dark:hover:bg-indigo-500/5 transition-colors duration-200">
-                      <td className="px-5 py-3 text-slate-400 font-mono text-xs">{row.id}</td>
-                      <td className="px-5 py-3 font-bold text-slate-700 dark:text-slate-300 max-w-[200px] truncate group-hover:text-indigo-700 dark:group-hover:text-indigo-400 transition-colors">{row.title}</td>
-                      <td className="px-5 py-3 text-slate-500 dark:text-slate-400 font-medium hidden md:table-cell">
+                      <td className="px-3 lg:px-4 2xl:px-5 py-2.5 text-slate-400 font-mono text-xs">{row.id}</td>
+                      <td className="px-3 lg:px-4 2xl:px-5 py-2.5 font-bold text-slate-700 dark:text-slate-300 max-w-[180px] 2xl:max-w-[200px] truncate group-hover:text-indigo-700 dark:group-hover:text-indigo-400 transition-colors">{row.title}</td>
+                      <td className="px-3 lg:px-4 2xl:px-5 py-2.5 text-slate-500 dark:text-slate-400 font-medium hidden 2xl:table-cell">
                         <span className="flex items-center gap-1.5 font-medium">
                           {getCategoryIcon(row.category || '')}
                           {row.category || '—'}
                         </span>
                       </td>
-                      <td className="px-5 py-3 whitespace-nowrap">
-                        <span className="flex items-center gap-1.5 text-sm font-medium">
+                      <td className="px-3 lg:px-4 2xl:px-5 py-2.5 whitespace-nowrap">
+                        <span className="flex items-center gap-1 text-sm font-medium">
                           {row.priority === 'Wysoki' ? <ChevronsUp className="w-4 h-4 text-red-500" /> : row.priority === 'Normalny' ? <Equal className="w-4 h-4 text-blue-500" /> : <ChevronsDown className="w-4 h-4 text-gray-400" />}
-                          <span className={row.priority === 'Wysoki' ? 'text-red-600' : row.priority === 'Normalny' ? 'text-blue-600' : 'text-gray-500'}>
+                          <span className={`hidden lg:inline ${row.priority === 'Wysoki' ? 'text-red-600' : row.priority === 'Normalny' ? 'text-blue-600' : 'text-gray-500'}`}>
                             {row.priority}
                           </span>
                         </span>
                       </td>
-                      <td className="px-5 py-3 text-slate-500 dark:text-slate-400 font-medium hidden lg:table-cell">
+                      <td className="px-3 lg:px-4 2xl:px-5 py-2.5 text-slate-500 dark:text-slate-400 font-medium hidden 2xl:table-cell">
                         <div className="flex items-center gap-2">
                           <UserAvatar avatar={row.creator_avatar} name={row.creator} size="md" />
-                          {row.creator}
+                          <span className="truncate max-w-[120px]">{row.creator}</span>
                         </div>
                       </td>
-                      <td className="px-5 py-3 text-slate-500 dark:text-slate-400 font-medium hidden lg:table-cell">
+                      <td className="px-3 lg:px-4 2xl:px-5 py-2.5 text-slate-500 dark:text-slate-400 font-medium hidden 2xl:table-cell">
                         {row.technician !== 'Brak' ? (
                           <div className="flex items-center gap-2">
                             <UserAvatar avatar={row.technician_avatar} name={row.technician} size="md" />
-                            {row.technician}
+                            <span className="truncate max-w-[120px]">{row.technician}</span>
                           </div>
                         ) : (
                           <span className="flex items-center gap-2 text-slate-400 italic">
                             <div className="w-6 h-6 rounded-full bg-gray-200 dark:bg-slate-700 text-gray-400 dark:text-slate-500 flex items-center justify-center flex-shrink-0">
                               <UserMinus className="w-3 h-3" />
                             </div>
-                            Nie przypisano
+                            <span className="hidden xl:inline">Nie przypisano</span>
                           </span>
                         )}
                       </td>
-                      <td className="px-5 py-3 whitespace-nowrap">
-                        <span className={`px-2.5 py-1 inline-flex text-xs leading-5 font-bold rounded-lg ${row.status === 'Nowe' ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300' :
+                      <td className="px-3 lg:px-4 2xl:px-5 py-2.5 whitespace-nowrap">
+                        <span className={`px-2 2xl:px-2.5 py-1 inline-flex text-xs leading-5 font-bold rounded-lg ${row.status === 'Nowe' ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300' :
                           row.status === 'W toku' ? 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300' :
                             row.status === 'Rozwiązane' ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300' :
                               'bg-teal-100 text-teal-800 dark:bg-teal-900/30 dark:text-teal-300'
@@ -592,7 +592,11 @@ const ExportPage: React.FC = () => {
                           {row.status}
                         </span>
                       </td>
-                      <td className="px-5 py-3 text-slate-400 text-xs font-medium whitespace-nowrap">{dayjs(row.created_at).format('DD MMM YYYY, HH:mm')}</td>
+                      <td className="px-3 lg:px-4 2xl:px-5 py-2.5 text-slate-400 text-xs font-medium whitespace-nowrap">
+                        <span className="hidden 2xl:inline">{dayjs(row.created_at).format('DD MMM YYYY, HH:mm')}</span>
+                        <span className="2xl:hidden">{dayjs(row.created_at).format('DD.MM.YY')}</span>
+                        <span className="text-slate-300 dark:text-slate-600 ml-1 2xl:hidden">{dayjs(row.created_at).format('HH:mm')}</span>
+                      </td>
                     </tr>
                   ))}
                 </tbody>
