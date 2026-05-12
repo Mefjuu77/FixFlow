@@ -8,7 +8,7 @@ export default {
   theme: {
     extend: {
       screens: {
-        'fhd': '1920px',
+        'fhd': '1500px',
       },
     },
   },
