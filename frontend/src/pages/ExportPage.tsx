@@ -586,10 +586,8 @@ const ExportPage: React.FC = () => {
                             <span className="truncate max-w-[120px]">{row.technician}</span>
                           </div>
                         ) : (
-                          <span className="flex items-center gap-2 text-slate-400 italic">
-                            <div className="w-6 h-6 rounded-full bg-gray-200 dark:bg-slate-700 text-gray-400 dark:text-slate-500 flex items-center justify-center flex-shrink-0">
-                              <UserMinus className="w-3 h-3" />
-                            </div>
+                          <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-xs font-semibold bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400 border border-dashed border-amber-300 dark:border-amber-700">
+                            <UserMinus className="w-3 h-3 flex-shrink-0" />
                             <span className="hidden xl:inline">Nie przypisano</span>
                           </span>
                         )}

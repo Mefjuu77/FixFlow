@@ -763,7 +763,7 @@ const StatisticsPage: React.FC = () => {
             <p className="text-xs text-gray-500 dark:text-gray-400 mb-5">Rozkład aktywnych zgłoszeń w zespole.</p>
             <div className="space-y-1 overflow-y-auto pr-1" style={{ maxHeight: '260px', scrollbarWidth: 'thin', scrollbarColor: '#cbd5e1 transparent' }}>
               {unassignedCount > 0 && (
-                <HorizontalBar label="Nie przypisano" value={unassignedCount} max={maxWorkload} color="#f87171" total={activeTickets.length} icon={<UserMinus className="w-4 h-4 text-gray-400" />} onClick={() => navigate('/tickets?assignment=unassigned')} />
+                <HorizontalBar label="Nie przypisano" value={unassignedCount} max={maxWorkload} color="#f87171" total={activeTickets.length} icon={<UserMinus className="w-4 h-4 text-amber-500" />} onClick={() => navigate('/tickets?assignment=unassigned')} />
               )}
               {workloadEntries.map(([name, data]) => (
                 <HorizontalBar key={name} label={name} value={data.count} max={maxWorkload} color="#6366f1" total={activeTickets.length} icon={
@@ -985,7 +985,7 @@ const StatisticsPage: React.FC = () => {
 
             <div className="flex-1 space-y-1 overflow-y-auto pr-1" style={{ scrollbarWidth: 'thin', scrollbarColor: '#cbd5e1 transparent' }}>
               {unassignedCount > 0 && (
-                <HorizontalBar label="Nie przypisano" value={unassignedCount} max={maxWorkload} color="#f87171" total={activeTickets.length} icon={<UserMinus className="w-4 h-4 text-gray-400" />} onClick={() => navigate('/tickets?assignment=unassigned')} />
+                <HorizontalBar label="Nie przypisano" value={unassignedCount} max={maxWorkload} color="#f87171" total={activeTickets.length} icon={<UserMinus className="w-4 h-4 text-amber-500" />} onClick={() => navigate('/tickets?assignment=unassigned')} />
               )}
               {workloadEntries.map(([name, data]) => (
                 <HorizontalBar key={name} label={name} value={data.count} max={maxWorkload} color="#6366f1" total={activeTickets.length} icon={
