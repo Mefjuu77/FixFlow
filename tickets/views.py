@@ -1,16 +1,33 @@
 import os
+from datetime import timedelta
 
 from django.conf import settings as django_settings
 from django.shortcuts import redirect
 from django.utils import timezone
 from rest_framework import viewsets, generics, status
-from rest_framework.permissions import IsAuthenticated, AllowAny
+from rest_framework.permissions import IsAuthenticated, AllowAny, BasePermission
 from rest_framework.exceptions import PermissionDenied
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from .models import Category, Ticket, Comment, Attachment, TicketLog, WorkLog
 from .serializers import CategorySerializer, TicketSerializer, CommentSerializer, AttachmentSerializer, TicketLogSerializer, WorkLogSerializer
 from .email import send_ticket_created_notification, send_comment_notification, TicketEmailAccumulator, send_reopened_notification
+
+
+# === Uprawnienia ===
+
+class IsAdminUser(BasePermission):
+    """Zezwala tylko administratorom."""
+    def has_permission(self, request, view):
+        return request.user and request.user.role == 'ADMIN'
+
+
+class IsTicketOwnerOrStaff(BasePermission):
+    """Pracownik może operować tylko na swoich zgłoszeniach. Technik/Admin — na wszystkich."""
+    def has_object_permission(self, request, view, obj):
+        if request.user.role in ('ADMIN', 'TECHNICIAN'):
+            return True
+        return obj.creator == request.user
 
 # === Stałe i helpery do walidacji uploadów ===
 MAX_FILE_SIZE = 5 * 1024 * 1024          # 5 MB
@@ -46,12 +63,16 @@ def validate_uploaded_files(files):
 class CategoryViewSet(viewsets.ModelViewSet):
     queryset = Category.objects.all()
     serializer_class = CategorySerializer
-    permission_classes = [IsAuthenticated]
+
+    def get_permissions(self):
+        if self.action in ('create', 'update', 'partial_update', 'destroy'):
+            return [IsAuthenticated(), IsAdminUser()]
+        return [IsAuthenticated()]
 
 class TicketViewSet(viewsets.ModelViewSet):
     queryset = Ticket.objects.all()
     serializer_class = TicketSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsTicketOwnerOrStaff]
 
     def get_queryset(self):
         user = self.request.user
@@ -522,6 +543,11 @@ class TicketResolutionActionView(APIView):
 
         if ticket.status != Ticket.Status.RESOLVED:
             return redirect(f'{frontend_url}/resolution/already-processed')
+
+        # Sprawdzenie TTL tokenu resolucji
+        ttl_hours = getattr(django_settings, 'FIXFLOW_RESOLUTION_TOKEN_TTL_HOURS', 72)
+        if ticket.resolved_at and timezone.now() > ticket.resolved_at + timedelta(hours=ttl_hours):
+            return redirect(f'{frontend_url}/resolution/invalid')
 
         if action == 'accept':
             old_status = ticket.status
