@@ -131,6 +131,26 @@ const TicketsPage: React.FC = () => {
     }
   }, [isAdmin, isTechnician]);
 
+  // Synchronizacja filtrów z URL params (np. po kliknięciu "Zobacz" z sugestii)
+  useEffect(() => {
+    const newStatus = searchParams.get('status') || 'all';
+    const newPriority = searchParams.get('priority') || 'all';
+    const newAssignment = searchParams.get('assignment') || 'all';
+    const newCategory = searchParams.get('category') || 'all';
+    const newDateFrom = searchParams.get('dateFrom') || '';
+    const newDateTo = searchParams.get('dateTo') || '';
+    const newActiveOnly = searchParams.get('active_only') === 'true';
+
+    setStatusFilter(newStatus);
+    setPriorityFilter(newPriority);
+    setAssignmentFilter(newAssignment);
+    setCategoryFilter(newCategory);
+    setDateFromFilter(newDateFrom);
+    setDateToFilter(newDateTo);
+    setActiveOnly(newActiveOnly);
+    setCurrentPage(1);
+  }, [searchParams]);
+
   const fetchTickets = async () => {
     try {
       const response = await api.get('tickets/');
@@ -144,7 +164,10 @@ const TicketsPage: React.FC = () => {
   };
 
   // ---------- Logika filtrowania i sortowania (memoizowana) ----------
-  const hasActiveFilters = searchQuery !== '' || statusFilter !== 'all' || categoryFilter !== 'all' || priorityFilter !== 'all' || assignmentFilter !== 'all' || !!dateFromFilter || !!dateToFilter;
+  const [activeOnly, setActiveOnly] = React.useState(searchParams.get('active_only') === 'true');
+  const INACTIVE_STATUSES = ['ROZWIAZANE', 'ZAMKNIETE'];
+
+  const hasActiveFilters = searchQuery !== '' || statusFilter !== 'all' || categoryFilter !== 'all' || priorityFilter !== 'all' || assignmentFilter !== 'all' || !!dateFromFilter || !!dateToFilter || activeOnly;
 
   const clearFilters = () => {
     setSearchQuery('');
@@ -154,6 +177,7 @@ const TicketsPage: React.FC = () => {
     setAssignmentFilter('all');
     setDateFromFilter('');
     setDateToFilter('');
+    setActiveOnly(false);
   };
 
   const filteredTickets = useMemo(() => {
@@ -167,6 +191,9 @@ const TicketsPage: React.FC = () => {
     });
 
     // Wspólne filtry dla wszystkich
+    if (activeOnly) {
+      result = result.filter(t => !INACTIVE_STATUSES.includes(t.status));
+    }
     if (statusFilter !== 'all') {
       result = result.filter(t => t.status === statusFilter);
     }

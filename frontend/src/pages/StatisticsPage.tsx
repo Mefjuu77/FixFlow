@@ -407,11 +407,27 @@ const StatisticsPage: React.FC = () => {
   // Sugestie
   const suggestions: { text: string; severity: 'warning' | 'info' | 'success', link?: string }[] = [];
 
+  // Helper: link dla sugestii o bieżącym stanie (bez dat — liczymy aktywne TERAZ)
+  const activeLink = (params: Record<string, string>) => {
+    const p = new URLSearchParams(params);
+    return `/tickets?${p.toString()}`;
+  };
+
+  // Helper: link dla sugestii historycznych/trendowych (z zakresem dat)
+  const trendLink = (params: Record<string, string>) => {
+    const p = new URLSearchParams({
+      ...params,
+      dateFrom: dateRange.start.format('YYYY-MM-DD'),
+      dateTo: dateRange.end.format('YYYY-MM-DD'),
+    });
+    return `/tickets?${p.toString()}`;
+  };
+
   if (unassignedCount > 0) {
     suggestions.push({
       text: `${unassignedCount} zgłosze${unassignedCount === 1 ? 'nie nie jest przypisane' : (unassignedCount < 5 ? 'nia nie są przypisane' : 'ń nie jest przypisanych')} do żadnego technika.`,
       severity: 'warning',
-      link: '/tickets?assignment=unassigned'
+      link: trendLink({ assignment: 'unassigned', active_only: 'true' })
     });
   }
 
@@ -420,22 +436,70 @@ const StatisticsPage: React.FC = () => {
     suggestions.push({
       text: `${highPriorityOpen.length} otwart${highPriorityOpen.length === 1 ? 'e zgłoszenie' : (highPriorityOpen.length < 5 ? 'e zgłoszenia' : 'ych zgłoszeń')} z wysokim priorytetem wymaga uwagi.`,
       severity: 'warning',
-      link: '/tickets?priority=WYSOKI'
+      link: trendLink({ priority: 'WYSOKI', active_only: 'true' })
     });
   }
 
+  // Stare zgłoszenia z wysokim priorytetem (>3 dni)
+  const oldHighPriority = highPriorityOpen.filter(t => dayjs().diff(dayjs(t.created_at), 'day') > 3);
+  if (oldHighPriority.length > 0) {
+    suggestions.push({
+      text: `${oldHighPriority.length} zgłosze${oldHighPriority.length === 1 ? 'nie' : (oldHighPriority.length < 5 ? 'nia' : 'ń')} z wysokim priorytetem ${oldHighPriority.length === 1 ? 'czeka' : 'czeka'} ponad 3 dni na rozwiązanie.`,
+      severity: 'warning',
+      link: trendLink({ priority: 'WYSOKI', active_only: 'true' })
+    });
+  }
+
+  // Przeciążony technik (>2× średnia)
+  if (workloadEntries.length >= 2) {
+    const avgLoad = workloadEntries.reduce((sum, [, d]) => sum + d.count, 0) / workloadEntries.length;
+    const overloaded = workloadEntries.find(([, d]) => d.count > avgLoad * 2 && d.count >= 5);
+    if (overloaded) {
+      suggestions.push({
+        text: `${overloaded[0]} ma ${overloaded[1].count} aktywnych zgłoszeń (${Math.round(overloaded[1].count / avgLoad)}× średnią zespołu).`,
+        severity: 'warning',
+        link: trendLink({ assignment: String(overloaded[1].techId), active_only: 'true' })
+      });
+    }
+  }
+
+  // Nierównomierny rozkład pracy
+  if (workloadEntries.length >= 2) {
+    const maxEntry = workloadEntries[0];
+    const minEntry = workloadEntries[workloadEntries.length - 1];
+    if (maxEntry[1].count >= 5 && minEntry[1].count >= 1 && maxEntry[1].count / minEntry[1].count >= 3) {
+      suggestions.push({
+        text: `Nierównomierny rozkład: ${maxEntry[0]} ma ${maxEntry[1].count} zgłoszeń vs ${minEntry[0]} — ${minEntry[1].count}.`,
+        severity: 'info',
+      });
+    }
+  }
+
+  // Spadek rozwiązywalności — historyczny, więc trendLink z datami
+  const prevResolvedTotal = prevTickets.filter(t => ['ROZWIAZANE', 'ZAMKNIETE'].includes(t.status)).length;
+  const currResolvedTotal = filteredTickets.filter(t => ['ROZWIAZANE', 'ZAMKNIETE'].includes(t.status)).length;
+  if (prevResolvedTotal >= 5 && currResolvedTotal < prevResolvedTotal * 0.7) {
+    const dropPct = Math.round((1 - currResolvedTotal / prevResolvedTotal) * 100);
+    suggestions.push({
+      text: `Rozwiązano ${dropPct}% mniej zgłoszeń niż w poprzednim okresie (${currResolvedTotal} vs ${prevResolvedTotal}).`,
+      severity: 'warning',
+      link: trendLink({ status: 'ROZWIAZANE' })
+    });
+  }
+
+  // Stare aktywne zgłoszenia (>7 dni)
   const oldTickets = activeTickets.filter(t => dayjs().diff(dayjs(t.created_at), 'day') > 7);
   if (oldTickets.length > 0) {
     suggestions.push({
       text: `${oldTickets.length} zgłosze${oldTickets.length === 1 ? 'nie jest' : (oldTickets.length < 5 ? 'nia są' : 'ń jest')} otwart${oldTickets.length === 1 ? 'e' : (oldTickets.length < 5 ? 'e' : 'ych')} dłużej niż 7 dni.`,
       severity: 'info',
-      link: '/tickets?sort=-created_at'
+      link: trendLink({ active_only: 'true' })
     });
   }
 
   if (suggestions.length === 0) {
     suggestions.push({
-      text: 'Brak problemów – wszystko wygląda dobrze!',
+      text: 'Brak problemów – wszystko wygląda dobrze! Zespół działa sprawnie.',
       severity: 'success'
     });
   }
@@ -684,20 +748,20 @@ const StatisticsPage: React.FC = () => {
           </div>
 
           {/* Podział priorytetów */}
-          <div className="bg-white border border-gray-200 rounded-2xl shadow-sm p-6">
+          <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700/60 rounded-2xl shadow-sm p-6">
             <div className="flex items-center justify-between mb-1">
-              <h3 className="font-bold text-gray-900">Priorytety zgłoszeń</h3>
+              <h3 className="font-bold text-gray-900 dark:text-white">Priorytety zgłoszeń</h3>
             </div>
-            <p className="text-xs text-gray-500 mb-5">Rozkład aktywnych zgłoszeń według priorytetu.</p>
+            <p className="text-xs text-gray-500 dark:text-gray-400 mb-5">Rozkład aktywnych zgłoszeń według priorytetu.</p>
             <DonutChart segments={priorityData} total={activeTickets.length} filterType="priority" dateRange={dateRange} />
           </div>
 
           {/* Obciążenie zespołu */}
-          <div className="bg-white border border-gray-200 rounded-2xl shadow-sm p-6">
+          <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700/60 rounded-2xl shadow-sm p-6">
             <div className="flex items-center justify-between mb-1">
-              <h3 className="font-bold text-gray-900">Obciążenie zespołu</h3>
+              <h3 className="font-bold text-gray-900 dark:text-white">Obciążenie zespołu</h3>
             </div>
-            <p className="text-xs text-gray-500 mb-5">Rozkład aktywnych zgłoszeń w zespole.</p>
+            <p className="text-xs text-gray-500 dark:text-gray-400 mb-5">Rozkład aktywnych zgłoszeń w zespole.</p>
             <div className="space-y-1 overflow-y-auto pr-1" style={{ maxHeight: '260px', scrollbarWidth: 'thin', scrollbarColor: '#cbd5e1 transparent' }}>
               {unassignedCount > 0 && (
                 <HorizontalBar label="Nie przypisano" value={unassignedCount} max={maxWorkload} color="#f87171" total={activeTickets.length} icon={<UserMinus className="w-4 h-4 text-gray-400" />} onClick={() => navigate('/tickets?assignment=unassigned')} />
@@ -718,26 +782,31 @@ const StatisticsPage: React.FC = () => {
           </div>
 
           {/* Sugestie */}
-          <div className="bg-white border border-gray-200 rounded-2xl shadow-sm p-6">
+          <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700/60 rounded-2xl shadow-sm p-6">
             <div className="flex items-center gap-2 mb-1">
               <Lightbulb className="w-5 h-5 text-amber-500" />
-              <h3 className="font-bold text-gray-900">Sugestie</h3>
+              <h3 className="font-bold text-gray-900 dark:text-white">Sugestie</h3>
             </div>
-            <p className="text-xs text-gray-500 mb-5">Automatyczne wskazówki na podstawie danych.</p>
+            <p className="text-xs text-gray-500 dark:text-gray-400 mb-5">Automatyczne wskazówki na podstawie danych.</p>
             <div className="space-y-3">
               {suggestions.map((s, i) => (
                 <div
                   key={i}
-                  className={`flex items-start gap-3 p-3 rounded-xl text-sm font-medium ${s.severity === 'warning'
-                    ? 'bg-amber-50 text-amber-800 border border-amber-200'
+                  className={`flex items-center gap-3 p-3 rounded-xl text-sm font-medium transition-colors ${s.severity === 'warning'
+                    ? 'bg-amber-50 dark:bg-amber-500/10 text-amber-800 dark:text-amber-400 border border-amber-200 dark:border-amber-500/20 hover:bg-amber-100 dark:hover:bg-amber-500/20'
                     : s.severity === 'info'
-                      ? 'bg-blue-50 text-blue-800 border border-blue-200'
-                      : 'bg-green-50 text-green-800 border border-green-200'
+                      ? 'bg-blue-50 dark:bg-blue-500/10 text-blue-800 dark:text-blue-400 border border-blue-200 dark:border-blue-500/20 hover:bg-blue-100 dark:hover:bg-blue-500/20'
+                      : 'bg-green-50 dark:bg-green-500/10 text-green-800 dark:text-green-400 border border-green-200 dark:border-green-500/20 hover:bg-green-100 dark:hover:bg-green-500/20'
                     }`}
                 >
-                  <AlertTriangle className={`w-4 h-4 mt-0.5 flex-shrink-0 ${s.severity === 'warning' ? 'text-amber-500' : s.severity === 'info' ? 'text-blue-500' : 'text-green-500'
-                    }`} />
-                  {s.text}
+                  <AlertTriangle className={`w-4 h-4 flex-shrink-0 ${s.severity === 'warning' ? 'text-amber-500' : s.severity === 'info' ? 'text-blue-500' : 'text-green-500'}`} />
+                  <span className="flex-1">{s.text}</span>
+                  {s.link && (
+                    <Link to={s.link} onAuxClick={(e) => { e.preventDefault(); window.open(s.link, '_blank', 'noopener,noreferrer'); }} className="flex-shrink-0 flex items-center text-xs font-bold px-3 py-1.5 bg-white/60 dark:bg-gray-800/60 hover:bg-white dark:hover:bg-gray-700 text-gray-800 dark:text-gray-200 rounded-lg shadow-sm border border-black/5 dark:border-white/5 hover:shadow transition-all group">
+                      Zobacz
+                      <ArrowUpRight className="w-3 h-3 ml-1 text-gray-500 dark:text-gray-400 group-hover:text-gray-800 dark:group-hover:text-gray-200 transition-colors" />
+                    </Link>
+                  )}
                 </div>
               ))}
             </div>
@@ -955,7 +1024,7 @@ const StatisticsPage: React.FC = () => {
                   <AlertTriangle className={`w-4 h-4 flex-shrink-0 ${s.severity === 'warning' ? 'text-amber-500' : s.severity === 'info' ? 'text-blue-500' : 'text-green-500'}`} />
                   <span className="flex-1">{s.text}</span>
                   {s.link && (
-                    <Link to={s.link} className="flex-shrink-0 flex items-center text-xs font-bold px-3 py-1.5 bg-white/60 dark:bg-gray-800/60 hover:bg-white dark:hover:bg-gray-700 text-gray-800 dark:text-gray-200 rounded-lg shadow-sm border border-black/5 dark:border-white/5 hover:shadow transition-all group">
+                    <Link to={s.link} onAuxClick={(e) => { e.preventDefault(); window.open(s.link, '_blank', 'noopener,noreferrer'); }} className="flex-shrink-0 flex items-center text-xs font-bold px-3 py-1.5 bg-white/60 dark:bg-gray-800/60 hover:bg-white dark:hover:bg-gray-700 text-gray-800 dark:text-gray-200 rounded-lg shadow-sm border border-black/5 dark:border-white/5 hover:shadow transition-all group">
                       Zobacz
                       <ArrowUpRight className="w-3 h-3 ml-1 text-gray-500 dark:text-gray-400 group-hover:text-gray-800 dark:group-hover:text-gray-200 transition-colors" />
                     </Link>
