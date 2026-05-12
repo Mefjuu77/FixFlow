@@ -25,8 +25,25 @@ class AttachmentSerializer(serializers.ModelSerializer):
             return request.build_absolute_uri(obj.file.url)
         return None
 
+class TicketListSerializer(serializers.ModelSerializer):
+    """Lekki serializer dla widoku listy — bez opisu i załączników."""
+    creator_details = UserSerializer(source='creator', read_only=True)
+    technician_details = UserSerializer(source='technician', read_only=True)
+    category_name = serializers.ReadOnlyField(source='category.name')
+
+    class Meta:
+        model = Ticket
+        fields = [
+            'id', 'title', 'status', 'priority',
+            'category', 'category_name', 'creator', 'creator_details',
+            'technician', 'technician_details',
+            'resolved_at', 'created_at', 'updated_at'
+        ]
+        read_only_fields = ('created_at', 'updated_at', 'resolved_at')
+
+
 class TicketSerializer(serializers.ModelSerializer):
-    # Dodajemy szczegóły twórcy oraz technika jako pole tylko do odczytu
+    """Pełny serializer dla widoku szczegółowego — z opisem i załącznikami."""
     creator_details = UserSerializer(source='creator', read_only=True)
     technician_details = UserSerializer(source='technician', read_only=True)
     category_name = serializers.ReadOnlyField(source='category.name')

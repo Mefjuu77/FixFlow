@@ -74,11 +74,24 @@ class TicketViewSet(viewsets.ModelViewSet):
     serializer_class = TicketSerializer
     permission_classes = [IsAuthenticated, IsTicketOwnerOrStaff]
 
+    def get_serializer_class(self):
+        """Lekki serializer na liście (bez description/attachments), pełny na detail."""
+        if self.action == 'list':
+            from .serializers import TicketListSerializer
+            return TicketListSerializer
+        return TicketSerializer
+
     def get_queryset(self):
         user = self.request.user
+        qs = Ticket.objects.select_related(
+            'creator', 'technician', 'category'
+        )
+        # Prefetch załączników tylko na detail view (nie na liście)
+        if self.action == 'retrieve':
+            qs = qs.prefetch_related('attachments')
         if user.role == 'EMPLOYEE':
-            return Ticket.objects.filter(creator=user)
-        return Ticket.objects.all()
+            return qs.filter(creator=user)
+        return qs
 
     def perform_create(self, serializer):
         # Automatycznie przypisuje aktualnie zalogowanego użytkownika jako twórcę zgłoszenia
