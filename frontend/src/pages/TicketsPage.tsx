@@ -444,13 +444,13 @@ const TicketsPage: React.FC = () => {
       </div>
 
       {/* ============ Filtry ============ */}
-      <div className="flex flex-col sm:flex-row gap-3 p-4 bg-white border border-gray-200 rounded-xl shadow-sm">
+      <div className="flex flex-wrap gap-2.5 p-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-sm">
         {/* Wyszukiwarka */}
-        <div className="relative flex-1 max-w-sm">
+        <div className="relative flex-1 min-w-[180px]">
           <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
           <input
             type="text"
-            className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
+            className="w-full pl-10 pr-4 py-2 border border-gray-200 dark:border-gray-700 dark:bg-gray-700/50 dark:text-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
             placeholder="Szukaj po tytule, ID lub osobie..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
@@ -469,7 +469,7 @@ const TicketsPage: React.FC = () => {
             { value: 'ROZWIAZANE', label: `Rozwiązane (${statusCounts.ROZWIAZANE})`, icon: <CheckCircle2 className="w-4 h-4 text-green-600 dark:text-green-400 stroke-[2.5]" /> },
             { value: 'ZAMKNIETE', label: `Zamknięte (${statusCounts.ZAMKNIETE})`, icon: <XCircle className="w-4 h-4 text-teal-500 dark:text-teal-400 stroke-[2.5]" /> }
           ]}
-          className="w-36 sm:w-44"
+          className="w-36"
         />
 
         {/* Kategoria */}
@@ -485,7 +485,7 @@ const TicketsPage: React.FC = () => {
               icon: getCategoryIcon(cat as string)
             }))
           ]}
-          className="w-40 sm:w-48"
+          className="w-40"
         />
 
         {/* Priorytet (tylko dla Admina/Technika) */}
@@ -500,7 +500,7 @@ const TicketsPage: React.FC = () => {
               { value: 'NORMALNY', label: 'Normalny', icon: PRIORITY_ICONS['NORMALNY'] },
               { value: 'NISKI', label: 'Niski', icon: PRIORITY_ICONS['NISKI'] }
             ]}
-            className="w-36 sm:w-44"
+            className="w-36"
           />
         )}
 
@@ -545,7 +545,7 @@ const TicketsPage: React.FC = () => {
                 )
               }))
             ]}
-            className="w-44 sm:w-56"
+            className="w-44"
           />
         )}
 
@@ -583,9 +583,9 @@ const TicketsPage: React.FC = () => {
       </div>
 
       {/* ============ Tabela ============ */}
-      <div className="bg-white border border-gray-200 shadow-sm rounded-2xl overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left">
+      <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 shadow-sm rounded-2xl overflow-hidden">
+        <div className="overflow-x-auto scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600 scrollbar-track-transparent">
+          <table className="w-full text-left text-sm">
             <thead>
               {selectedTicketIds.length > 0 ? (
                 <tr className="border-b-2 border-gray-200 dark:border-gray-700/80 bg-gray-50/50 dark:bg-[#1a1d24] transition-colors animate-in fade-in duration-200 z-10 relative">
@@ -698,14 +698,14 @@ const TicketsPage: React.FC = () => {
                       />
                     </th>
                   )}
-                  {renderSortableHeader('id', 'ID', 'w-20')}
-                  {renderSortableHeader('title', 'Tytuł', 'min-w-[300px]')}
-                  {renderSortableHeader('category_name', 'Kategoria')}
+                  {renderSortableHeader('id', 'ID', 'w-16')}
+                  {renderSortableHeader('title', 'Tytuł', 'min-w-[220px]')}
+                  {renderSortableHeader('category_name', 'Kategoria', 'hidden xl:table-cell')}
                   {!isEmployee && renderSortableHeader('priority', 'Priorytet')}
                   {renderSortableHeader('creator', 'Zgłaszający')}
                   {!isEmployee && renderSortableHeader('technician', 'Przypisany')}
                   {renderSortableHeader('status', 'Status')}
-                  {renderSortableHeader('created_at', 'Utworzono')}
+                  {renderSortableHeader('created_at', 'Data')}
                 </tr>
               )}
             </thead>
@@ -732,8 +732,8 @@ const TicketsPage: React.FC = () => {
                         />
                       </td>
                     )}
-                    <td className="px-6 py-3 text-sm font-medium text-gray-400 dark:text-gray-500 whitespace-nowrap">#{ticket.id}</td>
-                    <td className="px-6 py-3 text-sm max-w-[200px] sm:max-w-[250px] lg:max-w-[350px]">
+                    <td className="px-4 py-3 font-medium text-gray-400 dark:text-gray-500 whitespace-nowrap">#{ticket.id}</td>
+                    <td className="px-4 py-3 max-w-[180px] lg:max-w-[280px]">
                       {selectedTicketIds.length > 0 ? (
                         <div
                           title={ticket.title}
@@ -752,70 +752,72 @@ const TicketsPage: React.FC = () => {
                         </Link>
                       )}
                     </td>
-                    <td className="px-6 py-3 text-sm text-gray-600 whitespace-nowrap">
+                    <td className="px-4 py-3 text-gray-600 whitespace-nowrap hidden xl:table-cell">
                       <span className="flex items-center gap-1.5 font-medium">
                         {getCategoryIcon(ticket.category_name || '')}
                         {ticket.category_name || '—'}
                       </span>
                     </td>
                     {!isEmployee && (
-                      <td className="px-6 py-3 whitespace-nowrap">
-                        <span className="flex items-center gap-1.5 text-sm font-medium">
+                      <td className="px-4 py-3 whitespace-nowrap">
+                        <span className="flex items-center gap-1.5 font-medium">
                           {PRIORITY_ICONS[ticket.priority]}
                           <span className={ticket.priority === 'WYSOKI' ? 'text-red-600' : ticket.priority === 'NORMALNY' ? 'text-blue-600' : 'text-gray-500'}>
-                            {PRIORITY_LABELS[ticket.priority]}
+                            <span className="hidden lg:inline">{PRIORITY_LABELS[ticket.priority]}</span>
                           </span>
                         </span>
                       </td>
                     )}
-                    <td className="px-6 py-3 text-sm text-gray-700 dark:text-gray-300 whitespace-nowrap font-medium">
+                    <td className="px-4 py-3 text-gray-700 dark:text-gray-300 whitespace-nowrap font-medium">
                       {ticket.creator_details ? (
                         <span className="flex items-center gap-2">
-                          <div className="w-5 h-5 rounded-full bg-blue-600 text-white flex items-center justify-center flex-shrink-0 overflow-hidden">
+                          <div className="w-6 h-6 rounded-full bg-blue-600 text-white flex items-center justify-center flex-shrink-0 overflow-hidden">
                             {ticket.creator_details.avatar ? (
                               <img src={ticket.creator_details.avatar} alt="" className="w-full h-full object-cover" />
                             ) : (
                               <span className="text-[10px] font-bold uppercase">{ticket.creator_details.first_name?.charAt(0) || 'U'}</span>
                             )}
                           </div>
-                          <span className="truncate max-w-[120px] xl:max-w-[180px]" title={`${ticket.creator_details.first_name} ${ticket.creator_details.last_name}`}>
+                          <span className="truncate max-w-[100px] xl:max-w-[150px]" title={`${ticket.creator_details.first_name} ${ticket.creator_details.last_name}`}>
                             {ticket.creator_details.first_name} {ticket.creator_details.last_name}
                           </span>
                         </span>
                       ) : <span className="text-gray-400 italic">Nieznany</span>}
                     </td>
                     {!isEmployee && (
-                      <td className="px-6 py-3 text-sm whitespace-nowrap">
+                      <td className="px-4 py-3 whitespace-nowrap">
                         {ticket.technician_details ? (
                           <span className="flex items-center gap-2 text-gray-900 dark:text-gray-200 font-medium">
-                            <div className="w-5 h-5 rounded-full bg-blue-600 text-white flex items-center justify-center flex-shrink-0 overflow-hidden">
+                            <div className="w-6 h-6 rounded-full bg-blue-600 text-white flex items-center justify-center flex-shrink-0 overflow-hidden">
                               {ticket.technician_details.avatar ? (
                                 <img src={ticket.technician_details.avatar} alt="" className="w-full h-full object-cover" />
                               ) : (
                                 <span className="text-[10px] font-bold uppercase">{ticket.technician_details.first_name?.charAt(0) || 'U'}</span>
                               )}
                             </div>
-                            <span className="truncate max-w-[120px] xl:max-w-[180px]" title={`${ticket.technician_details.first_name} ${ticket.technician_details.last_name}`}>
+                            <span className="truncate max-w-[100px] xl:max-w-[150px]" title={`${ticket.technician_details.first_name} ${ticket.technician_details.last_name}`}>
                               {ticket.technician_details.first_name} {ticket.technician_details.last_name}
                             </span>
                           </span>
                         ) : (
-                          <span className="flex items-center gap-2 text-gray-500 italic">
-                            <div className="w-5 h-5 rounded-full bg-gray-200 dark:bg-gray-700 text-gray-400 flex items-center justify-center flex-shrink-0">
+                          <span className="flex items-center gap-2 text-gray-400">
+                            <div className="w-6 h-6 rounded-full bg-gray-100 dark:bg-gray-700 text-gray-400 flex items-center justify-center flex-shrink-0">
                               <UserMinus className="w-3 h-3" />
                             </div>
-                            Nie przypisano
+                            <span className="italic text-xs hidden lg:inline">Nie przypisano</span>
                           </span>
                         )}
                       </td>
                     )}
-                    <td className="px-6 py-3 whitespace-nowrap">
-                      <span className={`px-2.5 py-1 inline-flex text-xs leading-5 font-bold rounded-lg ${STATUS_STYLES[ticket.status] || 'bg-gray-100 text-gray-800'}`}>
+                    <td className="px-4 py-3 whitespace-nowrap">
+                      <span className={`px-2 py-1 inline-flex text-xs leading-5 font-bold rounded-lg ${STATUS_STYLES[ticket.status] || 'bg-gray-100 text-gray-800'}`}>
                         {STATUS_LABELS[ticket.status] || ticket.status}
                       </span>
                     </td>
-                    <td className="px-6 py-3 text-sm text-gray-500 whitespace-nowrap">
-                      {dayjs(ticket.created_at).format('DD MMM YYYY, HH:mm')}
+                    <td className="px-4 py-3 text-gray-500 whitespace-nowrap">
+                      <span className="hidden xl:inline">{dayjs(ticket.created_at).format('DD MMM YYYY')}</span>
+                      <span className="xl:hidden">{dayjs(ticket.created_at).format('DD.MM.YY')}</span>
+                      <span className="text-gray-400 ml-1">{dayjs(ticket.created_at).format('HH:mm')}</span>
                     </td>
                   </tr>
                 ))

@@ -327,7 +327,7 @@ html.dark .shadow-violet-200 {
   box-shadow: 0 4px 14px rgba(139, 92, 246, 0.15) !important;
 }
 
-/* ---- Scrollbar ---- */
+/* ---- Scrollbar (global dark) ---- */
 html.dark ::-webkit-scrollbar {
   width: 8px;
   height: 8px;
@@ -344,6 +344,33 @@ html.dark ::-webkit-scrollbar-thumb {
 
 html.dark ::-webkit-scrollbar-thumb:hover {
   background: #475569;
+}
+
+/* ---- Thin scrollbar utility (for table overflow) ---- */
+.scrollbar-thin::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+
+.scrollbar-thin::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb {
+  background: #d1d5db;
+  border-radius: 99px;
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb:hover {
+  background: #9ca3af;
+}
+
+html.dark .scrollbar-thin::-webkit-scrollbar-thumb {
+  background: #475569;
+}
+
+html.dark .scrollbar-thin::-webkit-scrollbar-thumb:hover {
+  background: #64748b;
 }
 
 /* ---- Hide scrollbar utility ---- */
