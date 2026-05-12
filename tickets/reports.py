@@ -75,8 +75,14 @@ class ReportExportView(APIView):
             qs = qs.filter(category_id__in=categories)
 
         technicians = params.getlist('technician')
-        if technicians:
-            qs = qs.filter(technician_id__in=technicians)
+        include_unassigned = params.get('technician_unassigned') == '1'
+        if technicians or include_unassigned:
+            q = Q()
+            if technicians:
+                q |= Q(technician_id__in=technicians)
+            if include_unassigned:
+                q |= Q(technician__isnull=True)
+            qs = qs.filter(q)
 
         creators = params.getlist('creator')
         if creators:

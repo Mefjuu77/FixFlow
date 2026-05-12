@@ -215,7 +215,10 @@ const ExportPage: React.FC = () => {
     statuses.forEach(s => p.append('status', s));
     priorities.forEach(s => p.append('priority', s));
     selectedCategories.forEach(s => p.append('category', s));
-    selectedTechnicians.forEach(s => p.append('technician', s));
+    const techIds = selectedTechnicians.filter(s => s !== 'unassigned');
+    const includeUnassigned = selectedTechnicians.includes('unassigned');
+    techIds.forEach(s => p.append('technician', s));
+    if (includeUnassigned) p.append('technician_unassigned', '1');
     selectedCreators.forEach(s => p.append('creator', s));
     return p;
   }, [dateFrom, dateTo, statuses, priorities, selectedCategories, selectedTechnicians, selectedCreators]);
