@@ -285,13 +285,24 @@ const ExportPage: React.FC = () => {
   ];
 
   const categoryOptions = categories.map(c => ({ value: String(c.id), label: c.name, icon: getCategoryIcon(c.name) }));
-  const technicianOptions = technicians.map(t => ({
-    value: String(t.id),
-    label: `${t.first_name} ${t.last_name}`,
-    icon: <div className="w-5 h-5 rounded-full bg-blue-600 flex items-center justify-center text-[9px] font-bold text-white overflow-hidden">
-      {t.avatar ? <img src={t.avatar} alt="" className="w-full h-full object-cover" /> : t.first_name.charAt(0)}
-    </div>
-  }));
+  const technicianOptions = [
+    {
+      value: 'unassigned',
+      label: 'Nie przypisano',
+      icon: (
+        <div className="w-5 h-5 rounded-full bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center text-amber-600 dark:text-amber-400 flex-shrink-0">
+          <UserMinus className="w-3 h-3" />
+        </div>
+      )
+    },
+    ...technicians.map(t => ({
+      value: String(t.id),
+      label: `${t.first_name} ${t.last_name}`,
+      icon: <div className="w-5 h-5 rounded-full bg-blue-600 flex items-center justify-center text-[9px] font-bold text-white overflow-hidden">
+        {t.avatar ? <img src={t.avatar} alt="" className="w-full h-full object-cover" /> : t.first_name.charAt(0)}
+      </div>
+    }))
+  ];
   const creatorOptions = allUsers.map(u => ({
     value: String(u.id),
     label: `${u.first_name} ${u.last_name}`,

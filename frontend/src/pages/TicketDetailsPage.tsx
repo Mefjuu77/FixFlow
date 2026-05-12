@@ -1880,14 +1880,14 @@ const TicketDetailsPage: React.FC = () => {
                         )}
                       </div>
                     ) : (
-                      <div className="w-5 h-5 rounded-full bg-gray-200 flex items-center justify-center flex-shrink-0 text-gray-500">
-                        <User className="w-3 h-3" />
+                      <div className="w-5 h-5 rounded-full bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center flex-shrink-0 text-amber-600 dark:text-amber-400">
+                        <UserMinus className="w-3 h-3" />
                       </div>
                     )}
                     {ticket.technician_details ? (
-                      `${ticket.technician_details.first_name} ${ticket.technician_details.last_name}`
+                      <span className="text-sm font-medium text-gray-900 dark:text-gray-100">{ticket.technician_details.first_name} {ticket.technician_details.last_name}</span>
                     ) : (
-                      <span className="italic text-gray-500">Nie przypisano</span>
+                      <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-xs font-semibold bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400 border border-dashed border-amber-300 dark:border-amber-700">Nie przypisano</span>
                     )}
                   </div>
                   {isEditingTechnician && isTechnicianOrAdmin && (
@@ -1903,10 +1903,10 @@ const TicketDetailsPage: React.FC = () => {
                         }}
                         className={`w-full flex items-center gap-2.5 px-3 py-2 text-sm hover:bg-blue-50 dark:hover:bg-gray-700 transition-colors ${ticket.technician === null ? 'bg-blue-50/50 dark:bg-blue-900/40 font-semibold' : ''}`}
                       >
-                        <div className="w-5 h-5 rounded-full bg-gray-200 text-gray-400 flex items-center justify-center flex-shrink-0">
+                        <div className="w-5 h-5 rounded-full bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 flex items-center justify-center flex-shrink-0">
                           <UserMinus className="w-3 h-3" />
                         </div>
-                        <span className="font-medium text-gray-700 dark:text-gray-200 italic">Brak (nie przypisano)</span>
+                        <span className="font-semibold text-amber-700 dark:text-amber-400">Nie przypisano</span>
                       </button>
                       {availableTechnicians.map(t => (
                         <button
@@ -2049,7 +2049,12 @@ const TicketDetailsPage: React.FC = () => {
                   >
                     <div className="flex items-center gap-2 truncate">
                       {(() => {
-                        if (!transitionAssignee) return <span>Nie przypisano</span>;
+                        if (!transitionAssignee) return (
+                          <span className="inline-flex items-center gap-1.5 text-amber-700 dark:text-amber-400 font-semibold">
+                            <UserMinus className="w-4 h-4" />
+                            Nie przypisano
+                          </span>
+                        );
                         const t = availableTechnicians.find(tech => tech.id === transitionAssignee);
                         if (!t) return <span>Nie przypisano</span>;
                         return (
@@ -2085,10 +2090,10 @@ const TicketDetailsPage: React.FC = () => {
                         }}
                         className={`w-full flex items-center gap-2.5 px-3 py-2 text-sm hover:bg-blue-50 dark:hover:bg-gray-700 transition-colors ${transitionAssignee === null ? 'bg-blue-50/50 dark:bg-blue-900/40 font-semibold' : ''}`}
                       >
-                        <div className="w-5 h-5 rounded-full bg-gray-200 dark:bg-gray-700 text-gray-400 flex items-center justify-center flex-shrink-0">
+                        <div className="w-5 h-5 rounded-full bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 flex items-center justify-center flex-shrink-0">
                           <UserMinus className="w-3 h-3" />
                         </div>
-                        <span className="font-medium text-gray-700 dark:text-gray-200 italic">Nie przypisano</span>
+                        <span className="font-semibold text-amber-700 dark:text-amber-400">Nie przypisano</span>
                       </button>
                       {availableTechnicians.map(t => (
                         <button

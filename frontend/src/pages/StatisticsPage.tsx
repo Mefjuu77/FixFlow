@@ -451,7 +451,7 @@ const StatisticsPage: React.FC = () => {
   }
 
   // Przeciążony technik (>2× średnia)
-  if (workloadEntries.length >= 2) {
+  if (!isTechnician && workloadEntries.length >= 2) {
     const avgLoad = workloadEntries.reduce((sum, [, d]) => sum + d.count, 0) / workloadEntries.length;
     const overloaded = workloadEntries.find(([, d]) => d.count > avgLoad * 2 && d.count >= 5);
     if (overloaded) {
@@ -464,7 +464,7 @@ const StatisticsPage: React.FC = () => {
   }
 
   // Nierównomierny rozkład pracy
-  if (workloadEntries.length >= 2) {
+  if (!isTechnician && workloadEntries.length >= 2) {
     const maxEntry = workloadEntries[0];
     const minEntry = workloadEntries[workloadEntries.length - 1];
     if (maxEntry[1].count >= 5 && minEntry[1].count >= 1 && maxEntry[1].count / minEntry[1].count >= 3) {
@@ -475,15 +475,14 @@ const StatisticsPage: React.FC = () => {
     }
   }
 
-  // Spadek rozwiązywalności — historyczny, więc trendLink z datami
+  // Spadek rozwiązywalności — historyczny, więc bez linku (TicketsPage nie obsługuje widoku porównawczego)
   const prevResolvedTotal = prevTickets.filter(t => ['ROZWIAZANE', 'ZAMKNIETE'].includes(t.status)).length;
   const currResolvedTotal = filteredTickets.filter(t => ['ROZWIAZANE', 'ZAMKNIETE'].includes(t.status)).length;
-  if (prevResolvedTotal >= 5 && currResolvedTotal < prevResolvedTotal * 0.7) {
+  if (prevResolvedTotal >= 10 && currResolvedTotal < prevResolvedTotal * 0.7) {
     const dropPct = Math.round((1 - currResolvedTotal / prevResolvedTotal) * 100);
     suggestions.push({
       text: `Rozwiązano ${dropPct}% mniej zgłoszeń niż w poprzednim okresie (${currResolvedTotal} vs ${prevResolvedTotal}).`,
-      severity: 'warning',
-      link: trendLink({ status: 'ROZWIAZANE' })
+      severity: 'warning'
     });
   }
 

@@ -552,7 +552,7 @@ const TicketsPage: React.FC = () => {
               },
               {
                 value: 'unassigned', label: 'Nie przypisano', icon: (
-                  <div className="w-5 h-5 rounded-full bg-gray-200 dark:bg-gray-700 text-gray-400 flex items-center justify-center flex-shrink-0">
+                  <div className="w-5 h-5 rounded-full bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 flex items-center justify-center flex-shrink-0">
                     <UserMinus className="w-3 h-3" />
                   </div>
                 )
@@ -828,11 +828,9 @@ const TicketsPage: React.FC = () => {
                             </span>
                           </span>
                         ) : (
-                          <span className="flex items-center gap-2 text-gray-400">
-                            <div className="w-6 h-6 rounded-full bg-gray-100 dark:bg-gray-700 text-gray-400 flex items-center justify-center flex-shrink-0">
-                              <UserMinus className="w-3 h-3" />
-                            </div>
-                            <span className="italic text-xs hidden lg:inline">Nie przypisano</span>
+                          <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-xs font-semibold bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400 border border-dashed border-amber-300 dark:border-amber-700">
+                            <UserMinus className="w-3 h-3 flex-shrink-0" />
+                            Nie przypisano
                           </span>
                         )}
                       </td>
