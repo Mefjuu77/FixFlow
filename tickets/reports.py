@@ -102,10 +102,10 @@ class ReportExportView(APIView):
         export_format = request.query_params.get('file_format', 'csv').lower()
         qs = self._build_queryset(request.query_params)
 
-        # Tryb podglądu – zwraca JSON z liczbą wyników i pierwszymi 10
+        # Tryb podglądu – zwraca JSON z liczbą wyników i pierwszymi 25
         if request.query_params.get('preview') == '1':
             total = qs.count()
-            preview_tickets = qs[:10]
+            preview_tickets = qs[:25]
             rows = []
             for t in preview_tickets:
                 creator_avatar = None

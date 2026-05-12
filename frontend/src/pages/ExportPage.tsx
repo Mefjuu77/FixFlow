@@ -356,7 +356,7 @@ const ExportPage: React.FC = () => {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-[320px_1fr] fhd:grid-cols-[380px_1fr] gap-5 lg:gap-6 fhd:gap-8 items-stretch">
+      <div className="flex-1 grid grid-cols-1 lg:grid-cols-[320px_1fr] fhd:grid-cols-[380px_1fr] gap-5 lg:gap-6 fhd:gap-8 items-stretch">
         {/* 🎛️ Filtr Sidebar */}
         <div className="flex flex-col gap-6">
           {/* Karta: Zakres Dat */}
@@ -534,7 +534,7 @@ const ExportPage: React.FC = () => {
             )}
           </div>
 
-          <div className="flex-1 overflow-auto relative">
+          <div className="flex-1 overflow-y-auto overflow-x-hidden relative">
             {preview.length === 0 && !loadingPreview ? (
               <div className="absolute inset-0 flex flex-col items-center justify-center text-slate-400">
                 <div className="w-24 h-24 mb-6 rounded-full bg-slate-50 dark:bg-slate-800/50 flex items-center justify-center">
@@ -554,7 +554,10 @@ const ExportPage: React.FC = () => {
                     <th className="px-3 lg:px-4 fhd:px-5 py-3 hidden fhd:table-cell">Zgłaszający</th>
                     <th className="px-3 lg:px-4 fhd:px-5 py-3 hidden fhd:table-cell">Technik</th>
                     <th className="px-3 lg:px-4 fhd:px-5 py-3 w-28 fhd:w-32">Status</th>
-                    <th className="px-3 lg:px-4 fhd:px-5 py-3 w-32 fhd:w-40">Data</th>
+                    <th className="px-3 lg:px-4 fhd:px-5 py-3 w-32 fhd:w-40">
+                      <span className="fhd:hidden">Data</span>
+                      <span className="hidden fhd:inline">Utworzono</span>
+                    </th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100/80 dark:divide-slate-700/80">
@@ -626,10 +629,10 @@ const ExportPage: React.FC = () => {
             )}
           </div>
 
-          {total !== null && total > 10 && preview.length > 0 && (
+          {total !== null && total > 25 && preview.length > 0 && (
             <div className="px-6 py-4 border-t border-slate-100 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50 flex items-center justify-between">
               <p className="text-xs font-medium text-slate-500">
-                Pokazuję <strong className="text-slate-700 dark:text-slate-300">10</strong> z <strong className="text-slate-700 dark:text-slate-300">{total}</strong> wyników.
+                Pokazuję <strong className="text-slate-700 dark:text-slate-300">25</strong> z <strong className="text-slate-700 dark:text-slate-300">{total}</strong> wyników.
               </p>
             </div>
           )}
