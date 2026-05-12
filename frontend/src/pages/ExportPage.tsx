@@ -491,7 +491,7 @@ const ExportPage: React.FC = () => {
               </button>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2 fhd:grid-cols-1 gap-3 fhd:space-y-1">
+            <div className="flex flex-col gap-3">
               <MultiSelect label="Kategoria" options={categoryOptions} selected={selectedCategories} onChange={setSelectedCategories} />
               <MultiSelect label="Priorytet" options={priorityOptions} selected={priorities} onChange={setPriorities} />
               <MultiSelect label="Zgłaszający" options={creatorOptions} selected={selectedCreators} onChange={setSelectedCreators} position="top" />
