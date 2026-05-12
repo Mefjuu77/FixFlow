@@ -6,7 +6,11 @@ export default {
   ],
   darkMode: 'class',
   theme: {
-    extend: {},
+    extend: {
+      screens: {
+        'fhd': '1920px',
+      },
+    },
   },
   plugins: [],
 }

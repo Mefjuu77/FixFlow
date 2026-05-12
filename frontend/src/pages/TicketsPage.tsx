@@ -446,7 +446,7 @@ const TicketsPage: React.FC = () => {
       {/* ============ Filtry ============ */}
       <div className="flex flex-wrap gap-2.5 p-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-sm">
         {/* Wyszukiwarka */}
-        <div className="relative flex-1 min-w-[180px] 2xl:max-w-sm">
+        <div className="relative flex-1 min-w-[180px] fhd:max-w-sm">
           <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
           <input
             type="text"
@@ -698,15 +698,15 @@ const TicketsPage: React.FC = () => {
                       />
                     </th>
                   )}
-                  {renderSortableHeader('id', 'ID', 'w-16 2xl:w-20')}
-                  {renderSortableHeader('title', 'Tytuł', 'min-w-[220px] 2xl:min-w-[300px]')}
-                  {renderSortableHeader('category_name', 'Kategoria', 'hidden 2xl:table-cell')}
+                  {renderSortableHeader('id', 'ID', 'w-16 fhd:w-20')}
+                  {renderSortableHeader('title', 'Tytuł', 'min-w-[220px] fhd:min-w-[300px]')}
+                  {renderSortableHeader('category_name', 'Kategoria', 'hidden fhd:table-cell')}
                   {!isEmployee && renderSortableHeader('priority', 'Priorytet')}
                   {renderSortableHeader('creator', 'Zgłaszający')}
                   {!isEmployee && renderSortableHeader('technician', 'Przypisany')}
                   {renderSortableHeader('status', 'Status')}
-                  {renderSortableHeader('created_at', 'Data', '2xl:hidden')}
-                  {renderSortableHeader('created_at', 'Utworzono', 'hidden 2xl:table-cell')}
+                  {renderSortableHeader('created_at', 'Data', 'fhd:hidden')}
+                  {renderSortableHeader('created_at', 'Utworzono', 'hidden fhd:table-cell')}
                 </tr>
               )}
             </thead>
@@ -733,8 +733,8 @@ const TicketsPage: React.FC = () => {
                         />
                       </td>
                     )}
-                    <td className="px-4 2xl:px-6 py-3 font-medium text-gray-400 dark:text-gray-500 whitespace-nowrap">#{ticket.id}</td>
-                    <td className="px-4 2xl:px-6 py-3 max-w-[180px] lg:max-w-[280px] 2xl:max-w-[350px]">
+                    <td className="px-4 fhd:px-6 py-3 font-medium text-gray-400 dark:text-gray-500 whitespace-nowrap">#{ticket.id}</td>
+                    <td className="px-4 fhd:px-6 py-3 max-w-[180px] lg:max-w-[280px] fhd:max-w-[350px]">
                       {selectedTicketIds.length > 0 ? (
                         <div
                           title={ticket.title}
@@ -753,14 +753,14 @@ const TicketsPage: React.FC = () => {
                         </Link>
                       )}
                     </td>
-                    <td className="px-4 2xl:px-6 py-3 text-gray-600 whitespace-nowrap hidden 2xl:table-cell">
+                    <td className="px-4 fhd:px-6 py-3 text-gray-600 whitespace-nowrap hidden fhd:table-cell">
                       <span className="flex items-center gap-1.5 font-medium">
                         {getCategoryIcon(ticket.category_name || '')}
                         {ticket.category_name || '—'}
                       </span>
                     </td>
                     {!isEmployee && (
-                      <td className="px-4 2xl:px-6 py-3 whitespace-nowrap">
+                      <td className="px-4 fhd:px-6 py-3 whitespace-nowrap">
                         <span className="flex items-center gap-1.5 font-medium">
                           {PRIORITY_ICONS[ticket.priority]}
                           <span className={ticket.priority === 'WYSOKI' ? 'text-red-600' : ticket.priority === 'NORMALNY' ? 'text-blue-600' : 'text-gray-500'}>
@@ -769,7 +769,7 @@ const TicketsPage: React.FC = () => {
                         </span>
                       </td>
                     )}
-                    <td className="px-4 2xl:px-6 py-3 text-gray-700 dark:text-gray-300 whitespace-nowrap font-medium">
+                    <td className="px-4 fhd:px-6 py-3 text-gray-700 dark:text-gray-300 whitespace-nowrap font-medium">
                       {ticket.creator_details ? (
                         <span className="flex items-center gap-2">
                           <div className="w-6 h-6 rounded-full bg-blue-600 text-white flex items-center justify-center flex-shrink-0 overflow-hidden">
@@ -779,14 +779,14 @@ const TicketsPage: React.FC = () => {
                               <span className="text-[10px] font-bold uppercase">{ticket.creator_details.first_name?.charAt(0) || 'U'}</span>
                             )}
                           </div>
-                          <span className="truncate max-w-[100px] xl:max-w-[150px] 2xl:max-w-[180px]" title={`${ticket.creator_details.first_name} ${ticket.creator_details.last_name}`}>
+                          <span className="truncate max-w-[100px] xl:max-w-[150px] fhd:max-w-[180px]" title={`${ticket.creator_details.first_name} ${ticket.creator_details.last_name}`}>
                             {ticket.creator_details.first_name} {ticket.creator_details.last_name}
                           </span>
                         </span>
                       ) : <span className="text-gray-400 italic">Nieznany</span>}
                     </td>
                     {!isEmployee && (
-                      <td className="px-4 2xl:px-6 py-3 whitespace-nowrap">
+                      <td className="px-4 fhd:px-6 py-3 whitespace-nowrap">
                         {ticket.technician_details ? (
                           <span className="flex items-center gap-2 text-gray-900 dark:text-gray-200 font-medium">
                             <div className="w-6 h-6 rounded-full bg-blue-600 text-white flex items-center justify-center flex-shrink-0 overflow-hidden">
@@ -796,7 +796,7 @@ const TicketsPage: React.FC = () => {
                                 <span className="text-[10px] font-bold uppercase">{ticket.technician_details.first_name?.charAt(0) || 'U'}</span>
                               )}
                             </div>
-                            <span className="truncate max-w-[100px] xl:max-w-[150px] 2xl:max-w-[180px]" title={`${ticket.technician_details.first_name} ${ticket.technician_details.last_name}`}>
+                            <span className="truncate max-w-[100px] xl:max-w-[150px] fhd:max-w-[180px]" title={`${ticket.technician_details.first_name} ${ticket.technician_details.last_name}`}>
                               {ticket.technician_details.first_name} {ticket.technician_details.last_name}
                             </span>
                           </span>
@@ -810,15 +810,15 @@ const TicketsPage: React.FC = () => {
                         )}
                       </td>
                     )}
-                    <td className="px-4 2xl:px-6 py-3 whitespace-nowrap">
-                      <span className={`px-2 2xl:px-2.5 py-1 inline-flex text-xs leading-5 font-bold rounded-lg ${STATUS_STYLES[ticket.status] || 'bg-gray-100 text-gray-800'}`}>
+                    <td className="px-4 fhd:px-6 py-3 whitespace-nowrap">
+                      <span className={`px-2 fhd:px-2.5 py-1 inline-flex text-xs leading-5 font-bold rounded-lg ${STATUS_STYLES[ticket.status] || 'bg-gray-100 text-gray-800'}`}>
                         {STATUS_LABELS[ticket.status] || ticket.status}
                       </span>
                     </td>
-                    <td className="px-4 2xl:px-6 py-3 text-gray-500 whitespace-nowrap">
-                      <span className="hidden 2xl:inline">{dayjs(ticket.created_at).format('DD MMM YYYY, HH:mm')}</span>
-                      <span className="2xl:hidden">{dayjs(ticket.created_at).format('DD.MM.YY')}</span>
-                      <span className="text-gray-400 ml-1 2xl:hidden">{dayjs(ticket.created_at).format('HH:mm')}</span>
+                    <td className="px-4 fhd:px-6 py-3 text-gray-500 whitespace-nowrap">
+                      <span className="hidden fhd:inline">{dayjs(ticket.created_at).format('DD MMM YYYY, HH:mm')}</span>
+                      <span className="fhd:hidden">{dayjs(ticket.created_at).format('DD.MM.YY')}</span>
+                      <span className="text-gray-400 ml-1 fhd:hidden">{dayjs(ticket.created_at).format('HH:mm')}</span>
                     </td>
                   </tr>
                 ))
