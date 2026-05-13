@@ -253,19 +253,19 @@ const CreateTicketPage: React.FC = () => {
   const selectedPriority = priorityOptions.find(p => p.value === formData.priority);
 
   return (
-    <div className="max-w-3xl mx-auto space-y-4 pb-4">
+    <div className="max-w-3xl mx-auto space-y-3 sm:space-y-4 pb-4">
       <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-xl overflow-hidden">
-        <div className="p-4 sm:p-5 border-b border-gray-100 dark:border-gray-700/50 bg-gray-50/50 dark:bg-gray-800/50 flex items-center gap-4">
+        <div className="p-4 sm:p-5 border-b border-gray-100 dark:border-gray-700/50 bg-gray-50/50 dark:bg-gray-800/50 flex items-center gap-3 sm:gap-4">
           <button onClick={() => navigate(-1)} className="p-2 -ml-2 text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-500/10 rounded-lg transition-colors" title="Wróć">
             <ArrowLeft className="w-5 h-5" />
           </button>
           <div>
-            <h1 className="text-xl font-bold text-gray-900 dark:text-white leading-none">Nowe zgłoszenie</h1>
-            <p className="text-gray-500 dark:text-gray-400 text-xs mt-1">Opisz problem i dodaj potrzebne szczegóły.</p>
+            <h1 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white leading-none">Nowe zgłoszenie</h1>
+            <p className="text-gray-500 dark:text-gray-400 text-xs mt-1 hidden sm:block">Opisz problem i dodaj potrzebne szczegóły.</p>
           </div>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-5 space-y-5">
+        <form onSubmit={handleSubmit} className="p-3 sm:p-4 md:p-5 space-y-3 sm:space-y-4 md:space-y-5">
           {error && (
             <div className="flex items-center p-4 bg-red-50 border border-red-100 rounded-xl text-red-700 text-sm">
               <AlertCircle className="w-5 h-5 mr-3 flex-shrink-0" /> {error}
@@ -273,12 +273,12 @@ const CreateTicketPage: React.FC = () => {
           )}
 
           {/* Tytuł */}
-          <div className="space-y-2">
+          <div className="space-y-1 sm:space-y-2">
             <label className="text-sm font-bold text-gray-700 dark:text-gray-300 ml-1">Tytuł zgłoszenia</label>
             <div className="relative">
               <input
                 type="text"
-                className={`w-full pl-4 pr-12 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:bg-white dark:focus:bg-gray-900 outline-none transition-all ${fieldErrors.title ? 'border-red-400 bg-red-50/30' : (titleBlurred && formData.title.trim().length >= 5) ? 'border-green-400 bg-green-50/10' : 'bg-gray-50 dark:bg-gray-900/50 border-gray-200 dark:border-gray-800'}`}
+                className={`w-full pl-4 pr-12 py-2 sm:py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:bg-white dark:focus:bg-gray-900 outline-none transition-all ${fieldErrors.title ? 'border-red-400 bg-red-50/30' : (titleBlurred && formData.title.trim().length >= 5) ? 'border-green-400 bg-green-50/10' : 'bg-gray-50 dark:bg-gray-900/50 border-gray-200 dark:border-gray-800'}`}
                 placeholder="Co się stało?"
                 value={formData.title}
                 onChange={(e) => {
@@ -298,16 +298,16 @@ const CreateTicketPage: React.FC = () => {
             )}
           </div>
 
-          <hr className="border-gray-100 dark:border-gray-800" />
+          <hr className="border-gray-100 dark:border-gray-800 hidden sm:block" />
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-5" ref={dropdownRef}>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-5" ref={dropdownRef}>
             {/* Kategoria - Dropdown */}
-            <div className="relative space-y-2">
+            <div className="relative space-y-1 sm:space-y-2">
               <label className="text-sm font-bold text-gray-700 dark:text-gray-300 ml-1">Kategoria</label>
               <button
                 type="button"
                 onClick={() => setActiveDropdown(activeDropdown === 'category' ? null : 'category')}
-                className={`w-full flex items-center justify-between pl-4 pr-3 py-3 border rounded-xl hover:border-blue-400 dark:hover:border-blue-500/70 transition-all text-left ${fieldErrors.category ? 'border-red-400 bg-red-50/30' : (formData.category !== 0 ? 'bg-white dark:bg-gray-800/60 border-blue-300 dark:border-blue-500/40 ring-2 ring-blue-500/10 dark:ring-blue-500/20 shadow-sm' : 'bg-gray-50 dark:bg-gray-900/50 border-gray-200 dark:border-gray-800')}`}
+                className={`w-full flex items-center justify-between pl-4 pr-3 py-2 sm:py-3 border rounded-xl hover:border-blue-400 dark:hover:border-blue-500/70 transition-all text-left ${fieldErrors.category ? 'border-red-400 bg-red-50/30' : (formData.category !== 0 ? 'bg-white dark:bg-gray-800/60 border-blue-300 dark:border-blue-500/40 ring-2 ring-blue-500/10 dark:ring-blue-500/20 shadow-sm' : 'bg-gray-50 dark:bg-gray-900/50 border-gray-200 dark:border-gray-800')}`}
               >
                 <div className="flex items-center gap-3">
                   <div className="text-blue-600">{getCategoryIcon(selectedCategory?.name || '', 'w-4 h-4')}</div>
@@ -345,12 +345,12 @@ const CreateTicketPage: React.FC = () => {
             </div>
 
             {/* Priorytet - Dropdown */}
-            <div className="relative space-y-2">
+            <div className="relative space-y-1 sm:space-y-2">
               <label className="text-sm font-bold text-gray-700 dark:text-gray-300 ml-1">Priorytet</label>
               <button
                 type="button"
                 onClick={() => setActiveDropdown(activeDropdown === 'priority' ? null : 'priority')}
-                className={`w-full flex items-center justify-between pl-4 pr-3 py-3 border rounded-xl hover:border-blue-400 dark:hover:border-blue-500/70 transition-all text-left ${formData.priority ? 'bg-white dark:bg-gray-800/60 border-blue-300 dark:border-blue-500/40 ring-2 ring-blue-500/10 dark:ring-blue-500/20 shadow-sm' : 'bg-gray-50 dark:bg-gray-900/50 border-gray-200 dark:border-gray-800'}`}
+                className={`w-full flex items-center justify-between pl-4 pr-3 py-2 sm:py-3 border rounded-xl hover:border-blue-400 dark:hover:border-blue-500/70 transition-all text-left ${formData.priority ? 'bg-white dark:bg-gray-800/60 border-blue-300 dark:border-blue-500/40 ring-2 ring-blue-500/10 dark:ring-blue-500/20 shadow-sm' : 'bg-gray-50 dark:bg-gray-900/50 border-gray-200 dark:border-gray-800'}`}
               >
                 <div className="flex items-center gap-3">
                   {selectedPriority?.icon}
@@ -386,10 +386,9 @@ const CreateTicketPage: React.FC = () => {
             </div>
           </div>
 
-          <hr className="border-gray-100 dark:border-gray-800" />
+          <hr className="border-gray-100 dark:border-gray-800 hidden sm:block" />
 
-          {/* Opis */}
-          <div className="space-y-2">
+          <div className="space-y-1 sm:space-y-2">
             <label className="text-sm font-bold text-gray-700 dark:text-gray-300 ml-1">Opis problemu</label>
             <MarkdownEditor
               key={descriptionPlaceholder}
@@ -401,7 +400,7 @@ const CreateTicketPage: React.FC = () => {
               placeholder={descriptionPlaceholder}
               className={fieldErrors.description ? 'border-red-400 bg-red-50/30 ring-1 ring-red-400/50 rounded-xl' : 'bg-gray-50 dark:bg-gray-900/50 border-gray-200 dark:border-gray-800'}
               resizable={true}
-              minHeight="150px"
+              minHeight="80px"
               onAttachFile={() => fileInputRef.current?.click()}
               onBlur={handleDescriptionBlur}
             />
@@ -412,33 +411,33 @@ const CreateTicketPage: React.FC = () => {
             )}
           </div>
 
-          <hr className="border-gray-100 dark:border-gray-800" />
+          <hr className="border-gray-100 dark:border-gray-800 hidden sm:block" />
 
-          {/* Załączniki */}
-          <div className="space-y-2">
+          <div className="space-y-1 sm:space-y-2">
             <label className="text-sm font-bold text-gray-700 dark:text-gray-300 ml-1">Załączniki (opcjonalne)</label>
             <div
               onDragOver={handleDragOver}
               onDragLeave={handleDragLeave}
               onDrop={handleDrop}
               onClick={() => fileInputRef.current?.click()}
-              className={`w-full flex flex-col items-center justify-center gap-2 py-4 border-2 border-dashed rounded-xl cursor-pointer transition-all group ${isDragging
+              className={`w-full flex flex-col items-center justify-center gap-1.5 sm:gap-2 py-3 sm:py-4 border-2 border-dashed rounded-xl cursor-pointer transition-all group ${isDragging
                 ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
                 : 'border-gray-300 dark:border-gray-700 hover:border-blue-400 dark:hover:border-blue-500/70 hover:bg-blue-50/50 dark:hover:bg-blue-900/20 text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400'
                 }`}
             >
-              <div className="bg-blue-50 dark:bg-blue-900/30 text-blue-500 rounded-full p-2 group-hover:scale-110 transition-transform duration-300">
-                <UploadCloud className="w-5 h-5" />
+              <div className="bg-blue-50 dark:bg-blue-900/30 text-blue-500 rounded-full p-1.5 sm:p-2 group-hover:scale-110 transition-transform duration-300">
+                <UploadCloud className="w-4 h-4 sm:w-5 sm:h-5" />
               </div>
 
-              <div className="text-center px-4 space-y-1">
+              <div className="text-center px-2 sm:px-4 space-y-0.5 sm:space-y-1">
                 <p className="font-bold text-gray-700 dark:text-gray-300 text-sm">
-                  Kliknij, aby wgrać pliki <span className="font-normal text-gray-500 dark:text-gray-400">lub przeciągnij je tutaj</span>
+                  <span className="hidden sm:inline">Kliknij, aby wgrać pliki <span className="font-normal text-gray-500 dark:text-gray-400">lub przeciągnij je tutaj</span></span>
+                  <span className="sm:hidden">Dotknij, aby wgrać pliki</span>
                 </p>
-                <div className="flex flex-wrap items-center justify-center gap-1.5 text-[10px] font-medium text-gray-500 dark:text-gray-400 pt-0.5">
-                  <span className="px-2 py-0.5 bg-gray-100 dark:bg-gray-800 rounded-md">Max 5MB / plik</span>
-                  <span className="px-2 py-0.5 bg-gray-100 dark:bg-gray-800 rounded-md">Łącznie do 15MB</span>
-                  <span className="px-2 py-0.5 bg-gray-100 dark:bg-gray-800 rounded-md">Obrazki, PDF, Dokumenty, ZIP</span>
+                <div className="flex flex-wrap items-center justify-center gap-1 sm:gap-1.5 text-[10px] font-medium text-gray-500 dark:text-gray-400">
+                  <span className="px-1.5 sm:px-2 py-0.5 bg-gray-100 dark:bg-gray-800 rounded-md">Max 5MB / plik</span>
+                  <span className="px-1.5 sm:px-2 py-0.5 bg-gray-100 dark:bg-gray-800 rounded-md">Łącznie do 15MB</span>
+                  <span className="px-1.5 sm:px-2 py-0.5 bg-gray-100 dark:bg-gray-800 rounded-md hidden sm:inline">Obrazki, PDF, Dokumenty, ZIP</span>
                 </div>
               </div>
             </div>
@@ -483,10 +482,10 @@ const CreateTicketPage: React.FC = () => {
               <div className="mt-3 space-y-3">
                 {/* Podgląd obrazków */}
                 {selectedFiles.some(f => f.type.startsWith('image/')) && (
-                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+                  <div className="grid grid-cols-3 sm:grid-cols-3 md:grid-cols-4 gap-2 sm:gap-3">
                     {selectedFiles.map((file, idx) =>
                       file.type.startsWith('image/') ? (
-                        <div key={idx} className="relative group rounded-xl overflow-hidden border border-gray-200 bg-gray-50 aspect-square">
+                        <div key={idx} className="relative group rounded-lg sm:rounded-xl overflow-hidden border border-gray-200 bg-gray-50 aspect-square">
                           <img
                             src={URL.createObjectURL(file)}
                             alt={file.name}
@@ -494,16 +493,16 @@ const CreateTicketPage: React.FC = () => {
                             onLoad={(e) => URL.revokeObjectURL((e.target as HTMLImageElement).src)}
                           />
                           <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-all duration-200" />
-                          <div className="absolute bottom-0 left-0 right-0 p-2 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-                            <p className="text-white text-xs font-medium truncate">{file.name}</p>
-                            <p className="text-white/70 text-[10px]">{(file.size / 1024).toFixed(0)} KB</p>
+                          <div className="absolute bottom-0 left-0 right-0 p-1 sm:p-2 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                            <p className="text-white text-[10px] sm:text-xs font-medium truncate">{file.name}</p>
+                            <p className="text-white/70 text-[9px] sm:text-[10px] hidden sm:block">{(file.size / 1024).toFixed(0)} KB</p>
                           </div>
                           <button
                             type="button"
                             onClick={() => setSelectedFiles(prev => prev.filter((_, i) => i !== idx))}
-                            className="absolute top-1.5 right-1.5 w-6 h-6 bg-red-500 hover:bg-red-600 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-200 shadow-lg"
+                            className="absolute top-1 right-1 sm:top-1.5 sm:right-1.5 w-5 h-5 sm:w-6 sm:h-6 bg-red-500 hover:bg-red-600 text-white rounded-full flex items-center justify-center opacity-100 sm:opacity-0 group-hover:opacity-100 transition-all duration-200 shadow-lg"
                           >
-                            <X className="w-3.5 h-3.5" />
+                            <X className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
                           </button>
                         </div>
                       ) : null
@@ -538,7 +537,7 @@ const CreateTicketPage: React.FC = () => {
             <button
               type="submit"
               disabled={isSubmitting || isSuccess}
-              className={`max-w-[300px] w-full flex items-center justify-center py-4 text-white font-bold rounded-xl shadow-lg active:scale-95 transition-all disabled:opacity-80 ${isSuccess ? 'bg-green-600 hover:bg-green-700 shadow-green-100/50 dark:shadow-none' : 'bg-blue-600 hover:bg-blue-700 shadow-blue-100 dark:shadow-none'}`}
+              className={`w-full sm:max-w-[300px] flex items-center justify-center py-3.5 sm:py-4 text-white font-bold rounded-xl shadow-lg active:scale-95 transition-all disabled:opacity-80 ${isSuccess ? 'bg-green-600 hover:bg-green-700 shadow-green-100/50 dark:shadow-none' : 'bg-blue-600 hover:bg-blue-700 shadow-blue-100 dark:shadow-none'}`}
             >
               {isSubmitting && !isSuccess && (
                 <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>

@@ -1,4 +1,4 @@
-import React, { useContext } from 'react';
+import React, { useContext, useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { AuthContext } from '../../context/AuthContext';
 import { ThemeContext } from '../../context/ThemeContext';
@@ -14,7 +14,9 @@ import {
   FileText,
   Moon,
   Sun,
-  Search
+  Search,
+  Menu,
+  X
 } from 'lucide-react';
 
 interface LayoutProps {
@@ -25,6 +27,22 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   const authContext = useContext(AuthContext);
   const themeContext = useContext(ThemeContext);
   const location = useLocation();
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+  // Close mobile menu on route change
+  useEffect(() => {
+    setIsMobileMenuOpen(false);
+  }, [location.pathname]);
+
+  // Prevent body scroll when mobile menu is open
+  useEffect(() => {
+    if (isMobileMenuOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => { document.body.style.overflow = ''; };
+  }, [isMobileMenuOpen]);
 
   const handleLogout = () => {
     authContext?.logout();
@@ -71,8 +89,38 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
 
   return (
     <div className="flex h-screen overflow-hidden bg-gray-100">
+      {/* Mobile Top Bar */}
+      <div className="md:hidden fixed top-0 left-0 right-0 z-40 flex items-center justify-between h-14 px-4 bg-gray-900 border-b border-gray-800">
+        <button
+          onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+          className="p-2 -ml-1 text-gray-300 hover:text-white hover:bg-gray-800 rounded-lg transition-colors"
+          aria-label="Menu"
+        >
+          {isMobileMenuOpen ? <X size={22} /> : <Menu size={22} />}
+        </button>
+        <div className="flex items-center gap-2">
+          <Wrench className="w-5 h-5 text-blue-400" />
+          <span className="text-lg font-bold text-white">FixFlow</span>
+        </div>
+        <button
+          onClick={() => themeContext?.toggleTheme()}
+          className="p-2 -mr-1 text-gray-300 hover:text-white hover:bg-gray-800 rounded-lg transition-colors"
+          title={themeContext?.isDark ? 'Włącz jasny motyw' : 'Włącz ciemny motyw'}
+        >
+          {themeContext?.isDark ? <Sun size={18} /> : <Moon size={18} />}
+        </button>
+      </div>
+
+      {/* Mobile Backdrop */}
+      {isMobileMenuOpen && (
+        <div
+          className="md:hidden fixed inset-0 z-40 bg-black/50 backdrop-blur-sm animate-in fade-in duration-200"
+          onClick={() => setIsMobileMenuOpen(false)}
+        />
+      )}
+
       {/* Sidebar */}
-      <div className="flex flex-col w-64 text-white bg-gray-900">
+      <div className={`fixed md:relative z-50 md:z-auto flex flex-col w-64 text-white bg-gray-900 h-full transition-transform duration-300 ease-in-out md:translate-x-0 ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}`}>
         <div className="flex items-center justify-center h-20 border-b border-gray-800">
           <Wrench className="w-8 h-8 mr-3 text-blue-400" />
           <h1 className="text-2xl font-bold">FixFlow</h1>
@@ -82,6 +130,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
         <div className="px-4 mt-4">
           <button
             onClick={() => {
+              setIsMobileMenuOpen(false);
               // Dispatch event to open CommandPalette
               window.dispatchEvent(new KeyboardEvent('keydown', { key: '/', ctrlKey: false }));
             }}
@@ -89,7 +138,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
           >
             <Search className="w-4 h-4 text-gray-500 group-hover:text-gray-300 transition-colors" />
             <span className="flex-1 text-left text-gray-500 group-hover:text-gray-300 transition-colors">Szukaj...</span>
-            <kbd className="px-2 py-0.5 text-[11px] font-bold text-gray-500 bg-gray-700 border border-gray-600 rounded">/</kbd>
+            <kbd className="hidden md:inline px-2 py-0.5 text-[11px] font-bold text-gray-500 bg-gray-700 border border-gray-600 rounded">/</kbd>
           </button>
         </div>
 
@@ -154,7 +203,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
             </button>
             <button
               onClick={() => themeContext?.toggleTheme()}
-              className="flex items-center justify-center w-9 h-9 text-gray-300 transition-colors bg-gray-800 rounded-md hover:bg-gray-700 hover:text-white flex-shrink-0"
+              className="hidden md:flex items-center justify-center w-9 h-9 text-gray-300 transition-colors bg-gray-800 rounded-md hover:bg-gray-700 hover:text-white flex-shrink-0"
               title={themeContext?.isDark ? 'Włącz jasny motyw' : 'Włącz ciemny motyw'}
             >
               {themeContext?.isDark ? <Sun size={16} /> : <Moon size={16} />}
@@ -166,7 +215,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
       {/* Main Content */}
       <div className="flex flex-col flex-1 overflow-hidden">
         {/* Page Content */}
-        <main className={`flex-1 px-6 pb-6 overflow-y-auto bg-gray-50 dark:bg-transparent ${location.pathname === '/dashboard' || location.pathname === '/' ? 'pt-0' : 'pt-6'}`}>
+        <main className={`flex-1 px-4 md:px-6 pb-6 overflow-y-auto bg-gray-50 dark:bg-transparent ${location.pathname === '/dashboard' || location.pathname === '/' ? 'pt-14 md:pt-0' : 'pt-[calc(3.5rem+1rem)] md:pt-6'}`}>
           {children}
         </main>
       </div>
