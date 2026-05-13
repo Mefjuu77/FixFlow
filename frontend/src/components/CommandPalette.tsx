@@ -87,8 +87,8 @@ const CommandPalette: React.FC = () => {
 
     // Nawigacja
     items.push(
-      { id: 'nav-dashboard', label: 'Start', icon: <LayoutGrid className="w-4 h-4" />, action: () => runAndClose(() => navigate('/dashboard')), group: 'Nawigacja', keywords: 'dashboard strona główna home panel' },
-      { id: 'nav-tickets', label: 'Zgłoszenia', icon: <ClipboardList className="w-4 h-4" />, action: () => runAndClose(() => navigate('/tickets')), group: 'Nawigacja', keywords: 'tickety lista' },
+      { id: 'nav-dashboard', label: isEmployee ? 'Start' : 'Pulpit', icon: <LayoutGrid className="w-4 h-4" />, action: () => runAndClose(() => navigate('/dashboard')), group: 'Nawigacja', keywords: 'dashboard strona główna home panel start pulpit' },
+      { id: 'nav-tickets', label: 'Zgłoszenia', icon: <ClipboardList className="w-4 h-4" />, action: () => runAndClose(() => navigate('/tickets')), group: 'Nawigacja', keywords: 'tickety lista moje zgłoszenia przypisane do mnie my tickets assigned' },
     );
 
     if (isAdmin || isTechnician) {
@@ -120,7 +120,7 @@ const CommandPalette: React.FC = () => {
     // ========== AKCJE ==========
     items.push(
       { id: 'action-create-ticket', label: 'Nowe zgłoszenie', icon: <PlusCircle className="w-4 h-4" />, action: () => runAndClose(() => navigate('/create-ticket')), group: 'Akcje', keywords: 'utwórz stwórz dodaj nowy ticket zgłoś create' },
-      { id: 'action-my-tickets', label: 'Moje zgłoszenia', icon: <ClipboardList className="w-4 h-4" />, action: () => runAndClose(() => navigate('/tickets')), group: 'Akcje', keywords: 'moje zgłoszenia przypisane do mnie my tickets assigned' },
+
     );
 
     if (isAdmin) {
