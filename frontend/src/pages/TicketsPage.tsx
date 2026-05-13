@@ -397,14 +397,14 @@ const TicketsPage: React.FC = () => {
     }
   };
 
-  const renderSortableHeader = (field: SortField, label: string, extraClassName?: string) => {
+  const renderSortableHeader = (field: SortField, label: string, extraClassName?: string, keyOverride?: string) => {
     const isActive = sortConfig.key === field;
     const direction = sortConfig.direction;
     const isAsc = direction === 'asc';
 
     return (
       <th
-        key={field}
+        key={keyOverride || field}
         className={`px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100/80 dark:hover:bg-gray-700/50 transition-colors group/th ${extraClassName || ''}`}
         onClick={() => handleSort(field)}
       >
@@ -733,7 +733,7 @@ const TicketsPage: React.FC = () => {
                   {!isEmployee && renderSortableHeader('technician', 'Przypisany')}
                   {renderSortableHeader('status', 'Status')}
                   {renderSortableHeader('created_at', 'Data', 'fhd:hidden')}
-                  {renderSortableHeader('created_at', 'Utworzono', 'hidden fhd:table-cell')}
+                  {renderSortableHeader('created_at', 'Utworzono', 'hidden fhd:table-cell', 'created_at_fhd')}
                 </tr>
               )}
             </thead>

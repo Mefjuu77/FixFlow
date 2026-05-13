@@ -219,39 +219,39 @@ const SettingsPage: React.FC = () => {
   ];
 
   return (
-    <div className="w-full max-w-5xl mx-auto space-y-8 animate-in fade-in duration-700 pb-12">
+    <div className="w-full max-w-5xl mx-auto space-y-4 sm:space-y-8 animate-in fade-in duration-700 pb-8 sm:pb-12">
       {/* Header */}
       <div className="relative overflow-hidden rounded-3xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 shadow-sm">
         <div className="absolute inset-0 bg-gradient-to-r from-blue-50/50 via-transparent to-purple-50/50 dark:from-blue-900/10 dark:to-purple-900/10" />
-        <div className="relative px-8 py-8 md:py-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+        <div className="relative px-4 sm:px-8 py-5 sm:py-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-gray-900 to-gray-600 dark:from-white dark:to-gray-300 tracking-tight">Ustawienia</h1>
-            <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">Dostosuj swoje preferencje, wygląd aplikacji oraz zarządzaj bezpieczeństwem.</p>
+            <h1 className="text-2xl sm:text-3xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-gray-900 to-gray-600 dark:from-white dark:to-gray-300 tracking-tight">Ustawienia</h1>
+            <p className="mt-1 sm:mt-2 text-xs sm:text-sm text-gray-500 dark:text-gray-400">Dostosuj swoje preferencje, wygląd aplikacji oraz zarządzaj bezpieczeństwem.</p>
           </div>
         </div>
       </div>
 
       {/* Tabs & Content */}
-      <div className="flex flex-col lg:flex-row gap-8">
+      <div className="flex flex-col lg:flex-row gap-4 sm:gap-8">
         {/* Sidebar Tabs */}
         <div className="lg:w-64 flex-shrink-0">
-          <nav className="flex lg:flex-col gap-2">
+          <nav className="grid grid-cols-2 lg:flex lg:flex-col gap-2">
             {tabs.map((tab) => (
               <button
                 key={tab.id}
                 onClick={() => { handleTabChange(tab.id as SettingsTab); setSuccessMsg(null); setErrorMsg(null); }}
-                className={`relative flex items-center gap-3 w-full px-4 py-3 rounded-2xl text-sm font-semibold transition-all duration-300 ${activeTab === tab.id
+                className={`relative flex items-center justify-center lg:justify-start gap-2 w-full px-2 sm:px-4 py-2.5 sm:py-3 rounded-xl sm:rounded-2xl text-xs sm:text-sm font-semibold transition-all duration-300 ${activeTab === tab.id
                     ? 'bg-white dark:bg-gray-800 text-blue-600 dark:text-blue-400 shadow-[0_2px_10px_-3px_rgba(6,81,237,0.1)] dark:shadow-[0_2px_10px_-3px_rgba(59,130,246,0.15)] border border-blue-100 dark:border-blue-900/50'
                     : 'text-gray-500 dark:text-gray-400 bg-white/40 dark:bg-gray-800/20 hover:bg-white/80 dark:hover:bg-gray-800/60 hover:text-gray-900 dark:hover:text-gray-200 border border-gray-200/60 dark:border-gray-700/50 hover:border-gray-300/60'
                   }`}
               >
                 {activeTab === tab.id && (
-                  <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1.5 h-6 bg-blue-600 dark:bg-blue-500 rounded-r-full" />
+                  <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 sm:w-1.5 h-5 sm:h-6 bg-blue-600 dark:bg-blue-500 rounded-r-full" />
                 )}
-                <span className={`${activeTab === tab.id ? 'opacity-100 scale-110' : 'opacity-70 scale-100'} transition-all duration-300`}>
+                <span className={`${activeTab === tab.id ? 'opacity-100' : 'opacity-70'} transition-all duration-300 flex-shrink-0`}>
                   {tab.icon}
                 </span>
-                {tab.label}
+                <span className="truncate">{tab.label}</span>
               </button>
             ))}
           </nav>
@@ -282,11 +282,11 @@ const SettingsPage: React.FC = () => {
                 </div>
               )}
 
-              <div className="bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700/60 rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-[0_8px_30px_rgb(0,0,0,0.1)] p-8 transition-all">
+              <div className="bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700/60 rounded-2xl sm:rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-[0_8px_30px_rgb(0,0,0,0.1)] p-4 sm:p-8 transition-all">
                 {/* Profile Header (Avatar + Info + Actions) */}
-                <div className="flex flex-col sm:flex-row gap-8 items-start sm:items-center">
+                <div className="flex flex-col sm:flex-row gap-4 sm:gap-8 items-start sm:items-center">
                   <div className="relative group flex-shrink-0">
-                    <div className="w-28 h-28 rounded-2xl bg-white dark:bg-gray-800 flex items-center justify-center overflow-hidden border-2 border-gray-100 dark:border-gray-700 shadow-lg transition-transform duration-300 group-hover:scale-[1.02]">
+                    <div className="w-20 h-20 sm:w-28 sm:h-28 rounded-2xl bg-white dark:bg-gray-800 flex items-center justify-center overflow-hidden border-2 border-gray-100 dark:border-gray-700 shadow-lg transition-transform duration-300 group-hover:scale-[1.02]">
                       {avatarPreview ? (
                         <img src={avatarPreview} alt="Avatar" className="w-full h-full object-cover" />
                       ) : (
@@ -315,7 +315,7 @@ const SettingsPage: React.FC = () => {
 
                   <div className="flex-1 flex flex-col items-start">
                     <div className="flex items-center gap-3 mb-1.5">
-                      <h3 className="text-2xl font-extrabold text-gray-900 dark:text-white tracking-tight">
+                      <h3 className="text-lg sm:text-2xl font-extrabold text-gray-900 dark:text-white tracking-tight">
                         {user?.first_name} {user?.last_name}
                       </h3>
                       {role && (
@@ -350,14 +350,14 @@ const SettingsPage: React.FC = () => {
                 </div>
 
                   {/* Editable fields */}
-                  <div className="mt-8 pt-8 border-t border-gray-100 dark:border-gray-700/50">
-                    <div className="flex items-center gap-2 mb-6">
-                      <div className="w-8 h-8 rounded-lg bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
+                  <div className="mt-4 sm:mt-8 pt-4 sm:pt-8 border-t border-gray-100 dark:border-gray-700/50">
+                    <div className="flex items-center gap-2 mb-4 sm:mb-6">
+                      <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
                         <User className="w-4 h-4 text-gray-500 dark:text-gray-400" />
                       </div>
-                      <h4 className="text-base font-bold text-gray-800 dark:text-gray-200">Dane osobowe</h4>
+                      <h4 className="text-sm sm:text-base font-bold text-gray-800 dark:text-gray-200">Dane osobowe</h4>
                     </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-6">
                       <div className="space-y-2">
                         <label className="text-[13px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-widest">Imię</label>
                         <input
@@ -383,11 +383,11 @@ const SettingsPage: React.FC = () => {
 
 
                   {/* Save button — inside card */}
-                  <div className="mt-8 pt-6 border-t border-gray-100 dark:border-gray-700/50 flex justify-end">
+                  <div className="mt-4 sm:mt-8 pt-4 sm:pt-6 border-t border-gray-100 dark:border-gray-700/50 flex justify-end">
                     <button
                       onClick={handleSaveProfile}
                       disabled={isSaving}
-                      className="inline-flex items-center gap-2 px-8 py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl text-sm shadow-[0_4px_14px_0_rgba(37,99,235,0.39)] dark:shadow-none transition-all disabled:opacity-50 hover:shadow-[0_6px_20px_rgba(37,99,235,0.23)] active:scale-[0.98]"
+                      className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 sm:px-8 py-2.5 sm:py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl text-sm shadow-[0_4px_14px_0_rgba(37,99,235,0.39)] dark:shadow-none transition-all disabled:opacity-50 active:scale-[0.98]"
                     >
                       {isSaving ? (
                         <Loader2 className="w-4 h-4 animate-spin" />
@@ -423,9 +423,9 @@ const SettingsPage: React.FC = () => {
                 </div>
               )}
 
-              <div className="bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700/60 rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-[0_8px_30px_rgb(0,0,0,0.1)] p-8">
-                <div className="flex items-center gap-4 mb-8">
-                  <div className="w-12 h-12 rounded-2xl bg-blue-50 dark:bg-blue-500/10 flex items-center justify-center border border-blue-100 dark:border-blue-500/20">
+              <div className="bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700/60 rounded-2xl sm:rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-[0_8px_30px_rgb(0,0,0,0.1)] p-4 sm:p-8">
+                <div className="flex items-center gap-3 sm:gap-4 mb-5 sm:mb-8">
+                  <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl bg-blue-50 dark:bg-blue-500/10 flex items-center justify-center border border-blue-100 dark:border-blue-500/20">
                     <KeyRound className="w-6 h-6 text-blue-600 dark:text-blue-400" />
                   </div>
                   <div>
@@ -434,7 +434,7 @@ const SettingsPage: React.FC = () => {
                   </div>
                 </div>
 
-                <form onSubmit={handleChangePassword} className="space-y-5 max-w-md">
+                <form onSubmit={handleChangePassword} className="space-y-3 sm:space-y-5 max-w-md">
                   <div className="space-y-2">
                     <label className="text-[13px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-widest">Obecne hasło</label>
                     <div className="relative">
@@ -486,11 +486,11 @@ const SettingsPage: React.FC = () => {
                     </div>
                   </div>
 
-                  <div className="pt-4">
+                  <div className="pt-2 sm:pt-4">
                     <button
                       type="submit"
                       disabled={isChangingPassword || !oldPassword || !newPassword || !confirmPassword}
-                      className="inline-flex items-center gap-2 px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl text-sm shadow-lg shadow-blue-600/20 dark:shadow-none transition-all disabled:opacity-50 hover:shadow-xl hover:shadow-blue-600/25 active:scale-[0.98]"
+                      className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl text-sm shadow-lg shadow-blue-600/20 dark:shadow-none transition-all disabled:opacity-50 active:scale-[0.98]"
                     >
                       {isChangingPassword ? (
                         <Loader2 className="w-4 h-4 animate-spin" />
@@ -508,9 +508,9 @@ const SettingsPage: React.FC = () => {
           {/* ===== APPEARANCE TAB ===== */}
           {activeTab === 'appearance' && (
             <div className="space-y-6">
-              <div className="bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700/60 rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-[0_8px_30px_rgb(0,0,0,0.1)] p-8">
-                <div className="flex items-center gap-4 mb-8">
-                  <div className="w-12 h-12 rounded-2xl bg-blue-50 dark:bg-blue-500/10 flex items-center justify-center border border-blue-100 dark:border-blue-500/20">
+              <div className="bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700/60 rounded-2xl sm:rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-[0_8px_30px_rgb(0,0,0,0.1)] p-4 sm:p-8">
+                <div className="flex items-center gap-3 sm:gap-4 mb-5 sm:mb-8">
+                  <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl bg-blue-50 dark:bg-blue-500/10 flex items-center justify-center border border-blue-100 dark:border-blue-500/20">
                     <Palette className="w-6 h-6 text-blue-600 dark:text-blue-400" />
                   </div>
                   <div>
@@ -519,7 +519,7 @@ const SettingsPage: React.FC = () => {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                <div className="grid grid-cols-2 gap-3 sm:gap-6">
                   {/* Light mode */}
                   <button
                     onClick={() => { if (themeContext?.isDark) themeContext.toggleTheme(); }}
@@ -570,9 +570,9 @@ const SettingsPage: React.FC = () => {
 
           {/* ===== NOTIFICATIONS TAB (Technik / Admin) ===== */}
           {activeTab === 'notifications' && (
-              <div className="bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700/60 rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-[0_8px_30px_rgb(0,0,0,0.1)] p-8">
-                <div className="flex items-center gap-4 mb-8">
-                  <div className="w-12 h-12 rounded-2xl bg-blue-50 dark:bg-blue-500/10 flex items-center justify-center border border-blue-100 dark:border-blue-500/20">
+              <div className="bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700/60 rounded-2xl sm:rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-[0_8px_30px_rgb(0,0,0,0.1)] p-4 sm:p-8">
+                <div className="flex items-center gap-3 sm:gap-4 mb-5 sm:mb-8">
+                  <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl bg-blue-50 dark:bg-blue-500/10 flex items-center justify-center border border-blue-100 dark:border-blue-500/20">
                     <Bell className="w-6 h-6 text-blue-600 dark:text-blue-400" />
                   </div>
                   <div>
