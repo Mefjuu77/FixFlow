@@ -7,7 +7,6 @@ import { AuthContext } from '../context/AuthContext';
 import {
   Plus,
   Search,
-  Trash2,
   X,
   Shield,
   Wrench,
@@ -202,15 +201,6 @@ const UsersPage: React.FC = () => {
     setFormErrors({});
     setShowPassword(false);
     setFocusPassword(false);
-    setIsModalOpen(true);
-  };
-
-  const openResetPasswordModal = (user: User) => {
-    setEditUserId(user.id);
-    setFormData({ email: user.email, first_name: user.first_name, last_name: user.last_name, role: user.role, password: '' });
-    setFormErrors({});
-    setShowPassword(true);
-    setFocusPassword(true);
     setIsModalOpen(true);
   };
 

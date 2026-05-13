@@ -13,3 +13,7 @@ media/
 # Node
 frontend/node_modules/
 frontend/dist/
+
+# Scratch / utility scripts
+scratch_*.py
+db_backup.json

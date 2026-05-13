@@ -122,7 +122,7 @@ const TicketsPage: React.FC = () => {
 
   // Paginacja
   const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(25);
+  const itemsPerPage = 25;
 
   useEffect(() => {
     fetchTickets();

@@ -1,14 +1,14 @@
+from django.contrib.auth import get_user_model
 from rest_framework import serializers
 from .models import Category, Ticket, Comment, Attachment, TicketLog, WorkLog
 from accounts.serializers import UserSerializer
+
+User = get_user_model()
 
 class CategorySerializer(serializers.ModelSerializer):
     class Meta:
         model = Category
         fields = '__all__'
-
-from django.contrib.auth import get_user_model
-User = get_user_model()
 
 class AttachmentSerializer(serializers.ModelSerializer):
     url = serializers.SerializerMethodField()

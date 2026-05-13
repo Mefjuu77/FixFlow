@@ -27,12 +27,14 @@ class Ticket(models.Model):
     status = models.CharField(
         max_length=20, 
         choices=Status.choices, 
-        default=Status.NEW
+        default=Status.NEW,
+        db_index=True
     )
     priority = models.CharField(
         max_length=20, 
         choices=Priority.choices, 
-        default=Priority.NORMAL
+        default=Priority.NORMAL,
+        db_index=True
     )
     category = models.ForeignKey(Category, on_delete=models.CASCADE, related_name='tickets')
     creator = models.ForeignKey(
@@ -47,7 +49,7 @@ class Ticket(models.Model):
         blank=True, 
         related_name='assigned_tickets'
     )
-    created_at = models.DateTimeField(auto_now_add=True)
+    created_at = models.DateTimeField(auto_now_add=True, db_index=True)
     updated_at = models.DateTimeField(auto_now=True)
     resolved_at = models.DateTimeField(null=True, blank=True, help_text='Data przejścia w status Rozwiązane')
     resolution_token = models.CharField(max_length=64, blank=True, default='', help_text='Token do akcji akceptacji/odrzucenia z e-maila')
@@ -90,8 +92,9 @@ class Comment(models.Model):
 
     def save(self, *args, **kwargs):
         super().save(*args, **kwargs)
-        # Podbicie daty ostatniej aktualizacji zgłoszenia
-        self.ticket.save()
+        # Podbicie daty ostatniej aktualizacji zgłoszenia — targeted UPDATE
+        # zamiast pełnego self.ticket.save() (eliminacja N+1 SELECT + UPDATE)
+        Ticket.objects.filter(pk=self.ticket_id).update(updated_at=timezone.now())
 
     def __str__(self):
         return f"Komentarz #{self.id} do zgłoszenia [{self.ticket.id}]"
@@ -143,7 +146,7 @@ class TicketLog(models.Model):
     action = models.CharField(max_length=30, choices=ActionType.choices)
     old_value = models.CharField(max_length=200, blank=True, default='')
     new_value = models.CharField(max_length=200, blank=True, default='')
-    created_at = models.DateTimeField(auto_now_add=True)
+    created_at = models.DateTimeField(auto_now_add=True, db_index=True)
 
     class Meta:
         ordering = ['-created_at']

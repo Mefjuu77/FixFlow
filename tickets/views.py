@@ -14,6 +14,30 @@ from .serializers import CategorySerializer, TicketSerializer, CommentSerializer
 from .email import send_ticket_created_notification, send_comment_notification, TicketEmailAccumulator, send_reopened_notification
 
 
+def _create_attachments(ticket, files, request_user, comment=None):
+    """Wspólna logika tworzenia załączników (DRY dla ticket i comment attachments)."""
+    created = []
+    for f in files:
+        attachment = Attachment.objects.create(
+            ticket=ticket,
+            comment=comment,
+            file=f,
+            filename=f.name,
+            uploaded_by=request_user,
+        )
+        created.append(attachment)
+
+    # Log: dodanie załączników (jeden zbiorczy wpis)
+    log_value = created[0].filename if len(created) == 1 else f'{len(created)} załączników'
+    TicketLog.objects.create(
+        ticket=ticket,
+        user=request_user,
+        action=TicketLog.ActionType.ATTACHMENT_ADDED,
+        new_value=log_value,
+    )
+    return created
+
+
 # === Uprawnienia ===
 
 class IsAdminUser(BasePermission):
@@ -244,7 +268,7 @@ class CommentListCreateView(generics.ListCreateAPIView):
         if user.role == 'EMPLOYEE' and ticket.creator != user:
             return Comment.objects.none()
 
-        queryset = Comment.objects.filter(ticket_id=ticket_id)
+        queryset = Comment.objects.filter(ticket_id=ticket_id).select_related('author')
 
         # Pracownik nie widzi notatek wewnętrznych
         if user.role == 'EMPLOYEE':
@@ -309,7 +333,7 @@ class TicketLogListView(generics.ListAPIView):
         if user.role == 'EMPLOYEE':
             return TicketLog.objects.none()
 
-        return TicketLog.objects.filter(ticket_id=ticket_id)
+        return TicketLog.objects.filter(ticket_id=ticket_id).select_related('user')
 
 
 class GlobalActivityLogView(generics.ListAPIView):
@@ -321,7 +345,7 @@ class GlobalActivityLogView(generics.ListAPIView):
         user = self.request.user
         if user.role == 'EMPLOYEE':
             return TicketLog.objects.none()
-        return TicketLog.objects.all().order_by('-created_at')[:40]
+        return TicketLog.objects.select_related('user', 'ticket').order_by('-created_at')[:40]
 
 
 class WorkLogListCreateView(generics.ListCreateAPIView):
@@ -337,7 +361,7 @@ class WorkLogListCreateView(generics.ListCreateAPIView):
         if user.role == 'EMPLOYEE':
             return WorkLog.objects.none()
 
-        return WorkLog.objects.filter(ticket_id=ticket_id)
+        return WorkLog.objects.filter(ticket_id=ticket_id).select_related('author')
 
     def perform_create(self, serializer):
         ticket_id = self.kwargs.get('ticket_id')
@@ -428,27 +452,7 @@ class TicketAttachmentView(APIView):
         if validation_error:
             return validation_error
 
-        created = []
-        for f in files:
-            attachment = Attachment.objects.create(
-                ticket=ticket,
-                file=f,
-                filename=f.name,
-                uploaded_by=request.user,
-            )
-            created.append(attachment)
-
-        # Log: dodanie załączników (jeden zbiorczy wpis)
-        if len(created) == 1:
-            log_value = created[0].filename
-        else:
-            log_value = f'{len(created)} załączników'
-        TicketLog.objects.create(
-            ticket=ticket,
-            user=request.user,
-            action=TicketLog.ActionType.ATTACHMENT_ADDED,
-            new_value=log_value,
-        )
+        created = _create_attachments(ticket, files, request.user)
 
         serializer = AttachmentSerializer(created, many=True, context={'request': request})
         return Response(serializer.data, status=status.HTTP_201_CREATED)
@@ -509,28 +513,7 @@ class CommentAttachmentView(APIView):
         if validation_error:
             return validation_error
 
-        created = []
-        for f in files:
-            attachment = Attachment.objects.create(
-                ticket=ticket,
-                comment=comment,
-                file=f,
-                filename=f.name,
-                uploaded_by=request.user,
-            )
-            created.append(attachment)
-
-        # Log: dodanie załączników (jeden zbiorczy wpis)
-        if len(created) == 1:
-            log_value = created[0].filename
-        else:
-            log_value = f'{len(created)} załączników'
-        TicketLog.objects.create(
-            ticket=ticket,
-            user=request.user,
-            action=TicketLog.ActionType.ATTACHMENT_ADDED,
-            new_value=log_value,
-        )
+        created = _create_attachments(ticket, files, request.user, comment=comment)
 
         serializer = AttachmentSerializer(created, many=True, context={'request': request})
         return Response(serializer.data, status=status.HTTP_201_CREATED)

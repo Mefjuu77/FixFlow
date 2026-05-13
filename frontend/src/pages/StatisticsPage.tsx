@@ -407,12 +407,6 @@ const StatisticsPage: React.FC = () => {
   // Sugestie
   const suggestions: { text: string; severity: 'warning' | 'info' | 'success', link?: string }[] = [];
 
-  // Helper: link dla sugestii o bieżącym stanie (bez dat — liczymy aktywne TERAZ)
-  const activeLink = (params: Record<string, string>) => {
-    const p = new URLSearchParams(params);
-    return `/tickets?${p.toString()}`;
-  };
-
   // Helper: link dla sugestii historycznych/trendowych (z zakresem dat)
   const trendLink = (params: Record<string, string>) => {
     const p = new URLSearchParams({

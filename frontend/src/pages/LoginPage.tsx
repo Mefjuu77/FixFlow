@@ -196,19 +196,7 @@ const LoginPage: React.FC = () => {
               </button>
             </form>
           </div>
-
-          {/* Stopka karty */}
-          <div className="px-6 sm:px-8 md:px-10 py-4 text-center bg-gray-50/70 dark:bg-gray-900/30 border-t border-gray-100 dark:border-gray-700/50">
-            <p className="text-xs text-gray-500 dark:text-gray-400 font-medium">
-              Dostęp do systemu nadaje administrator IT.
-            </p>
-          </div>
         </div>
-
-        {/* Copyright */}
-        <p className="mt-8 text-center text-xs text-gray-500 dark:text-gray-500 font-medium">
-          FixFlow Helpdesk &copy; 2026
-        </p>
       </div>
     </div>
   );

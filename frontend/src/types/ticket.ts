@@ -1,7 +1,6 @@
-export interface Category {
-  id: number;
-  name: string;
-}
+import { Category } from './index';
+
+export type { Category };
 
 export interface TicketPayload {
   title: string;

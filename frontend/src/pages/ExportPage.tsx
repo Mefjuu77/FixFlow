@@ -10,7 +10,7 @@ import { DayPicker } from 'react-day-picker';
 import 'react-day-picker/src/style.css';
 import { pl } from 'date-fns/locale/pl';
 import {
-  FileBarChart, Calendar, Filter, FileSpreadsheet, FileText,
+  Calendar, Filter, FileSpreadsheet, FileText,
   ChevronDown, Search, Loader2, CheckCircle2, ChevronsUp, Equal,
   ChevronsDown, Circle, XCircle, ArrowDownToLine, RefreshCw,
   UserMinus, AlertTriangle, X

@@ -1,4 +1,4 @@
-import React, { createContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useState, useEffect, useRef, ReactNode } from 'react';
 import { User } from '../types';
 import api, { getAccessToken, getRefreshToken, storeTokens, clearTokens } from '../api/axiosConfig';
 
@@ -21,6 +21,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(true);
+  const channelRef = useRef<BroadcastChannel | null>(null);
 
   const fetchCurrentUser = async () => {
     try {
@@ -66,6 +67,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     // 2. BroadcastChannel - dla sessionStorage (bez zapamiętaj mnie)
     // Synchronizuje stan logowania we wszystkich kartach nawet przy sessionStorage
     const channel = new BroadcastChannel('auth_sync_channel');
+    channelRef.current = channel;
     channel.onmessage = (event) => {
       if (event.data.type === 'LOGIN') {
         const { access, refresh, rememberMe } = event.data;
@@ -82,6 +84,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     return () => {
       window.removeEventListener('storage', handleStorageChange);
       channel.close();
+      channelRef.current = null;
     };
   }, []);
 
@@ -89,9 +92,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     storeTokens(accessToken, refreshToken, rememberMe);
     
     // Powiadom inne karty o logowaniu
-    const channel = new BroadcastChannel('auth_sync_channel');
-    channel.postMessage({ type: 'LOGIN', access: accessToken, refresh: refreshToken, rememberMe });
-    channel.close();
+    channelRef.current?.postMessage({ type: 'LOGIN', access: accessToken, refresh: refreshToken, rememberMe });
 
     setIsLoading(true);
     await fetchCurrentUser();
@@ -109,9 +110,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
     
     // Powiadom inne karty o wylogowaniu
-    const channel = new BroadcastChannel('auth_sync_channel');
-    channel.postMessage({ type: 'LOGOUT' });
-    channel.close();
+    channelRef.current?.postMessage({ type: 'LOGOUT' });
 
     clearTokens();
     setUser(null);

@@ -143,7 +143,6 @@ const refreshIntervalId = setInterval(async () => {
   if (refreshToken) {
     try {
       await refreshAccessToken();
-      console.log('[Auth] Token odświeżony proaktywnie');
     } catch (err) {
       console.warn('[Auth] Proaktywne odświeżanie tokena nie powiodło się', err);
     }
