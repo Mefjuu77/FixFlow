@@ -398,7 +398,7 @@ const CreateTicketPage: React.FC = () => {
                 if (fieldErrors.description) setFieldErrors(prev => ({ ...prev, description: undefined }));
               }}
               placeholder={descriptionPlaceholder}
-              className={fieldErrors.description ? 'border-red-400 bg-red-50/30 ring-1 ring-red-400/50 rounded-xl' : 'bg-gray-50 dark:bg-gray-900/50 border-gray-200 dark:border-gray-800'}
+              className={`${fieldErrors.description ? 'border-red-400 bg-red-50/30 ring-1 ring-red-400/50 rounded-xl' : 'bg-gray-50 dark:bg-gray-900/50 border-gray-200 dark:border-gray-800'} sm:[&_.ProseMirror]:!min-h-[180px]`}
               resizable={true}
               minHeight="80px"
               onAttachFile={() => fileInputRef.current?.click()}
