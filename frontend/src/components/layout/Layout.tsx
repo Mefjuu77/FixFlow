@@ -96,7 +96,8 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
         >
           {isMobileMenuOpen ? <X size={22} /> : <Menu size={22} />}
         </button>
-        <div className="flex items-center gap-2">
+        {/* Logo wyśrodkowane absolutnie */}
+        <div className="absolute left-1/2 -translate-x-1/2 flex items-center gap-2">
           <Wrench className="w-5 h-5 text-blue-400" />
           <span className="text-lg font-bold text-white">FixFlow</span>
         </div>
