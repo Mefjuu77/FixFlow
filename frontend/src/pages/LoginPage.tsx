@@ -2,7 +2,6 @@ import React, { useState, useContext, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import api from '../api/axiosConfig';
 import { AuthContext } from '../context/AuthContext';
-import { ThemeContext } from '../context/ThemeContext';
 import {
   Lock,
   Mail,
@@ -11,8 +10,6 @@ import {
   AlertCircle,
   Eye,
   EyeOff,
-  Sun,
-  Moon,
 } from 'lucide-react';
 import useTitle from '../hooks/useTitle';
 
@@ -26,7 +23,7 @@ const LoginPage: React.FC = () => {
   const [rememberMe, setRememberMe] = useState(false);
 
   const authContext = useContext(AuthContext);
-  const themeContext = useContext(ThemeContext);
+
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -75,15 +72,7 @@ const LoginPage: React.FC = () => {
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[300px] sm:w-[500px] h-[300px] sm:h-[500px] bg-gradient-to-br from-blue-50/50 via-transparent to-purple-50/50 dark:from-blue-900/10 dark:to-purple-900/10 rounded-full blur-3xl" />
       </div>
 
-      {/* Theme toggle — spójny z layoutem aplikacji */}
-      <button
-        onClick={() => themeContext?.toggleTheme()}
-        className="absolute top-5 right-5 z-10 w-10 h-10 flex items-center justify-center rounded-xl bg-white/80 dark:bg-gray-800/80 backdrop-blur border border-gray-200 dark:border-gray-700 text-gray-500 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-white dark:hover:bg-gray-800 transition-all shadow-sm"
-        title={themeContext?.isDark ? 'Włącz jasny motyw' : 'Włącz ciemny motyw'}
-        aria-label="Przełącz motyw"
-      >
-        {themeContext?.isDark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
-      </button>
+
 
       <div className="relative w-full max-w-md animate-in fade-in duration-500">
         {/* Karta logowania */}
@@ -97,9 +86,6 @@ const LoginPage: React.FC = () => {
               <h1 className="text-2xl sm:text-3xl font-extrabold text-gray-900 dark:text-white tracking-tight">
                 FixFlow
               </h1>
-              <p className="text-sm text-gray-500 dark:text-gray-400 mt-1.5">
-                Zaloguj się do systemu zgłoszeń IT
-              </p>
             </div>
 
             {/* Alert błędu — styl z Settings */}
@@ -160,9 +146,6 @@ const LoginPage: React.FC = () => {
                     {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </button>
                 </div>
-                <p className="text-xs text-gray-500 dark:text-gray-400 ml-0.5 pt-1">
-                  Problemy z logowaniem? Skontaktuj się z administratorem.
-                </p>
               </div>
 
               {/* Zapamiętaj mnie */}

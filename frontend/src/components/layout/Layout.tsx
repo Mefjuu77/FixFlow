@@ -12,8 +12,6 @@ import {
   Wrench,
   BarChart2,
   FileText,
-  Moon,
-  Sun,
   Search,
   Menu,
   X
@@ -102,13 +100,6 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
           <Wrench className="w-5 h-5 text-blue-400" />
           <span className="text-lg font-bold text-white">FixFlow</span>
         </div>
-        <button
-          onClick={() => themeContext?.toggleTheme()}
-          className="p-2 -mr-1 text-gray-300 hover:text-white hover:bg-gray-800 rounded-lg transition-colors"
-          title={themeContext?.isDark ? 'Włącz jasny motyw' : 'Włącz ciemny motyw'}
-        >
-          {themeContext?.isDark ? <Sun size={18} /> : <Moon size={18} />}
-        </button>
       </div>
 
       {/* Mobile Backdrop */}
@@ -200,13 +191,6 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
               className="flex-1 flex items-center justify-center px-4 py-2 text-sm text-gray-300 transition-colors bg-gray-800 rounded-md hover:bg-gray-700 hover:text-white"
             >
               <LogOut size={16} className="mr-2" /> Wyloguj się
-            </button>
-            <button
-              onClick={() => themeContext?.toggleTheme()}
-              className="hidden md:flex items-center justify-center w-9 h-9 text-gray-300 transition-colors bg-gray-800 rounded-md hover:bg-gray-700 hover:text-white flex-shrink-0"
-              title={themeContext?.isDark ? 'Włącz jasny motyw' : 'Włącz ciemny motyw'}
-            >
-              {themeContext?.isDark ? <Sun size={16} /> : <Moon size={16} />}
             </button>
           </div>
         </div>
