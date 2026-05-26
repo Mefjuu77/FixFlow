@@ -41,13 +41,11 @@ def _create_attachments(ticket, files, request_user, comment=None):
 # === Uprawnienia ===
 
 class IsAdminUser(BasePermission):
-    """Zezwala tylko administratorom."""
     def has_permission(self, request, view):
         return request.user and request.user.role == 'ADMIN'
 
 
 class IsTicketOwnerOrStaff(BasePermission):
-    """Pracownik może operować tylko na swoich zgłoszeniach. Technik/Admin — na wszystkich."""
     def has_object_permission(self, request, view, obj):
         if request.user.role in ('ADMIN', 'TECHNICIAN'):
             return True
