@@ -102,7 +102,7 @@ const NotificationBell: React.FC = () => {
       </button>
 
       {isOpen && (
-        <div className="absolute bottom-full left-0 mb-2 w-80 max-w-[calc(100vw-2rem)] bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-xl dark:shadow-[0_10px_40px_rgba(0,0,0,0.5)] z-50 overflow-hidden animate-in fade-in slide-in-from-bottom-2 duration-150">
+        <div className="fixed bottom-20 left-4 right-4 w-auto md:absolute md:inset-auto md:bottom-full md:left-0 md:mb-2 md:w-80 md:max-w-[calc(100vw-2rem)] bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-xl dark:shadow-[0_10px_40px_rgba(0,0,0,0.5)] z-50 overflow-hidden animate-in fade-in slide-in-from-bottom-2 duration-150">
           <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100 dark:border-gray-700/60">
             <h3 className="text-sm font-bold text-gray-900 dark:text-white">Powiadomienia</h3>
             {unread > 0 && (
@@ -115,7 +115,7 @@ const NotificationBell: React.FC = () => {
             )}
           </div>
 
-          <div className="max-h-96 overflow-y-auto">
+          <div className="max-h-[60vh] md:max-h-96 overflow-y-auto">
             {loading ? (
               <div className="flex items-center justify-center py-10">
                 <Loader2 className="w-5 h-5 text-blue-500 animate-spin" />

@@ -1,0 +1,107 @@
+{
+  "common": {
+    "appName": "FixFlow",
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "loading": "Loading...",
+    "search": "Search...",
+    "back": "Back",
+    "close": "Close",
+    "confirm": "Confirm",
+    "yes": "Yes",
+    "no": "No",
+    "all": "All"
+  },
+  "language": {
+    "label": "Language",
+    "description": "Choose the application interface language.",
+    "polish": "Polish",
+    "english": "English"
+  },
+  "nav": {
+    "groupMain": "MAIN",
+    "groupAnalytics": "ANALYTICS",
+    "groupManagement": "MANAGEMENT",
+    "groupConfig": "CONFIGURATION",
+    "dashboard": "Dashboard",
+    "dashboardEmployee": "Home",
+    "tickets": "Tickets",
+    "statistics": "Statistics",
+    "export": "Data export",
+    "users": "Users",
+    "settings": "Settings",
+    "logout": "Log out",
+    "notifications": "Notifications"
+  },
+  "roles": {
+    "EMPLOYEE": "Employee",
+    "TECHNICIAN": "Technician",
+    "ADMIN": "Administrator",
+    "user": "User"
+  },
+  "status": {
+    "NOWE": "New",
+    "W_TOKU": "In progress",
+    "ROZWIAZANE": "Resolved",
+    "ZAMKNIETE": "Closed"
+  },
+  "dashboard": {
+    "greeting": "Hi, {{name}}! 👋",
+    "employeeSubtitle": "Need IT help or something not working? Create a ticket.",
+    "newTicket": "New ticket",
+    "reportProblem": "Report a problem",
+    "quickLoginLabel": "Login problem",
+    "quickLoginSub": "Password, account, system access",
+    "quickSoftwareLabel": "Software problem",
+    "quickSoftwareSub": "Apps, software, errors",
+    "quickNetworkLabel": "No internet",
+    "quickNetworkSub": "Wi-Fi, network, VPN",
+    "quickHardwareLabel": "Hardware problem",
+    "quickHardwareSub": "Computer, printer, devices",
+    "activeTickets": "Active tickets",
+    "noOpenTitle": "No open cases",
+    "noOpenDesc": "Looks like everything is running smoothly. If any issues come up, use the button above.",
+    "updatedPrefix": "Updated: {{time}}",
+    "recentlyClosed": "Recently closed",
+    "noClosed": "No closed tickets.",
+    "allTickets": "All tickets →"
+  }
+  "login": {
+    "subtitle": "Sign in to the IT ticketing system",
+    "email": "Email address",
+    "emailPlaceholder": "your.address@company.com",
+    "password": "Password",
+    "forgotPassword": "Forgot your password?",
+    "rememberMe": "Remember me",
+    "submit": "Sign in",
+    "footer": "Access to the system is granted by an administrator.",
+    "errorInvalid": "Invalid email or password.",
+    "errorGeneric": "A login error occurred. Please try again.",
+    "errorDeactivated": "Your account has been deactivated. Contact an administrator.",
+    "sessionExpired": "Your session has expired. For security reasons you will be asked to sign in again.",
+    "accountDeactivated": "Your account was deactivated during the session. You have been logged out automatically.",
+    "showPassword": "Show password",
+    "hidePassword": "Hide password"
+  },
+  "settings": {
+    "title": "Settings",
+    "subtitle": "Adjust your preferences, the app appearance, and manage security.",
+    "tabProfile": "My profile",
+    "tabSecurity": "Security",
+    "tabAppearance": "Appearance",
+    "tabNotifications": "Notifications",
+    "tabTemplates": "Reply templates",
+    "themeTitle": "Application theme",
+    "themeDescription": "Choose your preferred interface color theme.",
+    "themeLight": "Light",
+    "themeLightDesc": "Classic, bright interface",
+    "themeDark": "Dark",
+    "themeDarkDesc": "Easy on the eyes in the dark"
+  },
+  "theme": {
+    "switchToLight": "Switch to light theme",
+    "switchToDark": "Switch to dark theme"
+  }
+}

@@ -242,6 +242,137 @@ class TicketViewSet(viewsets.ModelViewSet):
             'ZAMKNIETE': counts.get('ZAMKNIETE', 0),
         })
 
+    # ===== Łączenie i powiązywanie zgłoszeń (technik/admin) =====
+
+    def _require_staff(self, request):
+        if request.user.role not in ('ADMIN', 'TECHNICIAN'):
+            raise PermissionDenied('Tylko technik lub administrator może zarządzać powiązaniami zgłoszeń.')
+
+    def _get_target(self, request):
+        """Pobiera zgłoszenie docelowe z body (klucz 'target')."""
+        target_id = request.data.get('target')
+        if not target_id:
+            return None, Response({'detail': 'Brak identyfikatora zgłoszenia (target).'}, status=status.HTTP_400_BAD_REQUEST)
+        try:
+            return Ticket.objects.get(id=target_id), None
+        except (Ticket.DoesNotExist, ValueError, TypeError):
+            return None, Response({'detail': 'Wskazane zgłoszenie nie istnieje.'}, status=status.HTTP_404_NOT_FOUND)
+
+    @action(detail=True, methods=['post'], url_path='merge')
+    def merge(self, request, pk=None):
+        """
+        Oznacza bieżące zgłoszenie jako duplikat zgłoszenia docelowego (target).
+        Opcjonalnie przenosi komentarze i wpisy czasu pracy (move_content=true).
+        Bieżące zgłoszenie zostaje zamknięte.
+        """
+        self._require_staff(request)
+        duplicate = self.get_object()
+        canonical, err = self._get_target(request)
+        if err:
+            return err
+
+        if canonical.id == duplicate.id:
+            return Response({'detail': 'Nie można scalić zgłoszenia z samym sobą.'}, status=status.HTTP_400_BAD_REQUEST)
+        if canonical.merged_into_id == duplicate.id:
+            return Response({'detail': 'Wskazane zgłoszenie jest już duplikatem tego zgłoszenia.'}, status=status.HTTP_400_BAD_REQUEST)
+        if duplicate.merged_into_id:
+            return Response({'detail': 'To zgłoszenie jest już oznaczone jako duplikat.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        move_content = str(request.data.get('move_content', '')).lower() in ('1', 'true', 'yes')
+
+        if move_content:
+            Comment.objects.filter(ticket=duplicate).update(ticket=canonical)
+            WorkLog.objects.filter(ticket=duplicate).update(ticket=canonical)
+            canonical.save(update_fields=['updated_at'])
+
+        duplicate.merged_into = canonical
+        old_status = duplicate.status
+        if duplicate.status != Ticket.Status.CLOSED:
+            duplicate.status = Ticket.Status.CLOSED
+            duplicate.clear_resolution()
+        duplicate.save()
+
+        # Logi na obu zgłoszeniach
+        TicketLog.objects.create(
+            ticket=duplicate, user=request.user,
+            action=TicketLog.ActionType.MERGED,
+            old_value=old_status, new_value=f'#{canonical.id}',
+        )
+        TicketLog.objects.create(
+            ticket=canonical, user=request.user,
+            action=TicketLog.ActionType.MERGED,
+            new_value=f'#{duplicate.id}',
+        )
+
+        serializer = self.get_serializer(duplicate)
+        return Response(serializer.data)
+
+    @action(detail=True, methods=['post'], url_path='unmerge')
+    def unmerge(self, request, pk=None):
+        """Cofa oznaczenie duplikatu (przywraca zgłoszenie do statusu W toku)."""
+        self._require_staff(request)
+        duplicate = self.get_object()
+        if not duplicate.merged_into_id:
+            return Response({'detail': 'To zgłoszenie nie jest duplikatem.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        canonical_id = duplicate.merged_into_id
+        duplicate.merged_into = None
+        if duplicate.status == Ticket.Status.CLOSED:
+            duplicate.status = Ticket.Status.IN_PROGRESS
+        duplicate.save()
+
+        TicketLog.objects.create(
+            ticket=duplicate, user=request.user,
+            action=TicketLog.ActionType.UNMERGED,
+            old_value=f'#{canonical_id}',
+        )
+        serializer = self.get_serializer(duplicate)
+        return Response(serializer.data)
+
+    @action(detail=True, methods=['post'], url_path='link')
+    def link(self, request, pk=None):
+        """Tworzy symetryczne powiązanie między bieżącym a docelowym zgłoszeniem."""
+        self._require_staff(request)
+        ticket = self.get_object()
+        other, err = self._get_target(request)
+        if err:
+            return err
+        if other.id == ticket.id:
+            return Response({'detail': 'Nie można powiązać zgłoszenia z samym sobą.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        ticket.related_tickets.add(other)
+        TicketLog.objects.create(
+            ticket=ticket, user=request.user,
+            action=TicketLog.ActionType.LINKED, new_value=f'#{other.id}',
+        )
+        TicketLog.objects.create(
+            ticket=other, user=request.user,
+            action=TicketLog.ActionType.LINKED, new_value=f'#{ticket.id}',
+        )
+        serializer = self.get_serializer(ticket)
+        return Response(serializer.data)
+
+    @action(detail=True, methods=['post'], url_path='unlink')
+    def unlink(self, request, pk=None):
+        """Usuwa symetryczne powiązanie między zgłoszeniami."""
+        self._require_staff(request)
+        ticket = self.get_object()
+        other, err = self._get_target(request)
+        if err:
+            return err
+
+        ticket.related_tickets.remove(other)
+        TicketLog.objects.create(
+            ticket=ticket, user=request.user,
+            action=TicketLog.ActionType.UNLINKED, new_value=f'#{other.id}',
+        )
+        TicketLog.objects.create(
+            ticket=other, user=request.user,
+            action=TicketLog.ActionType.UNLINKED, new_value=f'#{ticket.id}',
+        )
+        serializer = self.get_serializer(ticket)
+        return Response(serializer.data)
+
     def perform_create(self, serializer):
         # Automatycznie przypisuje aktualnie zalogowanego użytkownika jako twórcę zgłoszenia
         ticket = serializer.save(creator=self.request.user)

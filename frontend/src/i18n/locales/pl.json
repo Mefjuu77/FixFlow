@@ -1,0 +1,107 @@
+{
+  "common": {
+    "appName": "FixFlow",
+    "save": "Zapisz",
+    "cancel": "Anuluj",
+    "delete": "Usuń",
+    "edit": "Edytuj",
+    "loading": "Ładowanie...",
+    "search": "Szukaj...",
+    "back": "Wstecz",
+    "close": "Zamknij",
+    "confirm": "Potwierdź",
+    "yes": "Tak",
+    "no": "Nie",
+    "all": "Wszystkie"
+  },
+  "language": {
+    "label": "Język",
+    "description": "Wybierz język interfejsu aplikacji.",
+    "polish": "Polski",
+    "english": "Angielski"
+  },
+  "nav": {
+    "groupMain": "GŁÓWNE",
+    "groupAnalytics": "ANALITYKA",
+    "groupManagement": "ZARZĄDZANIE",
+    "groupConfig": "KONFIGURACJA",
+    "dashboard": "Pulpit",
+    "dashboardEmployee": "Start",
+    "tickets": "Zgłoszenia",
+    "statistics": "Statystyki",
+    "export": "Eksport danych",
+    "users": "Użytkownicy",
+    "settings": "Ustawienia",
+    "logout": "Wyloguj się",
+    "notifications": "Powiadomienia"
+  },
+  "roles": {
+    "EMPLOYEE": "Pracownik",
+    "TECHNICIAN": "Technik",
+    "ADMIN": "Administrator",
+    "user": "Użytkownik"
+  },
+  "status": {
+    "NOWE": "Nowe",
+    "W_TOKU": "W toku",
+    "ROZWIAZANE": "Rozwiązane",
+    "ZAMKNIETE": "Zamknięte"
+  },
+  "dashboard": {
+    "greeting": "Cześć, {{name}}! 👋",
+    "employeeSubtitle": "Potrzebujesz pomocy IT lub coś nie działa? Utwórz zgłoszenie.",
+    "newTicket": "Nowe zgłoszenie",
+    "reportProblem": "Zgłoś problem",
+    "quickLoginLabel": "Problem z logowaniem",
+    "quickLoginSub": "Hasło, konto, dostęp do systemu",
+    "quickSoftwareLabel": "Problem z programem",
+    "quickSoftwareSub": "Aplikacje, oprogramowanie, błędy",
+    "quickNetworkLabel": "Brak internetu",
+    "quickNetworkSub": "Wi-Fi, sieć, VPN",
+    "quickHardwareLabel": "Problem ze sprzętem",
+    "quickHardwareSub": "Komputer, drukarka, urządzenia",
+    "activeTickets": "Aktywne zgłoszenia",
+    "noOpenTitle": "Brak otwartych spraw",
+    "noOpenDesc": "Wygląda na to, że wszystko działa bez zarzutu. Jeśli pojawią się problemy, użyj przycisku u góry.",
+    "updatedPrefix": "Aktualizacja: {{time}}",
+    "recentlyClosed": "Ostatnio zamknięte",
+    "noClosed": "Brak zamkniętych zgłoszeń.",
+    "allTickets": "Wszystkie zgłoszenia →"
+  }
+  "login": {
+    "subtitle": "Zaloguj się do systemu zgłoszeń IT",
+    "email": "Adres e-mail",
+    "emailPlaceholder": "twoj.adres@firma.pl",
+    "password": "Hasło",
+    "forgotPassword": "Zapomniałeś hasła?",
+    "rememberMe": "Zapamiętaj mnie",
+    "submit": "Zaloguj się",
+    "footer": "Dostęp do systemu nadaje administrator.",
+    "errorInvalid": "Błędny e-mail lub hasło.",
+    "errorGeneric": "Wystąpił błąd logowania. Spróbuj ponownie.",
+    "errorDeactivated": "Twoje konto zostało zdezaktywowane. Skontaktuj się z administratorem.",
+    "sessionExpired": "Twoja sesja wygasła. Ze względów bezpieczeństwa zostaniesz poproszony o ponowne logowanie.",
+    "accountDeactivated": "Twoje konto zostało zdezaktywowane w trakcie trwania sesji. Zostałeś automatycznie wylogowany.",
+    "showPassword": "Pokaż hasło",
+    "hidePassword": "Ukryj hasło"
+  },
+  "settings": {
+    "title": "Ustawienia",
+    "subtitle": "Dostosuj swoje preferencje, wygląd aplikacji oraz zarządzaj bezpieczeństwem.",
+    "tabProfile": "Mój profil",
+    "tabSecurity": "Zabezpieczenia",
+    "tabAppearance": "Wygląd",
+    "tabNotifications": "Powiadomienia",
+    "tabTemplates": "Szablony odpowiedzi",
+    "themeTitle": "Motyw aplikacji",
+    "themeDescription": "Wybierz preferowany motyw kolorystyczny interfejsu.",
+    "themeLight": "Jasny",
+    "themeLightDesc": "Klasyczny, jasny interfejs",
+    "themeDark": "Ciemny",
+    "themeDarkDesc": "Łagodny dla oczu w ciemności"
+  },
+  "theme": {
+    "switchToLight": "Włącz jasny motyw",
+    "switchToDark": "Włącz ciemny motyw"
+  }
+}

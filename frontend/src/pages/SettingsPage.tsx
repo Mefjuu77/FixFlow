@@ -1,11 +1,13 @@
 import React, { useContext, useState, useRef, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { AuthContext } from '../context/AuthContext';
 import { ThemeContext } from '../context/ThemeContext';
 import useTitle from '../hooks/useTitle';
 import api from '../api/axiosConfig';
 import { ticketService } from '../api/ticketService';
 import { ReplyTemplate } from '../types';
+import { SUPPORTED_LANGUAGES, AppLanguage } from '../i18n';
 import {
   Camera,
   Save,
@@ -27,6 +29,7 @@ import {
   MessageSquareText,
   Plus,
   Pencil,
+  Globe,
 } from 'lucide-react';
 
 const ROLE_LABELS: Record<string, string> = {
@@ -41,11 +44,12 @@ const ROLE_COLORS: Record<string, string> = {
   ADMIN: 'bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-400',
 };
 
-const validTabs = ['profile', 'security', 'appearance', 'notifications', 'templates'] as const;
+const validTabs = ['profile', 'security', 'appearance', 'language', 'notifications', 'templates'] as const;
 type SettingsTab = typeof validTabs[number];
 
 const SettingsPage: React.FC = () => {
-  useTitle('Ustawienia');
+  const { t, i18n } = useTranslation();
+  useTitle(t('settings.title'));
   const authContext = useContext(AuthContext);
   const themeContext = useContext(ThemeContext);
   const user = authContext?.user;
@@ -267,11 +271,12 @@ const SettingsPage: React.FC = () => {
   };
 
   const tabs: { id: string; label: string; icon: React.ReactNode }[] = [
-    { id: 'profile', label: 'Mój profil', icon: <User className="w-4 h-4" /> },
-    { id: 'security', label: 'Zabezpieczenia', icon: <KeyRound className="w-4 h-4" /> },
-    { id: 'appearance', label: 'Wygląd', icon: <Palette className="w-4 h-4" /> },
-    { id: 'notifications', label: 'Powiadomienia', icon: <Bell className="w-4 h-4" /> },
-    ...(isTechOrAdmin ? [{ id: 'templates', label: 'Szablony odpowiedzi', icon: <MessageSquareText className="w-4 h-4" /> }] : []),
+    { id: 'profile', label: t('settings.tabProfile'), icon: <User className="w-4 h-4" /> },
+    { id: 'security', label: t('settings.tabSecurity'), icon: <KeyRound className="w-4 h-4" /> },
+    { id: 'appearance', label: t('settings.tabAppearance'), icon: <Palette className="w-4 h-4" /> },
+    { id: 'language', label: t('language.label'), icon: <Globe className="w-4 h-4" /> },
+    { id: 'notifications', label: t('settings.tabNotifications'), icon: <Bell className="w-4 h-4" /> },
+    ...(isTechOrAdmin ? [{ id: 'templates', label: t('settings.tabTemplates'), icon: <MessageSquareText className="w-4 h-4" /> }] : []),
   ];
 
   return (
@@ -281,8 +286,8 @@ const SettingsPage: React.FC = () => {
         <div className="absolute inset-0 bg-gradient-to-r from-blue-50/50 via-transparent to-purple-50/50 dark:from-blue-900/10 dark:to-purple-900/10" />
         <div className="relative px-4 sm:px-8 py-5 sm:py-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
           <div>
-            <h1 className="text-2xl sm:text-3xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-gray-900 to-gray-600 dark:from-white dark:to-gray-300 tracking-tight">Ustawienia</h1>
-            <p className="mt-1 sm:mt-2 text-xs sm:text-sm text-gray-500 dark:text-gray-400">Dostosuj swoje preferencje, wygląd aplikacji oraz zarządzaj bezpieczeństwem.</p>
+            <h1 className="text-2xl sm:text-3xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-gray-900 to-gray-600 dark:from-white dark:to-gray-300 tracking-tight">{t('settings.title')}</h1>
+            <p className="mt-1 sm:mt-2 text-xs sm:text-sm text-gray-500 dark:text-gray-400">{t('settings.subtitle')}</p>
           </div>
         </div>
       </div>
@@ -570,8 +575,8 @@ const SettingsPage: React.FC = () => {
                     <Palette className="w-6 h-6 text-blue-600 dark:text-blue-400" />
                   </div>
                   <div>
-                    <h3 className="text-xl font-bold text-gray-900 dark:text-white tracking-tight">Motyw aplikacji</h3>
-                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">Wybierz preferowany motyw kolorystyczny interfejsu.</p>
+                    <h3 className="text-xl font-bold text-gray-900 dark:text-white tracking-tight">{t('settings.themeTitle')}</h3>
+                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">{t('settings.themeDescription')}</p>
                   </div>
                 </div>
 
@@ -588,8 +593,8 @@ const SettingsPage: React.FC = () => {
                       <Sun className="w-8 h-8 text-amber-500" />
                     </div>
                     <div className="text-center">
-                      <p className="text-sm font-bold text-gray-900 dark:text-white">Jasny</p>
-                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Klasyczny, jasny interfejs</p>
+                      <p className="text-sm font-bold text-gray-900 dark:text-white">{t('settings.themeLight')}</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{t('settings.themeLightDesc')}</p>
                     </div>
                     {!themeContext?.isDark && (
                       <div className="absolute top-3 right-3">
@@ -610,8 +615,8 @@ const SettingsPage: React.FC = () => {
                       <Moon className="w-8 h-8 text-blue-400" />
                     </div>
                     <div className="text-center">
-                      <p className="text-sm font-bold text-gray-900 dark:text-white">Ciemny</p>
-                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Łagodny dla oczu w ciemności</p>
+                      <p className="text-sm font-bold text-gray-900 dark:text-white">{t('settings.themeDark')}</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{t('settings.themeDarkDesc')}</p>
                     </div>
                     {themeContext?.isDark && (
                       <div className="absolute top-3 right-3">
@@ -619,6 +624,51 @@ const SettingsPage: React.FC = () => {
                       </div>
                     )}
                   </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* ===== LANGUAGE TAB ===== */}
+          {activeTab === 'language' && (
+            <div className="space-y-6">
+              <div className="bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700/60 rounded-2xl sm:rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-[0_8px_30px_rgb(0,0,0,0.1)] p-4 sm:p-8">
+                <div className="flex items-center gap-3 sm:gap-4 mb-5 sm:mb-8">
+                  <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl bg-blue-50 dark:bg-blue-500/10 flex items-center justify-center border border-blue-100 dark:border-blue-500/20">
+                    <Globe className="w-6 h-6 text-blue-600 dark:text-blue-400" />
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-bold text-gray-900 dark:text-white tracking-tight">{t('language.label')}</h3>
+                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">{t('language.description')}</p>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3 sm:gap-6">
+                  {SUPPORTED_LANGUAGES.map((lng) => {
+                    const active = (i18n.language?.split('-')[0] || 'pl') === lng;
+                    const meta: Record<AppLanguage, { flag: string; labelKey: string }> = {
+                      pl: { flag: '🇵🇱', labelKey: 'language.polish' },
+                      en: { flag: '🇬🇧', labelKey: 'language.english' },
+                    };
+                    return (
+                      <button
+                        key={lng}
+                        onClick={() => i18n.changeLanguage(lng)}
+                        className={`relative flex items-center gap-3 p-4 sm:p-5 rounded-2xl border-2 transition-all ${active
+                            ? 'border-blue-500 bg-blue-50/50 dark:bg-blue-500/10 shadow-md ring-4 ring-blue-500/10'
+                            : 'border-gray-200 dark:border-gray-700 hover:border-blue-300 dark:hover:border-blue-500/50 hover:shadow-md'
+                          }`}
+                      >
+                        <span className="text-2xl leading-none">{meta[lng].flag}</span>
+                        <span className="text-sm font-bold text-gray-900 dark:text-white">{t(meta[lng].labelKey)}</span>
+                        {active && (
+                          <div className="absolute top-3 right-3">
+                            <CheckCircle className="w-5 h-5 text-blue-500" />
+                          </div>
+                        )}
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
             </div>

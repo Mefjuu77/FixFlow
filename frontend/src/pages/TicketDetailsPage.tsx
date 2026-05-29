@@ -45,6 +45,7 @@ import {
 import { getCategoryIcon } from '../utils/ticketConstants';
 import MarkdownEditor from '../components/MarkdownEditor';
 import MarkdownRenderer from '../components/MarkdownRenderer';
+import TicketRelations from '../components/TicketRelations';
 
 const TicketDetailsPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -1493,6 +1494,30 @@ const TicketDetailsPage: React.FC = () => {
                                     <span className="bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 px-1.5 py-0.5 rounded font-medium line-through">{log.old_value}</span>
                                   </p>
                                 )}
+                                {log.action === 'MERGED' && (
+                                  <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                                    <span className="font-medium text-gray-700 dark:text-gray-300">{userName}</span> powiązał(a) jako duplikat:{' '}
+                                    <span className="bg-amber-50 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 px-1.5 py-0.5 rounded font-medium">{log.new_value}</span>
+                                  </p>
+                                )}
+                                {log.action === 'UNMERGED' && (
+                                  <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                                    <span className="font-medium text-gray-700 dark:text-gray-300">{userName}</span> cofnął(ęła) oznaczenie duplikatu{log.old_value ? ' ' : ''}
+                                    {log.old_value && <span className="bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 px-1.5 py-0.5 rounded font-medium">{log.old_value}</span>}
+                                  </p>
+                                )}
+                                {log.action === 'LINKED' && (
+                                  <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                                    <span className="font-medium text-gray-700 dark:text-gray-300">{userName}</span> powiązał(a) zgłoszenie:{' '}
+                                    <span className="bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 px-1.5 py-0.5 rounded font-medium">{log.new_value}</span>
+                                  </p>
+                                )}
+                                {log.action === 'UNLINKED' && (
+                                  <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                                    <span className="font-medium text-gray-700 dark:text-gray-300">{userName}</span> usunął(a) powiązanie:{' '}
+                                    <span className="bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 px-1.5 py-0.5 rounded font-medium line-through">{log.new_value}</span>
+                                  </p>
+                                )}
 
                                 {/* Avatar użytkownika */}
                                 {log.user_details && (
@@ -2184,6 +2209,13 @@ const TicketDetailsPage: React.FC = () => {
 
             </div>
           </div>
+
+          {/* Powiązania zgłoszeń (duplikaty / powiązane) */}
+          <TicketRelations
+            ticket={ticket}
+            canManage={isTechnicianOrAdmin}
+            onChanged={() => { fetchTicket(); fetchComments(); fetchLogs(); fetchWorkLogs(); }}
+          />
         </div>
       </div>
 

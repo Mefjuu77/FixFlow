@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, useContext, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { AuthContext } from '../context/AuthContext';
 import { ThemeContext } from '../context/ThemeContext';
 import api from '../api/axiosConfig';
@@ -8,7 +9,7 @@ import {
   Search, LayoutGrid, BarChart2, FileText,
   Users, Settings, PlusCircle, LogOut, Moon, Sun, ArrowRight,
   Hash, KeyRound, Bell, Palette, UserPlus,
-  ClipboardList,
+  ClipboardList, Globe,
 } from 'lucide-react';
 
 const GROUP_ORDER = ['Akcje', 'Nawigacja', 'Ustawienia', 'Zgłoszenia'];
@@ -35,6 +36,7 @@ const CommandPalette: React.FC = () => {
   const navigate = useNavigate();
   const authContext = useContext(AuthContext);
   const themeContext = useContext(ThemeContext);
+  const { i18n } = useTranslation();
 
   const role = authContext?.user?.role;
   const isAdmin = role === 'ADMIN';
@@ -117,6 +119,10 @@ const CommandPalette: React.FC = () => {
       );
     }
 
+    items.push(
+      { id: 'nav-settings-language', label: 'Język', icon: <Globe className="w-4 h-4" />, action: () => runAndClose(() => navigate('/settings?tab=language')), group: 'Ustawienia', keywords: 'język language polski angielski english polish locale tłumaczenie' },
+    );
+
     // ========== AKCJE ==========
     items.push(
       { id: 'action-create-ticket', label: 'Nowe zgłoszenie', icon: <PlusCircle className="w-4 h-4" />, action: () => runAndClose(() => navigate('/create-ticket')), group: 'Akcje', keywords: 'utwórz stwórz dodaj nowy ticket zgłoś create' },
@@ -138,6 +144,32 @@ const CommandPalette: React.FC = () => {
         group: 'Akcje',
         keywords: 'dark mode tryb ciemny jasny theme motyw switch'
       },
+    );
+
+    // Akcje zmiany języka — pokaż tylko ten język, który NIE jest aktywny
+    const currentLang = (i18n.language || 'pl').split('-')[0];
+    if (currentLang !== 'pl') {
+      items.push({
+        id: 'action-lang-pl',
+        label: 'Zmień język na polski',
+        icon: <Globe className="w-4 h-4" />,
+        action: () => runAndClose(() => i18n.changeLanguage('pl')),
+        group: 'Akcje',
+        keywords: 'język language polski polish pl zmień switch tłumaczenie',
+      });
+    }
+    if (currentLang !== 'en') {
+      items.push({
+        id: 'action-lang-en',
+        label: 'Switch language to English',
+        icon: <Globe className="w-4 h-4" />,
+        action: () => runAndClose(() => i18n.changeLanguage('en')),
+        group: 'Akcje',
+        keywords: 'język language angielski english en zmień switch translation',
+      });
+    }
+
+    items.push(
       {
         id: 'action-logout',
         label: 'Wyloguj się',
@@ -149,7 +181,7 @@ const CommandPalette: React.FC = () => {
     );
 
     return items;
-  }, [navigate, runAndClose, isAdmin, isTechnician, themeContext?.isDark]);
+  }, [navigate, runAndClose, isAdmin, isTechnician, themeContext?.isDark, i18n, i18n.language]);
 
   // Filtrowanie wyników
   const filteredResults = useMemo(() => {

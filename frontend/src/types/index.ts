@@ -28,6 +28,13 @@ export interface Attachment {
   created_at: string;
 }
 
+export interface TicketRef {
+  id: number;
+  title: string;
+  status: 'NOWE' | 'W_TOKU' | 'ROZWIAZANE' | 'ZAMKNIETE';
+  priority: 'NISKI' | 'NORMALNY' | 'WYSOKI';
+}
+
 export interface Ticket {
   id: number;
   title: string;
@@ -45,6 +52,10 @@ export interface Ticket {
   first_response_at?: string | null;
   created_at: string;
   updated_at: string;
+  merged_into?: number | null;
+  merged_into_details?: TicketRef | null;
+  duplicates?: TicketRef[];
+  related_details?: TicketRef[];
 }
 
 export interface Comment {
@@ -65,7 +76,7 @@ export interface TicketLog {
   ticket: number;
   user: number | null;
   user_details?: User;
-  action: 'CREATED' | 'STATUS_CHANGED' | 'TECHNICIAN_ASSIGNED' | 'TECHNICIAN_REMOVED' | 'PRIORITY_CHANGED' | 'CATEGORY_CHANGED' | 'CREATOR_CHANGED' | 'ATTACHMENT_ADDED' | 'TITLE_CHANGED' | 'DESCRIPTION_CHANGED' | 'ATTACHMENT_DELETED' | 'AUTO_CLOSED' | 'REOPENED' | 'COMMENT_ADDED' | 'WORK_LOGGED';
+  action: 'CREATED' | 'STATUS_CHANGED' | 'TECHNICIAN_ASSIGNED' | 'TECHNICIAN_REMOVED' | 'PRIORITY_CHANGED' | 'CATEGORY_CHANGED' | 'CREATOR_CHANGED' | 'ATTACHMENT_ADDED' | 'TITLE_CHANGED' | 'DESCRIPTION_CHANGED' | 'ATTACHMENT_DELETED' | 'AUTO_CLOSED' | 'REOPENED' | 'COMMENT_ADDED' | 'WORK_LOGGED' | 'MERGED' | 'UNMERGED' | 'LINKED' | 'UNLINKED';
   action_display: string;
   old_value: string;
   new_value: string;

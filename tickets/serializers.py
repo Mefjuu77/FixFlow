@@ -25,6 +25,13 @@ class AttachmentSerializer(serializers.ModelSerializer):
             return request.build_absolute_uri(obj.file.url)
         return None
 
+class TicketRefSerializer(serializers.ModelSerializer):
+    """Minimalna reprezentacja zgłoszenia do pokazania powiązań/duplikatów."""
+    class Meta:
+        model = Ticket
+        fields = ['id', 'title', 'status', 'priority']
+
+
 class TicketListSerializer(serializers.ModelSerializer):
     """Lekki serializer dla widoku listy — bez opisu i załączników."""
     creator_details = UserSerializer(source='creator', read_only=True)
@@ -36,7 +43,7 @@ class TicketListSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'title', 'status', 'priority',
             'category', 'category_name', 'creator', 'creator_details',
-            'technician', 'technician_details',
+            'technician', 'technician_details', 'merged_into',
             'resolved_at', 'first_response_at', 'created_at', 'updated_at'
         ]
         read_only_fields = ('created_at', 'updated_at', 'resolved_at')
@@ -52,6 +59,9 @@ class TicketSerializer(serializers.ModelSerializer):
         queryset=User.objects.all(),
         required=False
     )
+    merged_into_details = TicketRefSerializer(source='merged_into', read_only=True)
+    duplicates = TicketRefSerializer(many=True, read_only=True)
+    related_details = serializers.SerializerMethodField()
 
     class Meta:
         model = Ticket
@@ -59,9 +69,13 @@ class TicketSerializer(serializers.ModelSerializer):
             'id', 'title', 'description', 'status', 'priority', 
             'category', 'category_name', 'creator', 'creator_details', 
             'technician', 'technician_details', 'attachments', 
-            'resolved_at', 'first_response_at', 'created_at', 'updated_at'
+            'resolved_at', 'first_response_at', 'created_at', 'updated_at',
+            'merged_into', 'merged_into_details', 'duplicates', 'related_details'
         ]
-        read_only_fields = ('created_at', 'updated_at', 'resolved_at')
+        read_only_fields = ('created_at', 'updated_at', 'resolved_at', 'merged_into')
+
+    def get_related_details(self, obj):
+        return TicketRefSerializer(obj.related_tickets.all(), many=True).data
 
     def validate_title(self, value):
         cleaned = value.strip()

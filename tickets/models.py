@@ -55,6 +55,21 @@ class Ticket(models.Model):
     first_response_at = models.DateTimeField(null=True, blank=True, help_text='Data pierwszej reakcji technika (komentarz lub zmiana statusu)')
     resolution_token = models.CharField(max_length=64, blank=True, default='', help_text='Token do akcji akceptacji/odrzucenia z e-maila')
 
+    # Łączenie i powiązywanie zgłoszeń
+    merged_into = models.ForeignKey(
+        'self',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='duplicates',
+        help_text='Zgłoszenie nadrzędne, jeśli to jest duplikat'
+    )
+    related_tickets = models.ManyToManyField(
+        'self',
+        blank=True,
+        help_text='Powiązane zgłoszenia (relacja symetryczna)'
+    )
+
     def generate_resolution_token(self):
         """Generuje unikalny token i ustawia resolved_at."""
         self.resolution_token = secrets.token_urlsafe(48)
@@ -137,6 +152,10 @@ class TicketLog(models.Model):
         REOPENED = 'REOPENED', 'Ponownie otwarto'
         COMMENT_ADDED = 'COMMENT_ADDED', 'Dodano komentarz'
         WORK_LOGGED = 'WORK_LOGGED', 'Zarejestrowano czas pracy'
+        MERGED = 'MERGED', 'Oznaczono jako duplikat'
+        UNMERGED = 'UNMERGED', 'Cofnięto oznaczenie duplikatu'
+        LINKED = 'LINKED', 'Powiązano zgłoszenie'
+        UNLINKED = 'UNLINKED', 'Usunięto powiązanie'
 
     ticket = models.ForeignKey(Ticket, on_delete=models.CASCADE, related_name='logs')
     user = models.ForeignKey(

@@ -1,5 +1,6 @@
 import React, { useState, useContext, useEffect } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import api from '../api/axiosConfig';
 import { AuthContext } from '../context/AuthContext';
 import {
@@ -12,9 +13,11 @@ import {
   EyeOff,
 } from 'lucide-react';
 import useTitle from '../hooks/useTitle';
+import LanguageSwitcher from '../components/LanguageSwitcher';
 
 const LoginPage: React.FC = () => {
-  useTitle('Logowanie');
+  const { t } = useTranslation();
+  useTitle(t('login.submit'));
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -30,14 +33,14 @@ const LoginPage: React.FC = () => {
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     if (params.get('session_expired') === 'true') {
-      setError('Twoja sesja wygasła. Ze względów bezpieczeństwa zostaniesz poproszony o ponowne logowanie.');
+      setError(t('login.sessionExpired'));
       window.history.replaceState({}, document.title, '/login');
     }
     if (params.get('account_deactivated') === 'true') {
-      setError('Twoje konto zostało zdezaktywowane w trakcie trwania sesji. Zostałeś automatycznie wylogowany.');
+      setError(t('login.accountDeactivated'));
       window.history.replaceState({}, document.title, '/login');
     }
-  }, [location.search]);
+  }, [location.search, t]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -52,11 +55,11 @@ const LoginPage: React.FC = () => {
       }
     } catch (err: any) {
       if (err.response?.data?.code === 'user_inactive') {
-        setError(err.response.data.detail || 'Twoje konto zostało zdezaktywowane. Skontaktuj się z administratorem.');
+        setError(err.response.data.detail || t('login.errorDeactivated'));
       } else if (err.response?.status === 401) {
-        setError('Błędny e-mail lub hasło.');
+        setError(t('login.errorInvalid'));
       } else {
-        setError(err.response?.data?.detail || 'Wystąpił błąd logowania. Spróbuj ponownie.');
+        setError(err.response?.data?.detail || t('login.errorGeneric'));
       }
     } finally {
       setIsSubmitting(false);
@@ -72,7 +75,10 @@ const LoginPage: React.FC = () => {
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[300px] sm:w-[500px] h-[300px] sm:h-[500px] bg-gradient-to-br from-blue-50/50 via-transparent to-purple-50/50 dark:from-blue-900/10 dark:to-purple-900/10 rounded-full blur-3xl" />
       </div>
 
-
+      {/* Przełącznik języka */}
+      <div className="absolute top-4 right-4 z-10">
+        <LanguageSwitcher />
+      </div>
 
       <div className="relative w-full max-w-md animate-in fade-in duration-500">
         {/* Karta logowania */}
@@ -84,8 +90,11 @@ const LoginPage: React.FC = () => {
                 <Wrench className="w-7 h-7 text-blue-600 dark:text-blue-400" strokeWidth={1.75} />
               </div>
               <h1 className="text-2xl sm:text-3xl font-extrabold text-gray-900 dark:text-white tracking-tight">
-                FixFlow
+                {t('common.appName')}
               </h1>
+              <p className="text-sm text-gray-500 dark:text-gray-400 mt-1.5">
+                {t('login.subtitle')}
+              </p>
             </div>
 
             {/* Alert błędu — styl z Settings */}
@@ -100,7 +109,7 @@ const LoginPage: React.FC = () => {
               {/* Email */}
               <div className="space-y-2">
                 <label className="text-[13px] font-bold text-gray-500 dark:text-gray-400">
-                  Adres e-mail
+                  {t('login.email')}
                 </label>
                 <div className="relative group">
                   <div className="absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none">
@@ -111,7 +120,7 @@ const LoginPage: React.FC = () => {
                     required
                     autoComplete="email"
                     className="w-full pl-11 pr-4 py-3 bg-gray-50/50 dark:bg-gray-900/30 border border-gray-200 dark:border-gray-700 rounded-xl text-sm font-medium text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 focus:bg-white dark:focus:bg-gray-800 transition-all placeholder-gray-400 dark:placeholder-gray-500 shadow-sm"
-                    placeholder="Adres e-mail"
+                    placeholder={t('login.emailPlaceholder')}
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                   />
@@ -122,13 +131,13 @@ const LoginPage: React.FC = () => {
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
                   <label className="text-[13px] font-bold text-gray-500 dark:text-gray-400">
-                    Hasło
+                    {t('login.password')}
                   </label>
                   <Link
                     to="/forgot-password"
                     className="text-xs font-semibold text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 transition-colors"
                   >
-                    Zapomniałeś hasła?
+                    {t('login.forgotPassword')}
                   </Link>
                 </div>
                 <div className="relative group">
@@ -140,7 +149,7 @@ const LoginPage: React.FC = () => {
                     required
                     autoComplete="current-password"
                     className="w-full pl-11 pr-11 py-3 bg-gray-50/50 dark:bg-gray-900/30 border border-gray-200 dark:border-gray-700 rounded-xl text-sm font-medium text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 focus:bg-white dark:focus:bg-gray-800 transition-all placeholder-gray-400 dark:placeholder-gray-500 shadow-sm"
-                    placeholder="Hasło"
+                    placeholder={t('login.password')}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                   />
@@ -149,7 +158,7 @@ const LoginPage: React.FC = () => {
                     onClick={() => setShowPassword((prev) => !prev)}
                     className="absolute inset-y-0 right-0 flex items-center pr-4 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
                     tabIndex={-1}
-                    aria-label={showPassword ? 'Ukryj hasło' : 'Pokaż hasło'}
+                    aria-label={showPassword ? t('login.hidePassword') : t('login.showPassword')}
                   >
                     {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </button>
@@ -166,7 +175,7 @@ const LoginPage: React.FC = () => {
                   className="w-4 h-4 text-blue-600 border-gray-300 dark:border-gray-600 rounded focus:ring-blue-500 focus:ring-offset-0 bg-white dark:bg-gray-900"
                 />
                 <label htmlFor="remember-me" className="ml-2.5 text-sm font-medium text-gray-600 dark:text-gray-400 select-none cursor-pointer">
-                  Zapamiętaj mnie
+                  {t('login.rememberMe')}
                 </label>
               </div>
 
@@ -180,12 +189,19 @@ const LoginPage: React.FC = () => {
                   <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
                 ) : (
                   <>
-                    <span>Zaloguj się</span>
+                    <span>{t('login.submit')}</span>
                     <ArrowRight className="w-4 h-4" strokeWidth={2.25} />
                   </>
                 )}
               </button>
             </form>
+          </div>
+
+          {/* Stopka karty */}
+          <div className="px-6 sm:px-10 py-4 text-center bg-gray-50/70 dark:bg-gray-900/30 border-t border-gray-100 dark:border-gray-700/50">
+            <p className="text-xs text-gray-500 dark:text-gray-400 font-medium">
+              {t('login.footer')}
+            </p>
           </div>
         </div>
       </div>

@@ -1,5 +1,6 @@
 import React, { useContext, useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { AuthContext } from '../../context/AuthContext';
 import CommandPalette from '../CommandPalette';
 import NotificationBell from '../NotificationBell';
@@ -22,6 +23,7 @@ interface LayoutProps {
 }
 
 const Layout: React.FC<LayoutProps> = ({ children }) => {
+  const { t } = useTranslation();
   const authContext = useContext(AuthContext);
   const location = useLocation();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -51,37 +53,37 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
 
   const navSections = [
     {
-      label: 'GŁÓWNE',
+      label: t('nav.groupMain'),
       items: [
-        { name: isTechOrAdmin ? 'Pulpit' : 'Start', path: '/dashboard', icon: <LayoutGrid size={20} strokeWidth={1.75} /> },
-        { name: 'Zgłoszenia', path: '/tickets', icon: <ClipboardList size={20} strokeWidth={1.75} /> },
+        { name: isTechOrAdmin ? t('nav.dashboard') : t('nav.dashboardEmployee'), path: '/dashboard', icon: <LayoutGrid size={20} strokeWidth={1.75} /> },
+        { name: t('nav.tickets'), path: '/tickets', icon: <ClipboardList size={20} strokeWidth={1.75} /> },
       ],
     },
     ...(isTechOrAdmin ? [{
-      label: 'ANALITYKA',
+      label: t('nav.groupAnalytics'),
       items: [
-        { name: 'Statystyki', path: '/statistics', icon: <BarChart2 size={20} strokeWidth={1.75} /> },
-        ...(isAdmin ? [{ name: 'Eksport danych', path: '/export', icon: <FileText size={20} strokeWidth={1.75} /> }] : []),
+        { name: t('nav.statistics'), path: '/statistics', icon: <BarChart2 size={20} strokeWidth={1.75} /> },
+        ...(isAdmin ? [{ name: t('nav.export'), path: '/export', icon: <FileText size={20} strokeWidth={1.75} /> }] : []),
       ],
     }] : []),
     ...(isAdmin ? [{
-      label: 'ZARZĄDZANIE',
+      label: t('nav.groupManagement'),
       items: [
-        { name: 'Użytkownicy', path: '/users', icon: <Users size={20} strokeWidth={1.75} /> },
+        { name: t('nav.users'), path: '/users', icon: <Users size={20} strokeWidth={1.75} /> },
       ],
     }] : []),
     {
-      label: 'KONFIGURACJA',
+      label: t('nav.groupConfig'),
       items: [
-        { name: 'Ustawienia', path: '/settings', icon: <Settings size={20} strokeWidth={1.75} /> },
+        { name: t('nav.settings'), path: '/settings', icon: <Settings size={20} strokeWidth={1.75} /> },
       ],
     },
   ];
 
   const roleNames: Record<string, string> = {
-    'EMPLOYEE': 'Pracownik',
-    'TECHNICIAN': 'Technik',
-    'ADMIN': 'Administrator',
+    'EMPLOYEE': t('roles.EMPLOYEE'),
+    'TECHNICIAN': t('roles.TECHNICIAN'),
+    'ADMIN': t('roles.ADMIN'),
   };
 
   return (
@@ -111,7 +113,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
       )}
 
       {/* Sidebar */}
-      <div className={`fixed md:relative z-50 md:z-auto flex flex-col w-64 text-white bg-gray-900 h-full transition-transform duration-300 ease-in-out md:translate-x-0 ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+      <div className={`fixed md:relative z-50 flex flex-col w-64 text-white bg-gray-900 h-full transition-transform duration-300 ease-in-out md:translate-x-0 ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}`}>
         <div className="flex items-center justify-center h-20 border-b border-gray-800">
           <Wrench className="w-8 h-8 mr-3 text-blue-400" />
           <h1 className="text-2xl font-bold">FixFlow</h1>
@@ -128,7 +130,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
             className="w-full flex items-center gap-3 px-3 py-2.5 text-sm text-gray-400 bg-gray-800/50 hover:bg-gray-800 border border-gray-700/50 hover:border-gray-600 rounded-xl transition-all group"
           >
             <Search className="w-4 h-4 text-gray-500 group-hover:text-gray-300 transition-colors" />
-            <span className="flex-1 text-left text-gray-500 group-hover:text-gray-300 transition-colors">Szukaj...</span>
+            <span className="flex-1 text-left text-gray-500 group-hover:text-gray-300 transition-colors">{t('common.search')}</span>
             <kbd className="hidden md:inline px-2 py-0.5 text-[11px] font-bold text-gray-500 bg-gray-700 border border-gray-600 rounded">/</kbd>
           </button>
         </div>
@@ -181,7 +183,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                 {authContext?.user?.first_name} {authContext?.user?.last_name}
               </p>
               <p className="text-[11px] text-gray-400 truncate tracking-wide uppercase mt-0.5">
-                {authContext?.user?.role ? roleNames[authContext.user.role] : 'Użytkownik'}
+                {authContext?.user?.role ? roleNames[authContext.user.role] : t('roles.user')}
               </p>
             </div>
           </div>
@@ -190,7 +192,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
               onClick={handleLogout}
               className="flex-1 flex items-center justify-center px-4 py-2 text-sm text-gray-300 transition-colors bg-gray-800 rounded-md hover:bg-gray-700 hover:text-white"
             >
-              <LogOut size={16} className="mr-2" /> Wyloguj się
+              <LogOut size={16} className="mr-2" /> {t('nav.logout')}
             </button>
             <NotificationBell />
           </div>

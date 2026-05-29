@@ -153,6 +153,38 @@ export const ticketService = {
     await api.delete(`tickets/${ticketId}/`);
   },
 
+  // ===== Łączenie i powiązywanie zgłoszeń =====
+
+  // Wyszukiwanie zgłoszeń do scalenia/powiązania (po tytule lub ID)
+  searchTickets: async (query: string): Promise<Ticket[]> => {
+    const res = await ticketService.getTicketsPage({ search: query, page: 1, page_size: 8, ordering: '-created_at' });
+    return res.results;
+  },
+
+  // Oznacza bieżące zgłoszenie jako duplikat zgłoszenia docelowego
+  mergeTicket: async (ticketId: string | number, targetId: number, moveContent: boolean): Promise<Ticket> => {
+    const res = await api.post<Ticket>(`tickets/${ticketId}/merge/`, { target: targetId, move_content: moveContent });
+    return res.data;
+  },
+
+  // Cofa oznaczenie duplikatu
+  unmergeTicket: async (ticketId: string | number): Promise<Ticket> => {
+    const res = await api.post<Ticket>(`tickets/${ticketId}/unmerge/`, {});
+    return res.data;
+  },
+
+  // Tworzy powiązanie z innym zgłoszeniem
+  linkTicket: async (ticketId: string | number, targetId: number): Promise<Ticket> => {
+    const res = await api.post<Ticket>(`tickets/${ticketId}/link/`, { target: targetId });
+    return res.data;
+  },
+
+  // Usuwa powiązanie z innym zgłoszeniem
+  unlinkTicket: async (ticketId: string | number, targetId: number): Promise<Ticket> => {
+    const res = await api.post<Ticket>(`tickets/${ticketId}/unlink/`, { target: targetId });
+    return res.data;
+  },
+
   // ===== Powiadomienia in-app =====
   getNotifications: async (): Promise<Notification[]> => {
     const response = await api.get<Notification[]>('notifications/');
