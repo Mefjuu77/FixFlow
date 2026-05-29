@@ -9,10 +9,10 @@ import {
 
 export const getCategoryIcon = (name: string, size = 'w-4 h-4') => {
   const lowerName = (name || '').toLowerCase();
-  if (lowerName.includes('sprzęt')) return <Monitor className={`${size} text-gray-500`} />;
-  if (lowerName.includes('oprogramowanie')) return <AppWindow className={`${size} text-gray-500`} />;
-  if (lowerName.includes('sieć')) return <Globe className={`${size} text-gray-500`} />;
-  if (lowerName.includes('dostęp')) return <KeyRound className={`${size} text-gray-500`} />;
+  if (lowerName.includes('sprzęt') || lowerName.includes('hardware')) return <Monitor className={`${size} text-gray-500`} />;
+  if (lowerName.includes('oprogramowanie') || lowerName.includes('software')) return <AppWindow className={`${size} text-gray-500`} />;
+  if (lowerName.includes('sieć') || lowerName.includes('network') || lowerName.includes('internet')) return <Globe className={`${size} text-gray-500`} />;
+  if (lowerName.includes('dostęp') || lowerName.includes('access')) return <KeyRound className={`${size} text-gray-500`} />;
   return <Shapes className={`${size} text-gray-500`} />;
 };
 

@@ -3,6 +3,7 @@ import { AuthContext } from '../context/AuthContext';
 import api from '../api/axiosConfig';
 import { Ticket } from '../types';
 import { Link, useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import useTitle from '../hooks/useTitle';
 import {
   AlertTriangle,
@@ -23,9 +24,6 @@ import { getCategoryIcon } from '../utils/ticketConstants';
 
 dayjs.extend(isBetween);
 
-const plMonthsShort = ['sty', 'lut', 'mar', 'kwi', 'maj', 'cze', 'lip', 'sie', 'wrz', 'paź', 'lis', 'gru'];
-const plMonthsFull = ['Styczeń', 'Luty', 'Marzec', 'Kwiecień', 'Maj', 'Czerwiec', 'Lipiec', 'Sierpień', 'Wrzesień', 'Październik', 'Listopad', 'Grudzień'];
-
 // ==================== DONUT CHART (czysty SVG) ====================
 interface DonutSegment {
   label: string;
@@ -34,7 +32,7 @@ interface DonutSegment {
   filterValue?: string;
 }
 
-const DonutChart: React.FC<{ segments: DonutSegment[]; total: number; filterType?: string; dateRange?: { start: dayjs.Dayjs; end: dayjs.Dayjs }; extraParams?: Record<string, string> }> = ({ segments, total, filterType, dateRange, extraParams }) => {
+const DonutChart: React.FC<{ segments: DonutSegment[]; total: number; filterType?: string; dateRange?: { start: dayjs.Dayjs; end: dayjs.Dayjs }; extraParams?: Record<string, string>; totalLabel?: string }> = ({ segments, total, filterType, dateRange, extraParams, totalLabel = 'Łącznie' }) => {
   const navigate = useNavigate();
   const [hovered, setHovered] = useState<number | null>(null);
   const size = 200;
@@ -131,8 +129,7 @@ const DonutChart: React.FC<{ segments: DonutSegment[]; total: number; filterType
           ) : (
             <>
               <span className="text-3xl font-extrabold text-gray-900">{total}</span>
-              <span className="text-[10px] text-gray-400 font-semibold uppercase tracking-wider">Łącznie</span>
-            </>
+              <span className="text-[10px] text-gray-400 font-semibold uppercase tracking-wider">{totalLabel}</span>            </>
           )}
         </div>
       </div>
@@ -160,7 +157,7 @@ const DonutChart: React.FC<{ segments: DonutSegment[]; total: number; filterType
 };
 
 // ==================== HORIZONTAL BAR ====================
-const HorizontalBar: React.FC<{ label: string; value: number; max: number; color: string; icon?: React.ReactNode; onClick?: () => void; total?: number }> = ({ label, value, max, color, icon, onClick, total }) => {
+const HorizontalBar: React.FC<{ label: string; value: number; max: number; color: string; icon?: React.ReactNode; onClick?: () => void; total?: number; tooltipTemplate?: string }> = ({ label, value, max, color, icon, onClick, total, tooltipTemplate }) => {
   const pct = max > 0 ? (value / max) * 100 : 0;
   const percentage = total && total > 0 ? Math.round((value / total) * 100) : null;
   const [isHovered, setIsHovered] = useState(false);
@@ -211,8 +208,9 @@ const HorizontalBar: React.FC<{ label: string; value: number; max: number; color
             className="absolute top-1/2 left-0 bg-slate-900 dark:bg-slate-200 shadow-md rounded px-2 py-1 text-xs font-semibold text-white dark:text-slate-900 z-10 whitespace-nowrap pointer-events-none transition-opacity duration-150"
             style={{ willChange: 'transform' }}
           >
-            ({value}/{total} zgłoszeń)
-          </div>
+            {tooltipTemplate
+              ? tooltipTemplate.replace('{{value}}', String(value)).replace('{{total}}', String(total))
+              : `(${value}/${total})`}          </div>
         )}
       </div>
       {percentage !== null && (
@@ -224,7 +222,8 @@ const HorizontalBar: React.FC<{ label: string; value: number; max: number; color
 
 // ==================== MAIN PAGE ====================
 const StatisticsPage: React.FC = () => {
-  useTitle('Statystyki');
+  const { t } = useTranslation();
+  useTitle(t('statistics.title'));
   const authContext = useContext(AuthContext);
   const navigate = useNavigate();
   const [tickets, setTickets] = useState<Ticket[]>([]);
@@ -233,6 +232,10 @@ const StatisticsPage: React.FC = () => {
   const role = authContext?.user?.role;
   const isAdmin = role === 'ADMIN';
   const isTechnician = role === 'TECHNICIAN';
+
+  // Month arrays from i18n (locale-aware)
+  const plMonthsShort = t('calendar.monthsShort', { returnObjects: true }) as string[];
+  const plMonthsFull = t('calendar.monthsFull', { returnObjects: true }) as string[];
 
   // ========== DATE PICKER STATE ==========
   const [dateRange, setDateRange] = useState<{ start: dayjs.Dayjs; end: dayjs.Dayjs }>({
@@ -362,16 +365,17 @@ const StatisticsPage: React.FC = () => {
 
   // Statusy
   const statusData: DonutSegment[] = [
-    { label: 'Nowe', value: filteredTickets.filter(t => t.status === 'NOWE').length, color: '#3b82f6', filterValue: 'NOWE' },
-    { label: 'W toku', value: filteredTickets.filter(t => t.status === 'W_TOKU').length, color: '#f59e0b', filterValue: 'W_TOKU' },
-    { label: 'Rozwiązane', value: filteredTickets.filter(t => t.status === 'ROZWIAZANE').length, color: '#22c55e', filterValue: 'ROZWIAZANE' },
-    { label: 'Zamknięte', value: filteredTickets.filter(t => t.status === 'ZAMKNIETE').length, color: '#14b8a6', filterValue: 'ZAMKNIETE' },
+    { label: t('status.NOWE'), value: filteredTickets.filter(t => t.status === 'NOWE').length, color: '#3b82f6', filterValue: 'NOWE' },
+    { label: t('status.W_TOKU'), value: filteredTickets.filter(t => t.status === 'W_TOKU').length, color: '#f59e0b', filterValue: 'W_TOKU' },
+    { label: t('status.ROZWIAZANE'), value: filteredTickets.filter(t => t.status === 'ROZWIAZANE').length, color: '#22c55e', filterValue: 'ROZWIAZANE' },
+    { label: t('status.ZAMKNIETE'), value: filteredTickets.filter(t => t.status === 'ZAMKNIETE').length, color: '#14b8a6', filterValue: 'ZAMKNIETE' },
   ];
 
   // Kategorie
+  const unknownCategory = t('statistics.unassigned');
   const categoryMap = new Map<string, number>();
-  activeTickets.forEach(t => {
-    const cat = t.category_name || 'Nieznana';
+  activeTickets.forEach(ticket => {
+    const cat = ticket.category_name || unknownCategory;
     categoryMap.set(cat, (categoryMap.get(cat) || 0) + 1);
   });
   const categorySorted = [...categoryMap.entries()].sort((a, b) => b[1] - a[1]);
@@ -380,9 +384,9 @@ const StatisticsPage: React.FC = () => {
 
   // Priorytety
   const priorityData: DonutSegment[] = [
-    { label: 'Wysoki', value: activeTickets.filter(t => t.priority === 'WYSOKI').length, color: '#ef4444', filterValue: 'WYSOKI' },
-    { label: 'Normalny', value: activeTickets.filter(t => t.priority === 'NORMALNY').length, color: '#3b82f6', filterValue: 'NORMALNY' },
-    { label: 'Niski', value: activeTickets.filter(t => t.priority === 'NISKI').length, color: '#9ca3af', filterValue: 'NISKI' },
+    { label: t('priority.WYSOKI'), value: activeTickets.filter(t => t.priority === 'WYSOKI').length, color: '#ef4444', filterValue: 'WYSOKI' },
+    { label: t('priority.NORMALNY'), value: activeTickets.filter(t => t.priority === 'NORMALNY').length, color: '#3b82f6', filterValue: 'NORMALNY' },
+    { label: t('priority.NISKI'), value: activeTickets.filter(t => t.priority === 'NISKI').length, color: '#9ca3af', filterValue: 'NISKI' },
   ];
 
   // Obciążenie zespołu
@@ -419,7 +423,7 @@ const StatisticsPage: React.FC = () => {
 
   if (unassignedCount > 0) {
     suggestions.push({
-      text: `${unassignedCount} zgłosze${unassignedCount === 1 ? 'nie nie jest przypisane' : (unassignedCount < 5 ? 'nia nie są przypisane' : 'ń nie jest przypisanych')} do żadnego technika.`,
+      text: t('statistics.suggUnassigned', { count: unassignedCount }),
       severity: 'warning',
       link: trendLink({ assignment: 'unassigned', active_only: 'true' })
     });
@@ -428,7 +432,7 @@ const StatisticsPage: React.FC = () => {
   const highPriorityOpen = activeTickets.filter(t => t.priority === 'WYSOKI');
   if (highPriorityOpen.length > 0) {
     suggestions.push({
-      text: `${highPriorityOpen.length} otwart${highPriorityOpen.length === 1 ? 'e zgłoszenie' : (highPriorityOpen.length < 5 ? 'e zgłoszenia' : 'ych zgłoszeń')} z wysokim priorytetem wymaga uwagi.`,
+      text: t('statistics.suggHighPriority', { count: highPriorityOpen.length }),
       severity: 'warning',
       link: trendLink({ priority: 'WYSOKI', active_only: 'true' })
     });
@@ -438,7 +442,7 @@ const StatisticsPage: React.FC = () => {
   const oldHighPriority = highPriorityOpen.filter(t => dayjs().diff(dayjs(t.created_at), 'day') > 3);
   if (oldHighPriority.length > 0) {
     suggestions.push({
-      text: `${oldHighPriority.length} zgłosze${oldHighPriority.length === 1 ? 'nie' : (oldHighPriority.length < 5 ? 'nia' : 'ń')} z wysokim priorytetem ${oldHighPriority.length === 1 ? 'czeka' : 'czeka'} ponad 3 dni na rozwiązanie.`,
+      text: t('statistics.suggOldHighPriority', { count: oldHighPriority.length }),
       severity: 'warning',
       link: trendLink({ priority: 'WYSOKI', active_only: 'true' })
     });
@@ -450,7 +454,7 @@ const StatisticsPage: React.FC = () => {
     const overloaded = workloadEntries.find(([, d]) => d.count > avgLoad * 2 && d.count >= 5);
     if (overloaded) {
       suggestions.push({
-        text: `${overloaded[0]} ma ${overloaded[1].count} aktywnych zgłoszeń (${Math.round(overloaded[1].count / avgLoad)}× średnią zespołu).`,
+        text: t('statistics.suggOverloaded', { name: overloaded[0], count: overloaded[1].count, times: Math.round(overloaded[1].count / avgLoad) }),
         severity: 'warning',
         link: trendLink({ assignment: String(overloaded[1].techId), active_only: 'true' })
       });
@@ -463,19 +467,19 @@ const StatisticsPage: React.FC = () => {
     const minEntry = workloadEntries[workloadEntries.length - 1];
     if (maxEntry[1].count >= 5 && minEntry[1].count >= 1 && maxEntry[1].count / minEntry[1].count >= 3) {
       suggestions.push({
-        text: `Nierównomierny rozkład: ${maxEntry[0]} ma ${maxEntry[1].count} zgłoszeń vs ${minEntry[0]} — ${minEntry[1].count}.`,
+        text: t('statistics.suggImbalance', { max: maxEntry[0], maxCount: maxEntry[1].count, min: minEntry[0], minCount: minEntry[1].count }),
         severity: 'info',
       });
     }
   }
 
-  // Spadek rozwiązywalności — historyczny, więc bez linku (TicketsPage nie obsługuje widoku porównawczego)
+  // Spadek rozwiązywalności
   const prevResolvedTotal = prevTickets.filter(t => ['ROZWIAZANE', 'ZAMKNIETE'].includes(t.status)).length;
   const currResolvedTotal = filteredTickets.filter(t => ['ROZWIAZANE', 'ZAMKNIETE'].includes(t.status)).length;
   if (prevResolvedTotal >= 10 && currResolvedTotal < prevResolvedTotal * 0.7) {
     const dropPct = Math.round((1 - currResolvedTotal / prevResolvedTotal) * 100);
     suggestions.push({
-      text: `Rozwiązano ${dropPct}% mniej zgłoszeń niż w poprzednim okresie (${currResolvedTotal} vs ${prevResolvedTotal}).`,
+      text: t('statistics.suggResolvedDrop', { pct: dropPct, curr: currResolvedTotal, prev: prevResolvedTotal }),
       severity: 'warning'
     });
   }
@@ -484,7 +488,7 @@ const StatisticsPage: React.FC = () => {
   const oldTickets = activeTickets.filter(t => dayjs().diff(dayjs(t.created_at), 'day') > 7);
   if (oldTickets.length > 0) {
     suggestions.push({
-      text: `${oldTickets.length} zgłosze${oldTickets.length === 1 ? 'nie jest' : (oldTickets.length < 5 ? 'nia są' : 'ń jest')} otwart${oldTickets.length === 1 ? 'e' : (oldTickets.length < 5 ? 'e' : 'ych')} dłużej niż 7 dni.`,
+      text: t('statistics.suggOldTickets', { count: oldTickets.length }),
       severity: 'info',
       link: trendLink({ active_only: 'true' })
     });
@@ -492,7 +496,7 @@ const StatisticsPage: React.FC = () => {
 
   if (suggestions.length === 0) {
     suggestions.push({
-      text: 'Brak problemów – wszystko wygląda dobrze! Zespół działa sprawnie.',
+      text: t('statistics.suggestionsOk'),
       severity: 'success'
     });
   }
@@ -511,19 +515,19 @@ const StatisticsPage: React.FC = () => {
       {showDatePicker && (
         <div className="absolute top-full right-0 mt-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-xl z-50 p-3 flex flex-col md:flex-row gap-4 animate-in fade-in slide-in-from-top-2">
           <div className="flex flex-col gap-1 min-w-[160px] pr-4 md:border-r border-gray-100 dark:border-gray-700">
-            <button onClick={applyToday} className="text-left px-4 py-2 text-sm font-medium text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-500/10 rounded-xl transition-colors font-semibold">Dzisiaj</button>
+            <button onClick={applyToday} className="text-left px-4 py-2 text-sm font-medium text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-500/10 rounded-xl transition-colors font-semibold">{t('dashboard.pickerToday')}</button>
             <div className="h-px bg-gray-100 dark:bg-gray-700 my-1"></div>
-            <button onClick={() => applyPreset(7)} className="text-left px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-xl transition-colors">Ostatnie 7 dni</button>
-            <button onClick={() => applyPreset(14)} className="text-left px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-xl transition-colors">Ostatnie 14 dni</button>
-            <button onClick={() => applyPreset(30)} className="text-left px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-xl transition-colors">Ostatnie 30 dni</button>
+            <button onClick={() => applyPreset(7)} className="text-left px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-xl transition-colors">{t('dashboard.pickerLast7')}</button>
+            <button onClick={() => applyPreset(14)} className="text-left px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-xl transition-colors">{t('dashboard.pickerLast14')}</button>
+            <button onClick={() => applyPreset(30)} className="text-left px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-xl transition-colors">{t('dashboard.pickerLast30')}</button>
             <div className="h-px bg-gray-100 dark:bg-gray-700 my-1"></div>
-            <button onClick={applyThisMonth} className="text-left px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-xl transition-colors">Ten miesiąc</button>
-            <button onClick={applyLastMonth} className="text-left px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-xl transition-colors">Poprzedni miesiąc</button>
+            <button onClick={applyThisMonth} className="text-left px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-xl transition-colors">{t('dashboard.pickerThisMonth')}</button>
+            <button onClick={applyLastMonth} className="text-left px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-xl transition-colors">{t('dashboard.pickerLastMonth')}</button>
           </div>
 
           <div className="w-64">
             <div className="flex justify-between items-center mb-3 px-1">
-              <button onClick={() => setPickerView(p => ({ ...p, year: p.year - 1 }))} className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full text-gray-400 dark:text-gray-500 text-xs font-bold" title="Poprzedni rok">«</button>
+              <button onClick={() => setPickerView(p => ({ ...p, year: p.year - 1 }))} className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full text-gray-400 dark:text-gray-500 text-xs font-bold" title={t('dashboard.pickerPrevYear')}>«</button>
               <button onClick={() => setPickerView(p => p.month === 0 ? { year: p.year - 1, month: 11 } : { ...p, month: p.month - 1 })} className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full text-gray-600 dark:text-gray-400">
                 <ChevronDown className="w-4 h-4 rotate-90" />
               </button>
@@ -533,10 +537,10 @@ const StatisticsPage: React.FC = () => {
               <button onClick={() => setPickerView(p => p.month === 11 ? { year: p.year + 1, month: 0 } : { ...p, month: p.month + 1 })} disabled={pickerView.year === dayjs().year() && pickerView.month >= dayjs().month()} className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full text-gray-600 dark:text-gray-400 disabled:opacity-30 disabled:cursor-not-allowed">
                 <ChevronDown className="w-4 h-4 -rotate-90" />
               </button>
-              <button onClick={() => setPickerView(p => ({ ...p, year: p.year + 1 }))} disabled={pickerView.year >= dayjs().year()} className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full text-gray-400 dark:text-gray-500 text-xs font-bold disabled:opacity-30 disabled:cursor-not-allowed" title="Następny rok">»</button>
+              <button onClick={() => setPickerView(p => ({ ...p, year: p.year + 1 }))} disabled={pickerView.year >= dayjs().year()} className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full text-gray-400 dark:text-gray-500 text-xs font-bold disabled:opacity-30 disabled:cursor-not-allowed" title={t('dashboard.pickerNextYear')}>»</button>
             </div>
             <div className="grid grid-cols-7 gap-1 mb-1">
-              {['Pn', 'Wt', 'Śr', 'Cz', 'Pt', 'Sb', 'Nd'].map(d => (
+              {(t('calendar.weekdays', { returnObjects: true }) as string[]).map(d => (
                 <div key={d} className="text-center text-xs font-medium text-gray-400 py-1">{d}</div>
               ))}
             </div>
@@ -615,7 +619,7 @@ const StatisticsPage: React.FC = () => {
 
     const techKpis = [
       {
-        label: 'Moje aktywne',
+        label: t('statistics.kpiMyActive'),
         value: myActive.length,
         icon: <Clock className="w-5 h-5" />,
         iconColor: 'text-blue-600 dark:text-blue-400',
@@ -623,7 +627,7 @@ const StatisticsPage: React.FC = () => {
         trend: formatTrend(trendMyActive, false),
       },
       {
-        label: 'Moje rozwiązane',
+        label: t('statistics.kpiMyResolved'),
         value: myResolved.length,
         icon: <CheckCircle2 className="w-5 h-5" />,
         iconColor: 'text-emerald-600 dark:text-emerald-400',
@@ -631,7 +635,7 @@ const StatisticsPage: React.FC = () => {
         trend: formatTrend(trendMyResolved, true),
       },
       {
-        label: 'Nieprzypisane w systemie',
+        label: t('statistics.kpiSystemUnassigned'),
         value: unassignedCount,
         icon: <UserMinus className="w-5 h-5" />,
         iconColor: 'text-amber-600 dark:text-amber-400',
@@ -641,10 +645,10 @@ const StatisticsPage: React.FC = () => {
     ];
 
     const myStatusData: DonutSegment[] = [
-      { label: 'Nowe', value: myTickets.filter(t => t.status === 'NOWE').length, color: '#3b82f6', filterValue: 'NOWE' },
-      { label: 'W toku', value: myTickets.filter(t => t.status === 'W_TOKU').length, color: '#f59e0b', filterValue: 'W_TOKU' },
-      { label: 'Rozwiązane', value: myTickets.filter(t => t.status === 'ROZWIAZANE').length, color: '#22c55e', filterValue: 'ROZWIAZANE' },
-      { label: 'Zamknięte', value: myTickets.filter(t => t.status === 'ZAMKNIETE').length, color: '#14b8a6', filterValue: 'ZAMKNIETE' },
+      { label: t('status.NOWE'), value: myTickets.filter(t => t.status === 'NOWE').length, color: '#3b82f6', filterValue: 'NOWE' },
+      { label: t('status.W_TOKU'), value: myTickets.filter(t => t.status === 'W_TOKU').length, color: '#f59e0b', filterValue: 'W_TOKU' },
+      { label: t('status.ROZWIAZANE'), value: myTickets.filter(t => t.status === 'ROZWIAZANE').length, color: '#22c55e', filterValue: 'ROZWIAZANE' },
+      { label: t('status.ZAMKNIETE'), value: myTickets.filter(t => t.status === 'ZAMKNIETE').length, color: '#14b8a6', filterValue: 'ZAMKNIETE' },
     ];
 
     return (
@@ -652,9 +656,9 @@ const StatisticsPage: React.FC = () => {
         {/* Nagłówek */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Statystyki</h1>
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{t('statistics.title')}</h1>
             <p className="text-sm text-gray-500 dark:text-gray-400 mt-1 font-medium">
-              Szczegółowa analiza Twojej pracy i przypisanych zadań
+              {t('statistics.techSubtitle')}
             </p>
           </div>
           {datePickerElement}
@@ -692,7 +696,7 @@ const StatisticsPage: React.FC = () => {
                         <span>{kpi.trend.value.toFixed(1).replace('.', ',')}%</span>
                       </div>
                       <span className="text-xs font-medium text-gray-400 dark:text-gray-500 ml-2">
-                        vs poprz. okres
+                        {t('statistics.vsPrevPeriod')}
                       </span>
                     </>
                   )}
@@ -708,30 +712,30 @@ const StatisticsPage: React.FC = () => {
           {/* Przegląd statusów (moje) */}
           <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700/60 rounded-2xl shadow-sm p-6 flex flex-col h-[380px]">
             <div className="flex items-center justify-between mb-1">
-              <h3 className="font-bold text-gray-900 dark:text-white">Przegląd statusów</h3>
+              <h3 className="font-bold text-gray-900 dark:text-white">{t('statistics.chartStatusTitle')}</h3>
               <Link to="/tickets" className="text-xs font-bold text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 flex items-center">
-                Wyświetl zgłoszenia <ArrowUpRight className="w-3 h-3 ml-1" />
+                {t('statistics.viewTickets')} <ArrowUpRight className="w-3 h-3 ml-1" />
               </Link>
             </div>
-            <p className="text-xs text-gray-500 dark:text-gray-400 mb-5">Rozkład statusów Twoich zgłoszeń.</p>
-            <DonutChart segments={myStatusData} total={myTickets.length} filterType="status" dateRange={dateRange} extraParams={{ assignment: String(authContext?.user?.id) }} />
+            <p className="text-xs text-gray-500 dark:text-gray-400 mb-5">{t('statistics.chartStatusSubtechnik')}</p>
+            <DonutChart segments={myStatusData} total={myTickets.length} filterType="status" dateRange={dateRange} totalLabel={t('statistics.donutTotal')} extraParams={{ assignment: String(authContext?.user?.id) }} />
           </div>
 
           {/* Rodzaj zgłoszeń */}
           <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700/60 rounded-2xl shadow-sm p-6 flex flex-col h-[380px]">
             <div className="flex items-center justify-between mb-1">
-              <h3 className="font-bold text-gray-900 dark:text-white">Rodzaj zgłoszeń</h3>
+              <h3 className="font-bold text-gray-900 dark:text-white">{t('statistics.chartCategoryTitle')}</h3>
               <Link to="/tickets" className="text-xs font-bold text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 flex items-center">
-                Wyświetl zgłoszenia <ArrowUpRight className="w-3 h-3 ml-1" />
+                {t('statistics.viewTickets')} <ArrowUpRight className="w-3 h-3 ml-1" />
               </Link>
             </div>
-            <p className="text-xs text-gray-500 dark:text-gray-400 mb-5">Otwarte zgłoszenia według kategorii.</p>
+            <p className="text-xs text-gray-500 dark:text-gray-400 mb-5">{t('statistics.chartCategorySub')}</p>
             <div className="flex-1 space-y-1 overflow-y-auto pr-1" style={{ scrollbarWidth: 'thin', scrollbarColor: '#cbd5e1 transparent' }}>
               {categorySorted.length === 0 ? (
                 <p className="text-sm text-gray-500 dark:text-gray-400 italic text-center py-6">Brak otwartych zgłoszeń.</p>
               ) : (
                 categorySorted.map(([cat, count], i) => (
-                  <HorizontalBar key={cat} label={cat} value={count} max={maxCategoryVal} color={categoryColors[i % categoryColors.length]} total={activeTickets.length} icon={getCategoryIcon(cat)} onClick={() => {
+                  <HorizontalBar key={cat} label={t(`categories.${cat}`, cat)} value={count} max={maxCategoryVal} color={categoryColors[i % categoryColors.length]} total={activeTickets.length} tooltipTemplate={t('statistics.barTooltip')} icon={getCategoryIcon(cat)} onClick={() => {
                     const params = new URLSearchParams({ category: cat, dateFrom: dateRange.start.format('YYYY-MM-DD'), dateTo: dateRange.end.format('YYYY-MM-DD') });
                     navigate(`/tickets?${params.toString()}`);
                   }} />
@@ -743,24 +747,24 @@ const StatisticsPage: React.FC = () => {
           {/* Podział priorytetów */}
           <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700/60 rounded-2xl shadow-sm p-6">
             <div className="flex items-center justify-between mb-1">
-              <h3 className="font-bold text-gray-900 dark:text-white">Priorytety zgłoszeń</h3>
+              <h3 className="font-bold text-gray-900 dark:text-white">{t('statistics.chartPriorityTitle')}</h3>
             </div>
-            <p className="text-xs text-gray-500 dark:text-gray-400 mb-5">Rozkład aktywnych zgłoszeń według priorytetu.</p>
-            <DonutChart segments={priorityData} total={activeTickets.length} filterType="priority" dateRange={dateRange} />
+            <p className="text-xs text-gray-500 dark:text-gray-400 mb-5">{t('statistics.chartPrioritySub')}</p>
+            <DonutChart segments={priorityData} total={activeTickets.length} filterType="priority" dateRange={dateRange} totalLabel={t('statistics.donutTotal')} />
           </div>
 
           {/* Obciążenie zespołu */}
           <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700/60 rounded-2xl shadow-sm p-6">
             <div className="flex items-center justify-between mb-1">
-              <h3 className="font-bold text-gray-900 dark:text-white">Obciążenie zespołu</h3>
+              <h3 className="font-bold text-gray-900 dark:text-white">{t('statistics.chartWorkloadTitle')}</h3>
             </div>
-            <p className="text-xs text-gray-500 dark:text-gray-400 mb-5">Rozkład aktywnych zgłoszeń w zespole.</p>
+            <p className="text-xs text-gray-500 dark:text-gray-400 mb-5">{t('statistics.chartWorkloadSubTech')}</p>
             <div className="space-y-1 overflow-y-auto pr-1" style={{ maxHeight: '260px', scrollbarWidth: 'thin', scrollbarColor: '#cbd5e1 transparent' }}>
               {unassignedCount > 0 && (
-                <HorizontalBar label="Nie przypisano" value={unassignedCount} max={maxWorkload} color="#f87171" total={activeTickets.length} icon={<UserMinus className="w-4 h-4 text-amber-500" />} onClick={() => navigate('/tickets?assignment=unassigned')} />
+                <HorizontalBar label={t('statistics.unassigned')} value={unassignedCount} max={maxWorkload} color="#f87171" total={activeTickets.length} tooltipTemplate={t('statistics.barTooltip')} icon={<UserMinus className="w-4 h-4 text-amber-500" />} onClick={() => navigate('/tickets?assignment=unassigned')} />
               )}
               {workloadEntries.map(([name, data]) => (
-                <HorizontalBar key={name} label={name} value={data.count} max={maxWorkload} color="#6366f1" total={activeTickets.length} icon={
+                <HorizontalBar key={name} label={name} value={data.count} max={maxWorkload} color="#6366f1" total={activeTickets.length} tooltipTemplate={t('statistics.barTooltip')} icon={
                   data.avatar ? (
                     <img src={data.avatar} alt="" className="w-5 h-5 rounded-full object-cover" />
                   ) : (
@@ -778,9 +782,9 @@ const StatisticsPage: React.FC = () => {
           <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700/60 rounded-2xl shadow-sm p-6">
             <div className="flex items-center gap-2 mb-1">
               <Lightbulb className="w-5 h-5 text-amber-500" />
-              <h3 className="font-bold text-gray-900 dark:text-white">Sugestie</h3>
+              <h3 className="font-bold text-gray-900 dark:text-white">{t('statistics.suggestionsTitle')}</h3>
             </div>
-            <p className="text-xs text-gray-500 dark:text-gray-400 mb-5">Automatyczne wskazówki na podstawie danych.</p>
+            <p className="text-xs text-gray-500 dark:text-gray-400 mb-5">{t('statistics.suggestionsSub')}</p>
             <div className="space-y-3">
               {suggestions.map((s, i) => (
                 <div
@@ -827,7 +831,7 @@ const StatisticsPage: React.FC = () => {
 
     const adminKpis = [
       {
-        label: 'Wszystkie',
+        label: t('statistics.kpiAll'),
         value: allCount,
         icon: <TicketIcon className="w-5 h-5" />,
         iconColor: 'text-blue-600 dark:text-blue-400',
@@ -835,7 +839,7 @@ const StatisticsPage: React.FC = () => {
         trend: formatTrend(trendAll, false), // more tickets = not necessarily bad, but usually red? Let's say false = down is good
       },
       {
-        label: 'Aktywne',
+        label: t('statistics.kpiActive'),
         value: activeTickets.length,
         icon: <Clock className="w-5 h-5" />,
         iconColor: 'text-amber-600 dark:text-amber-400',
@@ -843,7 +847,7 @@ const StatisticsPage: React.FC = () => {
         trend: formatTrend(trendActive, false), // less active = good
       },
       {
-        label: 'Rozwiązane',
+        label: t('statistics.kpiResolved'),
         value: totalResolved,
         icon: <CheckCircle2 className="w-5 h-5" />,
         iconColor: 'text-emerald-600 dark:text-emerald-400',
@@ -851,7 +855,7 @@ const StatisticsPage: React.FC = () => {
         trend: formatTrend(trendResolved, true), // more resolved = good
       },
       {
-        label: 'Zamknięte',
+        label: t('statistics.kpiClosed'),
         value: totalClosed,
         icon: <CheckCircle2 className="w-5 h-5" />,
         iconColor: 'text-teal-600 dark:text-teal-400',
@@ -865,9 +869,9 @@ const StatisticsPage: React.FC = () => {
         {/* Nagłówek */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Statystyki</h1>
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{t('statistics.title')}</h1>
             <p className="text-sm text-gray-500 dark:text-gray-400 mt-1 font-medium">
-              Analiza zgłoszeń, statusów oraz efektywności zespołu
+              {t('statistics.adminSubtitle')}
             </p>
           </div>
           
@@ -906,7 +910,7 @@ const StatisticsPage: React.FC = () => {
                         <span>{kpi.trend.value.toFixed(1).replace('.', ',')}%</span>
                       </div>
                       <span className="text-xs font-medium text-gray-400 dark:text-gray-500 ml-2">
-                        vs poprz. okres
+                        {t('statistics.vsPrevPeriod')}
                       </span>
                     </>
                   )}
@@ -922,30 +926,30 @@ const StatisticsPage: React.FC = () => {
           {/* Przegląd statusów */}
           <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700/60 rounded-2xl shadow-sm p-6 flex flex-col h-[380px]">
             <div className="flex items-center justify-between mb-1">
-              <h3 className="font-bold text-gray-900 dark:text-white">Przegląd statusów</h3>
+              <h3 className="font-bold text-gray-900 dark:text-white">{t('statistics.chartStatusTitle')}</h3>
               <Link to="/tickets" className="text-xs font-bold text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 flex items-center">
-                Wyświetl wszystkie zgłoszenia <ArrowUpRight className="w-3 h-3 ml-1" />
+                {t('statistics.viewAllTickets')} <ArrowUpRight className="w-3 h-3 ml-1" />
               </Link>
             </div>
-            <p className="text-xs text-gray-500 dark:text-gray-400 mb-5">Szybki wgląd w status wszystkich zgłoszeń.</p>
-            <DonutChart segments={statusData} total={allCount} filterType="status" dateRange={dateRange} />
+            <p className="text-xs text-gray-500 dark:text-gray-400 mb-5">{t('statistics.chartStatusSubadmin')}</p>
+            <DonutChart segments={statusData} total={allCount} filterType="status" dateRange={dateRange} totalLabel={t('statistics.donutTotal')} />
           </div>
 
           {/* Rodzaj zgłoszeń */}
           <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700/60 rounded-2xl shadow-sm p-6 flex flex-col h-[380px]">
             <div className="flex items-center justify-between mb-1">
-              <h3 className="font-bold text-gray-900 dark:text-white">Rodzaj zgłoszeń</h3>
+              <h3 className="font-bold text-gray-900 dark:text-white">{t('statistics.chartCategoryTitle')}</h3>
               <Link to="/tickets" className="text-xs font-bold text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 flex items-center">
-                Wyświetl wszystkie zgłoszenia <ArrowUpRight className="w-3 h-3 ml-1" />
+                {t('statistics.viewAllTickets')} <ArrowUpRight className="w-3 h-3 ml-1" />
               </Link>
             </div>
-            <p className="text-xs text-gray-500 dark:text-gray-400 mb-5">Otwarte zgłoszenia według kategorii.</p>
+            <p className="text-xs text-gray-500 dark:text-gray-400 mb-5">{t('statistics.chartCategorySub')}</p>
             <div className="flex-1 space-y-1 overflow-y-auto pr-1" style={{ scrollbarWidth: 'thin', scrollbarColor: '#cbd5e1 transparent' }}>
               {categorySorted.length === 0 ? (
                 <p className="text-sm text-gray-500 italic text-center py-6">Brak otwartych zgłoszeń.</p>
               ) : (
                 categorySorted.map(([cat, count], i) => (
-                  <HorizontalBar key={cat} label={cat} value={count} max={maxCategoryVal} color={categoryColors[i % categoryColors.length]} total={activeTickets.length} icon={getCategoryIcon(cat)} onClick={() => {
+                  <HorizontalBar key={cat} label={t(`categories.${cat}`, cat)} value={count} max={maxCategoryVal} color={categoryColors[i % categoryColors.length]} total={activeTickets.length} tooltipTemplate={t('statistics.barTooltip')} icon={getCategoryIcon(cat)} onClick={() => {
                     const params = new URLSearchParams({ category: cat, dateFrom: dateRange.start.format('YYYY-MM-DD'), dateTo: dateRange.end.format('YYYY-MM-DD') });
                     navigate(`/tickets?${params.toString()}`);
                   }} />
@@ -957,32 +961,32 @@ const StatisticsPage: React.FC = () => {
           {/* Podział priorytetów */}
           <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700/60 rounded-2xl shadow-sm p-6 flex flex-col h-[380px]">
             <div className="flex items-center justify-between mb-1">
-              <h3 className="font-bold text-gray-900 dark:text-white">Priorytety zgłoszeń</h3>
+              <h3 className="font-bold text-gray-900 dark:text-white">{t('statistics.chartPriorityTitle')}</h3>
             </div>
-            <p className="text-xs text-gray-500 dark:text-gray-400 mb-5">Rozkład aktywnych zgłoszeń według priorytetu.</p>
-            <DonutChart segments={priorityData} total={activeTickets.length} filterType="priority" dateRange={dateRange} />
+            <p className="text-xs text-gray-500 dark:text-gray-400 mb-5">{t('statistics.chartPrioritySub')}</p>
+            <DonutChart segments={priorityData} total={activeTickets.length} filterType="priority" dateRange={dateRange} totalLabel={t('statistics.donutTotal')} />
           </div>
 
           {/* Obciążenie zespołu */}
           <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700/60 rounded-2xl shadow-sm p-6 flex flex-col h-[380px]">
             <div className="flex items-center justify-between mb-1">
-              <h3 className="font-bold text-gray-900 dark:text-white">Obciążenie zespołu</h3>
+              <h3 className="font-bold text-gray-900 dark:text-white">{t('statistics.chartWorkloadTitle')}</h3>
             </div>
-            <p className="text-xs text-gray-500 dark:text-gray-400 mb-5">Monitoruj potencjał wykonawczy swojego zespołu.</p>
+            <p className="text-xs text-gray-500 dark:text-gray-400 mb-5">{t('statistics.chartWorkloadSubAdmin')}</p>
 
             <div className="space-y-1 mb-4">
               <div className="flex items-center justify-between text-sm">
-                <span className="text-gray-600 dark:text-gray-300 font-medium">Osoba przypisana</span>
-                <span className="text-gray-600 dark:text-gray-300 font-medium">Rozkład prac</span>
+                <span className="text-gray-600 dark:text-gray-300 font-medium">{t('statistics.workloadColPerson')}</span>
+                <span className="text-gray-600 dark:text-gray-300 font-medium">{t('statistics.workloadColDist')}</span>
               </div>
             </div>
 
             <div className="flex-1 space-y-1 overflow-y-auto pr-1" style={{ scrollbarWidth: 'thin', scrollbarColor: '#cbd5e1 transparent' }}>
               {unassignedCount > 0 && (
-                <HorizontalBar label="Nie przypisano" value={unassignedCount} max={maxWorkload} color="#f87171" total={activeTickets.length} icon={<UserMinus className="w-4 h-4 text-amber-500" />} onClick={() => navigate('/tickets?assignment=unassigned')} />
+                <HorizontalBar label={t('statistics.unassigned')} value={unassignedCount} max={maxWorkload} color="#f87171" total={activeTickets.length} tooltipTemplate={t('statistics.barTooltip')} icon={<UserMinus className="w-4 h-4 text-amber-500" />} onClick={() => navigate('/tickets?assignment=unassigned')} />
               )}
               {workloadEntries.map(([name, data]) => (
-                <HorizontalBar key={name} label={name} value={data.count} max={maxWorkload} color="#6366f1" total={activeTickets.length} icon={
+                <HorizontalBar key={name} label={name} value={data.count} max={maxWorkload} color="#6366f1" total={activeTickets.length} tooltipTemplate={t('statistics.barTooltip')} icon={
                   data.avatar ? (
                     <img src={data.avatar} alt="" className="w-5 h-5 rounded-full object-cover" />
                   ) : (
@@ -1000,9 +1004,9 @@ const StatisticsPage: React.FC = () => {
           <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700/60 rounded-2xl shadow-sm p-6">
             <div className="flex items-center gap-2 mb-1">
               <Lightbulb className="w-5 h-5 text-amber-500" />
-              <h3 className="font-bold text-gray-900 dark:text-white">Sugestie</h3>
+              <h3 className="font-bold text-gray-900 dark:text-white">{t('statistics.suggestionsTitle')}</h3>
             </div>
-            <p className="text-xs text-gray-500 dark:text-gray-400 mb-5">Automatyczne wskazówki na podstawie danych.</p>
+            <p className="text-xs text-gray-500 dark:text-gray-400 mb-5">{t('statistics.suggestionsSub')}</p>
             <div className="space-y-3">
               {suggestions.map((s, i) => (
                 <div

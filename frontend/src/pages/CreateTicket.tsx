@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { ticketService } from '../api/ticketService';
 import { Category, TicketPayload } from '../types/ticket';
 import {
@@ -20,7 +21,8 @@ import MarkdownEditor from '../components/MarkdownEditor';
 import useTitle from '../hooks/useTitle';
 
 const CreateTicketPage: React.FC = () => {
-  useTitle('Nowe zgłoszenie');
+  const { t } = useTranslation();
+  useTitle(t('createTicket.title'));
   const [formData, setFormData] = useState<TicketPayload>({
     title: '',
     description: '',
@@ -69,7 +71,7 @@ const CreateTicketPage: React.FC = () => {
           if (match) setFormData(prev => ({ ...prev, category: match.id }));
         }
       } catch (err) {
-        setError('Błąd podczas ładowania kategorii.');
+        setError(t('createTicket.errorCategories'));
       }
     };
     fetchCategories();
@@ -89,21 +91,21 @@ const CreateTicketPage: React.FC = () => {
 
 
   const priorityOptions = [
-    { value: 'WYSOKI', label: 'Wysoki', icon: <ChevronsUp className="w-4 h-4 text-red-500" />, color: 'text-red-600', hint: 'Blokuje pracę lub uniemożliwia działanie' },
-    { value: 'NORMALNY', label: 'Normalny', icon: <Equal className="w-4 h-4 text-blue-500" />, color: 'text-blue-600', hint: 'Utrudnia pracę' },
-    { value: 'NISKI', label: 'Niski', icon: <ChevronsDown className="w-4 h-4 text-gray-400" />, color: 'text-gray-600', hint: 'Nie blokuje pracy' },
+    { value: 'WYSOKI', label: t('createTicket.priorityHighLabel'), icon: <ChevronsUp className="w-4 h-4 text-red-500" />, color: 'text-red-600', hint: t('createTicket.priorityHighHint') },
+    { value: 'NORMALNY', label: t('createTicket.priorityNormalLabel'), icon: <Equal className="w-4 h-4 text-blue-500" />, color: 'text-blue-600', hint: t('createTicket.priorityNormalHint') },
+    { value: 'NISKI', label: t('createTicket.priorityLowLabel'), icon: <ChevronsDown className="w-4 h-4 text-gray-400" />, color: 'text-gray-600', hint: t('createTicket.priorityLowHint') },
   ];
 
   const descriptionPlaceholderMap: Record<string, string> = {
-    'Dostęp do konta': 'Opisz problem. Podaj nazwę systemu lub aplikacji...',
-    'Oprogramowanie': 'Opisz problem. Podaj nazwę i wersję aplikacji jeśli znasz...',
-    'Sieć i internet': 'Opisz problem. Podaj lokalizację lub numer pokoju...',
-    'Sprzęt': 'Opisz problem. Podaj numer seryjny urządzenia jeśli znasz...',
-    'Inne': 'Podaj jak najwięcej szczegółów...',
+    'Dostęp do konta': t('createTicket.descPlaceholderAccount'),
+    'Oprogramowanie': t('createTicket.descPlaceholderSoftware'),
+    'Sieć i internet': t('createTicket.descPlaceholderNetwork'),
+    'Sprzęt': t('createTicket.descPlaceholderHardware'),
+    'Inne': t('createTicket.descPlaceholderDefault'),
   };
 
   const selectedCategoryName = categories.find(c => c.id === formData.category)?.name || '';
-  const descriptionPlaceholder = descriptionPlaceholderMap[selectedCategoryName] || 'Podaj jak najwięcej szczegółów...';
+  const descriptionPlaceholder = descriptionPlaceholderMap[selectedCategoryName] || t('createTicket.descPlaceholderDefault');
 
   const handleTitleBlur = () => {
     setTitleBlurred(true);
@@ -127,11 +129,11 @@ const CreateTicketPage: React.FC = () => {
       const extIndex = f.name.lastIndexOf('.');
       const ext = extIndex >= 0 ? f.name.substring(extIndex).toLowerCase() : '';
       if (!ALLOWED_EXTENSIONS.includes(ext)) {
-        invalidFiles.push(`${f.name} (niedozwolony format)`);
+        invalidFiles.push(t('createTicket.rejectedInvalidFormat', { name: f.name }));
       } else if (f.size > MAX_FILE_SIZE) {
-        invalidFiles.push(`${f.name} (powyżej 5MB)`);
+        invalidFiles.push(t('createTicket.rejectedTooLarge', { name: f.name }));
       } else if (currentTotal + f.size > MAX_TOTAL_SIZE) {
-        invalidFiles.push(`${f.name} (przekracza limit 15MB)`);
+        invalidFiles.push(t('createTicket.rejectedTotalLimit', { name: f.name }));
       } else {
         validFiles.push(f);
         currentTotal += f.size;
@@ -171,19 +173,19 @@ const CreateTicketPage: React.FC = () => {
     const trimmedDescription = formData.description.trim();
 
     if (!trimmedTitle) {
-      errors.title = 'Tytuł jest wymagany.';
+      errors.title = t('createTicket.titleRequired');
     } else if (trimmedTitle.length < 5) {
-      errors.title = `Tytuł musi mieć co najmniej 5 znaków (obecnie ${trimmedTitle.length}).`;
+      errors.title = t('createTicket.titleTooShort', { n: trimmedTitle.length });
     } else if (trimmedTitle.length > 200) {
-      errors.title = `Tytuł nie może przekraczać 200 znaków (obecnie ${trimmedTitle.length}).`;
+      errors.title = t('createTicket.titleTooLong', { n: trimmedTitle.length });
     }
 
     if (!trimmedDescription) {
-      errors.description = 'Opis jest wymagany.';
+      errors.description = t('createTicket.descriptionRequired');
     } else {
       const textOnly = trimmedDescription.replace(/<[^>]*>?/gm, '');
       if (textOnly.length < 10) {
-        errors.description = 'Opis musi mieć min. 10 znaków';
+        errors.description = t('createTicket.descriptionTooShort');
       }
     }
 
@@ -191,7 +193,7 @@ const CreateTicketPage: React.FC = () => {
     let isValid = Object.keys(errors).length === 0;
 
     if (formData.category === 0) {
-      errors.category = 'Proszę wybrać kategorię.';
+      errors.category = t('createTicket.categoryRequired');
       isValid = false;
     }
 
@@ -239,10 +241,10 @@ const CreateTicketPage: React.FC = () => {
         if (Object.keys(backendErrors).length > 0) {
           setFieldErrors(backendErrors);
         } else {
-          setError('Nie udało się utworzyć zgłoszenia.');
+          setError(t('createTicket.errorCreate'));
         }
       } else {
-        setError('Nie udało się utworzyć zgłoszenia.');
+        setError(t('createTicket.errorCreate'));
       }
     } finally {
       setIsSubmitting(false);
@@ -256,12 +258,12 @@ const CreateTicketPage: React.FC = () => {
     <div className="max-w-3xl mx-auto space-y-3 sm:space-y-4 pb-4">
       <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-xl overflow-hidden">
         <div className="p-4 sm:p-5 border-b border-gray-100 dark:border-gray-700/50 bg-gray-50/50 dark:bg-gray-800/50 flex items-center gap-3 sm:gap-4">
-          <button onClick={() => navigate(-1)} className="p-2 -ml-2 text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-500/10 rounded-lg transition-colors" title="Wróć">
+          <button onClick={() => navigate(-1)} className="p-2 -ml-2 text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-500/10 rounded-lg transition-colors" title={t('createTicket.back')}>
             <ArrowLeft className="w-5 h-5" />
           </button>
           <div>
-            <h1 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white leading-none">Nowe zgłoszenie</h1>
-            <p className="text-gray-500 dark:text-gray-400 text-xs mt-1 hidden sm:block">Opisz problem i dodaj potrzebne szczegóły.</p>
+            <h1 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white leading-none">{t('createTicket.title')}</h1>
+            <p className="text-gray-500 dark:text-gray-400 text-xs mt-1 hidden sm:block">{t('createTicket.subtitle')}</p>
           </div>
         </div>
 
@@ -274,12 +276,12 @@ const CreateTicketPage: React.FC = () => {
 
           {/* Tytuł */}
           <div className="space-y-1 sm:space-y-2">
-            <label className="text-sm font-bold text-gray-700 dark:text-gray-300 ml-1">Tytuł zgłoszenia</label>
+            <label className="text-sm font-bold text-gray-700 dark:text-gray-300 ml-1">{t('createTicket.labelTitle')}</label>
             <div className="relative">
               <input
                 type="text"
                 className={`w-full pl-4 pr-12 py-2 sm:py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:bg-white dark:focus:bg-gray-900 outline-none transition-all ${fieldErrors.title ? 'border-red-400 bg-red-50/30' : (titleBlurred && formData.title.trim().length >= 5) ? 'border-green-400 bg-green-50/10' : 'bg-gray-50 dark:bg-gray-900/50 border-gray-200 dark:border-gray-800'}`}
-                placeholder="Co się stało?"
+                placeholder={t('createTicket.titlePlaceholder')}
                 value={formData.title}
                 onChange={(e) => {
                   setFormData({ ...formData, title: e.target.value });
@@ -303,7 +305,7 @@ const CreateTicketPage: React.FC = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-5" ref={dropdownRef}>
             {/* Kategoria - Dropdown */}
             <div className="relative space-y-1 sm:space-y-2">
-              <label className="text-sm font-bold text-gray-700 dark:text-gray-300 ml-1">Kategoria</label>
+              <label className="text-sm font-bold text-gray-700 dark:text-gray-300 ml-1">{t('createTicket.labelCategory')}</label>
               <button
                 type="button"
                 onClick={() => setActiveDropdown(activeDropdown === 'category' ? null : 'category')}
@@ -311,7 +313,7 @@ const CreateTicketPage: React.FC = () => {
               >
                 <div className="flex items-center gap-3">
                   <div className="text-blue-600">{getCategoryIcon(selectedCategory?.name || '', 'w-4 h-4')}</div>
-                  <span className={`font-medium ${formData.category !== 0 ? 'text-gray-900 dark:text-gray-100' : 'text-gray-500 dark:text-gray-400'}`}>{selectedCategory?.name || 'Wybierz kategorię...'}</span>
+                  <span className={`font-medium ${formData.category !== 0 ? 'text-gray-900 dark:text-gray-100' : 'text-gray-500 dark:text-gray-400'}`}>{selectedCategory?.name ? t(`categories.${selectedCategory.name}`, selectedCategory.name) : t('createTicket.categoryPlaceholder')}</span>
                 </div>
                 <ChevronDown className={`w-5 h-5 text-gray-400 transition-transform ${activeDropdown === 'category' ? 'rotate-180' : ''}`} />
               </button>
@@ -331,7 +333,7 @@ const CreateTicketPage: React.FC = () => {
                       className={`w-full flex items-center gap-3 px-4 py-2.5 transition-colors text-left ${formData.category === cat.id ? 'bg-blue-50/70 dark:bg-blue-900/50 text-blue-700 dark:text-blue-400 font-bold' : 'hover:bg-blue-50/50 dark:hover:bg-gray-700/80 text-gray-700 dark:text-gray-300 hover:text-blue-700 dark:hover:text-blue-400 font-medium'}`}
                     >
                       <div className="text-blue-600">{getCategoryIcon(cat.name, 'w-4 h-4')}</div>
-                      <span className="flex-1">{cat.name}</span>
+                      <span className="flex-1">{t(`categories.${cat.name}`, cat.name)}</span>
                       {formData.category === cat.id && <Check className="w-5 h-5 text-blue-600" />}
                     </button>
                   ))}
@@ -346,7 +348,7 @@ const CreateTicketPage: React.FC = () => {
 
             {/* Priorytet - Dropdown */}
             <div className="relative space-y-1 sm:space-y-2">
-              <label className="text-sm font-bold text-gray-700 dark:text-gray-300 ml-1">Priorytet</label>
+              <label className="text-sm font-bold text-gray-700 dark:text-gray-300 ml-1">{t('createTicket.labelPriority')}</label>
               <button
                 type="button"
                 onClick={() => setActiveDropdown(activeDropdown === 'priority' ? null : 'priority')}
@@ -389,7 +391,7 @@ const CreateTicketPage: React.FC = () => {
           <hr className="border-gray-100 dark:border-gray-800 hidden sm:block" />
 
           <div className="space-y-1 sm:space-y-2">
-            <label className="text-sm font-bold text-gray-700 dark:text-gray-300 ml-1">Opis problemu</label>
+            <label className="text-sm font-bold text-gray-700 dark:text-gray-300 ml-1">{t('createTicket.labelDescription')}</label>
             <MarkdownEditor
               key={descriptionPlaceholder}
               value={formData.description}
@@ -414,7 +416,7 @@ const CreateTicketPage: React.FC = () => {
           <hr className="border-gray-100 dark:border-gray-800 hidden sm:block" />
 
           <div className="space-y-1 sm:space-y-2">
-            <label className="text-sm font-bold text-gray-700 dark:text-gray-300 ml-1">Załączniki (opcjonalne)</label>
+            <label className="text-sm font-bold text-gray-700 dark:text-gray-300 ml-1">{t('createTicket.labelAttachments')}</label>
             <div
               onDragOver={handleDragOver}
               onDragLeave={handleDragLeave}
@@ -431,13 +433,13 @@ const CreateTicketPage: React.FC = () => {
 
               <div className="text-center px-2 sm:px-4 space-y-0.5 sm:space-y-1">
                 <p className="font-bold text-gray-700 dark:text-gray-300 text-sm">
-                  <span className="hidden sm:inline">Kliknij, aby wgrać pliki <span className="font-normal text-gray-500 dark:text-gray-400">lub przeciągnij je tutaj</span></span>
-                  <span className="sm:hidden">Dotknij, aby wgrać pliki</span>
+                  <span className="hidden sm:inline">{t('createTicket.dropDesktop')} <span className="font-normal text-gray-500 dark:text-gray-400">{t('createTicket.dropDesktopOr')}</span></span>
+                  <span className="sm:hidden">{t('createTicket.dropMobile')}</span>
                 </p>
                 <div className="flex flex-wrap items-center justify-center gap-1 sm:gap-1.5 text-[10px] font-medium text-gray-500 dark:text-gray-400">
-                  <span className="px-1.5 sm:px-2 py-0.5 bg-gray-100 dark:bg-gray-800 rounded-md">Max 5MB / plik</span>
-                  <span className="px-1.5 sm:px-2 py-0.5 bg-gray-100 dark:bg-gray-800 rounded-md">Łącznie do 15MB</span>
-                  <span className="px-1.5 sm:px-2 py-0.5 bg-gray-100 dark:bg-gray-800 rounded-md hidden sm:inline">Obrazki, PDF, Dokumenty, ZIP</span>
+                  <span className="px-1.5 sm:px-2 py-0.5 bg-gray-100 dark:bg-gray-800 rounded-md">{t('createTicket.dropMaxFile')}</span>
+                  <span className="px-1.5 sm:px-2 py-0.5 bg-gray-100 dark:bg-gray-800 rounded-md">{t('createTicket.dropMaxTotal')}</span>
+                  <span className="px-1.5 sm:px-2 py-0.5 bg-gray-100 dark:bg-gray-800 rounded-md hidden sm:inline">{t('createTicket.dropFormats')}</span>
                 </div>
               </div>
             </div>
@@ -461,7 +463,7 @@ const CreateTicketPage: React.FC = () => {
                 <div className="flex gap-2.5">
                   <AlertCircle className="w-4 h-4 text-red-500 mt-0.5 flex-shrink-0" />
                   <div>
-                    <h4 className="text-sm font-semibold text-red-800 mb-1.5">Odrzucono niektóre pliki:</h4>
+                    <h4 className="text-sm font-semibold text-red-800 mb-1.5">{t('createTicket.rejectedFilesTitle')}</h4>
                     <ul className="text-xs text-red-700 list-disc list-inside space-y-1">
                       {attachmentErrors.map((err, i) => (
                         <li key={i}>{err}</li>
@@ -544,12 +546,12 @@ const CreateTicketPage: React.FC = () => {
               )}
               {isSuccess && (
                 <>
-                  <Check className="w-5 h-5 mr-2" /> Sukces
+                  <Check className="w-5 h-5 mr-2" /> {t('createTicket.submitSuccess')}
                 </>
               )}
               {!isSubmitting && !isSuccess && (
                 <>
-                  <Send className="w-5 h-5 mr-2" /> Utwórz zgłoszenie
+                  <Send className="w-5 h-5 mr-2" /> {t('createTicket.submit')}
                 </>
               )}
             </button>

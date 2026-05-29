@@ -11,9 +11,6 @@ import {
   Ticket as TicketIcon,
   Users,
   AlertTriangle,
-  MessageSquare,
-  FileText,
-  Paperclip,
   Timer,
   Activity,
   Calendar,
@@ -26,29 +23,16 @@ import {
   KeyRound
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import dayjs from 'dayjs';
 import useTitle from '../hooks/useTitle';
 import relativeTime from 'dayjs/plugin/relativeTime';
+import { getActivityConfig, formatActivityTime } from '../utils/dashboardActivity';
 
 
 
 // Plugin do obsługi czasu relatywnego (np. "2 godziny temu")
 dayjs.extend(relativeTime);
-
-const formatActivityTime = (dateStr: string) => {
-  const date = dayjs(dateStr);
-  const now = dayjs();
-  const diffMinutes = now.diff(date, 'minute');
-  const diffHours = now.diff(date, 'hour');
-
-  if (diffMinutes < 60) return `${Math.max(1, diffMinutes)} min temu`;
-  if (diffHours < 24 && date.isSame(now, 'day')) return `${diffHours} godz. temu`;
-  if (date.isSame(now.subtract(1, 'day'), 'day')) return `wczoraj`;
-
-  const plMonths = ['sty', 'lut', 'mar', 'kwi', 'maj', 'cze', 'lip', 'sie', 'wrz', 'paź', 'lis', 'gru'];
-  const plDays = ['Nie', 'Pon', 'Wto', 'Śro', 'Czw', 'Pią', 'Sob'];
-  return `${plDays[date.day()]}, ${date.date()} ${plMonths[date.month()]}`;
-};
 
 /**
  * Grupuje logi z bulk actions: jeśli ten sam user + action + new_value
@@ -90,12 +74,13 @@ const groupBulkLogs = (logs: any[]): any[] => {
 };
 
 const DashboardPage: React.FC = () => {
+  const { t } = useTranslation();
   const authContext = useContext(AuthContext);
   const isTechOrAdmin = authContext?.user?.role === 'ADMIN' || authContext?.user?.role === 'TECHNICIAN';
-  useTitle(isTechOrAdmin ? 'Pulpit' : 'Start');
+  useTitle(isTechOrAdmin ? t('nav.dashboard') : t('nav.dashboardEmployee'));
   const [tickets, setTickets] = useState<TicketType[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activityTab, setActivityTab] = useState('Wszystkie');
+  const [activityTab, setActivityTab] = useState('all');
   const [activityLogs, setActivityLogs] = useState<any[]>([]);
   const [riskFilter, setRiskFilter] = useState<string | null>(null);
 
@@ -154,8 +139,8 @@ const DashboardPage: React.FC = () => {
     return () => document.removeEventListener('mousedown', handler);
   }, []);
 
-  const plMonthsShort = ['sty', 'lut', 'mar', 'kwi', 'maj', 'cze', 'lip', 'sie', 'wrz', 'paź', 'lis', 'gru'];
-  const plMonthsFull = ['Styczeń', 'Luty', 'Marzec', 'Kwiecień', 'Maj', 'Czerwiec', 'Lipiec', 'Sierpień', 'Wrzesień', 'Październik', 'Listopad', 'Grudzień'];
+  const plMonthsShort = t('calendar.monthsShort', { returnObjects: true }) as string[];
+  const plMonthsFull = t('calendar.monthsFull', { returnObjects: true }) as string[];
 
   const applyPreset = (days: number) => {
     setDateRange({ start: dayjs().subtract(days - 1, 'day').startOf('day'), end: dayjs().endOf('day') });
@@ -237,10 +222,10 @@ const DashboardPage: React.FC = () => {
         <div className="flex flex-col md:flex-row md:items-start justify-between gap-4 pt-[22px]">
           <div>
             <h1 className="text-2xl md:text-3xl font-extrabold text-gray-900 dark:text-white tracking-tight">
-              Cześć, {authContext?.user?.first_name}! 👋
+              {t('dashboard.greeting', { name: authContext?.user?.first_name })}
             </h1>
             <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-              Potrzebujesz pomocy IT lub coś nie działa? Utwórz zgłoszenie.
+              {t('dashboard.employeeSubtitle')}
             </p>
           </div>
           <div className="flex flex-col sm:flex-row items-center gap-3 flex-shrink-0">
@@ -249,7 +234,7 @@ const DashboardPage: React.FC = () => {
               className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl shadow-sm hover:shadow-md shadow-blue-600/10 transition-all text-sm whitespace-nowrap"
             >
               <Plus className="w-4 h-4" />
-              Nowe zgłoszenie
+              {t('dashboard.newTicket')}
             </Link>
           </div>
         </div>
@@ -257,37 +242,37 @@ const DashboardPage: React.FC = () => {
         {/* Quick Actions — Zgłoś problem */}
         <div className="space-y-3 pt-1">
           <h2 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-            Zgłoś problem
+            {t('dashboard.reportProblem')}
           </h2>
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
             {[
               {
-                label: 'Problem z logowaniem',
-                sub: 'Hasło, konto, dostęp do systemu',
+                label: t('dashboard.quickLoginLabel'),
+                sub: t('dashboard.quickLoginSub'),
                 icon: <KeyRound className="w-5 h-5" />,
                 category: 'Dostęp do konta',
                 color: 'text-rose-600 dark:text-rose-400',
                 bg: 'bg-rose-50 dark:bg-rose-500/10',
               },
               {
-                label: 'Problem z programem',
-                sub: 'Aplikacje, oprogramowanie, błędy',
+                label: t('dashboard.quickSoftwareLabel'),
+                sub: t('dashboard.quickSoftwareSub'),
                 icon: <Monitor className="w-5 h-5" />,
                 category: 'Oprogramowanie',
                 color: 'text-blue-600 dark:text-blue-400',
                 bg: 'bg-blue-50 dark:bg-blue-500/10',
               },
               {
-                label: 'Brak internetu',
-                sub: 'Wi-Fi, sieć, VPN',
+                label: t('dashboard.quickNetworkLabel'),
+                sub: t('dashboard.quickNetworkSub'),
                 icon: <Globe className="w-5 h-5" />,
                 category: 'Sieć i internet',
                 color: 'text-teal-600 dark:text-teal-400',
                 bg: 'bg-teal-50 dark:bg-teal-500/10',
               },
               {
-                label: 'Problem ze sprzętem',
-                sub: 'Komputer, drukarka, urządzenia',
+                label: t('dashboard.quickHardwareLabel'),
+                sub: t('dashboard.quickHardwareSub'),
                 icon: <Printer className="w-5 h-5" />,
                 category: 'Sprzęt',
                 color: 'text-amber-600 dark:text-amber-400',
@@ -320,7 +305,7 @@ const DashboardPage: React.FC = () => {
           {/* Aktywne Zgłoszenia */}
           <div className="xl:col-span-2 flex flex-col space-y-3 min-h-0">
             <h2 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider flex items-center gap-2">
-              <Clock className="w-4 h-4" /> Aktywne zgłoszenia
+              <Clock className="w-4 h-4" /> {t('dashboard.activeTickets')}
             </h2>
             <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-3xl shadow-sm flex-1 flex flex-col min-h-0">
               {activeTickets.length === 0 ? (
@@ -328,8 +313,8 @@ const DashboardPage: React.FC = () => {
                   <div className="w-16 h-16 bg-green-50 dark:bg-green-900/20 rounded-full flex items-center justify-center mb-4 text-green-600 dark:text-green-400">
                     <CheckCircle2 className="w-8 h-8" />
                   </div>
-                  <h3 className="text-lg font-bold text-gray-900 dark:text-white">Brak otwartych spraw</h3>
-                  <p className="text-sm text-gray-500 dark:text-gray-400 mt-1 max-w-sm">Wygląda na to, że wszystko działa bez zarzutu. Jeśli pojawią się problemy, użyj przycisku u góry.</p>
+                  <h3 className="text-lg font-bold text-gray-900 dark:text-white">{t('dashboard.noOpenTitle')}</h3>
+                  <p className="text-sm text-gray-500 dark:text-gray-400 mt-1 max-w-sm">{t('dashboard.noOpenDesc')}</p>
                 </div>
               ) : (
                 <div className="divide-y divide-gray-100 dark:divide-gray-700/50 flex-1 overflow-y-auto custom-scrollbar">
@@ -349,11 +334,11 @@ const DashboardPage: React.FC = () => {
                           {ticket.title}
                         </p>
                         <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
-                          Aktualizacja: {dayjs(ticket.updated_at).fromNow()}
+                          {t('dashboard.updatedPrefix', { time: dayjs(ticket.updated_at).fromNow() })}
                         </p>
                       </div>
                       <span className={`px-2.5 py-1 rounded-lg text-[11px] font-semibold whitespace-nowrap flex-shrink-0 ${ticket.status === 'W_TOKU' ? 'bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400' : 'bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400'}`}>
-                        {ticket.status === 'W_TOKU' ? 'W TOKU' : 'NOWE'}
+                        {ticket.status === 'W_TOKU' ? t('status.W_TOKU') : t('status.NOWE')}
                       </span>
                     </Link>
                   ))}
@@ -365,13 +350,13 @@ const DashboardPage: React.FC = () => {
           {/* Ostatnio Rozwiązane */}
           <div className="flex flex-col space-y-3 min-h-0">
             <h2 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider flex items-center gap-2">
-              <CheckCircle2 className="w-4 h-4" /> Ostatnio zamknięte
+              <CheckCircle2 className="w-4 h-4" /> {t('dashboard.recentlyClosed')}
             </h2>
             <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-3xl shadow-sm flex-1 flex flex-col min-h-0">
               {resolvedTickets.length === 0 ? (
                 <div className="flex items-center gap-3 px-5 py-5 text-gray-400 dark:text-gray-500">
                   <CheckCircle2 className="w-4 h-4 flex-shrink-0" />
-                  <p className="text-sm">Brak zamkniętych zgłoszeń.</p>
+                  <p className="text-sm">{t('dashboard.noClosed')}</p>
                 </div>
               ) : (
                 <div className="divide-y divide-gray-100 dark:divide-gray-700/50 flex-1 overflow-y-auto custom-scrollbar">
@@ -390,7 +375,7 @@ const DashboardPage: React.FC = () => {
                         </p>
                       </div>
                       <span className="px-2 py-0.5 rounded text-[10px] font-semibold whitespace-nowrap flex-shrink-0 bg-green-50 dark:bg-green-500/10 text-green-600 dark:text-green-400 uppercase tracking-wide">
-                        {ticket.status === 'ROZWIAZANE' ? 'Rozwiązane' : 'Zamknięte'}
+                        {ticket.status === 'ROZWIAZANE' ? t('status.ROZWIAZANE') : t('status.ZAMKNIETE')}
                       </span>
                     </Link>
                   ))}
@@ -399,7 +384,7 @@ const DashboardPage: React.FC = () => {
               {resolvedTickets.length > 0 && (
                 <div className="px-5 py-3 border-t border-gray-100 dark:border-gray-700/50">
                   <Link to="/tickets" className="text-xs font-semibold text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 transition-colors">
-                    Wszystkie zgłoszenia →
+                    {t('dashboard.allTickets')}
                   </Link>
                 </div>
               )}
@@ -450,28 +435,28 @@ const DashboardPage: React.FC = () => {
 
     const techStats = [
       {
-        label: 'Moje otwarte zgłoszenia',
+        label: t('dashboard.kpiTechOpen'),
         value: myOpen.length.toString(),
         icon: <ClipboardList className="w-6 h-6 text-blue-600 dark:text-blue-400" />,
         bg: 'bg-blue-50 dark:bg-blue-500/10',
         border: 'border-blue-100 dark:border-blue-500/20'
       },
       {
-        label: 'Moje "W toku"',
+        label: t('dashboard.kpiTechInProgress'),
         value: myInProgress.length.toString(),
         icon: <Clock className="w-6 h-6 text-amber-600 dark:text-amber-400" />,
         bg: 'bg-amber-50 dark:bg-amber-500/10',
         border: 'border-amber-100 dark:border-amber-500/20'
       },
       {
-        label: 'Pula nieprzypisanych',
+        label: t('dashboard.kpiPoolUnassigned'),
         value: unassignedTickets.length.toString(),
         icon: <Users className="w-6 h-6 text-red-600 dark:text-red-400" />,
         bg: 'bg-red-50 dark:bg-red-500/10',
         border: 'border-red-100 dark:border-red-500/20'
       },
       {
-        label: 'Rozwiązane dzisiaj',
+        label: t('dashboard.kpiResolvedToday'),
         value: myCompletedToday.length.toString(),
         icon: <CheckCircle2 className="w-6 h-6 text-green-600 dark:text-green-400" />,
         bg: 'bg-green-50 dark:bg-green-500/10',
@@ -485,19 +470,13 @@ const DashboardPage: React.FC = () => {
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pt-[22px]">
           <div>
             <h1 className="text-2xl md:text-3xl font-extrabold text-gray-900 dark:text-white tracking-tight">
-              Mój pulpit
+              {t('dashboard.techTitle')}
             </h1>
             <div className="flex items-center gap-2 mt-1 flex-wrap">
               <p className="text-sm text-gray-500 dark:text-gray-400 font-medium">
-                {(() => {
-                  const count = myOpen.length;
-                  if (count === 0) return 'Nie masz żadnych otwartych zgłoszeń';
-                  if (count === 1) return 'Masz 1 otwarte zgłoszenie przypisane do Ciebie';
-                  if ([2, 3, 4].includes(count % 10) && ![12, 13, 14].includes(count % 100)) {
-                    return `Masz ${count} otwarte zgłoszenia przypisane do Ciebie`;
-                  }
-                  return `Masz ${count} otwartych zgłoszeń przypisanych do Ciebie`;
-                })()}
+                {myOpen.length === 0
+                  ? t('dashboard.techNoOpen')
+                  : t('dashboard.techOpenSummary', { count: myOpen.length })}
               </p>
             </div>
           </div>
@@ -506,14 +485,14 @@ const DashboardPage: React.FC = () => {
               to="/tickets?assignment=assigned_to_me"
               className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700/50 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-700 font-bold rounded-xl shadow-sm transition-all text-sm whitespace-nowrap"
             >
-              Moje zgłoszenia
+              {t('dashboard.myTickets')}
             </Link>
             <Link
               to="/create-ticket"
               className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl shadow-sm hover:shadow-md shadow-blue-600/10 transition-all text-sm whitespace-nowrap"
             >
               <Plus className="w-4 h-4" />
-              Nowe zgłoszenie
+              {t('dashboard.newTicket')}
             </Link>
           </div>
         </div>
@@ -566,15 +545,15 @@ const DashboardPage: React.FC = () => {
               });
 
               const techChipConfig: { reason: TechRiskReason; label: string }[] = [
-                { reason: 'critical_mine', label: 'Krytyczne moje' },
-                { reason: 'pool_unassigned', label: 'Do wzięcia' },
-                { reason: 'stale_mine', label: 'Nieruszane' },
+                { reason: 'critical_mine', label: t('dashboard.chipCriticalMine') },
+                { reason: 'pool_unassigned', label: t('dashboard.chipToTake') },
+                { reason: 'stale_mine', label: t('dashboard.chipUntouched') },
               ];
 
               const techRiskReasonLabel: Record<TechRiskReason, string> = {
-                critical_mine: 'Wysoki priorytet — moje',
-                pool_unassigned: 'Nieprzypisane — pula',
-                stale_mine: 'Brak aktywności',
+                critical_mine: t('dashboard.reasonCriticalMine'),
+                pool_unassigned: t('dashboard.reasonPoolUnassigned'),
+                stale_mine: t('dashboard.reasonStaleMine'),
               };
 
               const techRiskReasonColor: Record<TechRiskReason, { bg: string; icon: string; text: string }> = {
@@ -601,10 +580,9 @@ const DashboardPage: React.FC = () => {
                   NORMALNY: 'bg-blue-100 text-blue-700 dark:bg-blue-500/15 dark:text-blue-400',
                   NISKI: 'bg-slate-100 text-slate-700 dark:bg-slate-700/60 dark:text-slate-200',
                 };
-                const labels: Record<string, string> = { WYSOKI: 'Wysoki', NORMALNY: 'Normalny', NISKI: 'Niski' };
                 return (
                   <span className={`px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider ${styles[priority] || styles.NORMALNY}`}>
-                    {labels[priority] || priority}
+                    {t(`priority.${priority}`, priority)}
                   </span>
                 );
               };
@@ -614,10 +592,9 @@ const DashboardPage: React.FC = () => {
                   NOWE: 'bg-blue-100 text-blue-700 dark:bg-blue-500/15 dark:text-blue-400',
                   W_TOKU: 'bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-400',
                 };
-                const labels: Record<string, string> = { NOWE: 'Nowe', W_TOKU: 'W toku' };
                 return (
                   <span className={`px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider ${styles[status] || 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400'}`}>
-                    {labels[status] || status}
+                    {t(`status.${status}`, status)}
                   </span>
                 );
               };
@@ -629,7 +606,7 @@ const DashboardPage: React.FC = () => {
                   <div className="p-5 border-b border-gray-100 dark:border-gray-700/50">
                     <div className="flex items-center justify-between mb-4">
                       <h2 className="text-lg font-bold text-gray-900 dark:text-white">
-                        Wymagają uwagi
+                        {t('dashboard.needAttention')}
                         {techRiskItems.length > 0 && (
                           <span className="ml-2 text-sm font-semibold text-gray-400 dark:text-gray-500">
                             ({riskFilter ? visibleTechRisks.length : techRiskItems.length})
@@ -639,7 +616,7 @@ const DashboardPage: React.FC = () => {
                     </div>
                     <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600">
                       {techRiskItems.length === 0 ? (
-                        <span className="text-xs font-medium text-gray-400 dark:text-gray-500">Brak problemów</span>
+                        <span className="text-xs font-medium text-gray-400 dark:text-gray-500">{t('dashboard.noProblems')}</span>
                       ) : (
                         <>
                           <button
@@ -649,7 +626,7 @@ const DashboardPage: React.FC = () => {
                               : 'text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700/50 dark:hover:text-gray-200'
                               }`}
                           >
-                            Wszystkie
+                            {t('dashboard.tabAll')}
                           </button>
                           {techChipConfig.map(chip => {
                             const count = techRiskItems.filter(r => r.reason === chip.reason).length;
@@ -682,23 +659,23 @@ const DashboardPage: React.FC = () => {
                         <div className="w-14 h-14 bg-emerald-50 dark:bg-emerald-900/20 rounded-full flex items-center justify-center mb-4">
                           <CheckCircle2 className="w-7 h-7 text-emerald-500 dark:text-emerald-400" />
                         </div>
-                        <h3 className="text-base font-bold text-gray-900 dark:text-white">Świetna robota!</h3>
-                        <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Brak priorytetowych lub opóźnionych zgłoszeń.</p>
+                        <h3 className="text-base font-bold text-gray-900 dark:text-white">{t('dashboard.greatJob')}</h3>
+                        <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{t('dashboard.noUrgent')}</p>
                       </div>
                     ) : (
                       <div className="space-y-0.5">
                         {(() => {
                           const groupLabels: Record<TechRiskReason, string> = {
-                            critical_mine: '🔴 Krytyczne moje',
-                            pool_unassigned: '🟠 Do wzięcia',
-                            stale_mine: '🟡 Nieruszane',
+                            critical_mine: t('dashboard.groupCriticalMine'),
+                            pool_unassigned: t('dashboard.groupToTake'),
+                            stale_mine: t('dashboard.groupUntouched'),
                           };
 
                           let lastGroup: TechRiskReason | null = null;
 
                           return visibleTechRisks.map((risk) => {
                             const colors = techRiskReasonColor[risk.reason];
-                            const t = risk.ticket;
+                            const tk = risk.ticket;
 
                             const RiskIcon = risk.reason === 'critical_mine'
                               ? AlertTriangle
@@ -708,10 +685,10 @@ const DashboardPage: React.FC = () => {
 
                             const idleLabel =
                               risk.reason === 'stale_mine'
-                                ? `${risk.idle}d ciszy`
+                                ? t('dashboard.daysSilent', { n: risk.idle })
                                 : risk.reason === 'pool_unassigned'
-                                  ? `${risk.age}d czeka`
-                                  : `${risk.age}d`;
+                                  ? t('dashboard.daysWaiting', { n: risk.age })
+                                  : t('dashboard.daysShort', { n: risk.age });
 
                             const urgencyDays = getTechUrgencyDays(risk);
 
@@ -724,7 +701,7 @@ const DashboardPage: React.FC = () => {
                                     ? 'bg-amber-400/60'
                                     : 'bg-emerald-400/60';
 
-                            const ownershipTag = t.technician === null ? 'Do wzięcia' : 'Moje';
+                            const ownershipTag = tk.technician === null ? t('dashboard.ownToTake') : t('dashboard.ownMine');
 
                             // Group separator — only in "Wszystkie" view
                             let groupHeader: React.ReactNode = null;
@@ -741,10 +718,10 @@ const DashboardPage: React.FC = () => {
                             }
 
                             return (
-                              <React.Fragment key={t.id}>
+                              <React.Fragment key={tk.id}>
                                 {groupHeader}
                                 <Link
-                                  to={`/tickets/${t.id}`}
+                                  to={`/tickets/${tk.id}`}
                                   className="risk-row relative flex items-center px-4 py-3.5 rounded-2xl hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors group overflow-hidden"
                                 >
                                   {/* Bottom-edge severity bar */}
@@ -762,9 +739,9 @@ const DashboardPage: React.FC = () => {
                                   </div>
                                   <div className="relative flex-1 min-w-0 mr-3">
                                     <div className="flex items-center min-w-0">
-                                      <span className="text-[13px] font-bold text-gray-900 dark:text-white flex-shrink-0 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors duration-150">#{t.id}</span>
+                                      <span className="text-[13px] font-bold text-gray-900 dark:text-white flex-shrink-0 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors duration-150">#{tk.id}</span>
                                       <span className="mx-1.5 text-gray-300 dark:text-gray-600 flex-shrink-0">·</span>
-                                      <span className="text-[13px] text-gray-700 dark:text-gray-200 truncate group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors duration-150">{t.title}</span>
+                                      <span className="text-[13px] text-gray-700 dark:text-gray-200 truncate group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors duration-150">{tk.title}</span>
                                     </div>
                                     <div className="flex items-center gap-1.5 mt-1">
                                       {riskFilter === null && (
@@ -775,8 +752,8 @@ const DashboardPage: React.FC = () => {
                                           <span className="text-gray-300 dark:text-gray-600">·</span>
                                         </>
                                       )}
-                                      {priorityBadge(t.priority)}
-                                      {statusBadge(t.status)}
+                                      {priorityBadge(tk.priority)}
+                                      {statusBadge(tk.status)}
                                       {riskFilter === null && (
                                         <span className="text-[10px] font-medium text-gray-500 dark:text-gray-400 ml-1 flex items-center gap-1.5">
                                           <span className="w-1 h-1 rounded-full bg-gray-300 dark:bg-gray-500"></span>
@@ -792,7 +769,7 @@ const DashboardPage: React.FC = () => {
                                       {idleLabel}
                                     </span>
                                     <span className="absolute inset-0 flex items-center justify-end text-[11px] font-semibold text-blue-600 dark:text-blue-400 opacity-0 group-hover:opacity-100 transition-opacity duration-150 ease-in-out whitespace-nowrap pointer-events-none">
-                                      Zbadaj →
+                                      {t('dashboard.investigate')}
                                     </span>
                                   </div>
                                 </Link>
@@ -811,192 +788,11 @@ const DashboardPage: React.FC = () => {
           {/* Ostatnia aktywność — perspektywa technika */}
           <div className="xl:col-span-2 space-y-4">
             {(() => {
-              const techActivityTabs = ['Wszystkie', 'Moje', 'Pula'];
-
-              // Mapowanie akcji z API na konfigurację wizualną (technik)
-              // Pełna wersja — identyczna szczegółowość co admin, z perspektywą "Ty/ImięNazwisko"
-              const trunc = (s: string, max = 40) => s.length > max ? s.slice(0, max) + '...' : s;
-
-              const statusLabel: Record<string, string> = {
-                NOWE: 'Nowe', W_TOKU: 'W toku', ROZWIAZANE: 'Rozwiązane', ZAMKNIETE: 'Zamknięte',
-              };
-              const priorityLabel: Record<string, string> = {
-                NISKI: 'Niski', NORMALNY: 'Normalny', WYSOKI: 'Wysoki',
-              };
-              const sl = (v: string) => statusLabel[v] ?? v;
-              const pl = (v: string) => priorityLabel[v] ?? v;
-
-              const getTechActivityConfig = (log: any) => {
-                const action = log.action;
-                const ticketId = log.ticket;
-                const user = log.user_details;
-                const userName = user ? `${user.first_name} ${user.last_name}` : 'System';
-                const isMe = user?.id === myId;
-                                const capitalize = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
-                const formatAction = (verbBase: string, systemVerb?: string) => {
-                  if (!user) return `System ${systemVerb || verbBase + 'ł(a)'}`;
-                  if (isMe) return `${capitalize(verbBase)}łeś(aś)`;
-                  return `${userName} ${verbBase}ł(a)`;
-                };
-                const bulk = log._bulkCount;
-                const bulkLabel = bulk ? `${bulk} zgłoszeń` : null;
-
-                switch (action) {
-                  case 'CREATED':
-                    return {
-                      type: 'GREEN', icon: Plus, tab: 'Moje',
-                      text: bulk
-                        ? (<span>{formatAction('utworzy')} <strong>{bulkLabel}</strong></span>)
-                        : (<span>{formatAction('utworzy')} zgłoszenie <strong>#{ticketId}</strong></span>),
-                      unread: true,
-                    };
-
-                  case 'STATUS_CHANGED': {
-                    const oldS = log.old_value ? sl(log.old_value) : null;
-                    const newS = log.new_value ? sl(log.new_value) : null;
-                    const arrow = oldS && newS ? `: ${oldS} → ${newS}` : newS ? ` → ${newS}` : '';
-                    const isResolved = ['ROZWIAZANE', 'ZAMKNIETE'].includes(log.new_value);
-                    return {
-                      type: isResolved ? 'GREEN' : 'ORANGE',
-                      icon: isResolved ? CheckCircle2 : Activity,
-                      tab: 'Moje',
-                      text: bulk
-                        ? (<span>{formatAction('zmieni')} status <strong>{bulkLabel}</strong>{newS ? ` → ${newS}` : ''}</span>)
-                        : (<span>{formatAction('zmieni')} status <strong>#{ticketId}</strong>{arrow}</span>),
-                      unread: !isResolved,
-                    };
-                  }
-
-                  case 'PRIORITY_CHANGED': {
-                    const oldP = log.old_value ? pl(log.old_value) : null;
-                    const newP = log.new_value ? pl(log.new_value) : null;
-                    const arrow = oldP && newP ? `: ${oldP} → ${newP}` : newP ? ` → ${newP}` : '';
-                    return {
-                      type: 'ORANGE', icon: AlertTriangle, tab: 'Moje',
-                      text: bulk
-                        ? (<span>{formatAction('zmieni')} priorytet <strong>{bulkLabel}</strong>{newP ? ` → ${newP}` : ''}</span>)
-                        : (<span>{formatAction('zmieni')} priorytet <strong>#{ticketId}</strong>{arrow}</span>),
-                      unread: true,
-                    };
-                  }
-
-                  case 'CATEGORY_CHANGED': {
-                    const oldC = log.old_value || null;
-                    const newC = log.new_value || null;
-                    const arrow = oldC && newC ? `: ${oldC} → ${newC}` : newC ? ` → ${newC}` : '';
-                    return {
-                      type: 'ORANGE', icon: ClipboardList, tab: 'Moje',
-                      text: bulk
-                        ? (<span>{formatAction('zmieni')} kategorię <strong>{bulkLabel}</strong>{newC ? ` → ${newC}` : ''}</span>)
-                        : (<span>{formatAction('zmieni')} kategorię <strong>#{ticketId}</strong>{arrow}</span>),
-                      unread: false,
-                    };
-                  }
-
-                  case 'TITLE_CHANGED': {
-                    const oldT = log.old_value ? `„${trunc(log.old_value)}"` : null;
-                    const newT = log.new_value ? `„${trunc(log.new_value)}"` : null;
-                    const detail = oldT && newT ? `: ${oldT} → ${newT}` : newT ? ` → ${newT}` : '';
-                    return {
-                      type: 'ORANGE', icon: FileText, tab: '_edycje',
-                      text: (<span>{formatAction('zmieni')} tytuł <strong>#{ticketId}</strong>{detail}</span>),
-                      unread: false,
-                    };
-                  }
-
-                  case 'DESCRIPTION_CHANGED':
-                    return {
-                      type: 'ORANGE', icon: FileText, tab: '_edycje',
-                      text: (<span>{formatAction('zaktualizowa')} opis zgłoszenia <strong>#{ticketId}</strong></span>),
-                      unread: false,
-                    };
-
-                  case 'REOPENED':
-                    return {
-                      type: 'ORANGE', icon: Activity, tab: 'Moje',
-                      text: bulk
-                        ? (<span>{formatAction('ponownie otworzy')} <strong>{bulkLabel}</strong></span>)
-                        : (<span>{formatAction('ponownie otworzy')} <strong>#{ticketId}</strong></span>),
-                      unread: true,
-                    };
-
-                  case 'AUTO_CLOSED':
-                    return {
-                      type: 'GREEN', icon: CheckCircle2, tab: 'Moje',
-                      text: (<span>System automatycznie zamknął <strong>#{ticketId}</strong></span>),
-                      unread: false,
-                    };
-
-                  case 'TECHNICIAN_ASSIGNED': {
-                    const tech = log.new_value || null;
-                    return {
-                      type: 'BLUE', icon: Users, tab: 'Pula',
-                      text: bulk
-                        ? (<span>{formatAction('przypisa')} technika do <strong>{bulkLabel}</strong>{tech ? `: ${tech}` : ''}</span>)
-                        : (<span>{formatAction('przypisa')} technika do <strong>#{ticketId}</strong>{tech ? `: ${tech}` : ''}</span>),
-                      unread: false,
-                    };
-                  }
-
-                  case 'TECHNICIAN_REMOVED': {
-                    const tech = log.old_value || log.new_value || null;
-                    return {
-                      type: 'BLUE', icon: Users, tab: 'Pula',
-                      text: bulk
-                        ? (<span>{formatAction('usuną')} technika z <strong>{bulkLabel}</strong>{tech ? `: ${tech}` : ''}</span>)
-                        : (<span>{formatAction('usuną')} technika z <strong>#{ticketId}</strong>{tech ? `: ${tech}` : ''}</span>),
-                      unread: false,
-                    };
-                  }
-
-                  case 'CREATOR_CHANGED':
-                    return {
-                      type: 'BLUE', icon: Users, tab: 'Moje',
-                      text: (<span>{formatAction('zmieni')} zgłaszającego w <strong>#{ticketId}</strong>{log.new_value ? ` → ${log.new_value}` : ''}</span>),
-                      unread: false,
-                    };
-
-                  case 'COMMENT_ADDED':
-                    return {
-                      type: 'BLUE', icon: MessageSquare,
-                      tab: log.new_value === 'INTERNAL' ? 'Pula' : 'Moje',
-                      text: (<span>{formatAction('skomentowa')} <strong>#{ticketId}</strong></span>),
-                      unread: true,
-                    };
-
-                  case 'ATTACHMENT_ADDED': {
-                    const isMultiple = log.new_value && /^\d+ załącznik/.test(log.new_value);
-                    return {
-                      type: 'PURPLE', icon: Paperclip, tab: 'Moje',
-                      text: isMultiple
-                        ? (<span>{formatAction('doda')} {log.new_value} do <strong>#{ticketId}</strong></span>)
-                        : (<span>{formatAction('doda')} załącznik do <strong>#{ticketId}</strong>{log.new_value ? `: ${log.new_value}` : ''}</span>),
-                      unread: false,
-                    };
-                  }
-
-                  case 'ATTACHMENT_DELETED':
-                    return {
-                      type: 'PURPLE', icon: Paperclip, tab: 'Moje',
-                      text: (<span>{formatAction('usuną')} załącznik z <strong>#{ticketId}</strong>{log.old_value ? `: ${log.old_value}` : ''}</span>),
-                      unread: false,
-                    };
-
-                  case 'WORK_LOGGED':
-                    return {
-                      type: 'PURPLE', icon: Timer, tab: 'Moje',
-                      text: (<span>{formatAction('zarejestrowa')} czas pracy w <strong>#{ticketId}</strong>{log.new_value ? ` (${log.new_value})` : ''}</span>),
-                      unread: false,
-                    };
-
-                  default:
-                    return {
-                      type: 'ORANGE', icon: ClipboardList, tab: 'Moje',
-                      text: (<span>{isMe ? 'Twoja' : (user ? `${userName}:` : 'System:')} aktualizacja <strong>#{ticketId}</strong></span>),
-                      unread: false,
-                    };
-                }
-              };
+              const techActivityTabs = [
+                { id: 'all', label: t('dashboard.tabAll') },
+                { id: 'mine', label: t('dashboard.tabMine') },
+                { id: 'pool', label: t('dashboard.tabPool') },
+              ];
 
               // Zbiory ticketów per tab
               const myTicketIds = new Set(myTickets.map(t => t.id));
@@ -1034,7 +830,7 @@ const DashboardPage: React.FC = () => {
               const groupedLogs = groupBulkLogs(relevantLogs);
 
               const activities = groupedLogs.map((log: any) => {
-                const config = getTechActivityConfig(log);
+                const config = getActivityConfig(log, t, myId, 'tech');
                 return {
                   id: log.id,
                   ticketId: log.ticket,
@@ -1050,27 +846,27 @@ const DashboardPage: React.FC = () => {
                 };
               });
 
-              const filteredActivities = activityTab === 'Wszystkie'
+              const filteredActivities = activityTab === 'all'
                 ? activities
-                : activities.filter(a => a.tab === activityTab && a.tab !== '_edycje');
+                : activities.filter(a => a.tab === activityTab && a.tab !== '_edits');
 
               return (
                 <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-3xl shadow-sm flex flex-col h-[calc(100vh-280px)] min-h-[580px]">
                   <div className="p-5 border-b border-gray-100 dark:border-gray-700/50">
                     <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-4">
-                      Ostatnia aktywność
+                      {t('dashboard.recentActivity')}
                     </h2>
                     <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600">
                       {techActivityTabs.map(tab => (
                         <button
-                          key={tab}
-                          onClick={() => setActivityTab(tab)}
-                          className={`px-3 py-1.5 text-xs font-semibold rounded-lg whitespace-nowrap transition-colors ${activityTab === tab
+                          key={tab.id}
+                          onClick={() => setActivityTab(tab.id)}
+                          className={`px-3 py-1.5 text-xs font-semibold rounded-lg whitespace-nowrap transition-colors ${activityTab === tab.id
                             ? 'bg-gray-900 text-white dark:bg-blue-500/20 dark:text-blue-400'
                             : 'text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700/50 dark:hover:text-gray-200'
                             }`}
                         >
-                          {tab}
+                          {tab.label}
                         </button>
                       ))}
                     </div>
@@ -1082,8 +878,8 @@ const DashboardPage: React.FC = () => {
                         <div className="w-14 h-14 bg-gray-100 dark:bg-gray-700/50 rounded-full flex items-center justify-center mb-4">
                           <Activity className="w-7 h-7 text-gray-400 dark:text-gray-500" />
                         </div>
-                        <h3 className="text-base font-bold text-gray-900 dark:text-white">Brak aktywności</h3>
-                        <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Nie znaleziono zdarzeń dla wybranego filtru.</p>
+                        <h3 className="text-base font-bold text-gray-900 dark:text-white">{t('dashboard.noActivity')}</h3>
+                        <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{t('dashboard.noActivityDesc')}</p>
                       </div>
                     ) : (
                       <div className="space-y-0.5">
@@ -1124,10 +920,10 @@ const DashboardPage: React.FC = () => {
                               {/* Timestamp ↔ Zbadaj cross-fade */}
                               <div className="relative flex-shrink-0 w-20 text-right">
                                 <span className="block text-[11px] font-medium text-gray-400 dark:text-gray-500 opacity-100 group-hover:opacity-0 transition-opacity duration-150 ease-in-out whitespace-nowrap">
-                                  {formatActivityTime(activity.time)}
+                                  {formatActivityTime(activity.time, t)}
                                 </span>
                                 <span className="absolute inset-0 flex items-center justify-end text-[11px] font-semibold text-blue-600 dark:text-blue-400 opacity-0 group-hover:opacity-100 transition-opacity duration-150 ease-in-out whitespace-nowrap pointer-events-none">
-                                  Zbadaj →
+                                  {t('dashboard.investigate')}
                                 </span>
                               </div>
                             </Link>
@@ -1169,9 +965,9 @@ const DashboardPage: React.FC = () => {
     }
 
     const riskReasonLabel: Record<RiskReason, string> = {
-      critical_unassigned: 'Krytyczne — brak technika',
-      stale_unassigned: 'Nieprzypisane zbyt długo',
-      frozen_progress: 'Brak aktywności',
+      critical_unassigned: t('dashboard.reasonCriticalUnassigned'),
+      stale_unassigned: t('dashboard.reasonStaleUnassigned'),
+      frozen_progress: t('dashboard.reasonFrozen'),
     };
 
     const riskReasonColor: Record<RiskReason, { text: string; bg: string; icon: string }> = {
@@ -1264,44 +1060,44 @@ const DashboardPage: React.FC = () => {
 
     const kpiCards = [
       {
-        label: 'Otwarte zgłoszenia',
+        label: t('dashboard.kpiOpen'),
         value: openTickets.length,
         displayValue: openTickets.length.toString(),
         icon: <TicketIcon className="w-5 h-5" />,
         iconColor: 'text-blue-600 dark:text-blue-400',
         iconBg: 'bg-blue-50 dark:bg-blue-500/10 ring-1 ring-blue-100/50 dark:ring-blue-500/20',
         trend: { ...openTrend, isGood: openTrend.direction === 'down' },
-        tooltip: `Bieżący: ${openTickets.length} | Poprzedni (${prevPeriodLabel}): ${prevOpen}`,
+        tooltip: t('dashboard.tooltipMetrics', { current: openTickets.length, period: prevPeriodLabel, previous: prevOpen }),
       },
       {
-        label: 'Nieprzypisane',
+        label: t('dashboard.kpiUnassigned'),
         value: waitingTickets.length,
         displayValue: waitingTickets.length.toString(),
         icon: <Users className="w-5 h-5" />,
         iconColor: 'text-amber-600 dark:text-amber-400',
         iconBg: 'bg-amber-50 dark:bg-amber-500/10 ring-1 ring-amber-100/50 dark:ring-amber-500/20',
         trend: { ...waitingTrend, isGood: waitingTrend.direction === 'down' },
-        tooltip: `Bieżący: ${waitingTickets.length} | Poprzedni (${prevPeriodLabel}): ${prevWaiting}`,
+        tooltip: t('dashboard.tooltipMetrics', { current: waitingTickets.length, period: prevPeriodLabel, previous: prevWaiting }),
       },
       {
-        label: 'Rozwiązane',
+        label: t('dashboard.kpiResolved'),
         value: resolvedTickets.length,
         displayValue: resolvedTickets.length.toString(),
         icon: <CheckCircle2 className="w-5 h-5" />,
         iconColor: 'text-emerald-600 dark:text-emerald-400',
         iconBg: 'bg-emerald-50 dark:bg-emerald-500/10 ring-1 ring-emerald-100/50 dark:ring-emerald-500/20',
         trend: { ...resolvedTrend, isGood: resolvedTrend.direction === 'up' },
-        tooltip: `Bieżący: ${resolvedTickets.length} | Poprzedni (${prevPeriodLabel}): ${prevResolved}`,
+        tooltip: t('dashboard.tooltipMetrics', { current: resolvedTickets.length, period: prevPeriodLabel, previous: prevResolved }),
       },
       {
-        label: 'Śr. czas rozwiązania',
+        label: t('dashboard.kpiAvgResolution'),
         value: currentAvgMin,
         displayValue: formatMinutes(currentAvgMin),
         icon: <Timer className="w-5 h-5" />,
         iconColor: 'text-violet-600 dark:text-violet-400',
         iconBg: 'bg-violet-50 dark:bg-violet-500/10 ring-1 ring-violet-100/50 dark:ring-violet-500/20',
         trend: { ...avgTrend, isGood: avgTrend.direction === 'down' },
-        tooltip: `Bieżący: ${formatMinutes(currentAvgMin)} | Poprzedni (${prevPeriodLabel}): ${formatMinutes(prevAvgMin)}`,
+        tooltip: t('dashboard.tooltipMetrics', { current: formatMinutes(currentAvgMin), period: prevPeriodLabel, previous: formatMinutes(prevAvgMin) }),
       },
     ];
 
@@ -1316,10 +1112,10 @@ const DashboardPage: React.FC = () => {
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pt-[22px]">
             <div>
               <h1 className="text-2xl md:text-3xl font-extrabold text-gray-900 dark:text-white tracking-tight">
-                Pulpit
+                {t('dashboard.adminTitle')}
               </h1>
               <p className="text-sm text-gray-500 dark:text-gray-400 mt-1 font-medium">
-                Przegląd najważniejszych danych z systemu
+                {t('dashboard.adminSubtitle')}
               </p>
             </div>
 
@@ -1338,14 +1134,14 @@ const DashboardPage: React.FC = () => {
                 <div className="absolute top-full right-0 mt-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-xl z-50 p-3 flex flex-col md:flex-row gap-4 animate-in fade-in slide-in-from-top-2">
                   {/* Presety */}
                   <div className="flex flex-col gap-1 min-w-[160px] pr-4 md:border-r border-gray-100 dark:border-gray-700">
-                    <button onClick={applyToday} className="text-left px-4 py-2 text-sm font-medium text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-500/10 rounded-xl transition-colors font-semibold">Dzisiaj</button>
+                    <button onClick={applyToday} className="text-left px-4 py-2 text-sm font-medium text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-500/10 rounded-xl transition-colors font-semibold">{t('dashboard.pickerToday')}</button>
                     <div className="h-px bg-gray-100 dark:bg-gray-700 my-1"></div>
-                    <button onClick={() => applyPreset(7)} className="text-left px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-xl transition-colors">Ostatnie 7 dni</button>
-                    <button onClick={() => applyPreset(14)} className="text-left px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-xl transition-colors">Ostatnie 14 dni</button>
-                    <button onClick={() => applyPreset(30)} className="text-left px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-xl transition-colors">Ostatnie 30 dni</button>
+                    <button onClick={() => applyPreset(7)} className="text-left px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-xl transition-colors">{t('dashboard.pickerLast7')}</button>
+                    <button onClick={() => applyPreset(14)} className="text-left px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-xl transition-colors">{t('dashboard.pickerLast14')}</button>
+                    <button onClick={() => applyPreset(30)} className="text-left px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-xl transition-colors">{t('dashboard.pickerLast30')}</button>
                     <div className="h-px bg-gray-100 dark:bg-gray-700 my-1"></div>
-                    <button onClick={applyThisMonth} className="text-left px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-xl transition-colors">Ten miesiąc</button>
-                    <button onClick={applyLastMonth} className="text-left px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-xl transition-colors">Poprzedni miesiąc</button>
+                    <button onClick={applyThisMonth} className="text-left px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-xl transition-colors">{t('dashboard.pickerThisMonth')}</button>
+                    <button onClick={applyLastMonth} className="text-left px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-xl transition-colors">{t('dashboard.pickerLastMonth')}</button>
                   </div>
 
                   {/* Mini kalendarz */}
@@ -1356,7 +1152,7 @@ const DashboardPage: React.FC = () => {
                       <button
                         onClick={() => setPickerView(p => ({ ...p, year: p.year - 1 }))}
                         className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full text-gray-400 dark:text-gray-500 text-xs font-bold"
-                        title="Poprzedni rok"
+                        title={t('dashboard.pickerPrevYear')}
                       >
                         «
                       </button>
@@ -1380,7 +1176,7 @@ const DashboardPage: React.FC = () => {
                         onClick={() => setPickerView(p => ({ ...p, year: p.year + 1 }))}
                         disabled={pickerView.year >= dayjs().year()}
                         className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full text-gray-400 dark:text-gray-500 text-xs font-bold disabled:opacity-30 disabled:cursor-not-allowed"
-                        title="Następny rok"
+                        title={t('dashboard.pickerNextYear')}
                       >
                         »
                       </button>
@@ -1388,7 +1184,7 @@ const DashboardPage: React.FC = () => {
 
                     {/* Dni tygodnia */}
                     <div className="grid grid-cols-7 gap-1 mb-1">
-                      {['Pn', 'Wt', 'Śr', 'Cz', 'Pt', 'Sb', 'Nd'].map(d => (
+                      {(t('calendar.weekdays', { returnObjects: true }) as string[]).map(d => (
                         <div key={d} className="text-center text-xs font-medium text-gray-400 py-1">{d}</div>
                       ))}
                     </div>
@@ -1469,11 +1265,11 @@ const DashboardPage: React.FC = () => {
                     {/* Podpowiedź wyboru zakresu */}
                     {customStart ? (
                       <p className="text-xs text-center text-blue-600 dark:text-blue-400 mt-3 animate-pulse">
-                        Wybierz datę końcową...
+                        {t('dashboard.pickerSelectEnd')}
                       </p>
                     ) : (
                       <p className="text-xs text-center text-gray-400 dark:text-gray-500 mt-3">
-                        Kliknij dwa razy, aby wybrać zakres
+                        {t('dashboard.pickerClickTwice')}
                       </p>
                     )}
                   </div>
@@ -1518,7 +1314,7 @@ const DashboardPage: React.FC = () => {
                       <span>{kpi.trend.value.toFixed(1).replace('.', ',')}%</span>
                     </div>
                     <span className="text-xs font-medium text-gray-400 dark:text-gray-500 ml-2">
-                      vs poprz. okres
+                      {t('dashboard.vsPrevPeriod')}
                     </span>
                   </div>
                 </div>
@@ -1550,19 +1346,19 @@ const DashboardPage: React.FC = () => {
                 const chipConfig: { reason: RiskReason; label: string; activeStyle: string; inactiveStyle: string }[] = [
                   {
                     reason: 'critical_unassigned',
-                    label: 'Krytyczne',
+                    label: t('dashboard.chipCritical'),
                     activeStyle: 'bg-rose-600 text-white dark:bg-rose-500 dark:text-white ring-2 ring-rose-300 dark:ring-rose-500/40',
                     inactiveStyle: 'bg-rose-50 dark:bg-rose-500/10 text-rose-600 dark:text-rose-400 hover:bg-rose-100 dark:hover:bg-rose-500/20',
                   },
                   {
                     reason: 'stale_unassigned',
-                    label: 'Nieprzypisane',
+                    label: t('dashboard.chipUnassigned'),
                     activeStyle: 'bg-amber-600 text-white dark:bg-amber-500 dark:text-white ring-2 ring-amber-300 dark:ring-amber-500/40',
                     inactiveStyle: 'bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400 hover:bg-amber-100 dark:hover:bg-amber-500/20',
                   },
                   {
                     reason: 'frozen_progress',
-                    label: 'Zamrożone',
+                    label: t('dashboard.chipFrozen'),
                     activeStyle: 'bg-gray-700 text-white dark:bg-gray-500 dark:text-white ring-2 ring-gray-400 dark:ring-gray-500/40',
                     inactiveStyle: 'bg-gray-100 dark:bg-gray-700/50 text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-600/50',
                   },
@@ -1574,10 +1370,9 @@ const DashboardPage: React.FC = () => {
                     NORMALNY: 'bg-blue-100 text-blue-700 dark:bg-blue-500/15 dark:text-blue-400',
                     NISKI: 'bg-slate-100 text-slate-700 dark:bg-slate-700/60 dark:text-slate-200',
                   };
-                  const labels: Record<string, string> = { WYSOKI: 'Wysoki', NORMALNY: 'Normalny', NISKI: 'Niski' };
                   return (
                     <span className={`px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider ${styles[priority] || styles.NORMALNY}`}>
-                      {labels[priority] || priority}
+                      {t(`priority.${priority}`, priority)}
                     </span>
                   );
                 };
@@ -1587,10 +1382,9 @@ const DashboardPage: React.FC = () => {
                     NOWE: 'bg-blue-100 text-blue-700 dark:bg-blue-500/15 dark:text-blue-400',
                     W_TOKU: 'bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-400',
                   };
-                  const labels: Record<string, string> = { NOWE: 'Nowe', W_TOKU: 'W toku' };
                   return (
                     <span className={`px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider ${styles[status] || 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400'}`}>
-                      {labels[status] || status}
+                      {t(`status.${status}`, status)}
                     </span>
                   );
                 };
@@ -1602,7 +1396,7 @@ const DashboardPage: React.FC = () => {
                     <div className="p-5 border-b border-gray-100 dark:border-gray-700/50">
                       <div className="flex items-center justify-between mb-4">
                         <h2 className="text-lg font-bold text-gray-900 dark:text-white">
-                          Wymagają uwagi
+                          {t('dashboard.needAttention')}
                           {riskItems.length > 0 && (
                             <span className="ml-2 text-sm font-semibold text-gray-400 dark:text-gray-500">
                               ({riskFilter ? visibleRisks.length : riskItems.length})
@@ -1612,7 +1406,7 @@ const DashboardPage: React.FC = () => {
                       </div>
                       <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600">
                         {riskItems.length === 0 ? (
-                          <span className="text-xs font-medium text-gray-400 dark:text-gray-500">Brak problemów w systemie</span>
+                          <span className="text-xs font-medium text-gray-400 dark:text-gray-500">{t('dashboard.noProblemsSystem')}</span>
                         ) : (
                           <>
                             {/* Chip "Wszystkie" */}
@@ -1623,7 +1417,7 @@ const DashboardPage: React.FC = () => {
                                 : 'text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700/50 dark:hover:text-gray-200'
                                 }`}
                             >
-                              Wszystkie
+                              {t('dashboard.tabAll')}
                             </button>
                             {chipConfig.map(chip => {
                               const count = riskItems.filter(r => r.reason === chip.reason).length;
@@ -1654,22 +1448,22 @@ const DashboardPage: React.FC = () => {
                           <div className="w-14 h-14 bg-emerald-50 dark:bg-emerald-900/20 rounded-full flex items-center justify-center mb-4">
                             <CheckCircle2 className="w-7 h-7 text-emerald-500 dark:text-emerald-400" />
                           </div>
-                          <h3 className="text-base font-bold text-gray-900 dark:text-white">Wszystko pod kontrolą</h3>
-                          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Brak zgłoszeń wymagających interwencji.</p>
+                          <h3 className="text-base font-bold text-gray-900 dark:text-white">{t('dashboard.allUnderControl')}</h3>
+                          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{t('dashboard.noIntervention')}</p>
                         </div>
                       ) : (
                         <div className="space-y-0.5">
                           {(() => {
                             const groupLabels: Record<RiskReason, string> = {
-                              critical_unassigned: '🔴 Krytyczne',
-                              stale_unassigned: '🟠 Nieprzypisane',
-                              frozen_progress: '🟡 Zamrożone',
+                              critical_unassigned: t('dashboard.groupCritical'),
+                              stale_unassigned: t('dashboard.groupUnassigned'),
+                              frozen_progress: t('dashboard.groupFrozen'),
                             };
                             let lastGroup: RiskReason | null = null;
 
                             return visibleRisks.map((risk) => {
                               const colors = riskReasonColor[risk.reason];
-                              const t = risk.ticket;
+                              const tk = risk.ticket;
   
                               const RiskIcon = risk.reason === 'critical_unassigned'
                                 ? AlertTriangle
@@ -1679,10 +1473,10 @@ const DashboardPage: React.FC = () => {
   
                               const idleLabel =
                                 risk.reason === 'frozen_progress'
-                                  ? `${risk.idle}d ciszy`
+                                  ? t('dashboard.daysSilent', { n: risk.idle })
                                   : risk.reason === 'stale_unassigned'
-                                    ? `${risk.age}d czeka`
-                                    : `${risk.age}d`;
+                                    ? t('dashboard.daysWaiting', { n: risk.age })
+                                    : t('dashboard.daysShort', { n: risk.age });
   
                               // Urgency days — shared helper ensures consistency with sort order
                               const urgencyDays = getUrgencyDays(risk);
@@ -1712,11 +1506,11 @@ const DashboardPage: React.FC = () => {
                               }
   
                               return (
-                                <React.Fragment key={t.id}>
+                                <React.Fragment key={tk.id}>
                                   {groupHeader}
                               <Link
-                                to={`/tickets/${t.id}`}
-                                key={t.id}
+                                to={`/tickets/${tk.id}`}
+                                key={tk.id}
                                 className="risk-row relative flex items-center px-4 py-3.5 rounded-2xl hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors group overflow-hidden min-w-0"
                               >
                                 {/* Bottom-edge severity bar — animates scaleX 0→1 on hover via .risk-row CSS */}
@@ -1734,17 +1528,17 @@ const DashboardPage: React.FC = () => {
                                 </div>
                                 <div className="relative flex-1 min-w-0 mr-3">
                                   <div className="flex items-center min-w-0">
-                                    <span className="text-[13px] font-bold text-gray-900 dark:text-white flex-shrink-0 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors duration-150">#{t.id}</span>
+                                    <span className="text-[13px] font-bold text-gray-900 dark:text-white flex-shrink-0 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors duration-150">#{tk.id}</span>
                                     <span className="mx-1.5 text-gray-300 dark:text-gray-600 flex-shrink-0">·</span>
-                                    <span className="text-[13px] text-gray-700 dark:text-gray-200 truncate block min-w-0 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors duration-150">{t.title}</span>
+                                    <span className="text-[13px] text-gray-700 dark:text-gray-200 truncate block min-w-0 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors duration-150">{tk.title}</span>
                                   </div>
                                   <div className="flex items-center gap-1.5 mt-1">
                                     <span className={`text-[11px] font-medium ${colors.text}`}>
                                       {riskReasonLabel[risk.reason]}
                                     </span>
                                     <span className="text-gray-300 dark:text-gray-600">·</span>
-                                    {priorityBadge(t.priority)}
-                                    {statusBadge(t.status)}
+                                    {priorityBadge(tk.priority)}
+                                    {statusBadge(tk.status)}
                                   </div>
                                 </div>
 
@@ -1754,7 +1548,7 @@ const DashboardPage: React.FC = () => {
                                     {idleLabel}
                                   </span>
                                   <span className="absolute inset-0 flex items-center justify-end text-[11px] font-semibold text-blue-600 dark:text-blue-400 opacity-0 group-hover:opacity-100 transition-opacity duration-150 ease-in-out whitespace-nowrap pointer-events-none">
-                                    Zbadaj →
+                                    {t('dashboard.investigate')}
                                   </span>
                                 </div>
                               </Link>
@@ -1772,191 +1566,11 @@ const DashboardPage: React.FC = () => {
             {/* Aktywność globalna */}
             <div className="xl:col-span-2 space-y-4">
               {(() => {
-                const activityTabs = ['Wszystkie', 'Zgłoszenia', 'Zespół'];
-
-                // Mapowanie akcji z API na konfigurację wizualną
-                const trunc = (s: string, max = 40) => s.length > max ? s.slice(0, max) + '...' : s;
-
-                const statusLabel: Record<string, string> = {
-                  NOWE: 'Nowe', W_TOKU: 'W toku', ROZWIAZANE: 'Rozwiązane', ZAMKNIETE: 'Zamknięte',
-                };
-                const priorityLabel: Record<string, string> = {
-                  NISKI: 'Niski', NORMALNY: 'Normalny', WYSOKI: 'Wysoki',
-                };
-                const sl = (v: string) => statusLabel[v] ?? v;
-                const pl = (v: string) => priorityLabel[v] ?? v;
-
-                const getActivityConfig = (log: any) => {
-                  const action = log.action;
-                  const ticketId = log.ticket;
-                  const user = log.user_details;
-                  const userName = user ? `${user.first_name} ${user.last_name}` : 'System';
-                  const bulk = log._bulkCount;
-                  const isMe = user?.id === authContext?.user?.id;
-                  const capitalize = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
-                  const formatAction = (verbBase: string, systemVerb?: string) => {
-                    if (!user) return `System ${systemVerb || verbBase + 'ł(a)'}`;
-                    if (isMe) return `${capitalize(verbBase)}łeś(aś)`;
-                    return `${userName} ${verbBase}ł(a)`;
-                  };
-                  const bulkLabel = bulk ? `${bulk} zgłoszeń` : null;
-
-                  switch (action) {
-                    case 'CREATED':
-                      return {
-                        type: 'GREEN', icon: Plus, tab: 'Zgłoszenia',
-                        text: bulk
-                          ? (<span>{formatAction('utworzy')} <strong>{bulkLabel}</strong></span>)
-                          : (<span>{formatAction('utworzy')} zgłoszenie <strong>#{ticketId}</strong></span>),
-                        unread: true,
-                      };
-
-                    case 'STATUS_CHANGED': {
-                      const oldS = log.old_value ? sl(log.old_value) : null;
-                      const newS = log.new_value ? sl(log.new_value) : null;
-                      const arrow = oldS && newS ? `: ${oldS} → ${newS}` : newS ? ` → ${newS}` : '';
-                      const isResolved = ['ROZWIAZANE', 'ZAMKNIETE'].includes(log.new_value);
-                      return {
-                        type: isResolved ? 'GREEN' : 'ORANGE',
-                        icon: isResolved ? CheckCircle2 : Activity,
-                        tab: 'Zgłoszenia',
-                        text: bulk
-                          ? (<span>{formatAction('zmieni')} status <strong>{bulkLabel}</strong>{newS ? ` → ${newS}` : ''}</span>)
-                          : (<span>{formatAction('zmieni')} status <strong>#{ticketId}</strong>{arrow}</span>),
-                        unread: !isResolved,
-                      };
-                    }
-
-                    case 'PRIORITY_CHANGED': {
-                      const oldP = log.old_value ? pl(log.old_value) : null;
-                      const newP = log.new_value ? pl(log.new_value) : null;
-                      const arrow = oldP && newP ? `: ${oldP} → ${newP}` : newP ? ` → ${newP}` : '';
-                      return {
-                        type: 'ORANGE', icon: AlertTriangle, tab: 'Zgłoszenia',
-                        text: bulk
-                          ? (<span>{formatAction('zmieni')} priorytet <strong>{bulkLabel}</strong>{newP ? ` → ${newP}` : ''}</span>)
-                          : (<span>{formatAction('zmieni')} priorytet <strong>#{ticketId}</strong>{arrow}</span>),
-                        unread: true,
-                      };
-                    }
-
-                    case 'CATEGORY_CHANGED': {
-                      const oldC = log.old_value || null;
-                      const newC = log.new_value || null;
-                      const arrow = oldC && newC ? `: ${oldC} → ${newC}` : newC ? ` → ${newC}` : '';
-                      return {
-                        type: 'ORANGE', icon: ClipboardList, tab: 'Zgłoszenia',
-                        text: bulk
-                          ? (<span>{formatAction('zmieni')} kategorię <strong>{bulkLabel}</strong>{newC ? ` → ${newC}` : ''}</span>)
-                          : (<span>{formatAction('zmieni')} kategorię <strong>#{ticketId}</strong>{arrow}</span>),
-                        unread: false,
-                      };
-                    }
-
-                    case 'TITLE_CHANGED': {
-                      const oldT = log.old_value ? `„${trunc(log.old_value)}”` : null;
-                      const newT = log.new_value ? `„${trunc(log.new_value)}”` : null;
-                      const detail = oldT && newT ? `: ${oldT} → ${newT}` : newT ? ` → ${newT}` : '';
-                      return {
-                        type: 'ORANGE', icon: FileText, tab: '_edycje',
-                        text: (<span>{formatAction('zmieni')} tytuł <strong>#{ticketId}</strong>{detail}</span>),
-                        unread: false,
-                      };
-                    }
-
-                    case 'DESCRIPTION_CHANGED':
-                      return {
-                        type: 'ORANGE', icon: FileText, tab: '_edycje',
-                        text: (<span>{formatAction('zaktualizowa')} opis zgłoszenia <strong>#{ticketId}</strong></span>),
-                        unread: false,
-                      };
-
-                    case 'REOPENED':
-                      return {
-                        type: 'ORANGE', icon: Activity, tab: 'Zgłoszenia',
-                        text: bulk
-                          ? (<span>{formatAction('ponownie otworzy')} <strong>{bulkLabel}</strong></span>)
-                          : (<span>{formatAction('ponownie otworzy')} <strong>#{ticketId}</strong></span>),
-                        unread: true,
-                      };
-
-                    case 'AUTO_CLOSED':
-                      return {
-                        type: 'GREEN', icon: CheckCircle2, tab: 'Zgłoszenia',
-                        text: (<span>System automatycznie zamknął <strong>#{ticketId}</strong></span>),
-                        unread: false,
-                      };
-
-                    case 'TECHNICIAN_ASSIGNED': {
-                      const tech = log.new_value || null;
-                      return {
-                        type: 'BLUE', icon: Users, tab: 'Zespół',
-                        text: bulk
-                          ? (<span>{formatAction('przypisa')} technika do <strong>{bulkLabel}</strong>{tech ? `: ${tech}` : ''}</span>)
-                          : (<span>{formatAction('przypisa')} technika do <strong>#{ticketId}</strong>{tech ? `: ${tech}` : ''}</span>),
-                        unread: false,
-                      };
-                    }
-
-                    case 'TECHNICIAN_REMOVED': {
-                      const tech = log.old_value || log.new_value || null;
-                      return {
-                        type: 'BLUE', icon: Users, tab: 'Zespół',
-                        text: bulk
-                          ? (<span>{formatAction('usuną')} technika z <strong>{bulkLabel}</strong>{tech ? `: ${tech}` : ''}</span>)
-                          : (<span>{formatAction('usuną')} technika z <strong>#{ticketId}</strong>{tech ? `: ${tech}` : ''}</span>),
-                        unread: false,
-                      };
-                    }
-
-                    case 'CREATOR_CHANGED':
-                      return {
-                        type: 'BLUE', icon: Users, tab: 'Zgłoszenia',
-                        text: (<span>{formatAction('zmieni')} zgłaszającego w <strong>#{ticketId}</strong>{log.new_value ? ` → ${log.new_value}` : ''}</span>),
-                        unread: false,
-                      };
-
-                    case 'COMMENT_ADDED':
-                      return {
-                        type: 'BLUE', icon: MessageSquare,
-                        tab: log.new_value === 'INTERNAL' ? 'Zespół' : 'Zgłoszenia',
-                        text: (<span>{formatAction('skomentowa')} <strong>#{ticketId}</strong></span>),
-                        unread: true,
-                      };
-
-                    case 'ATTACHMENT_ADDED': {
-                      const isMultiple = log.new_value && /^\d+ załącznik/.test(log.new_value);
-                      return {
-                        type: 'PURPLE', icon: Paperclip, tab: 'Zgłoszenia',
-                        text: isMultiple
-                          ? (<span>{formatAction('doda')} {log.new_value} do <strong>#{ticketId}</strong></span>)
-                          : (<span>{formatAction('doda')} załącznik do <strong>#{ticketId}</strong>{log.new_value ? `: ${log.new_value}` : ''}</span>),
-                        unread: false,
-                      };
-                    }
-
-                    case 'ATTACHMENT_DELETED':
-                      return {
-                        type: 'PURPLE', icon: Paperclip, tab: 'Zgłoszenia',
-                        text: (<span>{formatAction('usuną')} załącznik z <strong>#{ticketId}</strong>{log.old_value ? `: ${log.old_value}` : ''}</span>),
-                        unread: false,
-                      };
-
-                    case 'WORK_LOGGED':
-                      return {
-                        type: 'PURPLE', icon: Timer, tab: 'Zespół',
-                        text: (<span>{formatAction('zarejestrowa')} czas pracy w <strong>#{ticketId}</strong>{log.new_value ? ` (${log.new_value})` : ''}</span>),
-                        unread: false,
-                      };
-
-                    default:
-                      return {
-                        type: 'ORANGE', icon: ClipboardList, tab: 'Zgłoszenia',
-                        text: (<span>{isMe ? 'Twoja' : (user ? `${userName}:` : 'System:')} aktualizacja <strong>#{ticketId}</strong></span>),
-                        unread: false,
-                      };
-                  }
-                };
+                const activityTabs = [
+                  { id: 'all', label: t('dashboard.tabAll') },
+                  { id: 'tickets', label: t('dashboard.tabTickets') },
+                  { id: 'team', label: t('dashboard.tabTeam') },
+                ];
 
                 // Filtruj: ukryj ATTACHMENT_ADDED jeśli tuż po CREATED lub COMMENT_ADDED dla tego samego ticketu
                 const parentEvents = new Set(
@@ -1982,7 +1596,7 @@ const DashboardPage: React.FC = () => {
                 const groupedLogs = groupBulkLogs(filteredLogs);
 
                 const activities = groupedLogs.map((log: any) => {
-                  const config = getActivityConfig(log);
+                  const config = getActivityConfig(log, t, authContext?.user?.id, 'admin');
                   return {
                     id: log.id,
                     ticketId: log.ticket,
@@ -1996,27 +1610,27 @@ const DashboardPage: React.FC = () => {
                   };
                 });
 
-                const filteredActivities = activityTab === 'Wszystkie'
+                const filteredActivities = activityTab === 'all'
                   ? activities
-                  : activities.filter(a => a.tab === activityTab && a.tab !== '_edycje');
+                  : activities.filter(a => a.tab === activityTab && a.tab !== '_edits');
 
                 return (
                   <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-3xl shadow-sm flex flex-col h-[calc(100vh-280px)] min-h-[580px]">
                     <div className="p-5 border-b border-gray-100 dark:border-gray-700/50">
                       <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-4">
-                        Ostatnia aktywność
+                        {t('dashboard.recentActivity')}
                       </h2>
                       <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600">
                         {activityTabs.map(tab => (
                           <button
-                            key={tab}
-                            onClick={() => setActivityTab(tab)}
-                            className={`px-3 py-1.5 text-xs font-semibold rounded-lg whitespace-nowrap transition-colors ${activityTab === tab
+                            key={tab.id}
+                            onClick={() => setActivityTab(tab.id)}
+                            className={`px-3 py-1.5 text-xs font-semibold rounded-lg whitespace-nowrap transition-colors ${activityTab === tab.id
                               ? 'bg-gray-900 text-white dark:bg-blue-500/20 dark:text-blue-400'
                               : 'text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700/50 dark:hover:text-gray-200'
                               }`}
                           >
-                            {tab}
+                            {tab.label}
                           </button>
                         ))}
                       </div>
@@ -2028,8 +1642,8 @@ const DashboardPage: React.FC = () => {
                           <div className="w-14 h-14 bg-gray-100 dark:bg-gray-700/50 rounded-full flex items-center justify-center mb-4">
                             <Activity className="w-7 h-7 text-gray-400 dark:text-gray-500" />
                           </div>
-                          <h3 className="text-base font-bold text-gray-900 dark:text-white">Brak aktywności</h3>
-                          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Nie znaleziono zdarzeń dla wybranego filtru.</p>
+                          <h3 className="text-base font-bold text-gray-900 dark:text-white">{t('dashboard.noActivity')}</h3>
+                          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{t('dashboard.noActivityDesc')}</p>
                         </div>
                       ) : (
                         <div className="space-y-0.5">
@@ -2070,10 +1684,10 @@ const DashboardPage: React.FC = () => {
                                 {/* Timestamp ↔ Zbadaj cross-fade — identical to risk panel */}
                                 <div className="relative flex-shrink-0 w-20 text-right">
                                   <span className="block text-[11px] font-medium text-gray-400 dark:text-gray-500 opacity-100 group-hover:opacity-0 transition-opacity duration-150 ease-in-out whitespace-nowrap">
-                                    {formatActivityTime(activity.time)}
+                                    {formatActivityTime(activity.time, t)}
                                   </span>
                                   <span className="absolute inset-0 flex items-center justify-end text-[11px] font-semibold text-blue-600 dark:text-blue-400 opacity-0 group-hover:opacity-100 transition-opacity duration-150 ease-in-out whitespace-nowrap pointer-events-none">
-                                    Zbadaj →
+                                    {t('dashboard.investigate')}
                                   </span>
                                 </div>
                               </Link>
@@ -2097,8 +1711,8 @@ const DashboardPage: React.FC = () => {
     <div className="flex items-center justify-center h-full">
       <div className="text-center p-10">
         <AlertCircle className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-        <h2 className="text-xl font-bold text-gray-700">Brak dostępu</h2>
-        <p className="text-sm text-gray-500 mt-2">Twoja rola nie ma przypisanego panelu. Skontaktuj się z administratorem.</p>
+        <h2 className="text-xl font-bold text-gray-700">{t('dashboard.noAccess')}</h2>
+        <p className="text-sm text-gray-500 mt-2">{t('dashboard.noAccessDesc')}</p>
       </div>
     </div>
   );

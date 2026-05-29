@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useContext, useRef, useMemo } from 'react';
 import { Link, useSearchParams, useLocation } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { AuthContext } from '../context/AuthContext';
 import { ticketService } from '../api/ticketService';
 import { Ticket, User } from '../types';
@@ -79,7 +80,8 @@ const CustomDropdown: React.FC<CustomDropdownProps> = ({ value, onChange, option
 
 
 const TicketsPage: React.FC = () => {
-  useTitle('Zgłoszenia');
+  const { t } = useTranslation();
+  useTitle(t('tickets.title'));
   const authContext = useContext(AuthContext);
   const [searchParams] = useSearchParams();
   const [tickets, setTickets] = useState<Ticket[]>([]);
@@ -183,7 +185,7 @@ const TicketsPage: React.FC = () => {
       .catch(err => {
         if (cancelled) return;
         console.error('Błąd podczas pobierania zgłoszeń:', err);
-        setError('Nie udało się pobrać listy zgłoszeń.');
+        setError(t('tickets.errorLoad'));
       })
       .finally(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };
@@ -246,22 +248,22 @@ const TicketsPage: React.FC = () => {
     let sortLegend = '';
 
     if (!isActive) {
-      if (key === 'created_at') sortLegend = 'Sortuj od najstarszych';
-      else if (key === 'id') sortLegend = 'Sortuj rosnąco';
-      else if (key === 'priority') sortLegend = 'Sortuj od najniższego';
-      else if (key === 'status') sortLegend = 'Sortuj Nowe ➔ Zamknięte';
-      else sortLegend = 'Sortuj A → Z';
+      if (key === 'created_at') sortLegend = t('tickets.sortOldest');
+      else if (key === 'id') sortLegend = t('tickets.sortAsc');
+      else if (key === 'priority') sortLegend = t('tickets.sortPriorityAsc');
+      else if (key === 'status') sortLegend = t('tickets.sortStatusAsc');
+      else sortLegend = t('tickets.sortAlpha');
     } else {
       if (key === 'created_at') {
-        sortLegend = direction === 'asc' ? 'Posortowane od najstarszych' : 'Posortowane od najnowszych';
+        sortLegend = direction === 'asc' ? t('tickets.sortedOldest') : t('tickets.sortedNewest');
       } else if (key === 'id') {
-        sortLegend = direction === 'asc' ? 'Posortowane rosnąco' : 'Posortowane malejąco';
+        sortLegend = direction === 'asc' ? t('tickets.sortedAsc') : t('tickets.sortedDesc');
       } else if (key === 'priority') {
-        sortLegend = direction === 'asc' ? 'Posortowane od najniższego' : 'Posortowane od najwyższego';
+        sortLegend = direction === 'asc' ? t('tickets.sortedPriorityAsc') : t('tickets.sortedPriorityDesc');
       } else if (key === 'status') {
-        sortLegend = direction === 'asc' ? 'Posortowane Nowe ➔ Zamknięte' : 'Posortowane Zamknięte ➔ Nowe';
+        sortLegend = direction === 'asc' ? t('tickets.sortedStatusAsc') : t('tickets.sortedStatusDesc');
       } else {
-        sortLegend = direction === 'asc' ? 'Posortowane A → Z' : 'Posortowane Z → A';
+        sortLegend = direction === 'asc' ? t('tickets.sortedAlphaAsc') : t('tickets.sortedAlphaDesc');
       }
     }
 
@@ -307,7 +309,7 @@ const TicketsPage: React.FC = () => {
       await Promise.all(selectedTicketIds.map(id => ticketService.updateTicket(id, updates)));
 
       await reloadTickets();
-      setBulkSuccessMessage('Zmiany zostały pomyślnie zastosowane!');
+      setBulkSuccessMessage(t('tickets.applySuccess'));
       setTimeout(() => {
         setBulkSuccessMessage('');
         setSelectedTicketIds([]);
@@ -316,7 +318,7 @@ const TicketsPage: React.FC = () => {
       }, 4000);
     } catch (err) {
       console.error('Bulk update error', err);
-      alert('Wystąpił błąd podczas masowej aktualizacji.');
+      alert(t('tickets.bulkError'));
     } finally {
       setIsBulkSubmitting(false);
     }
@@ -338,7 +340,7 @@ const TicketsPage: React.FC = () => {
       }, 3000);
     } catch (err) {
       console.error('Błąd usuwania zgłoszeń', err);
-      alert('Wystąpił błąd podczas usuwania zgłoszeń.');
+      alert(t('tickets.bulkDeleteError'));
     } finally {
       setIsDeletingBulk(false);
     }
@@ -373,13 +375,13 @@ const TicketsPage: React.FC = () => {
   };
 
   const getTicketPlural = (count: number) => {
-    if (count === 1) return 'wybrane zgłoszenie';
+    if (count === 1) return t('tickets.deleteModalTicketSingular');
     const lastDigit = count % 10;
     const lastTwoDigits = count % 100;
     if (lastDigit >= 2 && lastDigit <= 4 && (lastTwoDigits < 10 || lastTwoDigits >= 20)) {
-      return 'wybrane zgłoszenia';
+      return t('tickets.deleteModalTicketFew');
     }
-    return 'wybranych zgłoszeń';
+    return t('tickets.deleteModalTicketMany');
   };
 
   return (
@@ -388,12 +390,10 @@ const TicketsPage: React.FC = () => {
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-            {isEmployee ? 'Moje zgłoszenia' : 'Zgłoszenia'}
+            {isEmployee ? t('tickets.titleMine') : t('tickets.title')}
           </h1>
           <p className="text-sm text-gray-500 dark:text-gray-400 mt-1 font-medium">
-            {isEmployee
-              ? 'Śledź status swoich wniosków i sprawdzaj ich postępy'
-              : 'Przeglądaj zgłoszenia, zmieniaj ich statusy i zarządzaj przypisaniami'}
+            {isEmployee ? t('tickets.subtitleEmployee') : t('tickets.subtitle')}
           </p>
         </div>
         <Link
@@ -401,7 +401,7 @@ const TicketsPage: React.FC = () => {
           className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl shadow-sm hover:shadow-md shadow-blue-600/10 transition-all text-sm whitespace-nowrap"
         >
           <Plus className="w-4 h-4" />
-          Nowe zgłoszenie
+          {t('tickets.newTicket')}
         </Link>
       </div>
 
@@ -413,7 +413,7 @@ const TicketsPage: React.FC = () => {
           <input
             type="text"
             className="w-full pl-10 pr-4 py-2 border border-gray-200 dark:border-gray-700 dark:bg-gray-700/50 dark:text-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
-            placeholder="Szukaj po tytule, ID lub osobie..."
+            placeholder={t('tickets.searchPlaceholder')}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
@@ -423,13 +423,13 @@ const TicketsPage: React.FC = () => {
         <CustomDropdown
           value={statusFilter}
           onChange={setStatusFilter}
-          placeholder="Status"
+          placeholder={t('tickets.filterStatus')}
           options={[
-            { value: 'all', label: 'Wszystkie' },
-            { value: 'NOWE', label: `Nowe (${statusCounts.NOWE})`, icon: <Circle className="w-4 h-4 text-blue-600 dark:text-blue-400 stroke-[2.5]" /> },
-            { value: 'W_TOKU', label: `W toku (${statusCounts.W_TOKU})`, icon: <Loader2 className="w-4 h-4 text-amber-500 dark:text-amber-400 stroke-[2.5]" /> },
-            { value: 'ROZWIAZANE', label: `Rozwiązane (${statusCounts.ROZWIAZANE})`, icon: <CheckCircle2 className="w-4 h-4 text-green-600 dark:text-green-400 stroke-[2.5]" /> },
-            { value: 'ZAMKNIETE', label: `Zamknięte (${statusCounts.ZAMKNIETE})`, icon: <XCircle className="w-4 h-4 text-teal-500 dark:text-teal-400 stroke-[2.5]" /> }
+            { value: 'all', label: t('tickets.filterAll') },
+            { value: 'NOWE', label: `${t('status.NOWE')} (${statusCounts.NOWE})`, icon: <Circle className="w-4 h-4 text-blue-600 dark:text-blue-400 stroke-[2.5]" /> },
+            { value: 'W_TOKU', label: `${t('status.W_TOKU')} (${statusCounts.W_TOKU})`, icon: <Loader2 className="w-4 h-4 text-amber-500 dark:text-amber-400 stroke-[2.5]" /> },
+            { value: 'ROZWIAZANE', label: `${t('status.ROZWIAZANE')} (${statusCounts.ROZWIAZANE})`, icon: <CheckCircle2 className="w-4 h-4 text-green-600 dark:text-green-400 stroke-[2.5]" /> },
+            { value: 'ZAMKNIETE', label: `${t('status.ZAMKNIETE')} (${statusCounts.ZAMKNIETE})`, icon: <XCircle className="w-4 h-4 text-teal-500 dark:text-teal-400 stroke-[2.5]" /> }
           ]}
           className="w-36"
         />
@@ -438,12 +438,12 @@ const TicketsPage: React.FC = () => {
         <CustomDropdown
           value={categoryFilter}
           onChange={setCategoryFilter}
-          placeholder="Kategoria"
+          placeholder={t('tickets.filterCategory')}
           options={[
-            { value: 'all', label: 'Wszystkie' },
+            { value: 'all', label: t('tickets.filterAll') },
             ...categories.map(cat => ({
               value: cat as string,
-              label: cat as string,
+              label: t(`categories.${cat}`, cat),
               icon: getCategoryIcon(cat as string)
             }))
           ]}
@@ -455,12 +455,12 @@ const TicketsPage: React.FC = () => {
           <CustomDropdown
             value={priorityFilter}
             onChange={setPriorityFilter}
-            placeholder="Priorytet"
+            placeholder={t('tickets.filterPriority')}
             options={[
-              { value: 'all', label: 'Wszystkie' },
-              { value: 'WYSOKI', label: 'Wysoki', icon: PRIORITY_ICONS['WYSOKI'] },
-              { value: 'NORMALNY', label: 'Normalny', icon: PRIORITY_ICONS['NORMALNY'] },
-              { value: 'NISKI', label: 'Niski', icon: PRIORITY_ICONS['NISKI'] }
+              { value: 'all', label: t('tickets.filterAll') },
+              { value: 'WYSOKI', label: t('priority.WYSOKI'), icon: PRIORITY_ICONS['WYSOKI'] },
+              { value: 'NORMALNY', label: t('priority.NORMALNY'), icon: PRIORITY_ICONS['NORMALNY'] },
+              { value: 'NISKI', label: t('priority.NISKI'), icon: PRIORITY_ICONS['NISKI'] }
             ]}
             className="w-36"
           />
@@ -471,11 +471,11 @@ const TicketsPage: React.FC = () => {
           <CustomDropdown
             value={assignmentFilter}
             onChange={setAssignmentFilter}
-            placeholder="Przypisanie"
+            placeholder={t('tickets.filterAssignment')}
             options={[
-              { value: 'all', label: 'Wszystkie' },
+              { value: 'all', label: t('tickets.filterAll') },
               {
-                value: 'assigned_to_me', label: 'Moje zgłoszenia', icon: (
+                value: 'assigned_to_me', label: t('tickets.filterAssignedToMe'), icon: (
                   <div className="w-5 h-5 rounded-full bg-blue-600 text-white flex items-center justify-center flex-shrink-0 overflow-hidden">
                     {authContext?.user?.avatar ? (
                       <img src={authContext.user.avatar} alt="" className="w-full h-full object-cover" />
@@ -486,7 +486,7 @@ const TicketsPage: React.FC = () => {
                 )
               },
               {
-                value: 'unassigned', label: 'Nie przypisano', icon: (
+                value: 'unassigned', label: t('tickets.filterUnassigned'), icon: (
                   <div className="w-5 h-5 rounded-full bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 flex items-center justify-center flex-shrink-0">
                     <UserMinus className="w-3 h-3" />
                   </div>
@@ -522,13 +522,13 @@ const TicketsPage: React.FC = () => {
                   {dateFromFilter && dateToFilter
                     ? `${dayjs(dateFromFilter).format('DD.MM.YYYY')} – ${dayjs(dateToFilter).format('DD.MM.YYYY')}`
                     : dateFromFilter
-                      ? `od ${dayjs(dateFromFilter).format('DD.MM.YYYY')}`
-                      : `do ${dayjs(dateToFilter).format('DD.MM.YYYY')}`}
+                      ? t('tickets.dateFrom', { date: dayjs(dateFromFilter).format('DD.MM.YYYY') })
+                      : t('tickets.dateTo', { date: dayjs(dateToFilter).format('DD.MM.YYYY') })}
                 </span>
                 <button
                   onClick={() => { setDateFromFilter(''); setDateToFilter(''); }}
                   className="ml-0.5 text-blue-400 hover:text-blue-700 dark:hover:text-blue-200 transition-colors"
-                  aria-label="Usuń filtr dat"
+                  aria-label={t('tickets.clearFilters')}
                 >
                   <X className="w-3.5 h-3.5" />
                 </button>
@@ -538,7 +538,7 @@ const TicketsPage: React.FC = () => {
               onClick={clearFilters}
               className="px-3 py-2 rounded-xl text-sm font-medium text-gray-500 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors flex items-center gap-1.5 whitespace-nowrap"
             >
-              <X className="w-4 h-4" /> Wyczyść filtry
+              <X className="w-4 h-4" /> {t('tickets.clearFilters')}
             </button>
           </div>
         )}
@@ -563,7 +563,7 @@ const TicketsPage: React.FC = () => {
                     <div className="flex items-center gap-4">
                       <div className="px-3 py-1.5 bg-white dark:bg-gray-800 text-blue-700 dark:text-blue-400 rounded-xl font-bold text-sm border border-blue-100 dark:border-blue-800 whitespace-nowrap shadow-sm flex items-center">
                         <span className="w-5 h-5 bg-blue-100 dark:bg-blue-900/50 text-blue-800 dark:text-blue-300 rounded-md flex items-center justify-center text-xs mr-2">{selectedTicketIds.length}</span>
-                        Wybrano
+                        {t('tickets.selected')}
                       </div>
 
                       <div className="w-px h-6 bg-blue-200/50 dark:bg-blue-800/50"></div>
@@ -573,11 +573,11 @@ const TicketsPage: React.FC = () => {
                           className="w-48 shadow-sm bg-white dark:bg-gray-800 border-blue-100 dark:border-gray-700 hover:bg-blue-50 dark:hover:bg-gray-700/50 text-blue-900 dark:text-gray-200"
                           value={bulkAssignee}
                           onChange={setBulkAssignee}
-                          placeholder="Przypisz do..."
+                          placeholder={t('tickets.assignTo')}
                           options={[
                             {
                               value: 'me',
-                              label: 'Przypisz do mnie',
+                              label: t('tickets.assignToMe'),
                               icon: <UserAvatar avatar={authContext?.user?.avatar} name={authContext?.user?.first_name || 'U'} size="xs" className="mr-1" />
                             },
                             { value: 'separator', label: '' },
@@ -594,12 +594,12 @@ const TicketsPage: React.FC = () => {
                         className="w-44 shadow-sm bg-white dark:bg-gray-800 border-blue-100 dark:border-gray-700 hover:bg-blue-50 dark:hover:bg-gray-700/50 text-blue-900 dark:text-gray-200"
                         value={bulkStatus}
                         onChange={setBulkStatus}
-                        placeholder="Zmień status..."
+                        placeholder={t('tickets.changeStatus')}
                         options={[
-                          { value: 'NOWE', label: 'Nowe', icon: <Circle className="w-4 h-4 text-blue-600 dark:text-blue-400 stroke-[2.5]" /> },
-                          { value: 'W_TOKU', label: 'W toku', icon: <Loader2 className="w-4 h-4 text-amber-500 dark:text-amber-400 stroke-[2.5]" /> },
-                          { value: 'ROZWIAZANE', label: 'Rozwiązane', icon: <CheckCircle2 className="w-4 h-4 text-green-600 dark:text-green-400 stroke-[2.5]" /> },
-                          { value: 'ZAMKNIETE', label: 'Zamknięte', icon: <XCircle className="w-4 h-4 text-teal-500 dark:text-teal-400 stroke-[2.5]" /> },
+                          { value: 'NOWE', label: t('status.NOWE'), icon: <Circle className="w-4 h-4 text-blue-600 dark:text-blue-400 stroke-[2.5]" /> },
+                          { value: 'W_TOKU', label: t('status.W_TOKU'), icon: <Loader2 className="w-4 h-4 text-amber-500 dark:text-amber-400 stroke-[2.5]" /> },
+                          { value: 'ROZWIAZANE', label: t('status.ROZWIAZANE'), icon: <CheckCircle2 className="w-4 h-4 text-green-600 dark:text-green-400 stroke-[2.5]" /> },
+                          { value: 'ZAMKNIETE', label: t('status.ZAMKNIETE'), icon: <XCircle className="w-4 h-4 text-teal-500 dark:text-teal-400 stroke-[2.5]" /> },
                         ]}
                       />
 
@@ -616,10 +616,10 @@ const TicketsPage: React.FC = () => {
                         {isBulkSubmitting && <Loader2 className="w-4 h-4 animate-spin flex-shrink-0" />}
                         {!isBulkSubmitting && bulkSuccessMessage && <CheckCircle2 className="w-4 h-4 flex-shrink-0" />}
                         {isBulkSubmitting
-                          ? 'Przetwarzanie...'
+                          ? t('tickets.applying')
                           : bulkSuccessMessage
-                            ? 'Sukces!'
-                            : 'Zastosuj'}
+                            ? t('tickets.applySuccess')
+                            : t('tickets.apply')}
                       </button>
 
                       {isAdmin && (
@@ -630,17 +630,17 @@ const TicketsPage: React.FC = () => {
                             ? 'bg-green-500 hover:bg-green-600 text-white shadow-green-200 dark:shadow-none pointer-events-none'
                             : 'text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 bg-red-50 dark:bg-red-900/30 hover:bg-red-100 dark:hover:bg-red-900/50'
                             }`}
-                          title="Usuń wybrane zgłoszenia"
+                          title={t('tickets.deleteSelected')}
                         >
                           {bulkDeleteSuccessMessage ? (
                             <>
                               <CheckCircle2 className="w-4 h-4 flex-shrink-0" />
-                              Usunięto
+                              {t('tickets.deleted')}
                             </>
                           ) : (
                             <>
                               <Trash2 className="w-4 h-4" />
-                              Usuń
+                              {t('tickets.delete')}
                             </>
                           )}
                         </button>
@@ -660,15 +660,15 @@ const TicketsPage: React.FC = () => {
                       />
                     </th>
                   )}
-                  {renderSortableHeader('id', 'ID', 'w-16 fhd:w-20')}
-                  {renderSortableHeader('title', 'Tytuł', 'min-w-[220px] fhd:min-w-[300px]')}
-                  {renderSortableHeader('category_name', 'Kategoria', 'hidden fhd:table-cell')}
-                  {!isEmployee && renderSortableHeader('priority', 'Priorytet')}
-                  {renderSortableHeader('creator', 'Zgłaszający')}
-                  {!isEmployee && renderSortableHeader('technician', 'Przypisany')}
-                  {renderSortableHeader('status', 'Status')}
-                  {renderSortableHeader('created_at', 'Data', 'fhd:hidden')}
-                  {renderSortableHeader('created_at', 'Utworzono', 'hidden fhd:table-cell', 'created_at_fhd')}
+                  {renderSortableHeader('id', t('tickets.colId'), 'w-16 fhd:w-20')}
+                  {renderSortableHeader('title', t('tickets.colTitle'), 'min-w-[220px] fhd:min-w-[300px]')}
+                  {renderSortableHeader('category_name', t('tickets.colCategory'), 'hidden fhd:table-cell')}
+                  {!isEmployee && renderSortableHeader('priority', t('tickets.colPriority'))}
+                  {renderSortableHeader('creator', t('tickets.colCreator'))}
+                  {!isEmployee && renderSortableHeader('technician', t('tickets.colAssigned'))}
+                  {renderSortableHeader('status', t('tickets.colStatus'))}
+                  {renderSortableHeader('created_at', t('tickets.colDate'), 'fhd:hidden')}
+                  {renderSortableHeader('created_at', t('tickets.colCreatedAt'), 'hidden fhd:table-cell', 'created_at_fhd')}
                 </tr>
               )}
             </thead>
@@ -676,7 +676,7 @@ const TicketsPage: React.FC = () => {
               {tickets.length === 0 ? (
                 <tr>
                   <td colSpan={(isAdmin || isTechnician) ? 9 : 6} className="px-6 py-12 text-center text-gray-500 text-sm italic">
-                    Brak zgłoszeń spełniających kryteria.
+                    {t('tickets.noResults')}
                   </td>
                 </tr>
               ) : (
@@ -718,7 +718,7 @@ const TicketsPage: React.FC = () => {
                     <td className="px-4 fhd:px-6 py-3 text-gray-600 whitespace-nowrap hidden fhd:table-cell">
                       <span className="flex items-center gap-1.5 font-medium">
                         {getCategoryIcon(ticket.category_name || '')}
-                        {ticket.category_name || '—'}
+                        {ticket.category_name ? t(`categories.${ticket.category_name}`, ticket.category_name) : '—'}
                       </span>
                     </td>
                     {!isEmployee && (
@@ -726,7 +726,7 @@ const TicketsPage: React.FC = () => {
                         <span className="flex items-center gap-1.5 font-medium">
                           {PRIORITY_ICONS[ticket.priority]}
                           <span className={ticket.priority === 'WYSOKI' ? 'text-red-600' : ticket.priority === 'NORMALNY' ? 'text-blue-600' : 'text-gray-500'}>
-                            <span className="hidden lg:inline">{PRIORITY_LABELS[ticket.priority]}</span>
+                            <span className="hidden lg:inline">{t(`priority.${ticket.priority}`, PRIORITY_LABELS[ticket.priority])}</span>
                           </span>
                         </span>
                       </td>
@@ -745,7 +745,7 @@ const TicketsPage: React.FC = () => {
                             {ticket.creator_details.first_name} {ticket.creator_details.last_name}
                           </span>
                         </span>
-                      ) : <span className="text-gray-400 italic">Nieznany</span>}
+                      ) : <span className="text-gray-400 italic">{t('tickets.unknownCreator')}</span>}
                     </td>
                     {!isEmployee && (
                       <td className="px-4 fhd:px-6 py-3 whitespace-nowrap">
@@ -765,14 +765,14 @@ const TicketsPage: React.FC = () => {
                         ) : (
                           <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-xs font-semibold bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400 border border-dashed border-amber-300 dark:border-amber-700">
                             <UserMinus className="w-3 h-3 flex-shrink-0" />
-                            Nie przypisano
+                            {t('tickets.unassigned')}
                           </span>
                         )}
                       </td>
                     )}
                     <td className="px-4 fhd:px-6 py-3 whitespace-nowrap">
                       <span className={`px-2 fhd:px-2.5 py-1 inline-flex text-xs leading-5 font-bold rounded-lg ${STATUS_STYLES[ticket.status] || 'bg-gray-100 text-gray-800'}`}>
-                        {STATUS_LABELS[ticket.status] || ticket.status}
+                        {t(`status.${ticket.status}`, STATUS_LABELS[ticket.status] || ticket.status)}
                       </span>
                     </td>
                     <td className="px-4 fhd:px-6 py-3 text-gray-500 whitespace-nowrap">
@@ -793,11 +793,15 @@ const TicketsPage: React.FC = () => {
           {/* Lewa: Licznik */}
           <div className="flex items-center">
             <p className="text-xs font-medium text-slate-500">
-              Pokazuję <strong className="text-slate-700 dark:text-slate-300">
-                {totalCount > 0 ? (currentPage - 1) * itemsPerPage + 1 : 0}
-              </strong> do <strong className="text-slate-700 dark:text-slate-300">
-                {Math.min(currentPage * itemsPerPage, totalCount)}
-              </strong> z <strong className="text-slate-700 dark:text-slate-300">{totalCount}</strong> wyników.
+              {t('tickets.paginationShowing', {
+                from: totalCount > 0 ? (currentPage - 1) * itemsPerPage + 1 : 0,
+                to: Math.min(currentPage * itemsPerPage, totalCount),
+                total: totalCount,
+              }).split(/<s>|<\/s>/).map((part, i) =>
+                i % 2 === 1
+                  ? <strong key={i} className="text-slate-700 dark:text-slate-300">{part}</strong>
+                  : <React.Fragment key={i}>{part}</React.Fragment>
+              )}
             </p>
           </div>
 
@@ -810,7 +814,7 @@ const TicketsPage: React.FC = () => {
                   disabled={currentPage === 1}
                   className="px-3 py-1.5 rounded-lg text-xs font-semibold border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-sm"
                 >
-                  Poprzednia
+                  {t('tickets.prevPage')}
                 </button>
 
                 <div className="flex items-center px-1 gap-1">
@@ -849,7 +853,7 @@ const TicketsPage: React.FC = () => {
                   disabled={currentPage === totalPages}
                   className="px-3 py-1.5 rounded-lg text-xs font-semibold border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-sm"
                 >
-                  Następna
+                  {t('tickets.nextPage')}
                 </button>
               </div>
             )}
@@ -864,17 +868,23 @@ const TicketsPage: React.FC = () => {
             <div className="w-14 h-14 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
               <Trash2 className="w-7 h-7 text-red-600 dark:text-red-400" />
             </div>
-            <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100 mb-1">Usunąć zgłoszenia?</h3>
+            <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100 mb-1">{t('tickets.deleteModalTitle')}</h3>
             <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">
-              Czy na pewno chcesz usunąć <span className="font-semibold text-gray-700 dark:text-gray-300">{selectedTicketIds.length}</span> {getTicketPlural(selectedTicketIds.length)}?
-              <br />Tej operacji nie można cofnąć.
+              {t('tickets.deleteModalBody', {
+                count: selectedTicketIds.length,
+                plural: getTicketPlural(selectedTicketIds.length),
+              }).split(/<b>|<\/b>/).map((part, i) =>
+                i % 2 === 1
+                  ? <span key={i} className="font-semibold text-gray-700 dark:text-gray-300">{part}</span>
+                  : <React.Fragment key={i}>{part}</React.Fragment>
+              )}
             </p>
             <div className="flex gap-3 justify-center">
               <button
                 onClick={() => setShowDeleteModal(false)}
                 className="px-4 py-2 text-sm font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-xl transition-colors"
               >
-                Anuluj
+                {t('tickets.cancel')}
               </button>
               <button
                 onClick={handleBulkDelete}
@@ -882,7 +892,7 @@ const TicketsPage: React.FC = () => {
                 className="px-5 py-2 text-sm font-bold text-white bg-red-600 hover:bg-red-700 rounded-xl shadow-sm transition-all disabled:opacity-50 flex items-center"
               >
                 {isDeletingBulk && <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />}
-                Usuń
+                {t('tickets.delete')}
               </button>
             </div>
           </div>

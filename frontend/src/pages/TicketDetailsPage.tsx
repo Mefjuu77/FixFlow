@@ -9,6 +9,7 @@ import { ticketService } from '../api/ticketService';
 import api from '../api/axiosConfig';
 import { Ticket, User as UserType, Comment, Category, TicketLog, WorkLog, ReplyTemplate } from '../types';
 import { AuthContext } from '../context/AuthContext';
+import { useTranslation } from 'react-i18next';
 import useTitle from '../hooks/useTitle';
 import {
   ArrowLeft,
@@ -48,6 +49,7 @@ import MarkdownRenderer from '../components/MarkdownRenderer';
 import TicketRelations from '../components/TicketRelations';
 
 const TicketDetailsPage: React.FC = () => {
+  const { t } = useTranslation();
   const { id } = useParams<{ id: string }>();
   const [ticket, setTicket] = useState<Ticket | null>(null);
   const [comments, setComments] = useState<Comment[]>([]);
@@ -1998,7 +2000,7 @@ const TicketDetailsPage: React.FC = () => {
                     <span className="w-5 flex justify-center text-gray-500">
                       {getCategoryIcon(ticket.category_name || '')}
                     </span>
-                    {ticket.category_name}
+                    {ticket.category_name ? t(`categories.${ticket.category_name}`, ticket.category_name) : ''}
                   </div>
                   {isEditingCategory && isTechnicianOrAdmin && (
                     <div className="absolute z-50 left-0 -ml-1 top-full mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-xl shadow-lg dark:shadow-[0_10px_40px_rgba(0,0,0,0.4)] w-[calc(100%+8px)] max-h-60 overflow-y-auto animate-in fade-in zoom-in-95 duration-100">
@@ -2016,7 +2018,7 @@ const TicketDetailsPage: React.FC = () => {
                           className={`w-full flex items-center gap-2.5 px-3 py-2 text-sm hover:bg-blue-50 dark:hover:bg-gray-700 transition-colors ${ticket.category === cat.id ? 'bg-blue-50/50 dark:bg-blue-900/40 font-semibold' : ''}`}
                         >
                           <span className="w-4 flex justify-center text-gray-500">{getCategoryIcon(cat.name)}</span>
-                          <span className="font-medium text-gray-700">{cat.name}</span>
+                          <span className="font-medium text-gray-700">{t(`categories.${cat.name}`, cat.name)}</span>
                         </button>
                       ))}
                     </div>
