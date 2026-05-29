@@ -1,11 +1,13 @@
 import React, { useState } from 'react';
 import { Link, useParams, useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import api from '../api/axiosConfig';
 import { Lock, Wrench, ArrowRight, ArrowLeft, CheckCircle2, AlertCircle, Eye, EyeOff } from 'lucide-react';
 import useTitle from '../hooks/useTitle';
 
 const ResetPasswordPage: React.FC = () => {
-  useTitle('Ustaw nowe hasło');
+  const { t } = useTranslation();
+  useTitle(t('auth.setNewTitle'));
   const { uid, token } = useParams<{ uid: string; token: string }>();
   const navigate = useNavigate();
   const [password, setPassword] = useState('');
@@ -20,11 +22,11 @@ const ResetPasswordPage: React.FC = () => {
     setError('');
 
     if (password.length < 6) {
-      setError('Hasło musi mieć co najmniej 6 znaków.');
+      setError(t('auth.pwdTooShort'));
       return;
     }
     if (password !== confirm) {
-      setError('Hasła nie są identyczne.');
+      setError(t('auth.pwdMismatch'));
       return;
     }
 
@@ -34,7 +36,7 @@ const ResetPasswordPage: React.FC = () => {
       setDone(true);
       setTimeout(() => navigate('/login'), 2500);
     } catch (err: any) {
-      setError(err.response?.data?.detail || 'Link resetu hasła jest nieprawidłowy lub wygasł.');
+      setError(err.response?.data?.detail || t('auth.resetLinkInvalid'));
     } finally {
       setIsSubmitting(false);
     }
@@ -54,9 +56,9 @@ const ResetPasswordPage: React.FC = () => {
               <div className="w-14 h-14 rounded-2xl bg-blue-50 dark:bg-blue-500/10 border border-blue-100 dark:border-blue-500/20 flex items-center justify-center mb-4">
                 <Wrench className="w-7 h-7 text-blue-600 dark:text-blue-400" strokeWidth={1.75} />
               </div>
-              <h1 className="text-2xl font-extrabold text-gray-900 dark:text-white tracking-tight">Ustaw nowe hasło</h1>
+              <h1 className="text-2xl font-extrabold text-gray-900 dark:text-white tracking-tight">{t('auth.setNewTitle')}</h1>
               <p className="text-sm text-gray-500 dark:text-gray-400 mt-1.5">
-                Wprowadź nowe hasło do swojego konta
+                {t('auth.setNewSubtitle')}
               </p>
             </div>
 
@@ -66,7 +68,7 @@ const ResetPasswordPage: React.FC = () => {
                   <CheckCircle2 className="w-7 h-7 text-green-600 dark:text-green-400" />
                 </div>
                 <p className="text-sm text-gray-600 dark:text-gray-300 leading-relaxed">
-                  Hasło zostało zmienione. Za chwilę przekierujemy Cię do logowania.
+                  {t('auth.passwordChangedText')}
                 </p>
               </div>
             ) : (
@@ -78,7 +80,7 @@ const ResetPasswordPage: React.FC = () => {
                   </div>
                 )}
                 <div className="space-y-2">
-                  <label className="text-[13px] font-bold text-gray-500 dark:text-gray-400">Nowe hasło</label>
+                  <label className="text-[13px] font-bold text-gray-500 dark:text-gray-400">{t('auth.newPassword')}</label>
                   <div className="relative group">
                     <div className="absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none">
                       <Lock className="w-4 h-4 text-gray-400 group-focus-within:text-blue-500 transition-colors" strokeWidth={1.75} />
@@ -97,7 +99,7 @@ const ResetPasswordPage: React.FC = () => {
                       onClick={() => setShowPassword(p => !p)}
                       className="absolute inset-y-0 right-0 flex items-center pr-4 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
                       tabIndex={-1}
-                      aria-label={showPassword ? 'Ukryj hasło' : 'Pokaż hasło'}
+                      aria-label={showPassword ? t('auth.hidePassword') : t('auth.showPassword')}
                     >
                       {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                     </button>
@@ -105,7 +107,7 @@ const ResetPasswordPage: React.FC = () => {
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-[13px] font-bold text-gray-500 dark:text-gray-400">Powtórz nowe hasło</label>
+                  <label className="text-[13px] font-bold text-gray-500 dark:text-gray-400">{t('auth.confirmNewPassword')}</label>
                   <div className="relative group">
                     <div className="absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none">
                       <Lock className="w-4 h-4 text-gray-400 group-focus-within:text-blue-500 transition-colors" strokeWidth={1.75} />
@@ -131,7 +133,7 @@ const ResetPasswordPage: React.FC = () => {
                     <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
                   ) : (
                     <>
-                      <span>Zmień hasło</span>
+                      <span>{t('auth.changePassword')}</span>
                       <ArrowRight className="w-4 h-4" strokeWidth={2.25} />
                     </>
                   )}
@@ -142,7 +144,7 @@ const ResetPasswordPage: React.FC = () => {
                     to="/login"
                     className="inline-flex items-center gap-1.5 text-sm font-medium text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors"
                   >
-                    <ArrowLeft className="w-4 h-4" /> Powrót do logowania
+                    <ArrowLeft className="w-4 h-4" /> {t('auth.backToLogin')}
                   </Link>
                 </div>
               </form>

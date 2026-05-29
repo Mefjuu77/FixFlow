@@ -1,18 +1,20 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { Bell, Check, Loader2 } from 'lucide-react';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
 import 'dayjs/locale/pl';
+import 'dayjs/locale/en';
 import { ticketService } from '../api/ticketService';
 import { Notification } from '../types';
 
 dayjs.extend(relativeTime);
-dayjs.locale('pl');
 
 const POLL_INTERVAL = 60 * 1000; // 60s
 
 const NotificationBell: React.FC = () => {
+  const { t, i18n } = useTranslation();
   const navigate = useNavigate();
   const [isOpen, setIsOpen] = useState(false);
   const [unread, setUnread] = useState(0);
@@ -90,8 +92,8 @@ const NotificationBell: React.FC = () => {
       <button
         onClick={openPanel}
         className="relative flex items-center justify-center w-10 h-10 text-gray-300 transition-colors bg-gray-800 rounded-md hover:bg-gray-700 hover:text-white"
-        title="Powiadomienia"
-        aria-label="Powiadomienia"
+        title={t('notifications.title')}
+        aria-label={t('notifications.title')}
       >
         <Bell size={16} />
         {unread > 0 && (
@@ -104,13 +106,13 @@ const NotificationBell: React.FC = () => {
       {isOpen && (
         <div className="fixed bottom-20 left-4 right-4 w-auto md:absolute md:inset-auto md:bottom-full md:left-0 md:mb-2 md:w-80 md:max-w-[calc(100vw-2rem)] bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-xl dark:shadow-[0_10px_40px_rgba(0,0,0,0.5)] z-50 overflow-hidden animate-in fade-in slide-in-from-bottom-2 duration-150">
           <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100 dark:border-gray-700/60">
-            <h3 className="text-sm font-bold text-gray-900 dark:text-white">Powiadomienia</h3>
+            <h3 className="text-sm font-bold text-gray-900 dark:text-white">{t('notifications.title')}</h3>
             {unread > 0 && (
               <button
                 onClick={handleMarkAll}
                 className="text-xs font-semibold text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 flex items-center gap-1 transition-colors"
               >
-                <Check className="w-3.5 h-3.5" /> Oznacz wszystkie
+                <Check className="w-3.5 h-3.5" /> {t('notifications.markAll')}
               </button>
             )}
           </div>
@@ -123,7 +125,7 @@ const NotificationBell: React.FC = () => {
             ) : items.length === 0 ? (
               <div className="px-4 py-10 text-center">
                 <Bell className="w-8 h-8 text-gray-300 dark:text-gray-600 mx-auto mb-2" />
-                <p className="text-sm text-gray-400 dark:text-gray-500">Brak powiadomień</p>
+                <p className="text-sm text-gray-400 dark:text-gray-500">{t('notifications.empty')}</p>
               </div>
             ) : (
               <div className="divide-y divide-gray-50 dark:divide-gray-700/50">
@@ -139,7 +141,7 @@ const NotificationBell: React.FC = () => {
                         {n.message}
                       </p>
                       <p className="text-[11px] text-gray-400 dark:text-gray-500 mt-0.5">
-                        {dayjs(n.created_at).fromNow()}
+                        {dayjs(n.created_at).locale(i18n.language.startsWith('pl') ? 'pl' : 'en').fromNow()}
                       </p>
                     </div>
                   </button>

@@ -252,7 +252,7 @@ const UsersPage: React.FC = () => {
       await api.post(`users/${user.id}/toggle-active/`);
       await fetchUsers();
     } catch (err: any) {
-      const msg = err.response?.data?.detail || 'Nie udało się zmienić statusu.';
+      const msg = err.response?.data?.detail || t('users.toastStatusChangeError');
       showToast(msg);
     } finally {
       setIsToggling(null);

@@ -8,6 +8,23 @@ export const ticketService = {
     return response.data;
   },
 
+  // Tworzy nową kategorię (tylko admin)
+  createCategory: async (name: string): Promise<Category> => {
+    const response = await api.post<Category>('categories/', { name });
+    return response.data;
+  },
+
+  // Aktualizuje nazwę kategorii (tylko admin)
+  updateCategory: async (id: number, name: string): Promise<Category> => {
+    const response = await api.patch<Category>(`categories/${id}/`, { name });
+    return response.data;
+  },
+
+  // Usuwa kategorię (tylko admin)
+  deleteCategory: async (id: number): Promise<void> => {
+    await api.delete(`categories/${id}/`);
+  },
+
   createTicket: async (data: TicketPayload) => {
     const response = await api.post('tickets/', data);
     return response.data;

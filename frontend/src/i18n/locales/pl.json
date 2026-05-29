@@ -210,6 +210,44 @@
     "showPassword": "Pokaż hasło",
     "hidePassword": "Ukryj hasło"
   },
+  "auth": {
+    "resetTitle": "Reset hasła",
+    "resetSubtitle": "Podaj adres e-mail, a wyślemy link do ustawienia nowego hasła",
+    "emailLabel": "Adres e-mail",
+    "emailPlaceholder": "twoj.adres@firma.pl",
+    "sendResetLink": "Wyślij link resetujący",
+    "backToLogin": "Powrót do logowania",
+    "resetSentText": "Jeśli konto o podanym adresie istnieje, wysłaliśmy wiadomość z instrukcją resetu hasła. Sprawdź swoją skrzynkę odbiorczą.",
+    "resetError": "Wystąpił błąd. Spróbuj ponownie za chwilę.",
+    "setNewTitle": "Ustaw nowe hasło",
+    "setNewSubtitle": "Wprowadź nowe hasło do swojego konta",
+    "newPassword": "Nowe hasło",
+    "confirmNewPassword": "Powtórz nowe hasło",
+    "changePassword": "Zmień hasło",
+    "passwordChangedText": "Hasło zostało zmienione. Za chwilę przekierujemy Cię do logowania.",
+    "pwdTooShort": "Hasło musi mieć co najmniej 6 znaków.",
+    "pwdMismatch": "Hasła nie są identyczne.",
+    "resetLinkInvalid": "Link resetu hasła jest nieprawidłowy lub wygasł.",
+    "showPassword": "Pokaż hasło",
+    "hidePassword": "Ukryj hasło"
+  },
+  "notifications": {
+    "title": "Powiadomienia",
+    "markAll": "Oznacz wszystkie",
+    "empty": "Brak powiadomień"
+  },
+  "resolution": {
+    "acceptedTitle": "Rozwiązanie zaakceptowane",
+    "acceptedMessage": "Dziękujemy! Twoje zgłoszenie zostało zamknięte. Jeśli problem pojawi się ponownie, możesz utworzyć nowe zgłoszenie.",
+    "rejectedTitle": "Zgłoszenie ponownie otwarte",
+    "rejectedMessage": "Twoje zgłoszenie zostało ponownie otwarte. Przypisany technik został powiadomiony i wkrótce się z Tobą skontaktuje.",
+    "invalidTitle": "Nieprawidłowy link",
+    "invalidMessage": "Ten link jest nieprawidłowy lub wygasł. Zaloguj się do panelu FixFlow, aby zarządzać swoimi zgłoszeniami.",
+    "processedTitle": "Zgłoszenie już przetworzone",
+    "processedMessage": "To zgłoszenie zostało już wcześniej zaakceptowane, odrzucone lub zamknięte. Żadna dodatkowa akcja nie jest wymagana.",
+    "loginCta": "Zaloguj się do FixFlow →",
+    "footer": "⚙ FixFlow · System zgłoszeń IT"
+  },
   "statistics": {
     "title": "Statystyki",
     "techSubtitle": "Szczegółowa analiza Twojej pracy i przypisanych zadań",
@@ -576,6 +614,7 @@
     "dateTo": "Do",
     "pickDate": "Wybierz datę",
     "dateError": "nie może być późniejsza niż data \"Do\"",
+    "dateErrorFull": "Data „{{from}}” nie może być późniejsza niż data „{{to}}”",
     "filters": "Filtry",
     "clearFilters": "Wyczyść filtry",
     "all": "Wszystkie",
@@ -663,7 +702,8 @@
     "validLastNameRequired": "Nazwisko jest wymagane.",
     "validPasswordRequired": "Hasło jest wymagane.",
     "validPasswordMin": "Hasło musi mieć min. 6 znaków.",
-    "toastNoSelfDeactivate": "Nie możesz zmienić statusu własnego konta!"
+    "toastNoSelfDeactivate": "Nie możesz zmienić statusu własnego konta!",
+    "toastStatusChangeError": "Nie udało się zmienić statusu."
   },
   "role": {
     "EMPLOYEE": "Pracownik",
@@ -727,7 +767,16 @@
     "addTemplate": "Dodaj szablon",
     "noTemplates": "Brak szablonów. Dodaj pierwszy powyżej.",
     "editTitle": "Edytuj",
-    "deleteTitle": "Usuń"
+    "deleteTitle": "Usuń",
+    "tabCategories": "Kategorie",
+    "categoriesTitle": "Kategorie zgłoszeń",
+    "categoriesSubtitle": "Zarządzaj listą kategorii dostępnych przy tworzeniu zgłoszeń.",
+    "catNameLabel": "Nazwa kategorii",
+    "catNamePlaceholder": "np. Sprzęt, Oprogramowanie, Sieć...",
+    "addCategory": "Dodaj kategorię",
+    "noCategories": "Brak kategorii. Dodaj pierwszą powyżej.",
+    "catDeleteConfirm": "Czy na pewno chcesz usunąć kategorię „{{name}}”? Wszystkie zgłoszenia przypisane do tej kategorii również zostaną usunięte. Tej operacji nie można cofnąć.",
+    "catSaveError": "Nie udało się zapisać kategorii."
   },
   "relations": {
     "title": "Powiązania",

@@ -485,7 +485,7 @@ const ExportPage: React.FC = () => {
             {dateFrom && dateTo && dateFrom > dateTo && (
               <div className="flex items-center gap-2 mt-3 px-3 py-2 bg-rose-50 dark:bg-rose-500/10 border border-rose-200 dark:border-rose-500/20 rounded-xl text-xs font-semibold text-rose-600 dark:text-rose-400 animate-in fade-in duration-200">
                 <AlertTriangle className="w-4 h-4 shrink-0" />
-                Data &quot;{t('export.dateFrom')}&quot; {t('export.dateError')}
+                {t('export.dateErrorFull', { from: t('export.dateFrom'), to: t('export.dateTo') })}
               </div>
             )}
           </div>

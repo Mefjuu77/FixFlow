@@ -7,6 +7,7 @@ import useTitle from '../hooks/useTitle';
 import api from '../api/axiosConfig';
 import { ticketService } from '../api/ticketService';
 import { ReplyTemplate } from '../types';
+import { Category } from '../types/ticket';
 import { SUPPORTED_LANGUAGES, AppLanguage } from '../i18n';
 import {
   Camera,
@@ -30,6 +31,7 @@ import {
   Plus,
   Pencil,
   Globe,
+  Tags,
 } from 'lucide-react';
 
 
@@ -39,7 +41,7 @@ const ROLE_COLORS: Record<string, string> = {
   ADMIN: 'bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-400',
 };
 
-const validTabs = ['profile', 'security', 'appearance', 'language', 'notifications', 'templates'] as const;
+const validTabs = ['profile', 'security', 'appearance', 'language', 'notifications', 'templates', 'categories'] as const;
 type SettingsTab = typeof validTabs[number];
 
 const SettingsPage: React.FC = () => {
@@ -265,6 +267,58 @@ const SettingsPage: React.FC = () => {
     }
   };
 
+  // ===== Kategorie zgłoszeń (tylko admin) =====
+  const isAdmin = role === 'ADMIN';
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [catName, setCatName] = useState('');
+  const [catEditingId, setCatEditingId] = useState<number | null>(null);
+  const [catSaving, setCatSaving] = useState(false);
+  const [catError, setCatError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (isAdmin) {
+      ticketService.getCategories().then(setCategories).catch(console.error);
+    }
+  }, [isAdmin]);
+
+  const resetCatForm = () => {
+    setCatEditingId(null);
+    setCatName('');
+    setCatError(null);
+  };
+
+  const handleSaveCategory = async () => {
+    const name = catName.trim();
+    if (name.length < 2) return;
+    setCatSaving(true);
+    setCatError(null);
+    try {
+      if (catEditingId) {
+        await ticketService.updateCategory(catEditingId, name);
+      } else {
+        await ticketService.createCategory(name);
+      }
+      setCategories(await ticketService.getCategories());
+      resetCatForm();
+    } catch (err) {
+      console.error('Błąd zapisu kategorii:', err);
+      setCatError(t('settings.catSaveError'));
+    } finally {
+      setCatSaving(false);
+    }
+  };
+
+  const handleDeleteCategory = async (cat: Category) => {
+    if (!window.confirm(t('settings.catDeleteConfirm', { name: cat.name }))) return;
+    try {
+      await ticketService.deleteCategory(cat.id);
+      setCategories(prev => prev.filter(c => c.id !== cat.id));
+      if (catEditingId === cat.id) resetCatForm();
+    } catch (err) {
+      console.error('Błąd usuwania kategorii:', err);
+    }
+  };
+
   const tabs: { id: string; label: string; icon: React.ReactNode }[] = [
     { id: 'profile', label: t('settings.tabProfile'), icon: <User className="w-4 h-4" /> },
     { id: 'security', label: t('settings.tabSecurity'), icon: <KeyRound className="w-4 h-4" /> },
@@ -272,6 +326,7 @@ const SettingsPage: React.FC = () => {
     { id: 'language', label: t('language.label'), icon: <Globe className="w-4 h-4" /> },
     { id: 'notifications', label: t('settings.tabNotifications'), icon: <Bell className="w-4 h-4" /> },
     ...(isTechOrAdmin ? [{ id: 'templates', label: t('settings.tabTemplates'), icon: <MessageSquareText className="w-4 h-4" /> }] : []),
+    ...(isAdmin ? [{ id: 'categories', label: t('settings.tabCategories'), icon: <Tags className="w-4 h-4" /> }] : []),
   ];
 
   return (
@@ -852,6 +907,91 @@ const SettingsPage: React.FC = () => {
                           </button>
                           <button
                             onClick={() => handleDeleteTemplate(tpl.id)}
+                            className="p-2 text-gray-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
+                            title={t('settings.deleteTitle')}
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* ===== CATEGORIES TAB (Admin) ===== */}
+          {activeTab === 'categories' && isAdmin && (
+            <div className="space-y-6">
+              <div className="bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700/60 rounded-2xl sm:rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-[0_8px_30px_rgb(0,0,0,0.1)] p-4 sm:p-8">
+                <div className="flex items-center gap-3 sm:gap-4 mb-5 sm:mb-8">
+                  <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-2xl bg-blue-50 dark:bg-blue-500/10 flex items-center justify-center border border-blue-100 dark:border-blue-500/20 flex-shrink-0">
+                    <Tags className="w-5 h-5 sm:w-6 sm:h-6 text-blue-600 dark:text-blue-400" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white tracking-tight">{t('settings.categoriesTitle')}</h3>
+                    <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 mt-0.5">{t('settings.categoriesSubtitle')}</p>
+                  </div>
+                </div>
+
+                {/* Formularz dodawania / edycji */}
+                <div className="bg-gray-50 dark:bg-gray-900/30 border border-gray-200 dark:border-gray-700 rounded-2xl p-4 sm:p-5 space-y-3 mb-6">
+                  <div className="space-y-2">
+                    <label className="text-[13px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-widest">{t('settings.catNameLabel')}</label>
+                    <input
+                      type="text"
+                      value={catName}
+                      onChange={(e) => setCatName(e.target.value)}
+                      onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleSaveCategory(); } }}
+                      placeholder={t('settings.catNamePlaceholder')}
+                      className="w-full px-4 py-2.5 bg-white dark:bg-gray-900/50 border border-gray-200 dark:border-gray-700 rounded-xl text-sm font-medium text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all placeholder-gray-400"
+                    />
+                  </div>
+                  {catError && (
+                    <p className="text-xs font-medium text-red-600 dark:text-red-400">{catError}</p>
+                  )}
+                  <div className="flex items-center justify-end gap-2">
+                    {catEditingId && (
+                      <button
+                        onClick={resetCatForm}
+                        className="px-4 py-2 text-sm font-medium text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 transition-colors"
+                      >
+                        {t('settings.cancel')}
+                      </button>
+                    )}
+                    <button
+                      onClick={handleSaveCategory}
+                      disabled={catSaving || catName.trim().length < 2}
+                      className="inline-flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl text-sm shadow-sm transition-all disabled:opacity-50 active:scale-[0.98]"
+                    >
+                      {catSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : catEditingId ? <Save className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
+                      {catEditingId ? t('settings.saveChanges') : t('settings.addCategory')}
+                    </button>
+                  </div>
+                </div>
+
+                {/* Lista kategorii */}
+                {categories.length === 0 ? (
+                  <div className="text-center py-10">
+                    <Tags className="w-8 h-8 text-gray-300 dark:text-gray-600 mx-auto mb-2" />
+                    <p className="text-sm text-gray-400 dark:text-gray-500">{t('settings.noCategories')}</p>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {categories.map(cat => (
+                      <div key={cat.id} className="flex items-center justify-between gap-3 p-4 bg-white dark:bg-gray-800/50 border border-gray-100 dark:border-gray-700 rounded-xl">
+                        <p className="text-sm font-semibold text-gray-900 dark:text-gray-100 truncate min-w-0 flex-1">{cat.name}</p>
+                        <div className="flex items-center gap-1 flex-shrink-0">
+                          <button
+                            onClick={() => { setCatEditingId(cat.id); setCatName(cat.name); setCatError(null); }}
+                            className="p-2 text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors"
+                            title={t('settings.editTitle')}
+                          >
+                            <Pencil className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() => handleDeleteCategory(cat)}
                             className="p-2 text-gray-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
                             title={t('settings.deleteTitle')}
                           >

@@ -208,6 +208,44 @@
     "showPassword": "Show password",
     "hidePassword": "Hide password"
   },
+  "auth": {
+    "resetTitle": "Reset password",
+    "resetSubtitle": "Enter your email address and we'll send you a link to set a new password",
+    "emailLabel": "Email address",
+    "emailPlaceholder": "your.address@company.com",
+    "sendResetLink": "Send reset link",
+    "backToLogin": "Back to login",
+    "resetSentText": "If an account with that address exists, we've sent a message with password reset instructions. Check your inbox.",
+    "resetError": "An error occurred. Please try again in a moment.",
+    "setNewTitle": "Set a new password",
+    "setNewSubtitle": "Enter a new password for your account",
+    "newPassword": "New password",
+    "confirmNewPassword": "Confirm new password",
+    "changePassword": "Change password",
+    "passwordChangedText": "Your password has been changed. We'll redirect you to login shortly.",
+    "pwdTooShort": "Password must be at least 6 characters.",
+    "pwdMismatch": "Passwords do not match.",
+    "resetLinkInvalid": "The password reset link is invalid or has expired.",
+    "showPassword": "Show password",
+    "hidePassword": "Hide password"
+  },
+  "notifications": {
+    "title": "Notifications",
+    "markAll": "Mark all read",
+    "empty": "No notifications"
+  },
+  "resolution": {
+    "acceptedTitle": "Solution accepted",
+    "acceptedMessage": "Thank you! Your ticket has been closed. If the problem occurs again, you can create a new ticket.",
+    "rejectedTitle": "Ticket reopened",
+    "rejectedMessage": "Your ticket has been reopened. The assigned technician has been notified and will contact you shortly.",
+    "invalidTitle": "Invalid link",
+    "invalidMessage": "This link is invalid or has expired. Log in to the FixFlow panel to manage your tickets.",
+    "processedTitle": "Ticket already processed",
+    "processedMessage": "This ticket has already been accepted, rejected or closed. No further action is required.",
+    "loginCta": "Log in to FixFlow →",
+    "footer": "⚙ FixFlow · IT ticketing system"
+  },
   "statistics": {
     "title": "Statistics",
     "techSubtitle": "Detailed analysis of your work and assigned tasks",
@@ -562,6 +600,7 @@
     "dateTo": "To",
     "pickDate": "Pick a date",
     "dateError": "cannot be later than the \"To\" date",
+    "dateErrorFull": "The \"{{from}}\" date cannot be later than the \"{{to}}\" date",
     "filters": "Filters",
     "clearFilters": "Clear filters",
     "all": "All",
@@ -649,7 +688,8 @@
     "validLastNameRequired": "Last name is required.",
     "validPasswordRequired": "Password is required.",
     "validPasswordMin": "Password must be at least 6 characters.",
-    "toastNoSelfDeactivate": "You cannot change the status of your own account!"
+    "toastNoSelfDeactivate": "You cannot change the status of your own account!",
+    "toastStatusChangeError": "Failed to change status."
   },
   "role": {
     "EMPLOYEE": "Employee",
@@ -713,7 +753,16 @@
     "addTemplate": "Add template",
     "noTemplates": "No templates. Add one above.",
     "editTitle": "Edit",
-    "deleteTitle": "Delete"
+    "deleteTitle": "Delete",
+    "tabCategories": "Categories",
+    "categoriesTitle": "Ticket categories",
+    "categoriesSubtitle": "Manage the list of categories available when creating tickets.",
+    "catNameLabel": "Category name",
+    "catNamePlaceholder": "e.g. Hardware, Software, Network...",
+    "addCategory": "Add category",
+    "noCategories": "No categories. Add one above.",
+    "catDeleteConfirm": "Are you sure you want to delete the category \"{{name}}\"? All tickets assigned to this category will also be deleted. This action cannot be undone.",
+    "catSaveError": "Failed to save category."
   },
   "relations": {
     "title": "Linked tickets",
