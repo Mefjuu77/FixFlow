@@ -3,8 +3,8 @@ import { useParams, useNavigate } from 'react-router-dom';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
 import 'dayjs/locale/pl';
+import 'dayjs/locale/en';
 dayjs.extend(relativeTime);
-dayjs.locale('pl');
 import { ticketService } from '../api/ticketService';
 import api from '../api/axiosConfig';
 import { Ticket, User as UserType, Comment, Category, TicketLog, WorkLog, ReplyTemplate } from '../types';
@@ -49,7 +49,9 @@ import MarkdownRenderer from '../components/MarkdownRenderer';
 import TicketRelations from '../components/TicketRelations';
 
 const TicketDetailsPage: React.FC = () => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  // Keep dayjs locale in sync with the UI language
+  dayjs.locale(i18n.language.startsWith('pl') ? 'pl' : 'en');
   const { id } = useParams<{ id: string }>();
   const [ticket, setTicket] = useState<Ticket | null>(null);
   const [comments, setComments] = useState<Comment[]>([]);
@@ -132,15 +134,13 @@ const TicketDetailsPage: React.FC = () => {
   const technicianDropdownRef = useRef<HTMLDivElement>(null);
   const transitionAssigneeDropdownRef = useRef<HTMLDivElement>(null);
 
-  const targetStatusLabel = transitionModalConfig.targetStatus === 'W_TOKU' ? 'W toku' :
-    transitionModalConfig.targetStatus === 'NOWE' ? 'Nowe' :
-      transitionModalConfig.targetStatus === 'ROZWIAZANE' ? 'Rozwiązane' :
-        transitionModalConfig.targetStatus === 'ZAMKNIETE' ? 'Zamknięte' :
-          transitionModalConfig.targetStatus;
+  const targetStatusLabel = transitionModalConfig.targetStatus
+    ? t(`status.${transitionModalConfig.targetStatus}`)
+    : transitionModalConfig.targetStatus;
 
   const currentTitle = transitionModalConfig.isOpen && targetStatusLabel
     ? targetStatusLabel
-    : (ticket ? `Zgłoszenie #${ticket.id}` : 'Szczegóły zgłoszenia');
+    : (ticket ? t('ticketDetails.ticketLabel', { id: ticket.id }) : t('ticketDetails.details'));
 
   useTitle(currentTitle);
 
@@ -184,7 +184,7 @@ const TicketDetailsPage: React.FC = () => {
       const data = await ticketService.getTicket(id!);
       setTicket(data);
     } catch (err) {
-      setError('Nie udało się pobrać szczegółów zgłoszenia.');
+      setError(t('ticketDetails.errorLoad'));
     } finally {
       setLoading(false);
     }
@@ -287,8 +287,8 @@ const TicketDetailsPage: React.FC = () => {
       setTicket(updated);
       fetchLogs();
     } catch (err) {
-      console.error('Błąd aktualizacji', err);
-      alert('Błąd podczas aktualizacji.');
+      console.error('Update error', err);
+      alert(t('ticketDetails.errorUpdate'));
     }
   };
 
@@ -310,8 +310,8 @@ const TicketDetailsPage: React.FC = () => {
       document.body.removeChild(link);
       window.URL.revokeObjectURL(blobUrl);
     } catch (err) {
-      console.error('Błąd pobierania pliku:', err);
-      alert('Nie udało się pobrać pliku.');
+      console.error('File download error:', err);
+      alert(t('ticketDetails.errorDownload'));
     }
   };
 
@@ -345,8 +345,8 @@ const TicketDetailsPage: React.FC = () => {
         fetchLogs();
       }
     } catch (err) {
-      console.error('Błąd usuwania wszystkich załączników:', err);
-      alert('Nie udało się usunąć wszystkich załączników.');
+      console.error('Error deleting all attachments:', err);
+      alert(t('ticketDetails.errorDeleteAllAttachments'));
     } finally {
       setIsDeletingAllAttachments(false);
       setShowDeleteAllAttachmentsModal(false);
@@ -362,8 +362,8 @@ const TicketDetailsPage: React.FC = () => {
       fetchLogs();
       setAttachmentToDelete(null);
     } catch (err) {
-      console.error('Błąd usuwania załącznika:', err);
-      alert('Błąd podczas usuwania załącznika.');
+      console.error('Error deleting attachment:', err);
+      alert(t('ticketDetails.errorDeleteAttachment'));
     } finally {
       setIsDeletingAttachment(false);
     }
@@ -373,11 +373,11 @@ const TicketDetailsPage: React.FC = () => {
     setCommentError('');
     const trimmed = newCommentText.trim();
     if (!trimmed) {
-      setCommentError('Treść komentarza nie może być pusta.');
+      setCommentError(t('ticketDetails.commentErrorEmpty'));
       return;
     }
     if (trimmed.length > 5000) {
-      setCommentError('Treść komentarza nie może przekraczać 5000 znaków.');
+      setCommentError(t('ticketDetails.commentErrorTooLong'));
       return;
     }
 
@@ -404,7 +404,7 @@ const TicketDetailsPage: React.FC = () => {
       if (err.response?.data?.content) {
         setCommentError(err.response.data.content[0]);
       } else {
-        setCommentError('Wystąpił błąd podczas dodawania komentarza. Spróbuj ponownie.');
+        setCommentError(t('ticketDetails.commentErrorGeneric'));
       }
     } finally {
       setIsSubmittingComment(false);
@@ -496,8 +496,8 @@ const TicketDetailsPage: React.FC = () => {
       await ticketService.deleteTicket(ticket.id);
       navigate('/tickets');
     } catch (err) {
-      console.error('Błąd usuwania zgłoszenia:', err);
-      alert('Nie udało się usunąć zgłoszenia.');
+      console.error('Error deleting ticket:', err);
+      alert(t('ticketDetails.errorDeleteTicket'));
     } finally {
       setIsDeletingTicket(false);
       setShowDeleteModal(false);
@@ -505,7 +505,7 @@ const TicketDetailsPage: React.FC = () => {
   };
 
   if (loading) return <div className="flex justify-center mt-20"><div className="animate-spin w-10 h-10 border-4 border-blue-600 border-t-transparent rounded-full"></div></div>;
-  if (error || !ticket) return <div className="p-4 bg-red-50 text-red-700 rounded-xl m-6">{error || 'Zgłoszenie nie istnieje.'}</div>;
+  if (error || !ticket) return <div className="p-4 bg-red-50 text-red-700 rounded-xl m-6">{error || t('ticketDetails.errorNotFound')}</div>;
 
   const statusColors = {
     NOWE: 'bg-blue-100 text-blue-700 border-blue-200',
@@ -531,7 +531,7 @@ const TicketDetailsPage: React.FC = () => {
         }} 
         className="flex items-center text-gray-500 dark:text-gray-400 hover:!text-blue-600 dark:hover:!text-blue-400 font-semibold mb-6 transition-colors"
       >
-        <ArrowLeft className="w-4 h-4 mr-1" /> Wstecz
+        <ArrowLeft className="w-4 h-4 mr-1" /> {t('ticketDetails.back')}
       </button>
 
       {/* Baner weryfikacji rozwiązania dla klienta */}
@@ -548,14 +548,14 @@ const TicketDetailsPage: React.FC = () => {
                 <Check className="w-5 h-5 text-green-600 dark:text-green-400" />
               </div>
               <div className="flex-1">
-                <h3 className="text-base font-bold text-green-800 dark:text-green-400 mb-1">Zgłoszenie oznaczone jako rozwiązane</h3>
+                <h3 className="text-base font-bold text-green-800 dark:text-green-400 mb-1">{t('ticketDetails.resolutionBannerTitle')}</h3>
                 <p className="text-sm text-green-700 dark:text-green-300/80 mb-3">
-                  Technik oznaczył Twoje zgłoszenie jako rozwiązane. Sprawdź, czy problem został naprawiony.
+                  {t('ticketDetails.resolutionBannerDesc')}
                   {daysLeft > 0 && (
-                    <span className="font-semibold text-green-800 dark:text-green-300"> Masz jeszcze {daysLeft} {daysLeft === 1 ? 'dzień' : daysLeft < 5 ? 'dni' : 'dni'} na weryfikację.</span>
+                    <span className="font-semibold text-green-800 dark:text-green-300"> {t('ticketDetails.resolutionDaysLeft', { n: daysLeft, days: daysLeft === 1 ? t('ticketDetails.day') : t('ticketDetails.days') })}</span>
                   )}
                   {daysLeft === 0 && (
-                    <span className="font-semibold text-amber-600 dark:text-amber-500"> Czas weryfikacji upływa dzisiaj!</span>
+                    <span className="font-semibold text-amber-600 dark:text-amber-500"> {t('ticketDetails.resolutionExpiresToday')}</span>
                   )}
                 </p>
                 <div className="flex items-center gap-3">
@@ -590,7 +590,7 @@ const TicketDetailsPage: React.FC = () => {
                     ) : (
                       <Check className="w-4 h-4" />
                     )}
-                    {isAcceptingResolution ? 'Przetwarzanie...' : resolutionAccepted ? 'Zaakceptowano!' : 'Akceptuję rozwiązanie'}
+                    {isAcceptingResolution ? t('ticketDetails.processing') : resolutionAccepted ? t('ticketDetails.accepted') : t('ticketDetails.acceptResolution')}
                   </button>
                   <button
                     onClick={async () => {
@@ -623,7 +623,7 @@ const TicketDetailsPage: React.FC = () => {
                     ) : (
                       <X className="w-4 h-4" />
                     )}
-                    {isRejectingResolution ? 'Przetwarzanie...' : resolutionRejected ? 'Sukces!' : 'To nie rozwiązuje problemu'}
+                    {isRejectingResolution ? t('ticketDetails.processing') : resolutionRejected ? t('ticketDetails.success') : t('ticketDetails.rejectResolution')}
                   </button>
                 </div>
               </div>
@@ -631,8 +631,8 @@ const TicketDetailsPage: React.FC = () => {
             {/* Pasek postępu czasu */}
             <div className="mt-4 ml-[52px] max-w-sm">
               <div className="flex items-center justify-between text-[11px] text-green-700 dark:text-green-500/80 mb-1.5">
-                <span className="font-medium">Czas na weryfikację</span>
-                <span className="font-bold">{daysLeft} z 7 dni</span>
+                <span className="font-medium">{t('ticketDetails.verificationTimeLabel')}</span>
+                <span className="font-bold">{t('ticketDetails.verificationDaysOf7', { n: daysLeft })}</span>
               </div>
               <div className="w-full bg-green-200 dark:bg-green-900/40 rounded-full h-1.5">
                 <div
@@ -650,12 +650,9 @@ const TicketDetailsPage: React.FC = () => {
         <div className="space-y-6 min-w-0 lg:max-h-[calc(100vh-100px)] lg:overflow-y-auto lg:pl-1 lg:pr-3" style={{ scrollbarWidth: 'auto', scrollbarColor: '#94a3b8 transparent' }}>
           <div className="flex items-center justify-between mb-2">
             <div className="flex items-center gap-3">
-              <span className="text-sm font-semibold text-gray-500 hover:text-blue-600 hover:underline cursor-pointer transition-colors">Zgłoszenie #{ticket.id}</span>
+              <span className="text-sm font-semibold text-gray-500 hover:text-blue-600 hover:underline cursor-pointer transition-colors">{t('ticketDetails.ticketLabel', { id: ticket.id })}</span>
               <span className={`px-2 py-0.5 rounded-md text-[10px] font-bold border uppercase tracking-wider ${statusColors[ticket.status]}`}>
-                {ticket.status === 'W_TOKU' ? 'W toku' :
-                  ticket.status === 'NOWE' ? 'Nowe' :
-                    ticket.status === 'ROZWIAZANE' ? 'Rozwiązane' :
-                      ticket.status === 'ZAMKNIETE' ? 'Zamknięte' : ticket.status}
+                {t(`status.${ticket.status}`, ticket.status)}
               </span>
             </div>
           </div>
@@ -718,7 +715,7 @@ const TicketDetailsPage: React.FC = () => {
                   setIsEditingTitle(true);
                 }
               }}
-              title={isTechnicianOrAdmin ? "Kliknij, aby edytować tytuł" : undefined}
+              title={isTechnicianOrAdmin ? t('ticketDetails.clickToEditTitle') : undefined}
             >
               <h1 className="text-2xl font-semibold text-gray-900 dark:text-gray-100 flex-1 min-w-0 break-words">{ticket.title}</h1>
               {isTechnicianOrAdmin && (
@@ -747,20 +744,17 @@ const TicketDetailsPage: React.FC = () => {
                     ticket.status === 'ROZWIAZANE' ? 'text-green-800' :
                       'text-teal-800'
                   }`}>
-                  Status: {ticket.status === 'W_TOKU' ? 'W toku' :
-                    ticket.status === 'NOWE' ? 'Nowe' :
-                      ticket.status === 'ROZWIAZANE' ? 'Rozwiązane' :
-                        ticket.status === 'ZAMKNIETE' ? 'Zamknięte' : ticket.status}
+                  {t('ticketDetails.statusLabel', { status: t(`status.${ticket.status}`, ticket.status) })}
                 </p>
                 <p className={`text-xs mt-0.5 ${ticket.status === 'NOWE' ? 'text-blue-600' :
                   ticket.status === 'W_TOKU' ? 'text-amber-600' :
                     ticket.status === 'ROZWIAZANE' ? 'text-green-600' :
                       'text-teal-600'
                   }`}>
-                  {ticket.status === 'NOWE' ? 'Twoje zgłoszenie oczekuje na rozpatrzenie.' :
-                    ticket.status === 'W_TOKU' ? 'Twoje zgłoszenie jest w trakcie realizacji.' :
-                      ticket.status === 'ROZWIAZANE' ? 'Zgłoszenie zostało rozwiązane.' :
-                        'Zgłoszenie zostało zamknięte.'}
+                  {ticket.status === 'NOWE' ? t('ticketDetails.statusNewDesc') :
+                    ticket.status === 'W_TOKU' ? t('ticketDetails.statusInProgressDesc') :
+                      ticket.status === 'ROZWIAZANE' ? t('ticketDetails.statusResolvedDesc') :
+                        t('ticketDetails.statusClosedDesc')}
                 </p>
               </div>
             </div>
@@ -782,20 +776,20 @@ const TicketDetailsPage: React.FC = () => {
                   <span className="font-semibold">
                     {ticket.creator_details?.first_name
                       ? `${ticket.creator_details.first_name} ${ticket.creator_details.last_name || ''}`.trim()
-                      : 'Użytkownik'}
-                  </span> przesłał(a) zgłoszenie
+                      : t('roles.user')}
+                  </span> {t('ticketDetails.submitted')}
                 </p>
               </div>
             </div>
 
             <div className="p-4">
-              <h3 className="text-sm font-semibold text-gray-800 dark:text-gray-200 mb-2">Opis</h3>
+              <h3 className="text-sm font-semibold text-gray-800 dark:text-gray-200 mb-2">{t('ticketDetails.description')}</h3>
               {isEditingDescription ? (
                 <div>
                   <MarkdownEditor
                     value={editDescription}
                     onChange={setEditDescription}
-                    placeholder="Edytuj opis zgłoszenia..."
+                    placeholder={t('ticketDetails.editDescription')}
                     className="border-blue-300 dark:border-gray-600"
                     autoFocus
                   />
@@ -804,7 +798,7 @@ const TicketDetailsPage: React.FC = () => {
                       onClick={() => setIsEditingDescription(false)}
                       className="px-3 py-1.5 text-sm text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800 rounded-lg transition-colors"
                     >
-                      Anuluj
+                      {t('ticketDetails.cancel')}
                     </button>
                     <button
                       onClick={() => {
@@ -815,7 +809,7 @@ const TicketDetailsPage: React.FC = () => {
                       }}
                       className="px-3 py-1.5 text-sm bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors"
                     >
-                      Zapisz
+                      {t('common.save')}
                     </button>
                   </div>
                 </div>
@@ -828,7 +822,7 @@ const TicketDetailsPage: React.FC = () => {
                       setIsEditingDescription(true);
                     }
                   }}
-                  title={isTechnicianOrAdmin ? "Kliknij, aby edytować opis" : undefined}
+                  title={isTechnicianOrAdmin ? t('ticketDetails.clickToEditDesc') : undefined}
                 >
                   <MarkdownRenderer content={ticket.description} className="text-gray-700 dark:text-gray-300 text-sm leading-relaxed" />
                   {isTechnicianOrAdmin && (
@@ -843,7 +837,7 @@ const TicketDetailsPage: React.FC = () => {
                 <div className="mt-4 pt-4 border-t border-gray-100 dark:border-gray-700">
                   <div className="flex items-center justify-between mb-3">
                     <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider flex items-center">
-                      Załączniki do zgłoszenia
+                      {t('ticketDetails.ticketAttachments')}
                       <span className="bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 px-1.5 py-0.5 rounded-md ml-2 text-[10px] font-bold">{ticket.attachments.length}</span>
                     </h3>
                     
@@ -861,7 +855,7 @@ const TicketDetailsPage: React.FC = () => {
                             onClick={handleDownloadAllAttachments}
                             className="w-full text-left px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700/50 flex items-center justify-between"
                           >
-                            Pobierz wszystko
+                            {t('ticketDetails.downloadAll')}
                             <span className="bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 text-[10px] px-1.5 py-0.5 rounded-md font-medium">{ticket.attachments.length}</span>
                           </button>
                           {isTechnicianOrAdmin && (
@@ -872,7 +866,7 @@ const TicketDetailsPage: React.FC = () => {
                               }}
                               className="w-full text-left px-3 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20"
                             >
-                              Usuń wszystkie
+                              {t('ticketDetails.deleteAll')}
                             </button>
                           )}
                         </div>
@@ -891,7 +885,7 @@ const TicketDetailsPage: React.FC = () => {
                     return (
                       <div className="relative group/carousel mb-3">
                         <div className="flex items-center gap-1.5 mb-2">
-                          <span className="text-xs font-semibold text-gray-500">{imageAtts.length} {imageAtts.length === 1 ? 'zdjęcie' : imageAtts.length < 5 ? 'zdjęcia' : 'zdjęć'}</span>
+                          <span className="text-xs font-semibold text-gray-500">{t('ticketDetails.photos', { count: imageAtts.length })}</span>
                         </div>
                         {imageAtts.length > 3 && (
                           <>
@@ -924,7 +918,7 @@ const TicketDetailsPage: React.FC = () => {
                                 <button
                                   onClick={(e) => handleDownloadFile(e, att.url, att.filename)}
                                   className="p-1.5 bg-gray-900/60 hover:bg-gray-900 text-white rounded-md backdrop-blur-sm transition-all shadow-md"
-                                  title="Pobierz"
+                                  title={t('ticketDetails.download')}
                                 >
                                   <Download className="w-4 h-4" />
                                 </button>
@@ -932,7 +926,7 @@ const TicketDetailsPage: React.FC = () => {
                                   <button
                                     onClick={(e) => { e.stopPropagation(); handleDeleteAttachment(att.id, att.filename); }}
                                     className="p-1.5 bg-red-500/80 hover:bg-red-600 text-white rounded-md backdrop-blur-sm transition-all shadow-md"
-                                    title="Usuń załącznik"
+                                    title={t('ticketDetails.delete')}
                                   >
                                     <Trash2 className="w-4 h-4" />
                                   </button>
@@ -967,7 +961,7 @@ const TicketDetailsPage: React.FC = () => {
                             <button 
                               onClick={(e) => handleDownloadFile(e, att.url, att.filename)} 
                               className="p-1.5 text-gray-400 dark:text-gray-500 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-100/50 dark:hover:bg-blue-900/30 rounded-md transition-all" 
-                              title="Pobierz"
+                              title={t('ticketDetails.download')}
                             >
                               <Download className="w-4 h-4" />
                             </button>
@@ -975,7 +969,7 @@ const TicketDetailsPage: React.FC = () => {
                               <button
                                 onClick={() => handleDeleteAttachment(att.id, att.filename)}
                                 className="p-1.5 text-gray-400 dark:text-gray-500 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-md transition-all"
-                                title="Usuń załącznik"
+                                title={t('ticketDetails.delete')}
                               >
                                 <Trash2 className="w-4 h-4" />
                               </button>
@@ -992,13 +986,13 @@ const TicketDetailsPage: React.FC = () => {
 
           {/* Activity Section */}
           <div className="mt-8">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">{isTechnicianOrAdmin ? 'Aktywność' : 'Aktywność'}</h3>
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">{t('ticketDetails.activity')}</h3>
 
             {isTechnicianOrAdmin && (
               <div className="flex border-b border-gray-200 dark:border-gray-700 mb-4 custom-scrollbar overflow-x-auto">
-                <button onClick={() => setActiveTab('comments')} className={`px-4 py-2 text-sm whitespace-nowrap transition-colors ${activeTab === 'comments' ? 'text-blue-600 dark:text-blue-400 border-b-2 border-blue-600 dark:border-blue-500 bg-blue-50/50 dark:bg-blue-900/20 font-medium rounded-t-lg' : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800/50 rounded-t-lg'}`}>Komentarze</button>
-                <button onClick={() => setActiveTab('history')} className={`px-4 py-2 text-sm whitespace-nowrap transition-colors ${activeTab === 'history' ? 'text-blue-600 dark:text-blue-400 border-b-2 border-blue-600 dark:border-blue-500 bg-blue-50/50 dark:bg-blue-900/20 font-medium rounded-t-lg' : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800/50 rounded-t-lg'}`}>Historia</button>
-                <button onClick={() => setActiveTab('work_log')} className={`px-4 py-2 text-sm whitespace-nowrap transition-colors ${activeTab === 'work_log' ? 'text-blue-600 dark:text-blue-400 border-b-2 border-blue-600 dark:border-blue-500 bg-blue-50/50 dark:bg-blue-900/20 font-medium rounded-t-lg' : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800/50 rounded-t-lg'}`}>Rejestr prac</button>
+                <button onClick={() => setActiveTab('comments')} className={`px-4 py-2 text-sm whitespace-nowrap transition-colors ${activeTab === 'comments' ? 'text-blue-600 dark:text-blue-400 border-b-2 border-blue-600 dark:border-blue-500 bg-blue-50/50 dark:bg-blue-900/20 font-medium rounded-t-lg' : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800/50 rounded-t-lg'}`}>{t('ticketDetails.tabComments')}</button>
+                <button onClick={() => setActiveTab('history')} className={`px-4 py-2 text-sm whitespace-nowrap transition-colors ${activeTab === 'history' ? 'text-blue-600 dark:text-blue-400 border-b-2 border-blue-600 dark:border-blue-500 bg-blue-50/50 dark:bg-blue-900/20 font-medium rounded-t-lg' : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800/50 rounded-t-lg'}`}>{t('ticketDetails.tabHistory')}</button>
+                <button onClick={() => setActiveTab('work_log')} className={`px-4 py-2 text-sm whitespace-nowrap transition-colors ${activeTab === 'work_log' ? 'text-blue-600 dark:text-blue-400 border-b-2 border-blue-600 dark:border-blue-500 bg-blue-50/50 dark:bg-blue-900/20 font-medium rounded-t-lg' : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800/50 rounded-t-lg'}`}>{t('ticketDetails.tabWorkLog')}</button>
               </div>
             )}
 
@@ -1007,7 +1001,7 @@ const TicketDetailsPage: React.FC = () => {
                 {/* Lista Komentarzy */}
                 <div className={`space-y-4 ${isTechnicianOrAdmin ? 'pt-4' : 'mb-2'}`}>
                   {comments.length === 0 ? (
-                    <div className="text-center text-gray-500 text-sm py-2 italic">Brak komentarzy.</div>
+                    <div className="text-center text-gray-500 text-sm py-2 italic">{t('ticketDetails.noComments')}</div>
                   ) : (
                     (isTechnicianOrAdmin ? [...comments].reverse() : comments).map(comment => {
                       const isInternal = comment.comment_type === 'INTERNAL';
@@ -1032,21 +1026,21 @@ const TicketDetailsPage: React.FC = () => {
                                   {dayjs(comment.created_at).format('DD MMM YYYY, HH:mm')}
                                 </span>
                                 {comment.is_edited && (
-                                  <span className="text-[11px] text-gray-400 italic">(edytowano)</span>
+                                  <span className="text-[11px] text-gray-400 italic">{t('ticketDetails.edited')}</span>
                                 )}
                                 {canModify && !isEditing && (
                                   <div className="flex items-center gap-0.5 opacity-0 group-hover/comment:opacity-100 transition-opacity">
                                     <button
                                       onClick={() => { setEditingCommentId(comment.id); setEditCommentText(comment.content); }}
                                       className="p-1 text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded transition-colors"
-                                      title="Edytuj komentarz"
+                                      title={t('common.edit')}
                                     >
                                       <Pencil className="w-3.5 h-3.5" />
                                     </button>
                                     <button
                                       onClick={() => setCommentToDelete(comment)}
                                       className="p-1 text-gray-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors"
-                                      title="Usuń komentarz"
+                                      title={t('common.delete')}
                                     >
                                       <Trash2 className="w-3.5 h-3.5" />
                                     </button>
@@ -1057,7 +1051,7 @@ const TicketDetailsPage: React.FC = () => {
                             {isInternal && (
                               <div className="flex items-center gap-1.5 text-xs text-amber-700 bg-amber-100/50 px-2 py-1 rounded w-max mb-2">
                                 <Lock className="w-3 h-3" />
-                                <span className="font-medium uppercase tracking-wide">Notatka Wewnętrzna</span>
+                                <span className="font-medium uppercase tracking-wide">{t('ticketDetails.internalNote')}</span>
                               </div>
                             )}
                             {isEditing ? (
@@ -1073,7 +1067,7 @@ const TicketDetailsPage: React.FC = () => {
                                     onClick={() => { setEditingCommentId(null); setEditCommentText(''); }}
                                     className="px-3 py-1.5 text-sm font-medium text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 transition-colors"
                                   >
-                                    Anuluj
+                                    {t('ticketDetails.cancel')}
                                   </button>
                                   <button
                                     onClick={() => handleSaveCommentEdit(comment)}
@@ -1081,7 +1075,7 @@ const TicketDetailsPage: React.FC = () => {
                                     className="px-4 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold rounded-lg transition-all shadow-sm disabled:opacity-50 flex items-center gap-1.5"
                                   >
                                     {isSavingComment ? <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <Check className="w-3.5 h-3.5" />}
-                                    Zapisz
+                                    {t('common.save')}
                                   </button>
                                 </div>
                               </div>
@@ -1133,7 +1127,7 @@ const TicketDetailsPage: React.FC = () => {
                                               <button
                                                 onClick={(e) => handleDownloadFile(e, att.url, att.filename)}
                                                 className="p-1.5 bg-gray-900/60 hover:bg-gray-900 text-white rounded-md backdrop-blur-sm transition-all shadow-md"
-                                                title="Pobierz"
+                                                title={t('ticketDetails.download')}
                                               >
                                                 <Download className="w-3.5 h-3.5" />
                                               </button>
@@ -1165,7 +1159,7 @@ const TicketDetailsPage: React.FC = () => {
                                         <button 
                                           onClick={(e) => handleDownloadFile(e, att.url, att.filename)}
                                           className="p-1 ml-0.5 text-gray-400 dark:text-gray-500 opacity-0 group-hover:opacity-100 transition-opacity hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-100/50 dark:hover:bg-blue-900/30 rounded"
-                                          title="Pobierz"
+                                          title={t('ticketDetails.download')}
                                         >
                                           <Download className="w-3.5 h-3.5" />
                                         </button>
@@ -1200,14 +1194,14 @@ const TicketDetailsPage: React.FC = () => {
                         onClick={() => setNewCommentType('REPLY')}
                         className={`text-sm font-medium px-3 py-1.5 rounded-lg transition-colors ${newCommentType === 'REPLY' ? 'bg-blue-100 text-blue-700' : 'text-gray-500 hover:bg-gray-100'}`}
                       >
-                        Odpowiedz
+                        {t('ticketDetails.reply')}
                       </button>
                       {isTechnicianOrAdmin && (
                         <button
                           onClick={() => setNewCommentType('INTERNAL')}
                           className={`text-sm font-medium px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1 ${newCommentType === 'INTERNAL' ? 'bg-amber-100 text-amber-800' : 'text-gray-500 hover:bg-gray-100'}`}
                         >
-                          <Lock className="w-3 h-3" /> Notatka wewnętrzna
+                          <Lock className="w-3 h-3" /> {t('ticketDetails.internalNoteBtn')}
                         </button>
                       )}
 
@@ -1218,9 +1212,9 @@ const TicketDetailsPage: React.FC = () => {
                             type="button"
                             onClick={() => setShowTemplateMenu(v => !v)}
                             className="text-sm font-medium px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1.5 text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700"
-                            title="Wstaw szablon odpowiedzi"
+                            title={t('ticketDetails.templates')}
                           >
-                            <FileText className="w-3.5 h-3.5" /> Szablony
+                            <FileText className="w-3.5 h-3.5" /> {t('ticketDetails.templates')}
                             <ChevronDown className={`w-3.5 h-3.5 transition-transform ${showTemplateMenu ? 'rotate-180' : ''}`} />
                           </button>
                           {showTemplateMenu && (
@@ -1252,7 +1246,7 @@ const TicketDetailsPage: React.FC = () => {
                         setNewCommentText(v);
                         if (commentError) setCommentError('');
                       }}
-                      placeholder={newCommentType === 'INTERNAL' ? "Dodaj notatkę wewnętrzną (widoczna tylko dla techników)..." : "Napisz odpowiedź..."}
+                      placeholder={newCommentType === 'INTERNAL' ? t('ticketDetails.commentPlaceholderInternal') : t('ticketDetails.commentPlaceholderReply')}
                       className={`${commentError ? 'border-red-300 bg-red-50' : newCommentType === 'INTERNAL' ? 'border-amber-200' : 'border-gray-200'}`}
                       onAttachFile={() => newCommentFileRef.current?.click()}
                     />
@@ -1333,7 +1327,7 @@ const TicketDetailsPage: React.FC = () => {
                           className={`px-5 py-2.5 text-white text-sm font-bold rounded-lg transition-all shadow-sm flex items-center disabled:opacity-50 ${newCommentType === 'INTERNAL' ? 'bg-amber-600 hover:bg-amber-700 shadow-amber-200' : 'bg-blue-600 hover:bg-blue-700 shadow-blue-200'}`}
                         >
                           {isSubmittingComment ? <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div> : null}
-                          Wyślij
+                          {t('ticketDetails.send')}
                         </button>
                       </div>
                     </div>
@@ -1346,8 +1340,12 @@ const TicketDetailsPage: React.FC = () => {
               <div className="space-y-1">
                 {(() => {
                   type HistoryItem = { type: 'log'; data: TicketLog; date: string } | { type: 'comment'; data: Comment; date: string } | { type: 'worklog'; data: WorkLog; date: string };
+                  // Filter out log types that are already represented by comment/worklog cards
+                  const DUPLICATE_ACTIONS = new Set(['COMMENT_ADDED', 'WORK_LOGGED']);
                   const items: HistoryItem[] = [
-                    ...ticketLogs.map(l => ({ type: 'log' as const, data: l, date: l.created_at })),
+                    ...ticketLogs
+                      .filter(l => !DUPLICATE_ACTIONS.has(l.action))
+                      .map(l => ({ type: 'log' as const, data: l, date: l.created_at })),
                     ...comments.map(c => ({ type: 'comment' as const, data: c, date: c.created_at })),
                     ...workLogs.map(w => ({ type: 'worklog' as const, data: w, date: w.created_at })),
                   ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
@@ -1355,7 +1353,7 @@ const TicketDetailsPage: React.FC = () => {
                   if (items.length === 0) {
                     return (
                       <div className="text-center text-gray-500 text-sm py-8 italic border border-gray-100 rounded-xl bg-gray-50/50">
-                        Brak historii.
+                        {t('ticketDetails.noHistory')}
                       </div>
                     );
                   }
@@ -1366,8 +1364,9 @@ const TicketDetailsPage: React.FC = () => {
                         if (item.type === 'log') {
                           const log = item.data;
                           const statusLabels: Record<string, string> = {
-                            NOWE: 'Nowe', W_TOKU: 'W toku', ROZWIAZANE: 'Rozwiązane', ZAMKNIETE: 'Zamknięte',
-                            NISKI: 'Niski', NORMALNY: 'Normalny', WYSOKI: 'Wysoki',
+                            NOWE: t('status.NOWE'), W_TOKU: t('status.W_TOKU'),
+                            ROZWIAZANE: t('status.ROZWIAZANE'), ZAMKNIETE: t('status.ZAMKNIETE'),
+                            NISKI: t('priority.NISKI'), NORMALNY: t('priority.NORMALNY'), WYSOKI: t('priority.WYSOKI'),
                           };
                           const priorityColors: Record<string, string> = {
                             NISKI: 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300',
@@ -1415,20 +1414,38 @@ const TicketDetailsPage: React.FC = () => {
                               </div>
                               <div className="bg-gray-50 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-700 rounded-lg p-3 ml-2">
                                 <div className="flex items-center justify-between">
-                                  <span className="text-sm font-medium text-gray-900 dark:text-gray-100">{log.action_display}</span>
+                                  <span className="text-sm font-medium text-gray-900 dark:text-gray-100">{({
+                                    CREATED: t('ticketDetails.actionCreated'),
+                                    STATUS_CHANGED: t('ticketDetails.actionStatusChanged'),
+                                    TECHNICIAN_ASSIGNED: t('ticketDetails.actionTechAssigned'),
+                                    TECHNICIAN_REMOVED: t('ticketDetails.actionTechRemoved'),
+                                    PRIORITY_CHANGED: t('ticketDetails.actionPriorityChanged'),
+                                    CATEGORY_CHANGED: t('ticketDetails.actionCategoryChanged'),
+                                    CREATOR_CHANGED: t('ticketDetails.actionCreatorChanged'),
+                                    ATTACHMENT_ADDED: t('ticketDetails.actionAttachmentAdded'),
+                                    TITLE_CHANGED: t('ticketDetails.actionTitleChanged'),
+                                    DESCRIPTION_CHANGED: t('ticketDetails.actionDescriptionChanged'),
+                                    ATTACHMENT_DELETED: t('ticketDetails.actionAttachmentDeleted'),
+                                    AUTO_CLOSED: t('ticketDetails.actionAutoClosed'),
+                                    REOPENED: t('ticketDetails.actionReopened'),
+                                    MERGED: t('ticketDetails.actionMerged'),
+                                    UNMERGED: t('ticketDetails.actionUnmerged'),
+                                    LINKED: t('ticketDetails.actionLinked'),
+                                    UNLINKED: t('ticketDetails.actionUnlinked'),
+                                  } as Record<string, string>)[log.action] || log.action_display}</span>
                                   <span className="text-xs text-gray-400">{dayjs(log.created_at).format('DD MMM YYYY, HH:mm')}</span>
                                 </div>
 
                                 {/* Szczegóły zmian */}
                                 {log.action === 'CREATED' && (
                                   <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                                    <span className="font-medium text-gray-700 dark:text-gray-300">{userName}</span> utworzył(a) zgłoszenie
+                                    <span className="font-medium text-gray-700 dark:text-gray-300">{userName}</span> {t('ticketDetails.logCreated')}
                                     {log.new_value && <> „<span className="italic">{log.new_value}</span>"</>}
                                   </p>
                                 )}
                                 {log.action === 'STATUS_CHANGED' && (
                                   <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                                    <span className="font-medium text-gray-700 dark:text-gray-300">{userName}</span> zmienił(a) status:{' '}
+                                    <span className="font-medium text-gray-700 dark:text-gray-300">{userName}</span> {t('ticketDetails.logStatusChanged')}{' '}
                                     <span className={statusColors[log.old_value as keyof typeof statusColors] ? `${statusColors[log.old_value as keyof typeof statusColors]} px-1.5 py-0.5 rounded border` : "bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 px-1.5 py-0.5 rounded"}>{displayOld}</span>
                                     {' → '}
                                     <span className={statusColors[log.new_value as keyof typeof statusColors] ? `${statusColors[log.new_value as keyof typeof statusColors]} px-1.5 py-0.5 rounded border` : "bg-green-50 dark:bg-green-900/30 text-green-600 dark:text-green-400 px-1.5 py-0.5 rounded"}>{displayNew}</span>
@@ -1436,20 +1453,20 @@ const TicketDetailsPage: React.FC = () => {
                                 )}
                                 {log.action === 'TECHNICIAN_ASSIGNED' && (
                                   <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                                    <span className="font-medium text-gray-700 dark:text-gray-300">{userName}</span> przypisał(a) technika:{' '}
+                                    <span className="font-medium text-gray-700 dark:text-gray-300">{userName}</span> {t('ticketDetails.logTechAssigned')}{' '}
                                     {displayOld && <><span className="bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 px-1.5 py-0.5 rounded">{displayOld}</span>{' → '}</>}
                                     <span className="bg-green-50 dark:bg-green-900/30 text-green-600 dark:text-green-400 px-1.5 py-0.5 rounded">{displayNew}</span>
                                   </p>
                                 )}
                                 {log.action === 'TECHNICIAN_REMOVED' && (
                                   <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                                    <span className="font-medium text-gray-700 dark:text-gray-300">{userName}</span> usunął(a) technika:{' '}
+                                    <span className="font-medium text-gray-700 dark:text-gray-300">{userName}</span> {t('ticketDetails.logTechRemoved')}{' '}
                                     <span className="bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 px-1.5 py-0.5 rounded">{displayOld}</span>
                                   </p>
                                 )}
                                 {log.action === 'PRIORITY_CHANGED' && (
                                   <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                                    <span className="font-medium text-gray-700 dark:text-gray-300">{userName}</span> zmienił(a) priorytet:{' '}
+                                    <span className="font-medium text-gray-700 dark:text-gray-300">{userName}</span> {t('ticketDetails.logPriorityChanged')}{' '}
                                     <span className={`${priorityColors[log.old_value] || 'bg-gray-50 text-gray-600'} px-1.5 py-0.5 rounded border dark:border-gray-600`}>{displayOld}</span>
                                     {' → '}
                                     <span className={`${priorityColors[log.new_value] || 'bg-gray-50 text-gray-600'} px-1.5 py-0.5 rounded border dark:border-gray-600`}>{displayNew}</span>
@@ -1457,15 +1474,15 @@ const TicketDetailsPage: React.FC = () => {
                                 )}
                                 {log.action === 'CATEGORY_CHANGED' && (
                                   <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                                    <span className="font-medium text-gray-700 dark:text-gray-300">{userName}</span> zmienił(a) kategorię:{' '}
-                                    <span className="bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 px-1.5 py-0.5 rounded">{displayOld}</span>
+                                    <span className="font-medium text-gray-700 dark:text-gray-300">{userName}</span> {t('ticketDetails.logCategoryChanged')}{' '}
+                                    <span className="bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 px-1.5 py-0.5 rounded">{t(`categories.${displayOld}`, displayOld)}</span>
                                     {' → '}
-                                    <span className="bg-green-50 dark:bg-green-900/30 text-green-600 dark:text-green-400 px-1.5 py-0.5 rounded">{displayNew}</span>
+                                    <span className="bg-green-50 dark:bg-green-900/30 text-green-600 dark:text-green-400 px-1.5 py-0.5 rounded">{t(`categories.${displayNew}`, displayNew)}</span>
                                   </p>
                                 )}
                                 {log.action === 'CREATOR_CHANGED' && (
                                   <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                                    <span className="font-medium text-gray-700 dark:text-gray-300">{userName}</span> zmienił(a) zgłaszającego:{' '}
+                                    <span className="font-medium text-gray-700 dark:text-gray-300">{userName}</span> {t('ticketDetails.logCreatorChanged')}{' '}
                                     <span className="bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 px-1.5 py-0.5 rounded">{displayOld}</span>
                                     {' → '}
                                     <span className="bg-green-50 dark:bg-green-900/30 text-green-600 dark:text-green-400 px-1.5 py-0.5 rounded">{displayNew}</span>
@@ -1473,13 +1490,13 @@ const TicketDetailsPage: React.FC = () => {
                                 )}
                                 {log.action === 'ATTACHMENT_ADDED' && (
                                   <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                                    <span className="font-medium text-gray-700 dark:text-gray-300">{userName}</span> dodał(a) załącznik:{' '}
+                                    <span className="font-medium text-gray-700 dark:text-gray-300">{userName}</span> {t('ticketDetails.logAttachmentAdded')}{' '}
                                     <span className="bg-teal-50 dark:bg-teal-900/30 text-teal-600 dark:text-teal-400 px-1.5 py-0.5 rounded font-medium">{log.new_value}</span>
                                   </p>
                                 )}
                                 {log.action === 'TITLE_CHANGED' && (
                                   <p className="mt-1 text-xs text-gray-500 dark:text-gray-400 break-words w-full">
-                                    <span className="font-medium text-gray-700 dark:text-gray-300">{userName}</span> zmienił(a) tytuł:{' '}
+                                    <span className="font-medium text-gray-700 dark:text-gray-300">{userName}</span> {t('ticketDetails.logTitleChanged')}{' '}
                                     <span className="bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 px-1.5 py-0.5 rounded break-all inline-block max-w-full align-top whitespace-pre-wrap">{displayOld}</span>
                                     {' → '}
                                     <span className="bg-green-50 dark:bg-green-900/30 text-green-600 dark:text-green-400 px-1.5 py-0.5 rounded break-all inline-block max-w-full align-top whitespace-pre-wrap">{displayNew}</span>
@@ -1487,37 +1504,47 @@ const TicketDetailsPage: React.FC = () => {
                                 )}
                                 {log.action === 'DESCRIPTION_CHANGED' && (
                                   <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                                    <span className="font-medium text-gray-700 dark:text-gray-300">{userName}</span> zmienił(a) opis zgłoszenia
+                                    <span className="font-medium text-gray-700 dark:text-gray-300">{userName}</span> {t('ticketDetails.logDescriptionChanged')}
                                   </p>
                                 )}
                                 {log.action === 'ATTACHMENT_DELETED' && (
                                   <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                                    <span className="font-medium text-gray-700 dark:text-gray-300">{userName}</span> usunął(a) załącznik:{' '}
+                                    <span className="font-medium text-gray-700 dark:text-gray-300">{userName}</span> {t('ticketDetails.logAttachmentDeleted')}{' '}
                                     <span className="bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 px-1.5 py-0.5 rounded font-medium line-through">{log.old_value}</span>
                                   </p>
                                 )}
                                 {log.action === 'MERGED' && (
                                   <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                                    <span className="font-medium text-gray-700 dark:text-gray-300">{userName}</span> powiązał(a) jako duplikat:{' '}
+                                    <span className="font-medium text-gray-700 dark:text-gray-300">{userName}</span> {t('ticketDetails.logMerged')}{' '}
                                     <span className="bg-amber-50 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 px-1.5 py-0.5 rounded font-medium">{log.new_value}</span>
                                   </p>
                                 )}
                                 {log.action === 'UNMERGED' && (
                                   <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                                    <span className="font-medium text-gray-700 dark:text-gray-300">{userName}</span> cofnął(ęła) oznaczenie duplikatu{log.old_value ? ' ' : ''}
+                                    <span className="font-medium text-gray-700 dark:text-gray-300">{userName}</span> {t('ticketDetails.logUnmerged')}{log.old_value ? ' ' : ''}
                                     {log.old_value && <span className="bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 px-1.5 py-0.5 rounded font-medium">{log.old_value}</span>}
                                   </p>
                                 )}
                                 {log.action === 'LINKED' && (
                                   <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                                    <span className="font-medium text-gray-700 dark:text-gray-300">{userName}</span> powiązał(a) zgłoszenie:{' '}
+                                    <span className="font-medium text-gray-700 dark:text-gray-300">{userName}</span> {t('ticketDetails.logLinked')}{' '}
                                     <span className="bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 px-1.5 py-0.5 rounded font-medium">{log.new_value}</span>
                                   </p>
                                 )}
                                 {log.action === 'UNLINKED' && (
                                   <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                                    <span className="font-medium text-gray-700 dark:text-gray-300">{userName}</span> usunął(a) powiązanie:{' '}
+                                    <span className="font-medium text-gray-700 dark:text-gray-300">{userName}</span> {t('ticketDetails.logUnlinked')}{' '}
                                     <span className="bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 px-1.5 py-0.5 rounded font-medium line-through">{log.new_value}</span>
+                                  </p>
+                                )}
+                                {log.action === 'AUTO_CLOSED' && (
+                                  <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                                    {t('ticketDetails.logAutoClosed')}
+                                  </p>
+                                )}
+                                {log.action === 'REOPENED' && (
+                                  <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                                    <span className="font-medium text-gray-700 dark:text-gray-300">{userName}</span> {t('ticketDetails.logReopened')}
                                   </p>
                                 )}
 
@@ -1549,7 +1576,7 @@ const TicketDetailsPage: React.FC = () => {
                               <div className={`border rounded-lg p-3 ml-2 ${isInternal ? 'bg-amber-50/50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-800' : 'bg-gray-50 dark:bg-gray-800/50 border-gray-100 dark:border-gray-700'}`}>
                                 <div className="flex items-center justify-between">
                                   <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
-                                    {isInternal ? 'Notatka wewnętrzna' : 'Komentarz'}
+                                    {isInternal ? t('ticketDetails.internalNoteLabel') : t('ticketDetails.commentLabel')}
                                   </span>
                                   <span className="text-xs text-gray-400">{dayjs(comment.created_at).format('DD MMM YYYY, HH:mm')}</span>
                                 </div>
@@ -1573,7 +1600,7 @@ const TicketDetailsPage: React.FC = () => {
                           );
                         } else if (item.type === 'worklog') {
                           const wl = item.data;
-                          const wlAuthor = wl.author_details ? `${wl.author_details.first_name} ${wl.author_details.last_name}` : 'Nieznany';
+                          const wlAuthor = wl.author_details ? `${wl.author_details.first_name} ${wl.author_details.last_name}` : t('roles.user');
                           const hours = Math.floor(wl.duration_minutes / 60);
                           const mins = wl.duration_minutes % 60;
                           const durationStr = hours > 0 ? `${hours}h ${mins}min` : `${mins}min`;
@@ -1584,7 +1611,7 @@ const TicketDetailsPage: React.FC = () => {
                               </div>
                               <div className="bg-violet-50/50 dark:bg-violet-900/20 border border-violet-200 dark:border-violet-800 rounded-lg p-3 ml-2">
                                 <div className="flex items-center justify-between">
-                                  <span className="text-sm font-medium text-gray-900 dark:text-gray-100">Rejestr prac</span>
+                                  <span className="text-sm font-medium text-gray-900 dark:text-gray-100">{t('ticketDetails.workLogLabel')}</span>
                                   <span className="text-xs text-gray-400">{dayjs(wl.created_at).format('DD MMM YYYY, HH:mm')}</span>
                                 </div>
                                 <p className="mt-1 text-sm text-gray-700 dark:text-gray-300 line-clamp-2">{wl.description}</p>
@@ -1622,12 +1649,12 @@ const TicketDetailsPage: React.FC = () => {
                   <div className="bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 rounded-xl p-4 space-y-3">
                     <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 flex items-center gap-2">
                       <FileClock className="w-4 h-4 text-blue-500" />
-                      Dodaj wpis
+                      {t('ticketDetails.workLogAddTitle')}
                     </h4>
                     <textarea
                       value={newWorkLogDesc}
                       onChange={(e) => setNewWorkLogDesc(e.target.value)}
-                      placeholder="Opis wykonanej pracy..."
+                      placeholder={t('ticketDetails.workLogDescPlaceholder')}
                       className="w-full border border-gray-200 rounded-lg p-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 min-h-[80px] resize-none bg-white dark:bg-gray-900 dark:border-gray-600"
                     />
                     <div className="flex items-center gap-3">
@@ -1639,10 +1666,10 @@ const TicketDetailsPage: React.FC = () => {
                           max="1440"
                           value={newWorkLogMinutes}
                           onChange={(e) => setNewWorkLogMinutes(e.target.value)}
-                          placeholder="Minuty"
+                          placeholder={t('ticketDetails.minutesPlaceholder')}
                           className="w-24 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-900 dark:border-gray-600"
                         />
-                        <span className="text-xs text-gray-400">min</span>
+                        <span className="text-xs text-gray-400">{t('ticketDetails.min')}</span>
                       </div>
                       <button
                         onClick={handleAddWorkLog}
@@ -1650,7 +1677,7 @@ const TicketDetailsPage: React.FC = () => {
                         className="ml-auto px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold rounded-lg transition-all shadow-sm disabled:opacity-50 flex items-center gap-1.5"
                       >
                         {isSubmittingWorkLog ? <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div> : <Plus className="w-4 h-4" />}
-                        Dodaj
+                        {t('ticketDetails.add')}
                       </button>
                     </div>
                   </div>
@@ -1661,21 +1688,21 @@ const TicketDetailsPage: React.FC = () => {
                   <div className="flex items-center gap-2 px-3 py-2 bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800 rounded-lg">
                     <Clock className="w-4 h-4 text-blue-500" />
                     <span className="text-sm font-medium text-blue-700 dark:text-blue-300">
-                      Łączny czas: {(() => {
+                      {t('ticketDetails.totalTime', { time: (() => {
                         const total = workLogs.reduce((sum, wl) => sum + wl.duration_minutes, 0);
                         const h = Math.floor(total / 60);
                         const m = total % 60;
                         return h > 0 ? `${h}h ${m}min` : `${m}min`;
-                      })()}
+                      })() })}
                     </span>
-                    <span className="text-xs text-blue-500 dark:text-blue-400">({workLogs.length} {workLogs.length === 1 ? 'wpis' : workLogs.length < 5 ? 'wpisy' : 'wpisów'})</span>
+                    <span className="text-xs text-blue-500 dark:text-blue-400">{t('ticketDetails.workLogEntries', { count: workLogs.length })}</span>
                   </div>
                 )}
 
                 {/* Lista wpisów */}
                 {workLogs.length === 0 ? (
                   <div className="text-center text-gray-500 text-sm py-8 italic border border-gray-100 rounded-xl bg-gray-50/50">
-                    Brak wpisów w rejestrze prac.
+                    {t('ticketDetails.noWorkLogs')}
                   </div>
                 ) : (
                   <div className="space-y-3">
@@ -1706,14 +1733,14 @@ const TicketDetailsPage: React.FC = () => {
                                     onChange={(e) => setEditWorkLogMinutes(e.target.value)}
                                     className="w-24 border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-900"
                                   />
-                                  <span className="text-xs text-gray-400">min</span>
+                                  <span className="text-xs text-gray-400">{t('ticketDetails.min')}</span>
                                 </div>
                                 <div className="ml-auto flex items-center gap-2">
                                   <button
                                     onClick={() => setEditingWorkLogId(null)}
                                     className="px-3 py-1.5 text-sm font-medium text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 transition-colors"
                                   >
-                                    Anuluj
+                                    {t('ticketDetails.cancel')}
                                   </button>
                                   <button
                                     onClick={async () => {
@@ -1738,7 +1765,7 @@ const TicketDetailsPage: React.FC = () => {
                                     className="px-4 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold rounded-lg transition-all shadow-sm disabled:opacity-50 flex items-center gap-1.5"
                                   >
                                     {isSavingWorkLog ? <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <Check className="w-3.5 h-3.5" />}
-                                    Zapisz
+                                    {t('common.save')}
                                   </button>
                                 </div>
                               </div>
@@ -1752,7 +1779,7 @@ const TicketDetailsPage: React.FC = () => {
                                   <div className="flex items-center gap-1.5 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 px-2 py-1 rounded-md">
                                     <Clock className="w-3.5 h-3.5" />
                                     <span className="text-xs font-bold">
-                                      {wl.duration_minutes >= 60 ? `${Math.floor(wl.duration_minutes / 60)}h ${wl.duration_minutes % 60}min` : `${wl.duration_minutes}min`}
+                                      {wl.duration_minutes >= 60 ? `${Math.floor(wl.duration_minutes / 60)}h ${wl.duration_minutes % 60}${t('ticketDetails.min')}` : `${wl.duration_minutes}${t('ticketDetails.min')}`}
                                     </span>
                                   </div>
                                   {canEdit && (
@@ -1764,14 +1791,14 @@ const TicketDetailsPage: React.FC = () => {
                                           setEditWorkLogMinutes(String(wl.duration_minutes));
                                         }}
                                         className="p-1.5 text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-md transition-colors"
-                                        title="Edytuj wpis"
+                                        title={t('common.edit')}
                                       >
                                         <Pencil className="w-3.5 h-3.5" />
                                       </button>
                                       <button
                                         onClick={() => setWorkLogToDelete(wl)}
                                         className="p-1.5 text-gray-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-md transition-colors"
-                                        title="Usuń wpis"
+                                        title={t('common.delete')}
                                       >
                                         <Trash2 className="w-3.5 h-3.5" />
                                       </button>
@@ -1814,7 +1841,7 @@ const TicketDetailsPage: React.FC = () => {
                   onClick={() => setIsStatusMenuOpen(!isStatusMenuOpen)}
                   className="inline-flex items-center pl-4 pr-3 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl text-sm shadow-lg shadow-blue-200 transition-all border-none focus:outline-none"
                 >
-                  Zmień status
+                  {t('ticketDetails.changeStatus')}
                   <ChevronDown className={`w-4 h-4 ml-2 transition-transform ${isStatusMenuOpen ? 'rotate-180' : ''}`} />
                 </button>
 
@@ -1824,25 +1851,25 @@ const TicketDetailsPage: React.FC = () => {
                       onClick={() => openTransitionModal('NOWE')}
                       className="w-full text-left px-4 py-2.5 hover:bg-blue-50 dark:hover:bg-gray-700/80 text-gray-700 dark:text-gray-300 hover:text-blue-700 dark:hover:text-blue-400 transition-colors text-sm font-medium"
                     >
-                      Nowe
+                      {t('status.NOWE')}
                     </button>
                     <button
                       onClick={() => openTransitionModal('W_TOKU')}
                       className="w-full text-left px-4 py-2.5 hover:bg-blue-50 dark:hover:bg-gray-700/80 text-gray-700 dark:text-gray-300 hover:text-blue-700 dark:hover:text-blue-400 transition-colors text-sm font-medium"
                     >
-                      W toku
+                      {t('status.W_TOKU')}
                     </button>
                     <button
                       onClick={() => openTransitionModal('ROZWIAZANE')}
                       className="w-full text-left px-4 py-2.5 hover:bg-blue-50 dark:hover:bg-gray-700/80 text-gray-700 dark:text-gray-300 hover:text-blue-700 dark:hover:text-blue-400 transition-colors text-sm font-medium"
                     >
-                      Rozwiązane
+                      {t('status.ROZWIAZANE')}
                     </button>
                     <button
                       onClick={() => openTransitionModal('ZAMKNIETE')}
                       className="w-full text-left px-4 py-2.5 hover:bg-blue-50 dark:hover:bg-gray-700/80 text-gray-700 dark:text-gray-300 hover:text-blue-700 dark:hover:text-blue-400 transition-colors text-sm font-medium"
                     >
-                      Zamknięte
+                      {t('status.ZAMKNIETE')}
                     </button>
                   </div>
                 )}
@@ -1853,7 +1880,7 @@ const TicketDetailsPage: React.FC = () => {
                 <button
                   onClick={() => setIsMoreMenuOpen(!isMoreMenuOpen)}
                   className="inline-flex items-center justify-center w-9 h-9 bg-white border border-gray-200 hover:border-gray-300 hover:bg-gray-50 text-gray-500 rounded-xl shadow-sm transition-all focus:outline-none"
-                  title="Więcej akcji"
+                  title={t('ticketDetails.moreActions')}
                 >
                   <MoreHorizontal className="w-5 h-5" />
                 </button>
@@ -1869,7 +1896,7 @@ const TicketDetailsPage: React.FC = () => {
                       className="w-full text-left px-4 py-2.5 hover:bg-gray-50 dark:hover:bg-gray-700/80 text-gray-700 dark:text-gray-300 transition-colors text-sm font-medium flex items-center gap-2 border-b border-gray-100 dark:border-gray-700"
                     >
                       <Link2 className="w-4 h-4" />
-                      Skopiuj link
+                      {t('ticketDetails.copyLink')}
                     </button>
                     {isAdmin && (
                       <button
@@ -1880,7 +1907,7 @@ const TicketDetailsPage: React.FC = () => {
                         className="w-full text-left px-4 py-2.5 hover:bg-red-50 dark:hover:bg-red-900/20 text-red-600 dark:text-red-400 transition-colors text-sm font-medium flex items-center gap-2"
                       >
                         <Trash2 className="w-4 h-4" />
-                        Usuń zgłoszenie
+                        {t('ticketDetails.deleteTicket')}
                       </button>
                     )}
                   </div>
@@ -1892,18 +1919,18 @@ const TicketDetailsPage: React.FC = () => {
           {/* Stała zakładka: Szczegóły */}
           <div className="bg-white border border-gray-200 rounded-xl shadow-sm">
             <div className="px-4 py-3 border-b border-gray-100 flex items-center">
-              <h3 className="font-semibold text-gray-800 text-sm">Szczegóły</h3>
+              <h3 className="font-semibold text-gray-800 text-sm">{t('ticketDetails.details')}</h3>
             </div>
 
             <div className="p-4 space-y-4">
               {/* Row 1: Osoba zgłaszająca */}
               <div className="grid grid-cols-[160px_1fr] items-start">
-                <span className="text-sm text-gray-500 font-medium pt-0.5">Osoba zgłaszająca</span>
+                <span className="text-sm text-gray-500 font-medium pt-0.5">{t('ticketDetails.reporter')}</span>
                 <div className="relative" ref={creatorDropdownRef}>
                   <div
                     className={`flex items-center gap-2 text-sm text-gray-900 ${isTechnicianOrAdmin ? 'cursor-pointer hover:bg-gray-50 p-1 -ml-1 rounded transition-colors' : ''}`}
                     onClick={() => isTechnicianOrAdmin && setIsEditingCreator(!isEditingCreator)}
-                    title={isTechnicianOrAdmin ? "Kliknij, aby zmienić zgłaszającego" : ""}
+                    title={isTechnicianOrAdmin ? t('ticketDetails.clickToChangeReporter') : ""}
                   >
                     <div className="w-5 h-5 rounded-full bg-blue-600 flex items-center justify-center flex-shrink-0 text-white overflow-hidden">
                       {ticket.creator_details?.avatar ? (
@@ -1946,26 +1973,26 @@ const TicketDetailsPage: React.FC = () => {
 
               {/* Row 2: Priorytet */}
               <div className="grid grid-cols-[160px_1fr] items-start">
-                <span className="text-sm text-gray-500 font-medium pt-0.5">Priorytet</span>
+                <span className="text-sm text-gray-500 font-medium pt-0.5">{t('ticketDetails.priority')}</span>
                 <div className="relative" ref={priorityDropdownRef}>
                   <div
                     className={`flex items-center gap-2 text-sm text-gray-900 ${isTechnicianOrAdmin ? 'cursor-pointer hover:bg-gray-50 p-1 -ml-1 rounded transition-colors' : ''}`}
                     onClick={() => isTechnicianOrAdmin && setIsEditingPriority(!isEditingPriority)}
-                    title={isTechnicianOrAdmin ? 'Kliknij, aby zmienić priorytet' : ''}
+                    title={isTechnicianOrAdmin ? t('ticketDetails.clickToChangePriority') : ''}
                   >
                     {ticket.priority === 'WYSOKI' ? <ChevronsUp className="w-3.5 h-3.5 text-red-500" /> :
                       ticket.priority === 'NORMALNY' ? <Equal className="w-3.5 h-3.5 text-blue-500" /> :
                         <ChevronsDown className="w-3.5 h-3.5 text-gray-400" />}
                     <span className={`font-medium ${ticket.priority === 'WYSOKI' ? 'text-red-600' : ticket.priority === 'NORMALNY' ? 'text-blue-600' : 'text-gray-600'}`}>
-                      {ticket.priority === 'WYSOKI' ? 'Wysoki' : ticket.priority === 'NORMALNY' ? 'Normalny' : 'Niski'}
+                      {ticket.priority === 'WYSOKI' ? t('ticketDetails.priorityHigh') : ticket.priority === 'NORMALNY' ? t('ticketDetails.priorityNormal') : t('ticketDetails.priorityLow')}
                     </span>
                   </div>
                   {isEditingPriority && isTechnicianOrAdmin && (
                     <div className="absolute z-50 left-0 -ml-1 top-full mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-xl shadow-lg dark:shadow-[0_10px_40px_rgba(0,0,0,0.4)] w-[calc(100%+8px)] animate-in fade-in zoom-in-95 duration-100 overflow-hidden">
                       {[
-                        { value: 'NISKI', label: 'Niski', icon: <ChevronsDown className="w-3.5 h-3.5 text-gray-400" />, color: 'text-gray-600' },
-                        { value: 'NORMALNY', label: 'Normalny', icon: <Equal className="w-3.5 h-3.5 text-blue-500" />, color: 'text-blue-600' },
-                        { value: 'WYSOKI', label: 'Wysoki', icon: <ChevronsUp className="w-3.5 h-3.5 text-red-500" />, color: 'text-red-600' },
+                        { value: 'NISKI', label: t('ticketDetails.priorityLow'), icon: <ChevronsDown className="w-3.5 h-3.5 text-gray-400" />, color: 'text-gray-600' },
+                        { value: 'NORMALNY', label: t('ticketDetails.priorityNormal'), icon: <Equal className="w-3.5 h-3.5 text-blue-500" />, color: 'text-blue-600' },
+                        { value: 'WYSOKI', label: t('ticketDetails.priorityHigh'), icon: <ChevronsUp className="w-3.5 h-3.5 text-red-500" />, color: 'text-red-600' },
                       ].map(opt => (
                         <button
                           key={opt.value}
@@ -1990,12 +2017,12 @@ const TicketDetailsPage: React.FC = () => {
 
               {/* Row 3: Kategoria */}
               <div className="grid grid-cols-[160px_1fr] items-start">
-                <span className="text-sm text-gray-500 font-medium">Kategoria</span>
+                <span className="text-sm text-gray-500 font-medium">{t('ticketDetails.category')}</span>
                 <div className="relative" ref={categoryDropdownRef}>
                   <div
                     className={`flex items-center gap-2 text-sm text-gray-900 ${isTechnicianOrAdmin ? 'cursor-pointer hover:bg-gray-50 p-1 -ml-1 rounded transition-colors' : ''}`}
                     onClick={() => isTechnicianOrAdmin && setIsEditingCategory(!isEditingCategory)}
-                    title={isTechnicianOrAdmin ? 'Kliknij, aby zmienić kategorię' : ''}
+                    title={isTechnicianOrAdmin ? t('ticketDetails.clickToChangeCategory') : ''}
                   >
                     <span className="w-5 flex justify-center text-gray-500">
                       {getCategoryIcon(ticket.category_name || '')}
@@ -2028,12 +2055,12 @@ const TicketDetailsPage: React.FC = () => {
 
               {/* Row 4: Osoba przypisana */}
               <div className="grid grid-cols-[160px_1fr] items-start mt-4 pt-4 border-t border-gray-100">
-                <span className="text-sm text-gray-500 font-medium pt-0.5">Osoba przypisana</span>
+                <span className="text-sm text-gray-500 font-medium pt-0.5">{t('ticketDetails.assignedTo')}</span>
                 <div className="space-y-1 relative" ref={technicianDropdownRef}>
                   <div
                     className={`flex items-center gap-2 text-sm text-gray-900 ${isTechnicianOrAdmin ? 'cursor-pointer hover:bg-gray-50 p-1 -ml-1 rounded transition-colors' : ''}`}
                     onClick={() => isTechnicianOrAdmin && setIsEditingTechnician(!isEditingTechnician)}
-                    title={isTechnicianOrAdmin ? "Kliknij, aby przypisać zgłoszenie" : ""}
+                    title={isTechnicianOrAdmin ? t('ticketDetails.clickToAssign') : ""}
                   >
                     {ticket.technician_details ? (
                       <div className="w-5 h-5 rounded-full bg-blue-600 flex items-center justify-center flex-shrink-0 text-white overflow-hidden">
@@ -2051,7 +2078,7 @@ const TicketDetailsPage: React.FC = () => {
                     {ticket.technician_details ? (
                       <span className="text-sm font-medium text-gray-900 dark:text-gray-100">{ticket.technician_details.first_name} {ticket.technician_details.last_name}</span>
                     ) : (
-                      <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-xs font-semibold bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400 border border-dashed border-amber-300 dark:border-amber-700">Nie przypisano</span>
+                      <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-xs font-semibold bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400 border border-dashed border-amber-300 dark:border-amber-700">{t('ticketDetails.unassigned')}</span>
                     )}
                   </div>
                   {isEditingTechnician && isTechnicianOrAdmin && (
@@ -2070,7 +2097,7 @@ const TicketDetailsPage: React.FC = () => {
                         <div className="w-5 h-5 rounded-full bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 flex items-center justify-center flex-shrink-0">
                           <UserMinus className="w-3 h-3" />
                         </div>
-                        <span className="font-semibold text-amber-700 dark:text-amber-400">Nie przypisano</span>
+                        <span className="font-semibold text-amber-700 dark:text-amber-400">{t('ticketDetails.unassigned')}</span>
                       </button>
                       {availableTechnicians.map(t => (
                         <button
@@ -2106,14 +2133,14 @@ const TicketDetailsPage: React.FC = () => {
                       }}
                       className="text-blue-600 hover:text-blue-800 text-sm font-medium hover:underline block pl-7"
                     >
-                      Przypisz do mnie
+                      {t('ticketDetails.assignToMe')}
                     </button>
                   )}
                 </div>
               </div>
 
               <div className="grid grid-cols-[160px_1fr] items-start mt-4 pt-4 border-t border-gray-100">
-                <span className="text-sm text-gray-500 font-medium">Utworzono</span>
+                <span className="text-sm text-gray-500 font-medium">{t('ticketDetails.createdAt')}</span>
                 <div className="relative group/tooltip inline-block w-fit">
                   <div className="text-sm text-gray-900 cursor-pointer">
                     {dayjs().diff(dayjs(ticket.created_at), 'day') > 7
@@ -2131,7 +2158,7 @@ const TicketDetailsPage: React.FC = () => {
               </div>
 
               <div className="grid grid-cols-[160px_1fr] items-start mt-4">
-                <span className="text-sm text-gray-500 font-medium">Zaktualizowano</span>
+                <span className="text-sm text-gray-500 font-medium">{t('ticketDetails.updatedAt')}</span>
                 <div className="relative group/tooltip inline-block w-fit">
                   <div className="text-sm text-gray-900 cursor-pointer">
                     {dayjs().diff(dayjs(ticket.updated_at), 'day') > 7
@@ -2156,11 +2183,11 @@ const TicketDetailsPage: React.FC = () => {
                 const label = h > 0 ? `${h}h ${m > 0 ? `${m}min` : ''}`.trim() : `${m}min`;
                 return (
                   <div className="grid grid-cols-[160px_1fr] items-center mt-4 pt-4 border-t border-gray-100">
-                    <span className="text-sm text-gray-500 font-medium">Czas pracy</span>
+                    <span className="text-sm text-gray-500 font-medium">{t('ticketDetails.workTime')}</span>
                     <div className="flex items-center gap-1.5">
                       <FileClock className="w-3.5 h-3.5 text-indigo-500 flex-shrink-0" />
                       <span className="text-sm font-semibold text-indigo-600 dark:text-indigo-400">{label}</span>
-                      <span className="text-xs text-gray-400">({workLogs.length} {workLogs.length === 1 ? 'wpis' : workLogs.length < 5 ? 'wpisy' : 'wpisów'})</span>
+                      <span className="text-xs text-gray-400">{t('ticketDetails.workLogEntries', { count: workLogs.length })}</span>
                     </div>
                   </div>
                 );
@@ -2180,7 +2207,7 @@ const TicketDetailsPage: React.FC = () => {
                 if (ticket.first_response_at) {
                   rows.push(
                     <div key="resp" className="grid grid-cols-[160px_1fr] items-center mt-4 pt-4 border-t border-gray-100">
-                      <span className="text-sm text-gray-500 font-medium">Czas reakcji</span>
+                      <span className="text-sm text-gray-500 font-medium">{t('ticketDetails.responseTime')}</span>
                       <div className="flex items-center gap-1.5">
                         <Clock className="w-3.5 h-3.5 text-green-500 flex-shrink-0" />
                         <span className="text-sm font-semibold text-green-600 dark:text-green-400">{fmtDuration(ticket.created_at, ticket.first_response_at)}</span>
@@ -2190,15 +2217,15 @@ const TicketDetailsPage: React.FC = () => {
                 } else if (!['ROZWIAZANE', 'ZAMKNIETE'].includes(ticket.status)) {
                   rows.push(
                     <div key="resp-wait" className="grid grid-cols-[160px_1fr] items-center mt-4 pt-4 border-t border-gray-100">
-                      <span className="text-sm text-gray-500 font-medium">Czas reakcji</span>
-                      <span className="text-sm text-amber-600 dark:text-amber-400 font-medium italic">Oczekuje na reakcję</span>
+                      <span className="text-sm text-gray-500 font-medium">{t('ticketDetails.responseTime')}</span>
+                      <span className="text-sm text-amber-600 dark:text-amber-400 font-medium italic">{t('ticketDetails.awaitingResponse')}</span>
                     </div>
                   );
                 }
                 if (ticket.resolved_at) {
                   rows.push(
                     <div key="resol" className="grid grid-cols-[160px_1fr] items-center mt-4">
-                      <span className="text-sm text-gray-500 font-medium">Czas rozwiązania</span>
+                      <span className="text-sm text-gray-500 font-medium">{t('ticketDetails.resolutionTime')}</span>
                       <div className="flex items-center gap-1.5">
                         <Check className="w-3.5 h-3.5 text-teal-500 flex-shrink-0" />
                         <span className="text-sm font-semibold text-teal-600 dark:text-teal-400">{fmtDuration(ticket.created_at, ticket.resolved_at)}</span>
@@ -2238,10 +2265,7 @@ const TicketDetailsPage: React.FC = () => {
           >
             <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
               <h2 className="text-xl font-semibold text-gray-900">
-                {transitionModalConfig.targetStatus === 'W_TOKU' ? 'W toku' :
-                  transitionModalConfig.targetStatus === 'NOWE' ? 'Nowe' :
-                    transitionModalConfig.targetStatus === 'ROZWIAZANE' ? 'Rozwiązane' :
-                      transitionModalConfig.targetStatus === 'ZAMKNIETE' ? 'Zamknięte' : transitionModalConfig.targetStatus}
+                {transitionModalConfig.targetStatus ? t(`status.${transitionModalConfig.targetStatus}`) : ''}
               </h2>
               <button
                 onClick={() => { setTransitionModalConfig({ isOpen: false, targetStatus: null }); setIsTransitionSuccess(false); }}
@@ -2254,7 +2278,7 @@ const TicketDetailsPage: React.FC = () => {
             <div className="p-6 overflow-y-auto space-y-6">
               {/* Sekcja: Osoba przypisana */}
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-1.5">Osoba przypisana</label>
+                <label className="block text-sm font-semibold text-gray-700 mb-1.5">{t('ticketDetails.transitionAssignedTo')}</label>
                 <div className="relative w-full md:w-1/2" ref={transitionAssigneeDropdownRef}>
                   <button
                     type="button"
@@ -2266,21 +2290,21 @@ const TicketDetailsPage: React.FC = () => {
                         if (!transitionAssignee) return (
                           <span className="inline-flex items-center gap-1.5 text-amber-700 dark:text-amber-400 font-semibold">
                             <UserMinus className="w-4 h-4" />
-                            Nie przypisano
+                            {t('ticketDetails.unassigned')}
                           </span>
                         );
-                        const t = availableTechnicians.find(tech => tech.id === transitionAssignee);
-                        if (!t) return <span>Nie przypisano</span>;
+                        const tech = availableTechnicians.find(tech => tech.id === transitionAssignee);
+                        if (!tech) return <span>{t('ticketDetails.unassigned')}</span>;
                         return (
                           <>
                             <div className="w-5 h-5 rounded-full bg-blue-600 text-white flex items-center justify-center flex-shrink-0 overflow-hidden">
-                              {t.avatar ? (
-                                <img src={t.avatar} alt="" className="w-full h-full object-cover" />
+                              {tech.avatar ? (
+                                <img src={tech.avatar} alt="" className="w-full h-full object-cover" />
                               ) : (
-                                <span className="text-[10px] font-bold uppercase">{t.first_name?.charAt(0) || 'U'}</span>
+                                <span className="text-[10px] font-bold uppercase">{tech.first_name?.charAt(0) || 'U'}</span>
                               )}
                             </div>
-                            <span className="truncate">{t.first_name} {t.last_name}</span>
+                            <span className="truncate">{tech.first_name} {tech.last_name}</span>
                           </>
                         );
                       })()}
@@ -2307,7 +2331,7 @@ const TicketDetailsPage: React.FC = () => {
                         <div className="w-5 h-5 rounded-full bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 flex items-center justify-center flex-shrink-0">
                           <UserMinus className="w-3 h-3" />
                         </div>
-                        <span className="font-semibold text-amber-700 dark:text-amber-400">Nie przypisano</span>
+                        <span className="font-semibold text-amber-700 dark:text-amber-400">{t('ticketDetails.unassigned')}</span>
                       </button>
                       {availableTechnicians.map(t => (
                         <button
@@ -2338,14 +2362,14 @@ const TicketDetailsPage: React.FC = () => {
                     onClick={() => setTransitionAssignee(authContext.user!.id)}
                     className="text-blue-600 hover:underline text-sm font-medium mt-1.5 inline-block"
                   >
-                    Przypisz do mnie
+                    {t('ticketDetails.assignToMe')}
                   </button>
                 )}
               </div>
 
               {/* Sekcja: Komentarz */}
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">Komentarz</label>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">{t('ticketDetails.transitionComment')}</label>
 
                 {/* Tabs */}
                 <div className="flex border-b border-gray-200">
@@ -2353,13 +2377,13 @@ const TicketDetailsPage: React.FC = () => {
                     onClick={() => setTransitionCommentType('reply')}
                     className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${transitionCommentType === 'reply' ? 'border-gray-800 text-gray-900 bg-white' : 'border-transparent text-gray-500 bg-gray-50/50 hover:bg-gray-50'}`}
                   >
-                    Odpowiedz klientowi
+                    {t('ticketDetails.transitionReplyToClient')}
                   </button>
                   <button
                     onClick={() => setTransitionCommentType('internal')}
                     className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${transitionCommentType === 'internal' ? 'border-gray-800 text-gray-900 bg-white' : 'border-transparent text-gray-500 bg-gray-50/50 hover:bg-gray-50'}`}
                   >
-                    Dodaj komentarz wewnętrzny
+                    {t('ticketDetails.transitionInternalComment')}
                   </button>
                 </div>
 
@@ -2367,7 +2391,7 @@ const TicketDetailsPage: React.FC = () => {
                   {transitionCommentType === 'internal' && (
                     <div className="flex items-center gap-1.5 text-xs text-amber-700 bg-amber-50 px-3 py-2 rounded-md mb-2">
                       <Lock className="w-3.5 h-3.5" />
-                      <span className="font-medium">Twoje komentarze nie będą widoczne dla klientów w portalu.</span>
+                      <span className="font-medium">{t('ticketDetails.transitionInternalNote')}</span>
                     </div>
                   )}
 
@@ -2375,7 +2399,7 @@ const TicketDetailsPage: React.FC = () => {
                     <MarkdownEditor
                       value={transitionCommentText}
                       onChange={setTransitionCommentText}
-                      placeholder={transitionCommentType === 'internal' ? "Dodaj notatkę wewnętrzną..." : "Odpowiedz klientowi..."}
+                      placeholder={transitionCommentType === 'internal' ? t('ticketDetails.transitionPlaceholderInternal') : t('ticketDetails.transitionPlaceholderReply')}
                       className={transitionCommentType === 'internal' ? 'bg-amber-50/10' : ''}
                       minHeight="120px"
                     />
@@ -2390,7 +2414,7 @@ const TicketDetailsPage: React.FC = () => {
                 className="px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-800 transition-colors"
                 disabled={isSubmittingTransition || isTransitionSuccess}
               >
-                Anuluj
+                {t('ticketDetails.transitionCancel')}
               </button>
               <button
                 onClick={handleSubmitTransition}
@@ -2403,11 +2427,8 @@ const TicketDetailsPage: React.FC = () => {
                 )}
                 {isTransitionSuccess && <Check className="w-4 h-4" />}
 
-                {isTransitionSuccess ? 'Sukces' : (
-                  transitionModalConfig.targetStatus === 'W_TOKU' ? 'W toku' :
-                    transitionModalConfig.targetStatus === 'NOWE' ? 'Nowe' :
-                      transitionModalConfig.targetStatus === 'ROZWIAZANE' ? 'Rozwiązane' :
-                        transitionModalConfig.targetStatus === 'ZAMKNIETE' ? 'Zamknięte' : transitionModalConfig.targetStatus
+                {isTransitionSuccess ? t('ticketDetails.transitionSuccess') : (
+                  transitionModalConfig.targetStatus ? t(`status.${transitionModalConfig.targetStatus}`) : ''
                 )}
               </button>
             </div>
@@ -2424,7 +2445,7 @@ const TicketDetailsPage: React.FC = () => {
           <div className="relative w-[98vw] h-[98vh] flex items-center justify-center animate-in zoom-in-95 duration-200">
             <img
               src={lightboxUrl}
-              alt="Podgląd załącznika"
+              alt={t('ticketDetails.download')}
               className="max-w-full max-h-full rounded-xl shadow-2xl object-contain"
               onClick={(e) => e.stopPropagation()}
             />
@@ -2435,7 +2456,7 @@ const TicketDetailsPage: React.FC = () => {
                 rel="noopener noreferrer"
                 onClick={(e) => e.stopPropagation()}
                 className="p-2 bg-black/60 hover:bg-black/80 shadow-md backdrop-blur-md rounded-lg transition-all text-white border border-white/10"
-                title="Otwórz w nowej karcie"
+                title={t('ticketDetails.openInNewTab')}
               >
                 <ExternalLink className="w-5 h-5" />
               </a>
@@ -2445,14 +2466,14 @@ const TicketDetailsPage: React.FC = () => {
                   handleDownloadFile(e, lightboxUrl, filename);
                 }}
                 className="p-2 bg-black/60 hover:bg-black/80 shadow-md backdrop-blur-md rounded-lg transition-all text-white border border-white/10"
-                title="Pobierz"
+                title={t('ticketDetails.download')}
               >
                 <Download className="w-5 h-5" />
               </button>
               <button
                 onClick={() => setLightboxUrl(null)}
                 className="p-2 bg-black/60 hover:bg-black/80 shadow-md backdrop-blur-md rounded-lg transition-all text-white border border-white/10"
-                title="Zamknij"
+                title={t('ticketDetails.close')}
               >
                 <X className="w-5 h-5" />
               </button>
@@ -2474,16 +2495,16 @@ const TicketDetailsPage: React.FC = () => {
             <div className="w-14 h-14 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
               <Trash2 className="w-7 h-7 text-red-600 dark:text-red-400" />
             </div>
-            <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100 mb-1">Usunąć komentarz?</h3>
+            <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100 mb-1">{t('ticketDetails.deleteCommentTitle')}</h3>
             <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">
-              Tej operacji nie można cofnąć.
+              {t('ticketDetails.deleteCommentDesc')}
             </p>
             <div className="flex gap-3 justify-center">
               <button
                 onClick={() => setCommentToDelete(null)}
                 className="px-4 py-2 text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-xl transition-colors"
               >
-                Anuluj
+                {t('ticketDetails.cancel')}
               </button>
               <button
                 onClick={confirmDeleteComment}
@@ -2491,7 +2512,7 @@ const TicketDetailsPage: React.FC = () => {
                 className="px-5 py-2 text-sm font-bold text-white bg-red-600 hover:bg-red-700 rounded-xl shadow-sm transition-all disabled:opacity-50 flex items-center"
               >
                 {isDeletingComment && <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />}
-                Usuń
+                {t('ticketDetails.delete')}
               </button>
             </div>
           </div>
@@ -2511,17 +2532,17 @@ const TicketDetailsPage: React.FC = () => {
             <div className="w-14 h-14 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
               <Trash2 className="w-7 h-7 text-red-600 dark:text-red-400" />
             </div>
-            <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100 mb-1">Usunąć wpis?</h3>
+            <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100 mb-1">{t('ticketDetails.deleteWorkLogTitle')}</h3>
             <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">
-              Czy na pewno chcesz usunąć ten wpis rejestru prac?
-              <br />Tej operacji nie można cofnąć.
+              {t('ticketDetails.deleteWorkLogDesc')}
+              <br />{t('ticketDetails.irrecoverable')}
             </p>
             <div className="flex gap-3 justify-center">
               <button
                 onClick={() => setWorkLogToDelete(null)}
                 className="px-4 py-2 text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-xl transition-colors"
               >
-                Anuluj
+                {t('ticketDetails.cancel')}
               </button>
               <button
                 onClick={async () => {
@@ -2532,7 +2553,7 @@ const TicketDetailsPage: React.FC = () => {
                     setWorkLogToDelete(null);
                     fetchWorkLogs();
                   } catch (err) {
-                    console.error('Błąd usuwania wpisu:', err);
+                    console.error('Error deleting work log entry:', err);
                   } finally {
                     setIsDeletingWorkLog(false);
                   }
@@ -2541,7 +2562,7 @@ const TicketDetailsPage: React.FC = () => {
                 className="px-5 py-2 text-sm font-bold text-white bg-red-600 hover:bg-red-700 rounded-xl shadow-sm transition-all disabled:opacity-50 flex items-center"
               >
                 {isDeletingWorkLog && <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />}
-                Usuń
+                {t('ticketDetails.delete')}
               </button>
             </div>
           </div>
@@ -2561,17 +2582,17 @@ const TicketDetailsPage: React.FC = () => {
             <div className="w-14 h-14 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
               <Trash2 className="w-7 h-7 text-red-600 dark:text-red-400" />
             </div>
-            <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100 mb-1">Usunąć załącznik?</h3>
+            <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100 mb-1">{t('ticketDetails.deleteAttachmentTitle')}</h3>
             <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">
-              Czy na pewno chcesz usunąć plik <span className="font-semibold text-gray-700 dark:text-gray-300">{attachmentToDelete.filename}</span>?
-              <br />Tej operacji nie można cofnąć.
+              {t('ticketDetails.deleteAttachmentDesc')} <span className="font-semibold text-gray-700 dark:text-gray-300">{attachmentToDelete.filename}</span>?
+              <br />{t('ticketDetails.irrecoverable')}
             </p>
             <div className="flex gap-3 justify-center">
               <button
                 onClick={() => setAttachmentToDelete(null)}
                 className="px-4 py-2 text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-xl transition-colors"
               >
-                Anuluj
+                {t('ticketDetails.cancel')}
               </button>
               <button
                 onClick={confirmDeleteAttachment}
@@ -2579,7 +2600,7 @@ const TicketDetailsPage: React.FC = () => {
                 className="px-5 py-2 text-sm font-bold text-white bg-red-600 hover:bg-red-700 rounded-xl shadow-sm transition-all disabled:opacity-50 flex items-center"
               >
                 {isDeletingAttachment && <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />}
-                Usuń
+                {t('ticketDetails.delete')}
               </button>
             </div>
           </div>
@@ -2599,17 +2620,17 @@ const TicketDetailsPage: React.FC = () => {
             <div className="w-14 h-14 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
               <Trash2 className="w-7 h-7 text-red-600" />
             </div>
-            <h3 className="text-lg font-bold text-gray-900 mb-1">Usunąć zgłoszenie?</h3>
+            <h3 className="text-lg font-bold text-gray-900 mb-1">{t('ticketDetails.deleteTicketTitle')}</h3>
             <p className="text-sm text-gray-500 mb-6">
-              Czy na pewno chcesz usunąć zgłoszenie <span className="font-semibold text-gray-700">#{ticket.id}</span>?
-              <br />Tej operacji nie można cofnąć.
+              {t('ticketDetails.deleteTicketDesc')} <span className="font-semibold text-gray-700">#{ticket.id}</span>?
+              <br />{t('ticketDetails.irrecoverable')}
             </p>
             <div className="flex gap-3 justify-center">
               <button
                 onClick={() => setShowDeleteModal(false)}
                 className="px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-100 rounded-xl transition-colors"
               >
-                Anuluj
+                {t('ticketDetails.cancel')}
               </button>
               <button
                 onClick={handleDeleteTicket}
@@ -2617,7 +2638,7 @@ const TicketDetailsPage: React.FC = () => {
                 className="px-5 py-2 text-sm font-bold text-white bg-red-600 hover:bg-red-700 rounded-xl shadow-sm transition-all disabled:opacity-50 flex items-center"
               >
                 {isDeletingTicket && <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />}
-                Usuń
+                {t('ticketDetails.delete')}
               </button>
             </div>
           </div>
@@ -2636,17 +2657,17 @@ const TicketDetailsPage: React.FC = () => {
             <div className="w-14 h-14 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center mx-auto mb-4 border border-red-200 dark:border-red-800">
               <Trash2 className="w-7 h-7 text-red-600 dark:text-red-400" />
             </div>
-            <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100 mb-2">Usunąć wszystkie załączniki?</h3>
+            <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100 mb-2">{t('ticketDetails.deleteAllAttachmentsTitle')}</h3>
             <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">
-              Czy na pewno chcesz bezpowrotnie usunąć wszystkie ({ticket?.attachments?.length}) załączniki?
-              <br />Tej operacji nie można cofnąć.
+              {t('ticketDetails.deleteAllAttachmentsDesc', { count: ticket?.attachments?.length })}
+              <br />{t('ticketDetails.irrecoverable')}
             </p>
             <div className="flex gap-3 justify-center">
               <button
                 onClick={() => setShowDeleteAllAttachmentsModal(false)}
                 className="px-4 py-2 text-sm font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-xl transition-colors"
               >
-                Anuluj
+                {t('ticketDetails.cancel')}
               </button>
               <button
                 onClick={confirmDeleteAllAttachments}
@@ -2654,7 +2675,7 @@ const TicketDetailsPage: React.FC = () => {
                 className="px-5 py-2 text-sm font-bold text-white bg-red-600 hover:bg-red-700 dark:bg-red-500 dark:hover:bg-red-600 rounded-xl shadow-sm transition-all disabled:opacity-50 flex items-center"
               >
                 {isDeletingAllAttachments && <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />}
-                Usuń wszystkie
+                {t('ticketDetails.deleteAllBtn')}
               </button>
             </div>
           </div>
@@ -2668,7 +2689,7 @@ const TicketDetailsPage: React.FC = () => {
             <div className="w-8 h-8 rounded-full bg-green-100 dark:bg-green-500/20 flex items-center justify-center flex-shrink-0">
               <Check className="w-4 h-4 text-green-600 dark:text-green-400" />
             </div>
-            <p className="text-sm font-semibold">Link do zgłoszenia został skopiowany</p>
+            <p className="text-sm font-semibold">{t('ticketDetails.linkCopied')}</p>
           </div>
         </div>
       )}

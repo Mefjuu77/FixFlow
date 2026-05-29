@@ -6,9 +6,13 @@ import { ticketService } from '../api/ticketService';
 import { User, Category } from '../types';
 import useTitle from '../hooks/useTitle';
 import dayjs from 'dayjs';
+import 'dayjs/locale/pl';
+import 'dayjs/locale/en';
 import { DayPicker } from 'react-day-picker';
 import 'react-day-picker/src/style.css';
 import { pl } from 'date-fns/locale/pl';
+import { enUS } from 'date-fns/locale/en-US';
+import { useTranslation } from 'react-i18next';
 import {
   Calendar, Filter, FileSpreadsheet, FileText,
   ChevronDown, Search, Loader2, CheckCircle2, ChevronsUp, Equal,
@@ -93,7 +97,8 @@ interface MultiSelectProps {
   position?: 'top' | 'bottom';
 }
 
-const MultiSelect: React.FC<MultiSelectProps> = ({ label, icon, options, selected, onChange, placeholder = 'Wszystkie', position = 'bottom' }) => {
+const MultiSelect: React.FC<MultiSelectProps> = ({ label, icon, options, selected, onChange, placeholder, position = 'bottom' }) => {
+  const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
@@ -121,7 +126,7 @@ const MultiSelect: React.FC<MultiSelectProps> = ({ label, icon, options, selecte
         `}
       >
         <span className={selected.length ? 'text-indigo-900 dark:text-indigo-300 font-bold' : 'text-slate-500 dark:text-slate-300 font-medium'}>
-          {selected.length ? `Wybrano (${selected.length})` : placeholder}
+          {selected.length ? `(${selected.length})` : (placeholder ?? '—')}
         </span>
         <ChevronDown className={`w-4 h-4 transition-transform duration-300 ${open ? 'rotate-180 text-indigo-500 dark:text-indigo-400' : 'text-slate-400 dark:text-slate-300'}`} />
       </button>
@@ -133,7 +138,7 @@ const MultiSelect: React.FC<MultiSelectProps> = ({ label, icon, options, selecte
           {selected.length > 0 && (
             <div className="px-2 pb-2 mb-2 border-b border-slate-100">
               <button onClick={() => onChange([])} className="w-full flex items-center justify-center gap-2 px-3 py-2 text-xs font-bold text-rose-500 dark:text-rose-400 bg-rose-50 dark:bg-rose-500/10 rounded-lg hover:bg-rose-100 dark:hover:bg-rose-500/20 transition-colors">
-                <X className="w-3.5 h-3.5" /> Wyczyść
+                <X className="w-3.5 h-3.5" /> {t('export.clearFilters')}
               </button>
             </div>
           )}
@@ -164,7 +169,9 @@ const MultiSelect: React.FC<MultiSelectProps> = ({ label, icon, options, selecte
 
 // === Premium Page ===
 const ExportPage: React.FC = () => {
-  useTitle('Eksport danych');
+  const { t, i18n } = useTranslation();
+  const calLocale = i18n.language.startsWith('pl') ? pl : enUS;
+  useTitle(t('export.title'));
   const authContext = useContext(AuthContext);
 
   // Dane pomocnicze
@@ -275,23 +282,23 @@ const ExportPage: React.FC = () => {
   }
 
   const statusOptions = [
-    { value: 'NOWE', label: 'Nowe', icon: <Circle className="w-4 h-4 text-blue-600 stroke-[2.5]" />, color: 'text-blue-700' },
-    { value: 'W_TOKU', label: 'W toku', icon: <Loader2 className="w-4 h-4 text-amber-500 stroke-[2.5]" />, color: 'text-amber-700' },
-    { value: 'ROZWIAZANE', label: 'Rozwiązane', icon: <CheckCircle2 className="w-4 h-4 text-green-600 stroke-[2.5]" />, color: 'text-emerald-700' },
-    { value: 'ZAMKNIETE', label: 'Zamknięte', icon: <XCircle className="w-4 h-4 text-teal-500 stroke-[2.5]" />, color: 'text-teal-800 dark:text-teal-300' },
+    { value: 'NOWE', label: t('status.NOWE'), icon: <Circle className="w-4 h-4 text-blue-600 stroke-[2.5]" />, color: 'text-blue-700' },
+    { value: 'W_TOKU', label: t('status.W_TOKU'), icon: <Loader2 className="w-4 h-4 text-amber-500 stroke-[2.5]" />, color: 'text-amber-700' },
+    { value: 'ROZWIAZANE', label: t('status.ROZWIAZANE'), icon: <CheckCircle2 className="w-4 h-4 text-green-600 stroke-[2.5]" />, color: 'text-emerald-700' },
+    { value: 'ZAMKNIETE', label: t('status.ZAMKNIETE'), icon: <XCircle className="w-4 h-4 text-teal-500 stroke-[2.5]" />, color: 'text-teal-800 dark:text-teal-300' },
   ];
 
   const priorityOptions = [
-    { value: 'WYSOKI', label: 'Wysoki', icon: <ChevronsUp className="w-4 h-4 text-red-500" /> },
-    { value: 'NORMALNY', label: 'Normalny', icon: <Equal className="w-4 h-4 text-blue-500" /> },
-    { value: 'NISKI', label: 'Niski', icon: <ChevronsDown className="w-4 h-4 text-gray-400" /> },
+    { value: 'WYSOKI', label: t('priority.WYSOKI'), icon: <ChevronsUp className="w-4 h-4 text-red-500" /> },
+    { value: 'NORMALNY', label: t('priority.NORMALNY'), icon: <Equal className="w-4 h-4 text-blue-500" /> },
+    { value: 'NISKI', label: t('priority.NISKI'), icon: <ChevronsDown className="w-4 h-4 text-gray-400" /> },
   ];
 
   const categoryOptions = categories.map(c => ({ value: String(c.id), label: c.name, icon: getCategoryIcon(c.name) }));
   const technicianOptions = [
     {
       value: 'unassigned',
-      label: 'Nie przypisano',
+      label: t('export.unassigned'),
       icon: (
         <div className="w-5 h-5 rounded-full bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center text-amber-600 dark:text-amber-400 flex-shrink-0">
           <UserMinus className="w-3 h-3" />
@@ -315,12 +322,12 @@ const ExportPage: React.FC = () => {
   }));
 
   const presetButtons: { key: DatePreset; label: string }[] = [
-    { key: 'today', label: 'Dzisiaj' },
-    { key: 'week', label: '7 Dni' },
-    { key: 'month', label: '30 Dni' },
-    { key: 'quarter', label: 'Kwartał' },
-    { key: 'year', label: 'Rok' },
-    { key: 'custom', label: 'Własny' },
+    { key: 'today', label: t('export.presetToday') },
+    { key: 'week', label: t('export.presetWeek') },
+    { key: 'month', label: t('export.presetMonth') },
+    { key: 'quarter', label: t('export.presetQuarter') },
+    { key: 'year', label: t('export.presetYear') },
+    { key: 'custom', label: t('export.presetCustom') },
   ];
 
   return (
@@ -328,9 +335,9 @@ const ExportPage: React.FC = () => {
       {/* Nowy prosty nagłówek z pobieraniem w prawym górnym rogu */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Eksport danych</h1>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{t('export.title')}</h1>
           <p className="text-sm text-gray-500 dark:text-gray-400 mt-1 font-medium">
-            Generuj i pobieraj zestawienia zgłoszeń na podstawie wybranych filtrów
+            {t('export.subtitle')}
           </p>
         </div>
 
@@ -351,7 +358,7 @@ const ExportPage: React.FC = () => {
             className="flex items-center justify-center gap-2 px-5 py-2 bg-blue-600 text-white rounded-xl text-sm font-bold transition-all hover:bg-blue-700 active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none shadow-lg shadow-blue-600/20 whitespace-nowrap shrink-0"
           >
             {downloading ? <RefreshCw className="w-4 h-4 animate-spin" /> : <ArrowDownToLine className="w-4 h-4" />}
-            {downloading ? 'Generowanie...' : `Eksportuj ${exportFormat.toUpperCase()}`}
+            {downloading ? t('export.generating') : `${t('export.exportBtn')} ${exportFormat.toUpperCase()}`}
           </button>
         </div>
       </div>
@@ -362,7 +369,7 @@ const ExportPage: React.FC = () => {
           {/* Karta: Zakres Dat */}
           <div className="bg-white dark:bg-slate-800 rounded-3xl p-5 shadow-sm border border-slate-200/60 dark:border-slate-700/60">
             <label className="flex items-center gap-2 mb-4 text-xs font-bold text-slate-500 uppercase tracking-wider">
-              <Calendar className="w-4 h-4 text-slate-400" /> Zakres Dat
+              <Calendar className="w-4 h-4 text-slate-400" /> {t('export.dateRange')}
             </label>
 
             <div className="flex gap-1 p-1 bg-slate-50 dark:bg-slate-900/50 border border-slate-100 dark:border-slate-800 rounded-xl overflow-x-auto hide-scrollbar mb-4">
@@ -379,14 +386,14 @@ const ExportPage: React.FC = () => {
             <div className="grid grid-cols-2 gap-3 mt-4">
               <div className="space-y-1 relative">
                 <label className="flex items-center gap-1 text-[10px] text-indigo-500/70 font-extrabold uppercase ml-1 tracking-wider">
-                  <Calendar className="w-3 h-3" /> Od
+                  <Calendar className="w-3 h-3" /> {t('export.dateFrom')}
                 </label>
                 <button
                   type="button"
                   onClick={() => { setShowFromCal(!showFromCal); setShowToCal(false); }}
                   className="w-full px-3 py-2.5 bg-white dark:bg-slate-800 border-2 border-slate-200/80 dark:border-slate-700 hover:border-indigo-300 dark:hover:border-indigo-500 rounded-xl text-sm font-semibold text-slate-700 dark:text-slate-300 shadow-sm focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition-all cursor-pointer text-left"
                 >
-                  {dateFrom ? dayjs(dateFrom).format('DD.MM.YYYY') : 'Wybierz datę'}
+                  {dateFrom ? dayjs(dateFrom).format('DD.MM.YYYY') : t('export.pickDate')}
                 </button>
                 {showFromCal && (
                   <>
@@ -407,7 +414,7 @@ const ExportPage: React.FC = () => {
                             }
                           }
                         }}
-                        locale={pl}
+                        locale={calLocale}
                         captionLayout="dropdown"
                         startMonth={new Date(2020, 0)}
                         endMonth={new Date()}
@@ -427,14 +434,14 @@ const ExportPage: React.FC = () => {
               </div>
               <div className="space-y-1 relative">
                 <label className="flex items-center gap-1 text-[10px] text-indigo-500/70 font-extrabold uppercase ml-1 tracking-wider">
-                  <Calendar className="w-3 h-3" /> Do
+                  <Calendar className="w-3 h-3" /> {t('export.dateTo')}
                 </label>
                 <button
                   type="button"
                   onClick={() => { setShowToCal(!showToCal); setShowFromCal(false); }}
                   className="w-full px-3 py-2.5 bg-white dark:bg-slate-800 border-2 border-slate-200/80 dark:border-slate-700 hover:border-indigo-300 dark:hover:border-indigo-500 rounded-xl text-sm font-semibold text-slate-700 dark:text-slate-300 shadow-sm focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition-all cursor-pointer text-left"
                 >
-                  {dateTo ? dayjs(dateTo).format('DD.MM.YYYY') : 'Wybierz datę'}
+                  {dateTo ? dayjs(dateTo).format('DD.MM.YYYY') : t('export.pickDate')}
                 </button>
                 {showToCal && (
                   <>
@@ -455,7 +462,7 @@ const ExportPage: React.FC = () => {
                             }
                           }
                         }}
-                        locale={pl}
+                        locale={calLocale}
                         captionLayout="dropdown"
                         startMonth={new Date(2020, 0)}
                         endMonth={new Date()}
@@ -478,7 +485,7 @@ const ExportPage: React.FC = () => {
             {dateFrom && dateTo && dateFrom > dateTo && (
               <div className="flex items-center gap-2 mt-3 px-3 py-2 bg-rose-50 dark:bg-rose-500/10 border border-rose-200 dark:border-rose-500/20 rounded-xl text-xs font-semibold text-rose-600 dark:text-rose-400 animate-in fade-in duration-200">
                 <AlertTriangle className="w-4 h-4 shrink-0" />
-                Data &quot;Od&quot; nie może być późniejsza niż data &quot;Do&quot;
+                Data &quot;{t('export.dateFrom')}&quot; {t('export.dateError')}
               </div>
             )}
           </div>
@@ -487,7 +494,7 @@ const ExportPage: React.FC = () => {
           <div className="bg-white dark:bg-slate-800 rounded-3xl p-5 shadow-sm border border-slate-200/60 dark:border-slate-700/60">
             <div className="flex items-center justify-between mb-5">
               <label className="flex items-center gap-2 text-xs font-bold text-slate-500 uppercase tracking-wider">
-                <Filter className="w-4 h-4 text-slate-400" /> Filtry
+                <Filter className="w-4 h-4 text-slate-400" /> {t('export.filters')}
               </label>
               <button
                 onClick={() => {
@@ -498,19 +505,19 @@ const ExportPage: React.FC = () => {
                   setSelectedCreators([]);
                 }}
                 className="px-3 py-1.5 rounded-xl text-sm font-medium text-slate-500 dark:text-slate-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors flex items-center gap-1.5 whitespace-nowrap"
-                title="Wyczyść wszystkie filtry"
+                title={t('export.clearFilters')}
               >
                 <X className="w-4 h-4" />
-                Wyczyść filtry
+                {t('export.clearFilters')}
               </button>
             </div>
 
             <div className="flex flex-col gap-3">
-              <MultiSelect label="Kategoria" options={categoryOptions} selected={selectedCategories} onChange={setSelectedCategories} />
-              <MultiSelect label="Priorytet" options={priorityOptions} selected={priorities} onChange={setPriorities} />
-              <MultiSelect label="Zgłaszający" options={creatorOptions} selected={selectedCreators} onChange={setSelectedCreators} position="top" />
-              <MultiSelect label="Technik" options={technicianOptions} selected={selectedTechnicians} onChange={setSelectedTechnicians} position="top" />
-              <MultiSelect label="Status" options={statusOptions} selected={statuses} onChange={setStatuses} position="top" />
+              <MultiSelect label={t('export.filterCategory')} options={categoryOptions} selected={selectedCategories} onChange={setSelectedCategories} placeholder={t('export.all')} />
+              <MultiSelect label={t('export.filterPriority')} options={priorityOptions} selected={priorities} onChange={setPriorities} placeholder={t('export.all')} />
+              <MultiSelect label={t('export.filterCreator')} options={creatorOptions} selected={selectedCreators} onChange={setSelectedCreators} position="top" placeholder={t('export.all')} />
+              <MultiSelect label={t('export.filterTechnician')} options={technicianOptions} selected={selectedTechnicians} onChange={setSelectedTechnicians} position="top" placeholder={t('export.all')} />
+              <MultiSelect label={t('export.filterStatus')} options={statusOptions} selected={statuses} onChange={setStatuses} position="top" placeholder={t('export.all')} />
             </div>
           </div>
         </div>
@@ -520,16 +527,16 @@ const ExportPage: React.FC = () => {
           <div className="absolute inset-0 bg-white dark:bg-slate-800 rounded-3xl shadow-xl shadow-slate-200/40 dark:shadow-none border border-slate-100 dark:border-slate-700 flex flex-col overflow-hidden">
           <div className="px-6 py-3 border-b border-slate-100 dark:border-slate-700 flex items-center justify-between bg-slate-50/50 dark:bg-slate-800/50 backdrop-blur-xl">
             <div className="flex items-center gap-3">
-              <h3 className="font-bold text-slate-800 dark:text-white text-base">Podgląd wyników</h3>
+              <h3 className="font-bold text-slate-800 dark:text-white text-base">{t('export.previewTitle')}</h3>
               {total !== null && (
                 <span className="px-2.5 py-1 bg-indigo-100 dark:bg-indigo-500/20 text-indigo-700 dark:text-indigo-400 text-xs font-black rounded-lg ml-2">
-                  {total} zgłoszeń
+                  {total} {t('export.ticketsCount')}
                 </span>
               )}
             </div>
             {loadingPreview && (
               <div className="flex items-center gap-2 text-indigo-500 text-xs font-bold">
-                <RefreshCw className="w-4 h-4 animate-spin" /> Odświeżanie...
+                <RefreshCw className="w-4 h-4 animate-spin" /> {t('export.refreshing')}
               </div>
             )}
           </div>
@@ -540,23 +547,23 @@ const ExportPage: React.FC = () => {
                 <div className="w-24 h-24 mb-6 rounded-full bg-slate-50 dark:bg-slate-800/50 flex items-center justify-center">
                   <Search className="w-10 h-10 text-slate-300" />
                 </div>
-                <p className="text-lg font-bold text-slate-600">Brak dopasowań</p>
-                <p className="text-sm font-medium mt-1 text-slate-400 max-w-xs text-center">Zmień parametry filtrowania, aby zobaczyć podgląd wyników.</p>
+                <p className="text-lg font-bold text-slate-600">{t('export.noResults')}</p>
+                <p className="text-sm font-medium mt-1 text-slate-400 max-w-xs text-center">{t('export.noResultsHint')}</p>
               </div>
             ) : (
               <table className="w-full text-sm text-left">
                 <thead className="bg-white dark:bg-slate-800 sticky top-0 z-10 shadow-sm dark:shadow-slate-900/50">
                   <tr className="text-[11px] font-extrabold text-slate-400 uppercase tracking-widest">
                     <th className="px-3 lg:px-4 fhd:px-5 py-3 w-14 fhd:w-16">ID</th>
-                    <th className="px-3 lg:px-4 fhd:px-5 py-3">Tytuł</th>
-                    <th className="px-3 lg:px-4 fhd:px-5 py-3 hidden fhd:table-cell">Kategoria</th>
-                    <th className="px-3 lg:px-4 fhd:px-5 py-3 w-24 fhd:w-32">Priorytet</th>
-                    <th className="px-3 lg:px-4 fhd:px-5 py-3 hidden fhd:table-cell">Zgłaszający</th>
-                    <th className="px-3 lg:px-4 fhd:px-5 py-3 hidden fhd:table-cell">Technik</th>
-                    <th className="px-3 lg:px-4 fhd:px-5 py-3 w-28 fhd:w-32">Status</th>
+                    <th className="px-3 lg:px-4 fhd:px-5 py-3">{t('export.colTitle')}</th>
+                    <th className="px-3 lg:px-4 fhd:px-5 py-3 hidden fhd:table-cell">{t('export.colCategory')}</th>
+                    <th className="px-3 lg:px-4 fhd:px-5 py-3 w-24 fhd:w-32">{t('export.colPriority')}</th>
+                    <th className="px-3 lg:px-4 fhd:px-5 py-3 hidden fhd:table-cell">{t('export.colCreator')}</th>
+                    <th className="px-3 lg:px-4 fhd:px-5 py-3 hidden fhd:table-cell">{t('export.colTechnician')}</th>
+                    <th className="px-3 lg:px-4 fhd:px-5 py-3 w-28 fhd:w-32">{t('export.colStatus')}</th>
                     <th className="px-3 lg:px-4 fhd:px-5 py-3 w-32 fhd:w-40">
-                      <span className="fhd:hidden">Data</span>
-                      <span className="hidden fhd:inline">Utworzono</span>
+                      <span className="fhd:hidden">{t('export.colDateShort')}</span>
+                      <span className="hidden fhd:inline">{t('export.colDateLong')}</span>
                     </th>
                   </tr>
                 </thead>
@@ -573,9 +580,9 @@ const ExportPage: React.FC = () => {
                       </td>
                       <td className="px-3 lg:px-4 fhd:px-5 py-2.5 whitespace-nowrap">
                         <span className="flex items-center gap-1 text-sm font-medium">
-                          {row.priority === 'Wysoki' ? <ChevronsUp className="w-4 h-4 text-red-500" /> : row.priority === 'Normalny' ? <Equal className="w-4 h-4 text-blue-500" /> : <ChevronsDown className="w-4 h-4 text-gray-400" />}
-                          <span className={`hidden lg:inline ${row.priority === 'Wysoki' ? 'text-red-600' : row.priority === 'Normalny' ? 'text-blue-600' : 'text-gray-500'}`}>
-                            {row.priority}
+                          {row.priority === 'WYSOKI' ? <ChevronsUp className="w-4 h-4 text-red-500" /> : row.priority === 'NORMALNY' ? <Equal className="w-4 h-4 text-blue-500" /> : <ChevronsDown className="w-4 h-4 text-gray-400" />}
+                          <span className={`hidden lg:inline ${row.priority === 'WYSOKI' ? 'text-red-600' : row.priority === 'NORMALNY' ? 'text-blue-600' : 'text-gray-500'}`}>
+                            {t(`priority.${row.priority}`, row.priority)}
                           </span>
                         </span>
                       </td>
@@ -586,7 +593,7 @@ const ExportPage: React.FC = () => {
                         </div>
                       </td>
                       <td className="px-3 lg:px-4 fhd:px-5 py-2.5 text-slate-500 dark:text-slate-400 font-medium hidden fhd:table-cell">
-                        {row.technician !== 'Brak' ? (
+                        {row.technician ? (
                           <div className="flex items-center gap-2">
                             <UserAvatar avatar={row.technician_avatar} name={row.technician} size="md" />
                             <span className="truncate max-w-[120px]">{row.technician}</span>
@@ -594,21 +601,22 @@ const ExportPage: React.FC = () => {
                         ) : (
                           <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-xs font-semibold bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400 border border-dashed border-amber-300 dark:border-amber-700">
                             <UserMinus className="w-3 h-3 flex-shrink-0" />
-                            <span className="hidden xl:inline">Nie przypisano</span>
+                            <span className="hidden xl:inline">{t('export.unassigned')}</span>
                           </span>
                         )}
                       </td>
                       <td className="px-3 lg:px-4 fhd:px-5 py-2.5 whitespace-nowrap">
-                        <span className={`px-2 fhd:px-2.5 py-1 inline-flex text-xs leading-5 font-bold rounded-lg ${row.status === 'Nowe' ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300' :
-                          row.status === 'W toku' ? 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300' :
-                            row.status === 'Rozwiązane' ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300' :
-                              'bg-teal-100 text-teal-800 dark:bg-teal-900/30 dark:text-teal-300'
-                          }`}>
-                          {row.status}
+                        <span className={`px-2 fhd:px-2.5 py-1 inline-flex text-xs leading-5 font-bold rounded-lg ${
+                          row.status === 'NOWE' ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300' :
+                          row.status === 'W_TOKU' ? 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300' :
+                          row.status === 'ROZWIAZANE' ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300' :
+                          'bg-teal-100 text-teal-800 dark:bg-teal-900/30 dark:text-teal-300'
+                        }`}>
+                          {t(`status.${row.status}`, row.status)}
                         </span>
                       </td>
                       <td className="px-3 lg:px-4 fhd:px-5 py-2.5 text-slate-400 text-xs font-medium whitespace-nowrap">
-                        <span className="hidden fhd:inline">{dayjs(row.created_at).format('DD MMM YYYY, HH:mm')}</span>
+                        <span className="hidden fhd:inline">{dayjs(row.created_at).locale(i18n.language.startsWith('pl') ? 'pl' : 'en').format('DD MMM YYYY, HH:mm')}</span>
                         <span className="fhd:hidden">{dayjs(row.created_at).format('DD.MM.YY')}</span>
                         <span className="text-slate-300 dark:text-slate-600 ml-1 fhd:hidden">{dayjs(row.created_at).format('HH:mm')}</span>
                       </td>
@@ -623,7 +631,7 @@ const ExportPage: React.FC = () => {
               <div className="absolute inset-0 bg-white/40 dark:bg-slate-900/40 backdrop-blur-[1px] flex items-center justify-center z-20">
                 <div className="bg-white dark:bg-slate-800 px-4 py-2 rounded-xl shadow-lg border border-slate-100 dark:border-slate-700 flex items-center gap-3">
                   <RefreshCw className="w-5 h-5 text-indigo-500 animate-spin" />
-                  <span className="text-sm font-bold text-slate-700 dark:text-slate-200">Aktualizowanie...</span>
+                  <span className="text-sm font-bold text-slate-700 dark:text-slate-200">{t('export.updating')}</span>
                 </div>
               </div>
             )}
@@ -632,7 +640,7 @@ const ExportPage: React.FC = () => {
           {total !== null && total > 25 && preview.length > 0 && (
             <div className="px-6 py-4 border-t border-slate-100 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50 flex items-center justify-between">
               <p className="text-xs font-medium text-slate-500">
-                Pokazuję <strong className="text-slate-700 dark:text-slate-300">25</strong> z <strong className="text-slate-700 dark:text-slate-300">{total}</strong> wyników.
+                {t('export.showing')} <strong className="text-slate-700 dark:text-slate-300">25</strong> {t('export.of')} <strong className="text-slate-700 dark:text-slate-300">{total}</strong> {t('export.results')}.
               </p>
             </div>
           )}
