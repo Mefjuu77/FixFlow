@@ -234,17 +234,20 @@
     "markAll": "Mark all read",
     "empty": "No notifications"
   },
-  "resolution": {
-    "acceptedTitle": "Solution accepted",
-    "acceptedMessage": "Thank you! Your ticket has been closed. If the problem occurs again, you can create a new ticket.",
-    "rejectedTitle": "Ticket reopened",
-    "rejectedMessage": "Your ticket has been reopened. The assigned technician has been notified and will contact you shortly.",
-    "invalidTitle": "Invalid link",
-    "invalidMessage": "This link is invalid or has expired. Log in to the FixFlow panel to manage your tickets.",
-    "processedTitle": "Ticket already processed",
-    "processedMessage": "This ticket has already been accepted, rejected or closed. No further action is required.",
-    "loginCta": "Log in to FixFlow →",
-    "footer": "⚙ FixFlow · IT ticketing system"
+  "markdownEditor": {
+    "placeholder": "Write here...",
+    "linkPrompt": "Enter URL:",
+    "bold": "Bold (Ctrl+B)",
+    "italic": "Italic (Ctrl+I)",
+    "underline": "Underline (Ctrl+U)",
+    "strike": "Strikethrough",
+    "code": "Code",
+    "bulletList": "Bullet list",
+    "orderedList": "Numbered list",
+    "insertLink": "Insert link",
+    "attachFile": "Attach file",
+    "undo": "Undo (Ctrl+Z)",
+    "redo": "Redo (Ctrl+Y)"
   },
   "statistics": {
     "title": "Statistics",
@@ -406,21 +409,6 @@
     "bulkError": "An error occurred during bulk update.",
     "bulkDeleteError": "An error occurred while deleting tickets."
   },
-  "settings": {
-    "title": "Settings",
-    "subtitle": "Adjust your preferences, the app appearance, and manage security.",
-    "tabProfile": "My profile",
-    "tabSecurity": "Security",
-    "tabAppearance": "Appearance",
-    "tabNotifications": "Notifications",
-    "tabTemplates": "Reply templates",
-    "themeTitle": "Application theme",
-    "themeDescription": "Choose your preferred interface color theme.",
-    "themeLight": "Light",
-    "themeLightDesc": "Classic, bright interface",
-    "themeDark": "Dark",
-    "themeDarkDesc": "Easy on the eyes in the dark"
-  },
   "theme": {
     "switchToLight": "Switch to light theme",
     "switchToDark": "Switch to dark theme"
@@ -437,6 +425,10 @@
     "ticketLabel": "Ticket #{{id}}",
     "clickToEditTitle": "Click to edit title",
     "minChars": "Min. 5 characters (currently {{n}})",
+    "filesRejected": "Some files were rejected:",
+    "fileInvalidFormat": "unsupported format",
+    "fileTooLarge": "exceeds 5MB",
+    "fileTotalLimit": "exceeds 15MB total limit",
     "editDescription": "Edit description...",
     "statusLabel": "Status: {{status}}",
     "statusNewDesc": "Your ticket is awaiting review.",
@@ -756,6 +748,8 @@
     "deleteTitle": "Delete",
     "tabCategories": "Categories",
     "categoriesTitle": "Ticket categories",
+    "sectionPersonal": "Personal",
+    "sectionSystem": "System",
     "categoriesSubtitle": "Manage the list of categories available when creating tickets.",
     "catNameLabel": "Category name",
     "catNamePlaceholder": "e.g. Hardware, Software, Network...",

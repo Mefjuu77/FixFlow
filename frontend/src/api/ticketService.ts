@@ -204,12 +204,16 @@ export const ticketService = {
 
   // ===== Powiadomienia in-app =====
   getNotifications: async (): Promise<Notification[]> => {
-    const response = await api.get<Notification[]>('notifications/');
+    const response = await api.get<Notification[]>('notifications/', {
+      params: { _ts: Date.now() },
+    });
     return response.data;
   },
 
   getUnreadCount: async (): Promise<number> => {
-    const response = await api.get<{ unread: number }>('notifications/actions/');
+    const response = await api.get<{ unread: number }>('notifications/actions/', {
+      params: { _ts: Date.now() },
+    });
     return response.data.unread;
   },
 

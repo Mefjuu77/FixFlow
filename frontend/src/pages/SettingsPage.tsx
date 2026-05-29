@@ -319,15 +319,37 @@ const SettingsPage: React.FC = () => {
     }
   };
 
-  const tabs: { id: string; label: string; icon: React.ReactNode }[] = [
+  const personalTabs: { id: string; label: string; icon: React.ReactNode }[] = [
     { id: 'profile', label: t('settings.tabProfile'), icon: <User className="w-4 h-4" /> },
     { id: 'security', label: t('settings.tabSecurity'), icon: <KeyRound className="w-4 h-4" /> },
     { id: 'appearance', label: t('settings.tabAppearance'), icon: <Palette className="w-4 h-4" /> },
     { id: 'language', label: t('language.label'), icon: <Globe className="w-4 h-4" /> },
     { id: 'notifications', label: t('settings.tabNotifications'), icon: <Bell className="w-4 h-4" /> },
+  ];
+
+  const systemTabs: { id: string; label: string; icon: React.ReactNode }[] = [
     ...(isTechOrAdmin ? [{ id: 'templates', label: t('settings.tabTemplates'), icon: <MessageSquareText className="w-4 h-4" /> }] : []),
     ...(isAdmin ? [{ id: 'categories', label: t('settings.tabCategories'), icon: <Tags className="w-4 h-4" /> }] : []),
   ];
+
+  const renderTab = (tab: { id: string; label: string; icon: React.ReactNode }) => (
+    <button
+      key={tab.id}
+      onClick={() => { handleTabChange(tab.id as SettingsTab); setSuccessMsg(null); setErrorMsg(null); }}
+      className={`relative flex items-center justify-center lg:justify-start gap-2 w-full px-2 sm:px-4 py-2.5 sm:py-3 rounded-xl sm:rounded-2xl text-xs sm:text-sm font-semibold transition-all duration-300 ${activeTab === tab.id
+          ? 'bg-white dark:bg-gray-800 text-blue-600 dark:text-blue-400 shadow-[0_2px_10px_-3px_rgba(6,81,237,0.1)] dark:shadow-[0_2px_10px_-3px_rgba(59,130,246,0.15)] border border-blue-100 dark:border-blue-900/50'
+          : 'text-gray-500 dark:text-gray-400 bg-white/40 dark:bg-gray-800/20 hover:bg-white/80 dark:hover:bg-gray-800/60 hover:text-gray-900 dark:hover:text-gray-200 border border-gray-200/60 dark:border-gray-700/50 hover:border-gray-300/60'
+        }`}
+    >
+      {activeTab === tab.id && (
+        <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 sm:w-1.5 h-5 sm:h-6 bg-blue-600 dark:bg-blue-500 rounded-r-full" />
+      )}
+      <span className={`${activeTab === tab.id ? 'opacity-100' : 'opacity-70'} transition-all duration-300 flex-shrink-0`}>
+        {tab.icon}
+      </span>
+      <span className="truncate">{tab.label}</span>
+    </button>
+  );
 
   return (
     <div className="w-full max-w-5xl mx-auto space-y-4 sm:space-y-8 animate-in fade-in duration-700 pb-8 sm:pb-12">
@@ -346,25 +368,28 @@ const SettingsPage: React.FC = () => {
       <div className="flex flex-col lg:flex-row gap-4 sm:gap-8">
         {/* Sidebar Tabs */}
         <div className="lg:w-64 flex-shrink-0">
-          <nav className="grid grid-cols-2 lg:flex lg:flex-col gap-2">
-            {tabs.map((tab) => (
-              <button
-                key={tab.id}
-                onClick={() => { handleTabChange(tab.id as SettingsTab); setSuccessMsg(null); setErrorMsg(null); }}
-                className={`relative flex items-center justify-center lg:justify-start gap-2 w-full px-2 sm:px-4 py-2.5 sm:py-3 rounded-xl sm:rounded-2xl text-xs sm:text-sm font-semibold transition-all duration-300 ${activeTab === tab.id
-                    ? 'bg-white dark:bg-gray-800 text-blue-600 dark:text-blue-400 shadow-[0_2px_10px_-3px_rgba(6,81,237,0.1)] dark:shadow-[0_2px_10px_-3px_rgba(59,130,246,0.15)] border border-blue-100 dark:border-blue-900/50'
-                    : 'text-gray-500 dark:text-gray-400 bg-white/40 dark:bg-gray-800/20 hover:bg-white/80 dark:hover:bg-gray-800/60 hover:text-gray-900 dark:hover:text-gray-200 border border-gray-200/60 dark:border-gray-700/50 hover:border-gray-300/60'
-                  }`}
-              >
-                {activeTab === tab.id && (
-                  <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 sm:w-1.5 h-5 sm:h-6 bg-blue-600 dark:bg-blue-500 rounded-r-full" />
-                )}
-                <span className={`${activeTab === tab.id ? 'opacity-100' : 'opacity-70'} transition-all duration-300 flex-shrink-0`}>
-                  {tab.icon}
-                </span>
-                <span className="truncate">{tab.label}</span>
-              </button>
-            ))}
+          <nav className="flex flex-col gap-4">
+            {/* PERSONAL section */}
+            <div>
+              <p className="px-2 mb-2 text-[10.5px] font-semibold tracking-widest text-gray-500 uppercase select-none hidden lg:block">
+                {t('settings.sectionPersonal')}
+              </p>
+              <div className="grid grid-cols-2 lg:flex lg:flex-col gap-2">
+                {personalTabs.map(renderTab)}
+              </div>
+            </div>
+
+            {/* SYSTEM section — admin only (templates visible to tech too) */}
+            {systemTabs.length > 0 && (
+              <div>
+                <p className="px-2 mb-2 text-[10.5px] font-semibold tracking-widest text-gray-500 uppercase select-none hidden lg:block">
+                  {t('settings.sectionSystem')}
+                </p>
+                <div className="grid grid-cols-2 lg:flex lg:flex-col gap-2">
+                  {systemTabs.map(renderTab)}
+                </div>
+              </div>
+            )}
           </nav>
         </div>
 
@@ -890,7 +915,10 @@ const SettingsPage: React.FC = () => {
                     <p className="text-sm text-gray-400 dark:text-gray-500">{t('settings.noTemplates')}</p>
                   </div>
                 ) : (
-                  <div className="space-y-3">
+                  <div
+                    className="space-y-3 overflow-y-auto pr-1"
+                    style={{ maxHeight: '400px', scrollbarWidth: 'thin', scrollbarColor: '#cbd5e1 transparent' }}
+                  >
                     {templates.map(tpl => (
                       <div key={tpl.id} className="flex items-start justify-between gap-3 p-4 bg-white dark:bg-gray-800/50 border border-gray-100 dark:border-gray-700 rounded-xl">
                         <div className="min-w-0 flex-1">
@@ -981,7 +1009,7 @@ const SettingsPage: React.FC = () => {
                   <div className="space-y-3">
                     {categories.map(cat => (
                       <div key={cat.id} className="flex items-center justify-between gap-3 p-4 bg-white dark:bg-gray-800/50 border border-gray-100 dark:border-gray-700 rounded-xl">
-                        <p className="text-sm font-semibold text-gray-900 dark:text-gray-100 truncate min-w-0 flex-1">{cat.name}</p>
+                        <p className="text-sm font-semibold text-gray-900 dark:text-gray-100 truncate min-w-0 flex-1">{t(`categories.${cat.name}`, cat.name)}</p>
                         <div className="flex items-center gap-1 flex-shrink-0">
                           <button
                             onClick={() => { setCatEditingId(cat.id); setCatName(cat.name); setCatError(null); }}

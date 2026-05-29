@@ -236,17 +236,20 @@
     "markAll": "Oznacz wszystkie",
     "empty": "Brak powiadomień"
   },
-  "resolution": {
-    "acceptedTitle": "Rozwiązanie zaakceptowane",
-    "acceptedMessage": "Dziękujemy! Twoje zgłoszenie zostało zamknięte. Jeśli problem pojawi się ponownie, możesz utworzyć nowe zgłoszenie.",
-    "rejectedTitle": "Zgłoszenie ponownie otwarte",
-    "rejectedMessage": "Twoje zgłoszenie zostało ponownie otwarte. Przypisany technik został powiadomiony i wkrótce się z Tobą skontaktuje.",
-    "invalidTitle": "Nieprawidłowy link",
-    "invalidMessage": "Ten link jest nieprawidłowy lub wygasł. Zaloguj się do panelu FixFlow, aby zarządzać swoimi zgłoszeniami.",
-    "processedTitle": "Zgłoszenie już przetworzone",
-    "processedMessage": "To zgłoszenie zostało już wcześniej zaakceptowane, odrzucone lub zamknięte. Żadna dodatkowa akcja nie jest wymagana.",
-    "loginCta": "Zaloguj się do FixFlow →",
-    "footer": "⚙ FixFlow · System zgłoszeń IT"
+  "markdownEditor": {
+    "placeholder": "Pisz tutaj...",
+    "linkPrompt": "Podaj adres URL:",
+    "bold": "Pogrubienie (Ctrl+B)",
+    "italic": "Kursywa (Ctrl+I)",
+    "underline": "Podkreślenie (Ctrl+U)",
+    "strike": "Przekreślenie",
+    "code": "Kod",
+    "bulletList": "Lista punktowana",
+    "orderedList": "Lista numerowana",
+    "insertLink": "Wstaw link",
+    "attachFile": "Dodaj załącznik",
+    "undo": "Cofnij (Ctrl+Z)",
+    "redo": "Ponów (Ctrl+Y)"
   },
   "statistics": {
     "title": "Statystyki",
@@ -416,21 +419,6 @@
     "bulkError": "Wystąpił błąd podczas masowej aktualizacji.",
     "bulkDeleteError": "Wystąpił błąd podczas usuwania zgłoszeń."
   },
-  "settings": {
-    "title": "Ustawienia",
-    "subtitle": "Dostosuj swoje preferencje, wygląd aplikacji oraz zarządzaj bezpieczeństwem.",
-    "tabProfile": "Mój profil",
-    "tabSecurity": "Zabezpieczenia",
-    "tabAppearance": "Wygląd",
-    "tabNotifications": "Powiadomienia",
-    "tabTemplates": "Szablony odpowiedzi",
-    "themeTitle": "Motyw aplikacji",
-    "themeDescription": "Wybierz preferowany motyw kolorystyczny interfejsu.",
-    "themeLight": "Jasny",
-    "themeLightDesc": "Klasyczny, jasny interfejs",
-    "themeDark": "Ciemny",
-    "themeDarkDesc": "Łagodny dla oczu w ciemności"
-  },
   "theme": {
     "switchToLight": "Włącz jasny motyw",
     "switchToDark": "Włącz ciemny motyw"
@@ -447,6 +435,10 @@
     "ticketLabel": "Zgłoszenie #{{id}}",
     "clickToEditTitle": "Kliknij, aby edytować tytuł",
     "minChars": "Min. 5 znaków (obecnie {{n}})",
+    "filesRejected": "Odrzucono niektóre pliki:",
+    "fileInvalidFormat": "niedozwolony format",
+    "fileTooLarge": "powyżej 5MB",
+    "fileTotalLimit": "przekracza łączny limit 15MB",
     "editDescription": "Edytuj opis zgłoszenia...",
     "statusLabel": "Status: {{status}}",
     "statusNewDesc": "Twoje zgłoszenie oczekuje na rozpatrzenie.",
@@ -770,6 +762,8 @@
     "deleteTitle": "Usuń",
     "tabCategories": "Kategorie",
     "categoriesTitle": "Kategorie zgłoszeń",
+    "sectionPersonal": "Osobiste",
+    "sectionSystem": "System",
     "categoriesSubtitle": "Zarządzaj listą kategorii dostępnych przy tworzeniu zgłoszeń.",
     "catNameLabel": "Nazwa kategorii",
     "catNamePlaceholder": "np. Sprzęt, Oprogramowanie, Sieć...",

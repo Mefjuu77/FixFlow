@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Link from '@tiptap/extension-link';
@@ -61,7 +62,7 @@ const ToolbarSeparator = () => (
 const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
   value,
   onChange,
-  placeholder = 'Pisz tutaj...',
+  placeholder,
   className = '',
   minHeight = '120px',
   autoFocus = false,
@@ -69,6 +70,8 @@ const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
   resizable = false,
   onBlur,
 }) => {
+  const { t } = useTranslation();
+  const effectivePlaceholder = placeholder ?? t('markdownEditor.placeholder');
   const editor = useEditor({
     extensions: [
       StarterKit.configure({
@@ -85,7 +88,7 @@ const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
         },
       }),
       Placeholder.configure({
-        placeholder,
+        placeholder: effectivePlaceholder,
       }),
     ],
     content: value || '',
@@ -124,7 +127,7 @@ const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
   const handleAddLink = useCallback(() => {
     if (!editor) return;
     const previousUrl = editor.getAttributes('link').href;
-    const url = window.prompt('Podaj adres URL:', previousUrl || 'https://');
+    const url = window.prompt(t('markdownEditor.linkPrompt'), previousUrl || 'https://');
 
     if (url === null) return; // cancelled
 
@@ -143,25 +146,25 @@ const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
       <div className="flex items-center gap-0.5 px-2 py-1.5 bg-gray-50 dark:bg-gray-800/60 border-b border-gray-200 dark:border-gray-700 flex-wrap">
         <ToolbarButton
           icon={<Bold className="w-3.5 h-3.5" />}
-          label="Pogrubienie (Ctrl+B)"
+          label={t('markdownEditor.bold')}
           isActive={editor.isActive('bold')}
           onClick={() => editor.chain().focus().toggleBold().run()}
         />
         <ToolbarButton
           icon={<Italic className="w-3.5 h-3.5" />}
-          label="Kursywa (Ctrl+I)"
+          label={t('markdownEditor.italic')}
           isActive={editor.isActive('italic')}
           onClick={() => editor.chain().focus().toggleItalic().run()}
         />
         <ToolbarButton
           icon={<UnderlineIcon className="w-3.5 h-3.5" />}
-          label="Podkreślenie (Ctrl+U)"
+          label={t('markdownEditor.underline')}
           isActive={editor.isActive('underline')}
           onClick={() => editor.chain().focus().toggleUnderline().run()}
         />
         <ToolbarButton
           icon={<Strikethrough className="w-3.5 h-3.5" />}
-          label="Przekreślenie"
+          label={t('markdownEditor.strike')}
           isActive={editor.isActive('strike')}
           onClick={() => editor.chain().focus().toggleStrike().run()}
         />
@@ -170,19 +173,19 @@ const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
 
         <ToolbarButton
           icon={<Code className="w-3.5 h-3.5" />}
-          label="Kod"
+          label={t('markdownEditor.code')}
           isActive={editor.isActive('code')}
           onClick={() => editor.chain().focus().toggleCode().run()}
         />
         <ToolbarButton
           icon={<List className="w-3.5 h-3.5" />}
-          label="Lista punktowana"
+          label={t('markdownEditor.bulletList')}
           isActive={editor.isActive('bulletList')}
           onClick={() => editor.chain().focus().toggleBulletList().run()}
         />
         <ToolbarButton
           icon={<ListOrdered className="w-3.5 h-3.5" />}
-          label="Lista numerowana"
+          label={t('markdownEditor.orderedList')}
           isActive={editor.isActive('orderedList')}
           onClick={() => editor.chain().focus().toggleOrderedList().run()}
         />
@@ -191,7 +194,7 @@ const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
 
         <ToolbarButton
           icon={<Link2 className="w-3.5 h-3.5" />}
-          label="Wstaw link"
+          label={t('markdownEditor.insertLink')}
           isActive={editor.isActive('link')}
           onClick={handleAddLink}
         />
@@ -201,7 +204,7 @@ const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
             <ToolbarSeparator />
             <ToolbarButton
               icon={<Paperclip className="w-3.5 h-3.5" />}
-              label="Dodaj załącznik"
+              label={t('markdownEditor.attachFile')}
               onClick={onAttachFile}
             />
           </>
@@ -211,13 +214,13 @@ const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
 
         <ToolbarButton
           icon={<Undo2 className="w-3.5 h-3.5" />}
-          label="Cofnij (Ctrl+Z)"
+          label={t('markdownEditor.undo')}
           onClick={() => editor.chain().focus().undo().run()}
           disabled={!editor.can().undo()}
         />
         <ToolbarButton
           icon={<Redo2 className="w-3.5 h-3.5" />}
-          label="Ponów (Ctrl+Y)"
+          label={t('markdownEditor.redo')}
           onClick={() => editor.chain().focus().redo().run()}
           disabled={!editor.can().redo()}
         />

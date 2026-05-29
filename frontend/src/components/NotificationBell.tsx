@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Bell, Check, Loader2 } from 'lucide-react';
@@ -8,6 +8,7 @@ import 'dayjs/locale/pl';
 import 'dayjs/locale/en';
 import { ticketService } from '../api/ticketService';
 import { Notification } from '../types';
+import { AuthContext } from '../context/AuthContext';
 
 dayjs.extend(relativeTime);
 
@@ -16,6 +17,8 @@ const POLL_INTERVAL = 60 * 1000; // 60s
 const NotificationBell: React.FC = () => {
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
+  const authContext = useContext(AuthContext);
+  const userId = authContext?.user?.id ?? null;
   const [isOpen, setIsOpen] = useState(false);
   const [unread, setUnread] = useState(0);
   const [items, setItems] = useState<Notification[]>([]);
@@ -30,12 +33,24 @@ const NotificationBell: React.FC = () => {
     }
   }, []);
 
-  // Polling licznika nieprzeczytanych
+  // Reset stanu przy zmianie zalogowanego użytkownika (wylogowanie/logowanie
+  // bez przeładowania strony) — zapobiega pokazywaniu powiadomień poprzedniego konta.
   useEffect(() => {
-    fetchUnread();
+    setIsOpen(false);
+    setItems([]);
+    setUnread(0);
+    if (userId) {
+      fetchUnread();
+    }
+  }, [userId, fetchUnread]);
+
+  // Polling licznika nieprzeczytanych
+  // Polling licznika nieprzeczytanych (tylko dla zalogowanego użytkownika)
+  useEffect(() => {
+    if (!userId) return;
     const id = setInterval(fetchUnread, POLL_INTERVAL);
     return () => clearInterval(id);
-  }, [fetchUnread]);
+  }, [fetchUnread, userId]);
 
   // Zamknięcie po kliknięciu poza panelem
   useEffect(() => {

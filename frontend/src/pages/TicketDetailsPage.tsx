@@ -483,7 +483,7 @@ const TicketDetailsPage: React.FC = () => {
       }, 1200);
     } catch (err) {
       console.error('Błąd podczas zmiany statusu/tworzenia komentarza', err);
-      alert('Błąd podczas aktualizacji zgłoszenia.');
+      alert(t('ticketDetails.errorUpdate'));
     } finally {
       setIsSubmittingTransition(false);
     }
@@ -687,21 +687,21 @@ const TicketDetailsPage: React.FC = () => {
                     }
                   }}
                   className="p-2 text-green-600 hover:bg-green-50 rounded-lg transition-colors"
-                  title="Zapisz"
+                  title={t('common.save')}
                 >
                   <Check className="w-5 h-5" />
                 </button>
                 <button
                   onClick={() => setIsEditingTitle(false)}
                   className="p-2 text-gray-400 hover:bg-gray-100 rounded-lg transition-colors"
-                  title="Anuluj"
+                  title={t('ticketDetails.cancel')}
                 >
                   <X className="w-5 h-5" />
                 </button>
               </div>
               <div className="flex items-center justify-between mt-1 px-1">
                 {editTitle.trim().length < 5 ? (
-                  <span className="text-xs text-red-500">Min. 5 znaków (obecnie {editTitle.trim().length})</span>
+                  <span className="text-xs text-red-500">{t('ticketDetails.minChars', { n: editTitle.trim().length })}</span>
                 ) : <span />}
                 <span className={`text-xs ${editTitle.length > 180 ? 'text-amber-500' : 'text-gray-400'}`}>{editTitle.length}/200</span>
               </div>
@@ -1302,18 +1302,18 @@ const TicketDetailsPage: React.FC = () => {
                                   const extIndex = f.name.lastIndexOf('.');
                                   const ext = extIndex >= 0 ? f.name.substring(extIndex).toLowerCase() : '';
                                   if (!ALLOWED_EXTENSIONS.includes(ext)) {
-                                    invalidFiles.push(`${f.name} (niedozwolony format)`);
+                                    invalidFiles.push(`${f.name} (${t('ticketDetails.fileInvalidFormat')})`);
                                   } else if (f.size > MAX_FILE_SIZE) {
-                                    invalidFiles.push(`${f.name} (powyżej 5MB)`);
+                                    invalidFiles.push(`${f.name} (${t('ticketDetails.fileTooLarge')})`);
                                   } else if (currentTotal + f.size > MAX_TOTAL_SIZE) {
-                                    invalidFiles.push(`${f.name} (przekracza łączny limit 15MB)`);
+                                    invalidFiles.push(`${f.name} (${t('ticketDetails.fileTotalLimit')})`);
                                   } else {
                                     validFiles.push(f);
                                     currentTotal += f.size;
                                   }
                                 });
                                 if (invalidFiles.length > 0) {
-                                  alert(`Odrzucono niektóre pliki:\n- ${invalidFiles.join('\n- ')}`);
+                                  alert(`${t('ticketDetails.filesRejected')}\n- ${invalidFiles.join('\n- ')}`);
                                 }
                                 setNewCommentFiles(prev => [...prev, ...validFiles]);
                               }
