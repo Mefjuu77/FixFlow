@@ -52,6 +52,7 @@ class Ticket(models.Model):
     created_at = models.DateTimeField(auto_now_add=True, db_index=True)
     updated_at = models.DateTimeField(auto_now=True)
     resolved_at = models.DateTimeField(null=True, blank=True, help_text='Data przejścia w status Rozwiązane')
+    first_response_at = models.DateTimeField(null=True, blank=True, help_text='Data pierwszej reakcji technika (komentarz lub zmiana statusu)')
     resolution_token = models.CharField(max_length=64, blank=True, default='', help_text='Token do akcji akceptacji/odrzucenia z e-maila')
 
     def generate_resolution_token(self):
@@ -86,6 +87,8 @@ class Comment(models.Model):
         default=CommentType.REPLY
     )
     created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    is_edited = models.BooleanField(default=False)
 
     class Meta:
         ordering = ['created_at']
@@ -172,3 +175,50 @@ class WorkLog(models.Model):
 
     def __str__(self):
         return f"WorkLog #{self.id} ({self.duration_minutes}min) zgłoszenie #{self.ticket_id}"
+
+
+class Notification(models.Model):
+    """Powiadomienie in-app dla użytkownika (dzwonek w interfejsie)."""
+    class Type(models.TextChoices):
+        NEW_TICKET = 'NEW_TICKET', 'Nowe zgłoszenie'
+        COMMENT = 'COMMENT', 'Nowy komentarz'
+        STATUS_CHANGE = 'STATUS_CHANGE', 'Zmiana statusu'
+        ASSIGNMENT = 'ASSIGNMENT', 'Przypisanie'
+
+    recipient = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='notifications'
+    )
+    ticket = models.ForeignKey(Ticket, on_delete=models.CASCADE, null=True, blank=True, related_name='notifications')
+    type = models.CharField(max_length=20, choices=Type.choices)
+    message = models.CharField(max_length=255)
+    is_read = models.BooleanField(default=False, db_index=True)
+    created_at = models.DateTimeField(auto_now_add=True, db_index=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"Powiadomienie [{self.get_type_display()}] -> {self.recipient_id}"
+
+
+class ReplyTemplate(models.Model):
+    """Szablon szybkiej odpowiedzi (canned response) dla techników/adminów."""
+    title = models.CharField(max_length=100)
+    content = models.TextField()
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='reply_templates'
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['title']
+
+    def __str__(self):
+        return self.title

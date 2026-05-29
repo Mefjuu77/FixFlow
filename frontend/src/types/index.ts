@@ -42,6 +42,7 @@ export interface Ticket {
   technician_details?: User;
   attachments?: Attachment[];
   resolved_at?: string | null;
+  first_response_at?: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -55,6 +56,8 @@ export interface Comment {
   comment_type: 'REPLY' | 'INTERNAL';
   attachments?: Attachment[];
   created_at: string;
+  updated_at?: string;
+  is_edited?: boolean;
 }
 
 export interface TicketLog {
@@ -77,4 +80,24 @@ export interface WorkLog {
   description: string;
   duration_minutes: number;
   created_at: string;
+}
+
+
+export interface Notification {
+  id: number;
+  ticket: number | null;
+  type: 'NEW_TICKET' | 'COMMENT' | 'STATUS_CHANGE' | 'ASSIGNMENT';
+  type_display: string;
+  message: string;
+  is_read: boolean;
+  created_at: string;
+}
+
+export interface ReplyTemplate {
+  id: number;
+  title: string;
+  content: string;
+  created_by?: number | null;
+  created_at: string;
+  updated_at: string;
 }

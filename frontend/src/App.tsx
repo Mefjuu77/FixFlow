@@ -3,6 +3,8 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { AuthProvider, AuthContext } from './context/AuthContext';
 import { ThemeProvider } from './context/ThemeContext';
 import LoginPage from './pages/LoginPage';
+import ForgotPasswordPage from './pages/ForgotPasswordPage';
+import ResetPasswordPage from './pages/ResetPasswordPage';
 import TicketsPage from './pages/TicketsPage';
 import DashboardPage from './pages/DashboardPage';
 import CreateTicketPage from './pages/CreateTicket';
@@ -40,6 +42,8 @@ const App: React.FC = () => {
       <Router>
         <Routes>
           <Route path="/login" element={<LoginPage />} />
+          <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+          <Route path="/reset-password/:uid/:token" element={<ResetPasswordPage />} />
           <Route path="/resolution/:result" element={<ResolutionActionPage />} />
           
           <Route path="/dashboard" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />

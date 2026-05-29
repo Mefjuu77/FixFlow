@@ -1,6 +1,6 @@
 from django.urls import path
 from rest_framework.permissions import AllowAny
-from .views import CurrentUserView, TechnicianListView, UserListView, UserCreateView, UserDetailView, UserToggleActiveView, LogoutView, ChangePasswordView, CustomTokenObtainPairView, CustomTokenRefreshView
+from .views import CurrentUserView, TechnicianListView, UserListView, UserCreateView, UserDetailView, UserToggleActiveView, LogoutView, ChangePasswordView, CustomTokenObtainPairView, CustomTokenRefreshView, PasswordResetRequestView, PasswordResetConfirmView
 
 urlpatterns = [
     path('login/', CustomTokenObtainPairView.as_view(permission_classes=[AllowAny]), name='token_obtain_pair'),
@@ -8,6 +8,8 @@ urlpatterns = [
     path('logout/', LogoutView.as_view(), name='user_logout'),
     path('me/', CurrentUserView.as_view(), name='current_user'),
     path('change-password/', ChangePasswordView.as_view(), name='change_password'),
+    path('password-reset/', PasswordResetRequestView.as_view(), name='password_reset_request'),
+    path('password-reset/confirm/', PasswordResetConfirmView.as_view(), name='password_reset_confirm'),
     path('technicians/', TechnicianListView.as_view(), name='technician_list'),
     path('list/', UserListView.as_view(), name='user_list'),
     path('create/', UserCreateView.as_view(), name='user_create'),

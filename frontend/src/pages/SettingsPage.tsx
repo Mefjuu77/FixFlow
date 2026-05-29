@@ -4,6 +4,8 @@ import { AuthContext } from '../context/AuthContext';
 import { ThemeContext } from '../context/ThemeContext';
 import useTitle from '../hooks/useTitle';
 import api from '../api/axiosConfig';
+import { ticketService } from '../api/ticketService';
+import { ReplyTemplate } from '../types';
 import {
   Camera,
   Save,
@@ -22,6 +24,9 @@ import {
   KeyRound,
   Eye,
   EyeOff,
+  MessageSquareText,
+  Plus,
+  Pencil,
 } from 'lucide-react';
 
 const ROLE_LABELS: Record<string, string> = {
@@ -36,7 +41,7 @@ const ROLE_COLORS: Record<string, string> = {
   ADMIN: 'bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-400',
 };
 
-const validTabs = ['profile', 'security', 'appearance', 'notifications'] as const;
+const validTabs = ['profile', 'security', 'appearance', 'notifications', 'templates'] as const;
 type SettingsTab = typeof validTabs[number];
 
 const SettingsPage: React.FC = () => {
@@ -211,11 +216,62 @@ const SettingsPage: React.FC = () => {
     }
   };
 
+  // ===== Szablony szybkich odpowiedzi (technik/admin) =====
+  const isTechOrAdmin = role === 'TECHNICIAN' || role === 'ADMIN';
+  const [templates, setTemplates] = useState<ReplyTemplate[]>([]);
+  const [tplTitle, setTplTitle] = useState('');
+  const [tplContent, setTplContent] = useState('');
+  const [tplEditingId, setTplEditingId] = useState<number | null>(null);
+  const [tplSaving, setTplSaving] = useState(false);
+
+  useEffect(() => {
+    if (isTechOrAdmin) {
+      ticketService.getReplyTemplates().then(setTemplates).catch(console.error);
+    }
+  }, [isTechOrAdmin]);
+
+  const resetTplForm = () => {
+    setTplEditingId(null);
+    setTplTitle('');
+    setTplContent('');
+  };
+
+  const handleSaveTemplate = async () => {
+    const title = tplTitle.trim();
+    const content = tplContent.trim();
+    if (title.length < 3 || !content) return;
+    setTplSaving(true);
+    try {
+      if (tplEditingId) {
+        await ticketService.updateReplyTemplate(tplEditingId, { title, content });
+      } else {
+        await ticketService.createReplyTemplate({ title, content });
+      }
+      setTemplates(await ticketService.getReplyTemplates());
+      resetTplForm();
+    } catch (err) {
+      console.error('Błąd zapisu szablonu:', err);
+    } finally {
+      setTplSaving(false);
+    }
+  };
+
+  const handleDeleteTemplate = async (id: number) => {
+    try {
+      await ticketService.deleteReplyTemplate(id);
+      setTemplates(prev => prev.filter(t => t.id !== id));
+      if (tplEditingId === id) resetTplForm();
+    } catch (err) {
+      console.error('Błąd usuwania szablonu:', err);
+    }
+  };
+
   const tabs: { id: string; label: string; icon: React.ReactNode }[] = [
     { id: 'profile', label: 'Mój profil', icon: <User className="w-4 h-4" /> },
     { id: 'security', label: 'Zabezpieczenia', icon: <KeyRound className="w-4 h-4" /> },
     { id: 'appearance', label: 'Wygląd', icon: <Palette className="w-4 h-4" /> },
     { id: 'notifications', label: 'Powiadomienia', icon: <Bell className="w-4 h-4" /> },
+    ...(isTechOrAdmin ? [{ id: 'templates', label: 'Szablony odpowiedzi', icon: <MessageSquareText className="w-4 h-4" /> }] : []),
   ];
 
   return (
@@ -634,6 +690,99 @@ const SettingsPage: React.FC = () => {
                     <div className={`absolute left-0.5 top-0.5 w-5 h-5 bg-white rounded-full shadow-sm transition-transform duration-300 ease-in-out ${notifyStatus ? 'translate-x-5' : 'translate-x-0'}`} />
                   </div>
                 </div>
+              </div>
+            </div>
+          )}
+
+          {/* ===== TEMPLATES TAB (Technik / Admin) ===== */}
+          {activeTab === 'templates' && isTechOrAdmin && (
+            <div className="space-y-6">
+              <div className="bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700/60 rounded-2xl sm:rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-[0_8px_30px_rgb(0,0,0,0.1)] p-4 sm:p-8">
+                <div className="flex items-center gap-3 sm:gap-4 mb-5 sm:mb-8">
+                  <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-2xl bg-blue-50 dark:bg-blue-500/10 flex items-center justify-center border border-blue-100 dark:border-blue-500/20 flex-shrink-0">
+                    <MessageSquareText className="w-5 h-5 sm:w-6 sm:h-6 text-blue-600 dark:text-blue-400" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white tracking-tight">Szablony odpowiedzi</h3>
+                    <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 mt-0.5">Gotowe odpowiedzi do szybkiego wstawiania w komentarzach do zgłoszeń.</p>
+                  </div>
+                </div>
+
+                {/* Formularz dodawania / edycji */}
+                <div className="bg-gray-50 dark:bg-gray-900/30 border border-gray-200 dark:border-gray-700 rounded-2xl p-4 sm:p-5 space-y-3 mb-6">
+                  <div className="space-y-2">
+                    <label className="text-[13px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-widest">Tytuł szablonu</label>
+                    <input
+                      type="text"
+                      value={tplTitle}
+                      onChange={(e) => setTplTitle(e.target.value)}
+                      placeholder="np. Prośba o restart urządzenia"
+                      className="w-full px-4 py-2.5 bg-white dark:bg-gray-900/50 border border-gray-200 dark:border-gray-700 rounded-xl text-sm font-medium text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all placeholder-gray-400"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-[13px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-widest">Treść</label>
+                    <textarea
+                      value={tplContent}
+                      onChange={(e) => setTplContent(e.target.value)}
+                      placeholder="Treść odpowiedzi, którą chcesz móc szybko wstawić..."
+                      className="w-full px-4 py-2.5 bg-white dark:bg-gray-900/50 border border-gray-200 dark:border-gray-700 rounded-xl text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all placeholder-gray-400 min-h-[90px] resize-y"
+                    />
+                  </div>
+                  <div className="flex items-center justify-end gap-2">
+                    {tplEditingId && (
+                      <button
+                        onClick={resetTplForm}
+                        className="px-4 py-2 text-sm font-medium text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 transition-colors"
+                      >
+                        Anuluj
+                      </button>
+                    )}
+                    <button
+                      onClick={handleSaveTemplate}
+                      disabled={tplSaving || tplTitle.trim().length < 3 || !tplContent.trim()}
+                      className="inline-flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl text-sm shadow-sm transition-all disabled:opacity-50 active:scale-[0.98]"
+                    >
+                      {tplSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : tplEditingId ? <Save className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
+                      {tplEditingId ? 'Zapisz zmiany' : 'Dodaj szablon'}
+                    </button>
+                  </div>
+                </div>
+
+                {/* Lista szablonów */}
+                {templates.length === 0 ? (
+                  <div className="text-center py-10">
+                    <MessageSquareText className="w-8 h-8 text-gray-300 dark:text-gray-600 mx-auto mb-2" />
+                    <p className="text-sm text-gray-400 dark:text-gray-500">Brak szablonów. Dodaj pierwszy powyżej.</p>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {templates.map(tpl => (
+                      <div key={tpl.id} className="flex items-start justify-between gap-3 p-4 bg-white dark:bg-gray-800/50 border border-gray-100 dark:border-gray-700 rounded-xl">
+                        <div className="min-w-0 flex-1">
+                          <p className="text-sm font-semibold text-gray-900 dark:text-gray-100 truncate">{tpl.title}</p>
+                          <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 line-clamp-2 whitespace-pre-wrap">{tpl.content}</p>
+                        </div>
+                        <div className="flex items-center gap-1 flex-shrink-0">
+                          <button
+                            onClick={() => { setTplEditingId(tpl.id); setTplTitle(tpl.title); setTplContent(tpl.content); }}
+                            className="p-2 text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors"
+                            title="Edytuj"
+                          >
+                            <Pencil className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() => handleDeleteTemplate(tpl.id)}
+                            className="p-2 text-gray-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
+                            title="Usuń"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
           )}

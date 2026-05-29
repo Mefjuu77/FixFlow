@@ -1,6 +1,6 @@
 from django.contrib.auth import get_user_model
 from rest_framework import serializers
-from .models import Category, Ticket, Comment, Attachment, TicketLog, WorkLog
+from .models import Category, Ticket, Comment, Attachment, TicketLog, WorkLog, Notification, ReplyTemplate
 from accounts.serializers import UserSerializer
 
 User = get_user_model()
@@ -37,7 +37,7 @@ class TicketListSerializer(serializers.ModelSerializer):
             'id', 'title', 'status', 'priority',
             'category', 'category_name', 'creator', 'creator_details',
             'technician', 'technician_details',
-            'resolved_at', 'created_at', 'updated_at'
+            'resolved_at', 'first_response_at', 'created_at', 'updated_at'
         ]
         read_only_fields = ('created_at', 'updated_at', 'resolved_at')
 
@@ -59,7 +59,7 @@ class TicketSerializer(serializers.ModelSerializer):
             'id', 'title', 'description', 'status', 'priority', 
             'category', 'category_name', 'creator', 'creator_details', 
             'technician', 'technician_details', 'attachments', 
-            'resolved_at', 'created_at', 'updated_at'
+            'resolved_at', 'first_response_at', 'created_at', 'updated_at'
         ]
         read_only_fields = ('created_at', 'updated_at', 'resolved_at')
 
@@ -84,8 +84,8 @@ class CommentSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Comment
-        fields = ['id', 'ticket', 'author', 'author_details', 'content', 'comment_type', 'attachments', 'created_at']
-        read_only_fields = ('author', 'ticket', 'created_at')
+        fields = ['id', 'ticket', 'author', 'author_details', 'content', 'comment_type', 'attachments', 'created_at', 'updated_at', 'is_edited']
+        read_only_fields = ('author', 'ticket', 'created_at', 'updated_at', 'is_edited')
 
     def validate_content(self, value):
         cleaned = value.strip()
@@ -128,3 +128,35 @@ class WorkLogSerializer(serializers.ModelSerializer):
         if value > 1440:
             raise serializers.ValidationError('Czas pracy nie może przekraczać 24h (1440 min).')
         return value
+
+
+class NotificationSerializer(serializers.ModelSerializer):
+    type_display = serializers.CharField(source='get_type_display', read_only=True)
+
+    class Meta:
+        model = Notification
+        fields = ['id', 'ticket', 'type', 'type_display', 'message', 'is_read', 'created_at']
+        read_only_fields = ('__all__',)
+
+
+class ReplyTemplateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ReplyTemplate
+        fields = ['id', 'title', 'content', 'created_by', 'created_at', 'updated_at']
+        read_only_fields = ('created_by', 'created_at', 'updated_at')
+
+    def validate_title(self, value):
+        cleaned = value.strip()
+        if len(cleaned) < 3:
+            raise serializers.ValidationError('Tytuł musi mieć co najmniej 3 znaki.')
+        if len(cleaned) > 100:
+            raise serializers.ValidationError('Tytuł nie może przekraczać 100 znaków.')
+        return cleaned
+
+    def validate_content(self, value):
+        cleaned = value.strip()
+        if not cleaned:
+            raise serializers.ValidationError('Treść szablonu nie może być pusta.')
+        if len(cleaned) > 5000:
+            raise serializers.ValidationError('Treść nie może przekraczać 5000 znaków.')
+        return cleaned

@@ -1,18 +1,22 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
-from .views import CategoryViewSet, TicketViewSet, CommentListCreateView, TicketAttachmentView, CommentAttachmentView, TicketLogListView, GlobalActivityLogView, WorkLogListCreateView, WorkLogDetailView, AttachmentDeleteView, TicketResolutionActionView
+from .views import CategoryViewSet, TicketViewSet, CommentListCreateView, CommentDetailView, TicketAttachmentView, CommentAttachmentView, TicketLogListView, GlobalActivityLogView, WorkLogListCreateView, WorkLogDetailView, AttachmentDeleteView, TicketResolutionActionView, NotificationListView, NotificationActionView, ReplyTemplateViewSet
 from .reports import ReportExportView
 
 router = DefaultRouter()
 router.register(r'categories', CategoryViewSet)
 router.register(r'tickets', TicketViewSet)
+router.register(r'reply-templates', ReplyTemplateViewSet, basename='reply-template')
 
 urlpatterns = [
     path('reports/export/', ReportExportView.as_view(), name='report-export'),
     path('tickets/resolve/<str:token>/<str:action>/', TicketResolutionActionView.as_view(), name='ticket-resolution-action'),
     path('tickets/activity-feed/', GlobalActivityLogView.as_view(), name='global-activity'),
+    path('notifications/', NotificationListView.as_view(), name='notification-list'),
+    path('notifications/actions/', NotificationActionView.as_view(), name='notification-actions'),
     path('', include(router.urls)),
     path('tickets/<int:ticket_id>/comments/', CommentListCreateView.as_view(), name='ticket-comments'),
+    path('tickets/<int:ticket_id>/comments/<int:comment_id>/', CommentDetailView.as_view(), name='ticket-comment-detail'),
     path('tickets/<int:ticket_id>/attachments/', TicketAttachmentView.as_view(), name='ticket-attachments'),
     path('tickets/<int:ticket_id>/attachments/<int:attachment_id>/', AttachmentDeleteView.as_view(), name='attachment-delete'),
     path('tickets/<int:ticket_id>/comments/<int:comment_id>/attachments/', CommentAttachmentView.as_view(), name='comment-attachments'),

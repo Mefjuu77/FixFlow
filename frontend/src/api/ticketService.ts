@@ -1,6 +1,6 @@
 import api from './axiosConfig';
 import { Category, TicketPayload } from '../types/ticket';
-import { Ticket, User, Comment, Attachment, TicketLog, WorkLog } from '../types';
+import { Ticket, User, Comment, Attachment, TicketLog, WorkLog, Notification, ReplyTemplate } from '../types';
 
 export const ticketService = {
   getCategories: async (): Promise<Category[]> => {
@@ -80,6 +80,17 @@ export const ticketService = {
     return response.data;
   },
 
+  // Edytuje komentarz (tylko autor lub admin)
+  updateComment: async (ticketId: string | number, commentId: number, content: string): Promise<Comment> => {
+    const response = await api.patch<Comment>(`tickets/${ticketId}/comments/${commentId}/`, { content });
+    return response.data;
+  },
+
+  // Usuwa komentarz (tylko autor lub admin)
+  deleteComment: async (ticketId: string | number, commentId: number): Promise<void> => {
+    await api.delete(`tickets/${ticketId}/comments/${commentId}/`);
+  },
+
   // Upload załączników do zgłoszenia
   uploadAttachments: async (ticketId: string | number, files: File[]): Promise<Attachment[]> => {
     const formData = new FormData();
@@ -140,5 +151,44 @@ export const ticketService = {
   // Usuwanie zgłoszenia
   deleteTicket: async (ticketId: string | number): Promise<void> => {
     await api.delete(`tickets/${ticketId}/`);
+  },
+
+  // ===== Powiadomienia in-app =====
+  getNotifications: async (): Promise<Notification[]> => {
+    const response = await api.get<Notification[]>('notifications/');
+    return response.data;
+  },
+
+  getUnreadCount: async (): Promise<number> => {
+    const response = await api.get<{ unread: number }>('notifications/actions/');
+    return response.data.unread;
+  },
+
+  markNotificationRead: async (id: number): Promise<void> => {
+    await api.post('notifications/actions/', { action: 'mark_read', id });
+  },
+
+  markAllNotificationsRead: async (): Promise<void> => {
+    await api.post('notifications/actions/', { action: 'mark_all_read' });
+  },
+
+  // ===== Szablony szybkich odpowiedzi =====
+  getReplyTemplates: async (): Promise<ReplyTemplate[]> => {
+    const response = await api.get<ReplyTemplate[]>('reply-templates/');
+    return response.data;
+  },
+
+  createReplyTemplate: async (data: { title: string; content: string }): Promise<ReplyTemplate> => {
+    const response = await api.post<ReplyTemplate>('reply-templates/', data);
+    return response.data;
+  },
+
+  updateReplyTemplate: async (id: number, data: { title: string; content: string }): Promise<ReplyTemplate> => {
+    const response = await api.patch<ReplyTemplate>(`reply-templates/${id}/`, data);
+    return response.data;
+  },
+
+  deleteReplyTemplate: async (id: number): Promise<void> => {
+    await api.delete(`reply-templates/${id}/`);
   },
 };

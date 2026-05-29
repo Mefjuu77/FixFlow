@@ -1,5 +1,5 @@
 import React, { useState, useContext, useEffect } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate, useLocation, Link } from 'react-router-dom';
 import api from '../api/axiosConfig';
 import { AuthContext } from '../context/AuthContext';
 import {
@@ -120,9 +120,17 @@ const LoginPage: React.FC = () => {
 
               {/* Hasło */}
               <div className="space-y-2">
-                <label className="text-[13px] font-bold text-gray-500 dark:text-gray-400">
-                  Hasło
-                </label>
+                <div className="flex items-center justify-between">
+                  <label className="text-[13px] font-bold text-gray-500 dark:text-gray-400">
+                    Hasło
+                  </label>
+                  <Link
+                    to="/forgot-password"
+                    className="text-xs font-semibold text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 transition-colors"
+                  >
+                    Zapomniałeś hasła?
+                  </Link>
+                </div>
                 <div className="relative group">
                   <div className="absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none">
                     <Lock className="w-4 h-4 text-gray-400 group-focus-within:text-blue-500 transition-colors" strokeWidth={1.75} />

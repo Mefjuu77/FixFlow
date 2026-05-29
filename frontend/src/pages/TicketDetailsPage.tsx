@@ -7,7 +7,7 @@ dayjs.extend(relativeTime);
 dayjs.locale('pl');
 import { ticketService } from '../api/ticketService';
 import api from '../api/axiosConfig';
-import { Ticket, User as UserType, Comment, Category, TicketLog, WorkLog } from '../types';
+import { Ticket, User as UserType, Comment, Category, TicketLog, WorkLog, ReplyTemplate } from '../types';
 import { AuthContext } from '../context/AuthContext';
 import useTitle from '../hooks/useTitle';
 import {
@@ -53,6 +53,15 @@ const TicketDetailsPage: React.FC = () => {
   const [newCommentText, setNewCommentText] = useState('');
   const [newCommentType, setNewCommentType] = useState<'REPLY' | 'INTERNAL'>('REPLY');
   const [isSubmittingComment, setIsSubmittingComment] = useState(false);
+  // Comment edit/delete state
+  const [editingCommentId, setEditingCommentId] = useState<number | null>(null);
+  const [editCommentText, setEditCommentText] = useState('');
+  const [isSavingComment, setIsSavingComment] = useState(false);
+  const [commentToDelete, setCommentToDelete] = useState<Comment | null>(null);
+  const [isDeletingComment, setIsDeletingComment] = useState(false);
+  // Reply templates (canned responses)
+  const [replyTemplates, setReplyTemplates] = useState<ReplyTemplate[]>([]);
+  const [showTemplateMenu, setShowTemplateMenu] = useState(false);
   const [activeTab, setActiveTab] = useState<'comments' | 'history' | 'work_log'>('comments');
   const [ticketLogs, setTicketLogs] = useState<TicketLog[]>([]);
   const [workLogs, setWorkLogs] = useState<WorkLog[]>([]);
@@ -77,6 +86,7 @@ const TicketDetailsPage: React.FC = () => {
   const navigate = useNavigate();
   const statusMenuRef = useRef<HTMLDivElement>(null);
   const moreMenuRef = useRef<HTMLDivElement>(null);
+  const templateMenuRef = useRef<HTMLDivElement>(null);
   const [isStatusMenuOpen, setIsStatusMenuOpen] = useState(false);
   const [isMoreMenuOpen, setIsMoreMenuOpen] = useState(false);
   const [transitionModalConfig, setTransitionModalConfig] = useState<{ isOpen: boolean; targetStatus: Ticket['status'] | null }>({ isOpen: false, targetStatus: null });
@@ -139,6 +149,9 @@ const TicketDetailsPage: React.FC = () => {
       }
       if (moreMenuRef.current && !moreMenuRef.current.contains(target)) {
         setIsMoreMenuOpen(false);
+      }
+      if (templateMenuRef.current && !templateMenuRef.current.contains(target)) {
+        setShowTemplateMenu(false);
       }
       if (priorityDropdownRef.current && !priorityDropdownRef.current.contains(target)) {
         setIsEditingPriority(false);
@@ -212,6 +225,13 @@ const TicketDetailsPage: React.FC = () => {
     fetchAllUsers();
     fetchCategories();
   }, [id, fetchTicket, fetchComments, fetchLogs, fetchWorkLogs]);
+
+  // Załaduj szablony szybkich odpowiedzi (technik/admin)
+  useEffect(() => {
+    if (authContext?.user?.role === 'TECHNICIAN' || authContext?.user?.role === 'ADMIN') {
+      ticketService.getReplyTemplates().then(setReplyTemplates).catch(console.error);
+    }
+  }, [authContext?.user?.role]);
 
   const handleAddWorkLog = async () => {
     const trimmed = newWorkLogDesc.trim();
@@ -385,6 +405,37 @@ const TicketDetailsPage: React.FC = () => {
       }
     } finally {
       setIsSubmittingComment(false);
+    }
+  };
+
+  const handleSaveCommentEdit = async (comment: Comment) => {
+    const trimmed = editCommentText.trim();
+    if (!trimmed || trimmed.length > 5000) return;
+    setIsSavingComment(true);
+    try {
+      await ticketService.updateComment(id!, comment.id, trimmed);
+      setEditingCommentId(null);
+      setEditCommentText('');
+      await fetchComments();
+    } catch (err) {
+      console.error('Błąd edycji komentarza:', err);
+    } finally {
+      setIsSavingComment(false);
+    }
+  };
+
+  const confirmDeleteComment = async () => {
+    if (!commentToDelete) return;
+    setIsDeletingComment(true);
+    try {
+      await ticketService.deleteComment(id!, commentToDelete.id);
+      setCommentToDelete(null);
+      await fetchComments();
+      fetchLogs();
+    } catch (err) {
+      console.error('Błąd usuwania komentarza:', err);
+    } finally {
+      setIsDeletingComment(false);
     }
   };
 
@@ -957,6 +1008,8 @@ const TicketDetailsPage: React.FC = () => {
                   ) : (
                     (isTechnicianOrAdmin ? [...comments].reverse() : comments).map(comment => {
                       const isInternal = comment.comment_type === 'INTERNAL';
+                      const canModify = authContext?.user?.id === comment.author || authContext?.user?.role === 'ADMIN';
+                      const isEditing = editingCommentId === comment.id;
                       return (
                         <div key={comment.id} className="flex gap-4 items-start">
                           <div className="w-8 h-8 mt-3 rounded-full bg-blue-600 flex items-center justify-center flex-shrink-0 overflow-hidden outline outline-1 outline-gray-200">
@@ -968,12 +1021,35 @@ const TicketDetailsPage: React.FC = () => {
                               </span>
                             )}
                           </div>
-                          <div className={`p-4 rounded-xl flex-1 min-w-0 ${isInternal ? 'bg-amber-50 border border-amber-200' : 'bg-gray-50 border border-gray-100'}`}>
+                          <div className={`p-4 rounded-xl flex-1 min-w-0 group/comment ${isInternal ? 'bg-amber-50 border border-amber-200' : 'bg-gray-50 border border-gray-100'}`}>
                             <div className="flex justify-between items-start mb-2">
                               <span className="font-semibold text-gray-900 text-sm">{comment.author_details?.first_name} {comment.author_details?.last_name}</span>
-                              <span className="text-xs text-gray-500">
-                                {dayjs(comment.created_at).format('DD MMM YYYY, HH:mm')}
-                              </span>
+                              <div className="flex items-center gap-2">
+                                <span className="text-xs text-gray-500">
+                                  {dayjs(comment.created_at).format('DD MMM YYYY, HH:mm')}
+                                </span>
+                                {comment.is_edited && (
+                                  <span className="text-[11px] text-gray-400 italic">(edytowano)</span>
+                                )}
+                                {canModify && !isEditing && (
+                                  <div className="flex items-center gap-0.5 opacity-0 group-hover/comment:opacity-100 transition-opacity">
+                                    <button
+                                      onClick={() => { setEditingCommentId(comment.id); setEditCommentText(comment.content); }}
+                                      className="p-1 text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded transition-colors"
+                                      title="Edytuj komentarz"
+                                    >
+                                      <Pencil className="w-3.5 h-3.5" />
+                                    </button>
+                                    <button
+                                      onClick={() => setCommentToDelete(comment)}
+                                      className="p-1 text-gray-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors"
+                                      title="Usuń komentarz"
+                                    >
+                                      <Trash2 className="w-3.5 h-3.5" />
+                                    </button>
+                                  </div>
+                                )}
+                              </div>
                             </div>
                             {isInternal && (
                               <div className="flex items-center gap-1.5 text-xs text-amber-700 bg-amber-100/50 px-2 py-1 rounded w-max mb-2">
@@ -981,7 +1057,34 @@ const TicketDetailsPage: React.FC = () => {
                                 <span className="font-medium uppercase tracking-wide">Notatka Wewnętrzna</span>
                               </div>
                             )}
-                            <MarkdownRenderer content={comment.content} className="text-gray-700 dark:text-gray-300 text-sm leading-relaxed" />
+                            {isEditing ? (
+                              <div className="space-y-2">
+                                <textarea
+                                  value={editCommentText}
+                                  onChange={(e) => setEditCommentText(e.target.value)}
+                                  className="w-full border border-blue-300 dark:border-blue-600 rounded-lg p-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 min-h-[80px] resize-none bg-white dark:bg-gray-900 dark:text-gray-200"
+                                  autoFocus
+                                />
+                                <div className="flex items-center justify-end gap-2">
+                                  <button
+                                    onClick={() => { setEditingCommentId(null); setEditCommentText(''); }}
+                                    className="px-3 py-1.5 text-sm font-medium text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 transition-colors"
+                                  >
+                                    Anuluj
+                                  </button>
+                                  <button
+                                    onClick={() => handleSaveCommentEdit(comment)}
+                                    disabled={isSavingComment || !editCommentText.trim() || editCommentText.trim().length > 5000}
+                                    className="px-4 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold rounded-lg transition-all shadow-sm disabled:opacity-50 flex items-center gap-1.5"
+                                  >
+                                    {isSavingComment ? <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <Check className="w-3.5 h-3.5" />}
+                                    Zapisz
+                                  </button>
+                                </div>
+                              </div>
+                            ) : (
+                              <MarkdownRenderer content={comment.content} className="text-gray-700 dark:text-gray-300 text-sm leading-relaxed" />
+                            )}
 
                             {comment.attachments && comment.attachments.length > 0 && (
                               <div className="mt-3 pt-3 border-t border-gray-100/70">
@@ -1103,6 +1206,40 @@ const TicketDetailsPage: React.FC = () => {
                         >
                           <Lock className="w-3 h-3" /> Notatka wewnętrzna
                         </button>
+                      )}
+
+                      {/* Szablony szybkich odpowiedzi */}
+                      {isTechnicianOrAdmin && replyTemplates.length > 0 && (
+                        <div className="relative ml-auto" ref={templateMenuRef}>
+                          <button
+                            type="button"
+                            onClick={() => setShowTemplateMenu(v => !v)}
+                            className="text-sm font-medium px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1.5 text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700"
+                            title="Wstaw szablon odpowiedzi"
+                          >
+                            <FileText className="w-3.5 h-3.5" /> Szablony
+                            <ChevronDown className={`w-3.5 h-3.5 transition-transform ${showTemplateMenu ? 'rotate-180' : ''}`} />
+                          </button>
+                          {showTemplateMenu && (
+                            <div className="absolute right-0 top-full mt-1 w-72 max-h-72 overflow-y-auto bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-xl dark:shadow-[0_10px_40px_rgba(0,0,0,0.5)] z-50 py-1 animate-in fade-in zoom-in-95 duration-100">
+                              {replyTemplates.map(tpl => (
+                                <button
+                                  key={tpl.id}
+                                  type="button"
+                                  onClick={() => {
+                                    setNewCommentText(prev => prev ? `${prev}\n${tpl.content}` : tpl.content);
+                                    setShowTemplateMenu(false);
+                                    if (commentError) setCommentError('');
+                                  }}
+                                  className="w-full text-left px-3 py-2 hover:bg-blue-50 dark:hover:bg-gray-700/70 transition-colors"
+                                >
+                                  <p className="text-sm font-semibold text-gray-800 dark:text-gray-200 truncate">{tpl.title}</p>
+                                  <p className="text-xs text-gray-500 dark:text-gray-400 truncate mt-0.5">{tpl.content}</p>
+                                </button>
+                              ))}
+                            </div>
+                          )}
+                        </div>
                       )}
                     </div>
 
@@ -2002,6 +2139,49 @@ const TicketDetailsPage: React.FC = () => {
                 );
               })()}
 
+              {/* SLA — metryki czasu (technik/admin) */}
+              {isTechnicianOrAdmin && (() => {
+                const fmtDuration = (fromIso: string, toIso: string) => {
+                  const mins = dayjs(toIso).diff(dayjs(fromIso), 'minute');
+                  if (mins < 60) return `${Math.max(0, mins)} min`;
+                  const hours = Math.floor(mins / 60);
+                  if (hours < 24) return `${hours}h ${mins % 60}min`;
+                  const days = Math.floor(hours / 24);
+                  return `${days} d ${hours % 24}h`;
+                };
+                const rows = [];
+                if (ticket.first_response_at) {
+                  rows.push(
+                    <div key="resp" className="grid grid-cols-[160px_1fr] items-center mt-4 pt-4 border-t border-gray-100">
+                      <span className="text-sm text-gray-500 font-medium">Czas reakcji</span>
+                      <div className="flex items-center gap-1.5">
+                        <Clock className="w-3.5 h-3.5 text-green-500 flex-shrink-0" />
+                        <span className="text-sm font-semibold text-green-600 dark:text-green-400">{fmtDuration(ticket.created_at, ticket.first_response_at)}</span>
+                      </div>
+                    </div>
+                  );
+                } else if (!['ROZWIAZANE', 'ZAMKNIETE'].includes(ticket.status)) {
+                  rows.push(
+                    <div key="resp-wait" className="grid grid-cols-[160px_1fr] items-center mt-4 pt-4 border-t border-gray-100">
+                      <span className="text-sm text-gray-500 font-medium">Czas reakcji</span>
+                      <span className="text-sm text-amber-600 dark:text-amber-400 font-medium italic">Oczekuje na reakcję</span>
+                    </div>
+                  );
+                }
+                if (ticket.resolved_at) {
+                  rows.push(
+                    <div key="resol" className="grid grid-cols-[160px_1fr] items-center mt-4">
+                      <span className="text-sm text-gray-500 font-medium">Czas rozwiązania</span>
+                      <div className="flex items-center gap-1.5">
+                        <Check className="w-3.5 h-3.5 text-teal-500 flex-shrink-0" />
+                        <span className="text-sm font-semibold text-teal-600 dark:text-teal-400">{fmtDuration(ticket.created_at, ticket.resolved_at)}</span>
+                      </div>
+                    </div>
+                  );
+                }
+                return rows;
+              })()}
+
             </div>
           </div>
         </div>
@@ -2241,6 +2421,43 @@ const TicketDetailsPage: React.FC = () => {
                 title="Zamknij"
               >
                 <X className="w-5 h-5" />
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Comment Modal */}
+      {commentToDelete && (
+        <div
+          className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 animate-in fade-in duration-200"
+          onClick={() => !isDeletingComment && setCommentToDelete(null)}
+        >
+          <div
+            className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-sm mx-4 p-6 text-center"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="w-14 h-14 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
+              <Trash2 className="w-7 h-7 text-red-600 dark:text-red-400" />
+            </div>
+            <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100 mb-1">Usunąć komentarz?</h3>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">
+              Tej operacji nie można cofnąć.
+            </p>
+            <div className="flex gap-3 justify-center">
+              <button
+                onClick={() => setCommentToDelete(null)}
+                className="px-4 py-2 text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-xl transition-colors"
+              >
+                Anuluj
+              </button>
+              <button
+                onClick={confirmDeleteComment}
+                disabled={isDeletingComment}
+                className="px-5 py-2 text-sm font-bold text-white bg-red-600 hover:bg-red-700 rounded-xl shadow-sm transition-all disabled:opacity-50 flex items-center"
+              >
+                {isDeletingComment && <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />}
+                Usuń
               </button>
             </div>
           </div>

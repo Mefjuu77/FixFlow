@@ -11,9 +11,10 @@ from rest_framework.exceptions import PermissionDenied
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from django.db.models import Count
-from .models import Category, Ticket, Comment, Attachment, TicketLog, WorkLog
-from .serializers import CategorySerializer, TicketSerializer, CommentSerializer, AttachmentSerializer, TicketLogSerializer, WorkLogSerializer
+from .models import Category, Ticket, Comment, Attachment, TicketLog, WorkLog, Notification, ReplyTemplate
+from .serializers import CategorySerializer, TicketSerializer, CommentSerializer, AttachmentSerializer, TicketLogSerializer, WorkLogSerializer, NotificationSerializer, ReplyTemplateSerializer
 from .pagination import OptInPageNumberPagination
+from . import notifications as notify
 from .email import send_ticket_created_notification, send_comment_notification, TicketEmailAccumulator, send_reopened_notification
 
 
@@ -245,6 +246,7 @@ class TicketViewSet(viewsets.ModelViewSet):
         # Automatycznie przypisuje aktualnie zalogowanego użytkownika jako twórcę zgłoszenia
         ticket = serializer.save(creator=self.request.user)
         send_ticket_created_notification(ticket)
+        notify.notify_ticket_created(ticket)
 
         # Log: utworzenie zgłoszenia
         TicketLog.objects.create(
@@ -284,6 +286,14 @@ class TicketViewSet(viewsets.ModelViewSet):
                 new_value=ticket.status,
             )
             accumulator.add_status_change(old_status, ticket.status)
+            notify.notify_status_change(ticket, ticket.status, actor=user)
+
+            # SLA: pierwsza reakcja technika/admina — wyjście ze statusu NOWE
+            if (old_status == Ticket.Status.NEW
+                    and ticket.first_response_at is None
+                    and user.role in ('TECHNICIAN', 'ADMIN')):
+                ticket.first_response_at = timezone.now()
+                ticket.save(update_fields=['first_response_at'])
 
             # Ustawienie resolved_at i tokenu przy przejściu na ROZWIAZANE
             if ticket.status == Ticket.Status.RESOLVED:
@@ -304,6 +314,7 @@ class TicketViewSet(viewsets.ModelViewSet):
                     old_value=f"{old_technician.first_name} {old_technician.last_name}" if old_technician else '',
                     new_value=f"{ticket.technician.first_name} {ticket.technician.last_name}",
                 )
+                notify.notify_assignment(ticket, ticket.technician, actor=user)
             else:
                 TicketLog.objects.create(
                     ticket=ticket,
@@ -419,6 +430,14 @@ class CommentListCreateView(generics.ListCreateAPIView):
 
         comment = serializer.save(author=user, ticket=ticket)
         send_comment_notification(comment)
+        notify.notify_comment(comment)
+
+        # SLA: pierwsza reakcja technika/admina przez komentarz
+        if (ticket.first_response_at is None
+                and user.role in ('TECHNICIAN', 'ADMIN')
+                and comment.comment_type == 'REPLY'):
+            ticket.first_response_at = timezone.now()
+            ticket.save(update_fields=['first_response_at'])
 
         # Log: dodanie komentarza
         TicketLog.objects.create(
@@ -442,6 +461,98 @@ class CommentListCreateView(generics.ListCreateAPIView):
                 new_value=ticket.status,
             )
             send_reopened_notification(ticket, user)
+
+
+class CommentDetailView(APIView):
+    """Edycja i usuwanie pojedynczego komentarza (tylko autor lub admin)."""
+    permission_classes = [IsAuthenticated]
+
+    def _get_comment(self, ticket_id, comment_id):
+        try:
+            return Comment.objects.select_related('author', 'ticket').get(id=comment_id, ticket_id=ticket_id)
+        except Comment.DoesNotExist:
+            return None
+
+    def _check_permission(self, request, comment):
+        if request.user.role != 'ADMIN' and comment.author_id != request.user.id:
+            raise PermissionDenied('Możesz edytować lub usuwać tylko własne komentarze.')
+
+    def patch(self, request, ticket_id, comment_id):
+        comment = self._get_comment(ticket_id, comment_id)
+        if not comment:
+            return Response({'detail': 'Komentarz nie istnieje.'}, status=status.HTTP_404_NOT_FOUND)
+        self._check_permission(request, comment)
+
+        serializer = CommentSerializer(comment, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save(is_edited=True)
+            return Response(serializer.data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def delete(self, request, ticket_id, comment_id):
+        comment = self._get_comment(ticket_id, comment_id)
+        if not comment:
+            return Response({'detail': 'Komentarz nie istnieje.'}, status=status.HTTP_404_NOT_FOUND)
+        self._check_permission(request, comment)
+        comment.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class NotificationListView(generics.ListAPIView):
+    """Lista powiadomień zalogowanego użytkownika (najnowsze 50)."""
+    serializer_class = NotificationSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        return Notification.objects.filter(recipient=self.request.user).select_related('ticket')[:50]
+
+
+class NotificationActionView(APIView):
+    """Akcje na powiadomieniach: oznacz jako przeczytane / oznacz wszystkie / usuń."""
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        # Liczba nieprzeczytanych (dla licznika przy dzwonku)
+        count = Notification.objects.filter(recipient=request.user, is_read=False).count()
+        return Response({'unread': count})
+
+    def post(self, request):
+        action_type = request.data.get('action')
+        if action_type == 'mark_all_read':
+            Notification.objects.filter(recipient=request.user, is_read=False).update(is_read=True)
+            return Response({'detail': 'Oznaczono wszystkie jako przeczytane.'})
+        if action_type == 'mark_read':
+            notif_id = request.data.get('id')
+            Notification.objects.filter(id=notif_id, recipient=request.user).update(is_read=True)
+            return Response({'detail': 'Oznaczono jako przeczytane.'})
+        return Response({'detail': 'Nieznana akcja.'}, status=status.HTTP_400_BAD_REQUEST)
+
+
+class ReplyTemplateViewSet(viewsets.ModelViewSet):
+    """Szablony szybkich odpowiedzi — dostępne dla techników i adminów."""
+    serializer_class = ReplyTemplateSerializer
+    permission_classes = [IsAuthenticated]
+    pagination_class = None
+
+    def get_queryset(self):
+        if self.request.user.role == 'EMPLOYEE':
+            return ReplyTemplate.objects.none()
+        return ReplyTemplate.objects.all()
+
+    def perform_create(self, serializer):
+        if self.request.user.role == 'EMPLOYEE':
+            raise PermissionDenied('Brak uprawnień do tworzenia szablonów.')
+        serializer.save(created_by=self.request.user)
+
+    def perform_update(self, serializer):
+        if self.request.user.role == 'EMPLOYEE':
+            raise PermissionDenied('Brak uprawnień.')
+        serializer.save()
+
+    def perform_destroy(self, instance):
+        if self.request.user.role == 'EMPLOYEE':
+            raise PermissionDenied('Brak uprawnień.')
+        instance.delete()
 
 
 class TicketLogListView(generics.ListAPIView):

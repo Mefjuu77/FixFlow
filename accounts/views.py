@@ -8,7 +8,11 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.exceptions import TokenError
 from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework_simplejwt.views import TokenRefreshView
-from .serializers import UserSerializer, UserCreateSerializer, UserUpdateSerializer, ProfileUpdateSerializer, ChangePasswordSerializer, CustomTokenObtainPairSerializer, CustomTokenRefreshSerializer
+from django.contrib.auth.tokens import default_token_generator
+from django.utils.http import urlsafe_base64_decode
+from django.utils.encoding import force_str
+from .serializers import UserSerializer, UserCreateSerializer, UserUpdateSerializer, ProfileUpdateSerializer, ChangePasswordSerializer, CustomTokenObtainPairSerializer, CustomTokenRefreshSerializer, PasswordResetRequestSerializer, PasswordResetConfirmSerializer
+from .email import send_password_reset_email
 from .models import CustomUser
 
 class CustomTokenObtainPairView(TokenObtainPairView):
@@ -33,6 +37,63 @@ class ChangePasswordView(APIView):
             user.save()
             return Response({"detail": "Hasło zostało pomyślnie zmienione."}, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class PasswordResetRequestView(APIView):
+    """
+    Wysyła e-mail z linkiem do resetu hasła.
+    Zawsze zwraca 200 (nie ujawnia, czy konto istnieje — ochrona przed enumeracją).
+    """
+    permission_classes = [AllowAny]
+    throttle_classes = [ScopedRateThrottle]
+    throttle_scope = 'login'
+
+    def post(self, request):
+        serializer = PasswordResetRequestSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        email = serializer.validated_data['email']
+
+        try:
+            user = CustomUser.objects.get(email=email, is_active=True)
+            send_password_reset_email(user)
+        except CustomUser.DoesNotExist:
+            pass  # Celowo nie ujawniamy braku konta
+
+        return Response(
+            {'detail': 'Jeśli konto o podanym adresie istnieje, wysłaliśmy wiadomość z instrukcją resetu hasła.'},
+            status=status.HTTP_200_OK
+        )
+
+
+class PasswordResetConfirmView(APIView):
+    """
+    Ustawia nowe hasło na podstawie uid + token z e-maila.
+    """
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        serializer = PasswordResetConfirmSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        data = serializer.validated_data
+
+        try:
+            uid = force_str(urlsafe_base64_decode(data['uid']))
+            user = CustomUser.objects.get(pk=uid)
+        except (TypeError, ValueError, OverflowError, CustomUser.DoesNotExist):
+            return Response(
+                {'detail': 'Nieprawidłowy lub wygasły link resetu hasła.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        if not default_token_generator.check_token(user, data['token']):
+            return Response(
+                {'detail': 'Link resetu hasła jest nieprawidłowy lub wygasł.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        user.set_password(data['new_password'])
+        user.save()
+        return Response({'detail': 'Hasło zostało pomyślnie zmienione. Możesz się zalogować.'}, status=status.HTTP_200_OK)
 
 class IsAdmin(BasePermission):
     def has_permission(self, request, view):

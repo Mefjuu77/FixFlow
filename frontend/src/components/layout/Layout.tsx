@@ -1,8 +1,8 @@
 import React, { useContext, useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { AuthContext } from '../../context/AuthContext';
-import { ThemeContext } from '../../context/ThemeContext';
 import CommandPalette from '../CommandPalette';
+import NotificationBell from '../NotificationBell';
 import {
   LayoutGrid,
   ClipboardList,
@@ -23,7 +23,6 @@ interface LayoutProps {
 
 const Layout: React.FC<LayoutProps> = ({ children }) => {
   const authContext = useContext(AuthContext);
-  const themeContext = useContext(ThemeContext);
   const location = useLocation();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
@@ -193,6 +192,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
             >
               <LogOut size={16} className="mr-2" /> Wyloguj się
             </button>
+            <NotificationBell />
           </div>
         </div>
       </div>
