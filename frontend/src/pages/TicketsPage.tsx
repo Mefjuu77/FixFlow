@@ -1,17 +1,13 @@
 import React, { useState, useEffect, useContext, useRef, useMemo } from 'react';
 import { Link, useSearchParams, useLocation } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
-import api from '../api/axiosConfig';
 import { ticketService } from '../api/ticketService';
 import { Ticket, User } from '../types';
 import dayjs from 'dayjs';
-import isBetween from 'dayjs/plugin/isBetween';
 import { Plus, Search, ChevronDown, ArrowUp, ArrowDown, UserMinus, Circle, CheckCircle2, XCircle, Loader2, Trash2, X, Calendar } from 'lucide-react';
 import useTitle from '../hooks/useTitle';
 import { getCategoryIcon, STATUS_LABELS, STATUS_STYLES, PRIORITY_LABELS, PRIORITY_ICONS } from '../utils/ticketConstants';
 import UserAvatar from '../components/UserAvatar';
-
-dayjs.extend(isBetween);
 
 type SortField = 'id' | 'title' | 'category_name' | 'priority' | 'creator' | 'technician' | 'status' | 'created_at';
 
@@ -114,6 +110,10 @@ const TicketsPage: React.FC = () => {
   const [isDeletingBulk, setIsDeletingBulk] = useState(false);
 
   const [technicians, setTechnicians] = useState<User[]>([]);
+  // Dane pochodne z serwera (niezależne od paginacji)
+  const [totalCount, setTotalCount] = useState(0);
+  const [statusCounts, setStatusCounts] = useState<Record<string, number>>({ all: 0, NOWE: 0, W_TOKU: 0, ROZWIAZANE: 0, ZAMKNIETE: 0 });
+  const [categories, setCategories] = useState<string[]>([]);
 
   const role = authContext?.user?.role;
   const isEmployee = role === 'EMPLOYEE';
@@ -124,48 +124,90 @@ const TicketsPage: React.FC = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 25;
 
+  // Debounce wyszukiwania, aby nie odpytywać serwera przy każdym wciśnięciu klawisza
+  const [debouncedSearch, setDebouncedSearch] = useState(searchQuery);
   useEffect(() => {
-    fetchTickets();
+    const t = setTimeout(() => setDebouncedSearch(searchQuery), 350);
+    return () => clearTimeout(t);
+  }, [searchQuery]);
+
+  const [activeOnly, setActiveOnly] = useState(searchParams.get('active_only') === 'true');
+
+  // Parametry filtrów wysyłane do serwera (bez numeru strony)
+  const filterParams = useMemo(() => ({
+    status: statusFilter,
+    priority: (isAdmin || isTechnician) ? priorityFilter : 'all',
+    category: categoryFilter,
+    assignment: (isAdmin || isTechnician) ? assignmentFilter : 'all',
+    dateFrom: dateFromFilter,
+    dateTo: dateToFilter,
+    active_only: activeOnly ? 'true' : '',
+    search: debouncedSearch.trim(),
+    ordering: `${sortConfig.direction === 'desc' ? '-' : ''}${sortConfig.key}`,
+  }), [statusFilter, priorityFilter, categoryFilter, assignmentFilter, dateFromFilter, dateToFilter, activeOnly, debouncedSearch, sortConfig, isAdmin, isTechnician]);
+
+  // Jednorazowe dane pomocnicze (kategorie, technicy)
+  useEffect(() => {
+    ticketService.getCategories()
+      .then(cats => setCategories(cats.map(c => c.name)))
+      .catch(console.error);
     if (isAdmin || isTechnician) {
       ticketService.getTechnicians().then(setTechnicians).catch(console.error);
     }
   }, [isAdmin, isTechnician]);
 
-  // Synchronizacja filtrów z URL params (np. po kliknięciu "Zobacz" z sugestii)
+  // Globalne liczniki statusów (etykiety filtra)
+  const refreshStatusCounts = () => {
+    ticketService.getStatusCounts().then(setStatusCounts).catch(console.error);
+  };
   useEffect(() => {
-    const newStatus = searchParams.get('status') || 'all';
-    const newPriority = searchParams.get('priority') || 'all';
-    const newAssignment = searchParams.get('assignment') || 'all';
-    const newCategory = searchParams.get('category') || 'all';
-    const newDateFrom = searchParams.get('dateFrom') || '';
-    const newDateTo = searchParams.get('dateTo') || '';
-    const newActiveOnly = searchParams.get('active_only') === 'true';
+    refreshStatusCounts();
+  }, []);
 
-    setStatusFilter(newStatus);
-    setPriorityFilter(newPriority);
-    setAssignmentFilter(newAssignment);
-    setCategoryFilter(newCategory);
-    setDateFromFilter(newDateFrom);
-    setDateToFilter(newDateTo);
-    setActiveOnly(newActiveOnly);
+  // Reset do pierwszej strony przy każdej zmianie filtrów
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [filterParams]);
+
+  // Pobranie strony zgłoszeń z serwera przy zmianie filtrów lub strony
+  useEffect(() => {
+    let cancelled = false;
+    setLoading(true);
+    ticketService.getTicketsPage({ ...filterParams, page: currentPage, page_size: itemsPerPage })
+      .then(data => {
+        if (cancelled) return;
+        setTickets(data.results);
+        setTotalCount(data.count);
+        setError('');
+      })
+      .catch(err => {
+        if (cancelled) return;
+        console.error('Błąd podczas pobierania zgłoszeń:', err);
+        setError('Nie udało się pobrać listy zgłoszeń.');
+      })
+      .finally(() => { if (!cancelled) setLoading(false); });
+    return () => { cancelled = true; };
+  }, [filterParams, currentPage]);
+
+  // Synchronizacja filtrów z URL params (np. po kliknięciu "Zobacz" z sugestii / wykresu)
+  useEffect(() => {
+    setStatusFilter(searchParams.get('status') || 'all');
+    setPriorityFilter(searchParams.get('priority') || 'all');
+    setAssignmentFilter(searchParams.get('assignment') || 'all');
+    setCategoryFilter(searchParams.get('category') || 'all');
+    setDateFromFilter(searchParams.get('dateFrom') || '');
+    setDateToFilter(searchParams.get('dateTo') || '');
+    setActiveOnly(searchParams.get('active_only') === 'true');
     setCurrentPage(1);
   }, [searchParams]);
 
-  const fetchTickets = async () => {
-    try {
-      const response = await api.get('tickets/');
-      setTickets(response.data);
-    } catch (err) {
-      console.error("Błąd podczas pobierania zgłoszeń:", err);
-      setError('Nie udało się pobrać listy zgłoszeń.');
-    } finally {
-      setLoading(false);
-    }
+  // Ponowne pobranie bieżącej strony (po akcjach masowych)
+  const reloadTickets = async () => {
+    const data = await ticketService.getTicketsPage({ ...filterParams, page: currentPage, page_size: itemsPerPage });
+    setTickets(data.results);
+    setTotalCount(data.count);
+    refreshStatusCounts();
   };
-
-  // ---------- Logika filtrowania i sortowania (memoizowana) ----------
-  const [activeOnly, setActiveOnly] = React.useState(searchParams.get('active_only') === 'true');
-  const INACTIVE_STATUSES = ['ROZWIAZANE', 'ZAMKNIETE'];
 
   const hasActiveFilters = searchQuery !== '' || statusFilter !== 'all' || categoryFilter !== 'all' || priorityFilter !== 'all' || assignmentFilter !== 'all' || !!dateFromFilter || !!dateToFilter || activeOnly;
 
@@ -180,109 +222,8 @@ const TicketsPage: React.FC = () => {
     setActiveOnly(false);
   };
 
-  const filteredTickets = useMemo(() => {
-    let result = tickets.filter(t => {
-      const q = searchQuery.toLowerCase();
-      const matchTitle = t.title.toLowerCase().includes(q);
-      const matchId = t.id.toString().includes(q);
-      const matchCreator = t.creator_details && `${t.creator_details.first_name} ${t.creator_details.last_name}`.toLowerCase().includes(q);
-      const matchTechnician = t.technician_details && `${t.technician_details.first_name} ${t.technician_details.last_name}`.toLowerCase().includes(q);
-      return matchTitle || matchId || matchCreator || matchTechnician;
-    });
-
-    // Wspólne filtry dla wszystkich
-    if (activeOnly) {
-      result = result.filter(t => !INACTIVE_STATUSES.includes(t.status));
-    }
-    if (statusFilter !== 'all') {
-      result = result.filter(t => t.status === statusFilter);
-    }
-    if (categoryFilter !== 'all') {
-      result = result.filter(t => t.category_name === categoryFilter);
-    }
-    // Date range filter (from chart click-through)
-    if (dateFromFilter) {
-      const from = dayjs(dateFromFilter).startOf('day');
-      result = result.filter(t => !dayjs(t.created_at).isBefore(from, 'day'));
-    }
-    if (dateToFilter) {
-      const to = dayjs(dateToFilter).endOf('day');
-      result = result.filter(t => !dayjs(t.created_at).isAfter(to, 'day'));
-    }
-
-    // Filtry tylko dla technika i admina
-    if (isAdmin || isTechnician) {
-      if (priorityFilter !== 'all') {
-        result = result.filter(t => t.priority === priorityFilter);
-      }
-      if (assignmentFilter === 'unassigned') {
-        result = result.filter(t => t.technician === null);
-      } else if (assignmentFilter === 'assigned_to_me') {
-        result = result.filter(t => t.technician === authContext?.user?.id);
-      } else if (assignmentFilter !== 'all') {
-        const techId = Number(assignmentFilter);
-        if (!isNaN(techId)) {
-          result = result.filter(t => t.technician === techId);
-        }
-      }
-    }
-
-    // Sortowanie
-    return [...result].sort((a, b) => {
-      let aValue: any = a.id;
-      let bValue: any = b.id;
-
-      switch (sortConfig.key) {
-        case 'id':
-          aValue = a.id;
-          bValue = b.id;
-          break;
-        case 'title':
-          aValue = a.title.toLowerCase();
-          bValue = b.title.toLowerCase();
-          break;
-        case 'category_name':
-          aValue = a.category_name?.toLowerCase() || '';
-          bValue = b.category_name?.toLowerCase() || '';
-          break;
-        case 'priority':
-          const priorityOrder = { 'WYSOKI': 3, 'NORMALNY': 2, 'NISKI': 1 };
-          aValue = priorityOrder[a.priority as keyof typeof priorityOrder] || 0;
-          bValue = priorityOrder[b.priority as keyof typeof priorityOrder] || 0;
-          break;
-        case 'creator':
-          aValue = a.creator_details ? `${a.creator_details.first_name} ${a.creator_details.last_name}`.toLowerCase() : '';
-          bValue = b.creator_details ? `${b.creator_details.first_name} ${b.creator_details.last_name}`.toLowerCase() : '';
-          break;
-        case 'technician':
-          aValue = a.technician_details ? `${a.technician_details.first_name} ${a.technician_details.last_name}`.toLowerCase() : '';
-          bValue = b.technician_details ? `${b.technician_details.first_name} ${b.technician_details.last_name}`.toLowerCase() : '';
-          break;
-        case 'status':
-          aValue = a.status.toLowerCase();
-          bValue = b.status.toLowerCase();
-          break;
-        case 'created_at':
-          aValue = new Date(a.created_at).getTime();
-          bValue = new Date(b.created_at).getTime();
-          break;
-      }
-
-      if (aValue < bValue) return sortConfig.direction === 'asc' ? -1 : 1;
-      if (aValue > bValue) return sortConfig.direction === 'asc' ? 1 : -1;
-      return 0;
-    });
-  }, [tickets, searchQuery, statusFilter, categoryFilter, priorityFilter, assignmentFilter, sortConfig, isAdmin, isTechnician, authContext?.user?.id, dateFromFilter, dateToFilter]);
-
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [searchQuery, statusFilter, categoryFilter, priorityFilter, assignmentFilter, sortConfig, itemsPerPage, dateFromFilter, dateToFilter]);
-
-  const totalPages = Math.ceil(filteredTickets.length / itemsPerPage);
-  const paginatedTickets = filteredTickets.slice(
-    (currentPage - 1) * itemsPerPage,
-    currentPage * itemsPerPage
-  );
+  // Serwer zwraca już przefiltrowaną i posortowaną stronę — używamy jej wprost.
+  const totalPages = Math.ceil(totalCount / itemsPerPage);
 
   if (loading) return (
     <div className="flex items-center justify-center h-full">
@@ -327,9 +268,17 @@ const TicketsPage: React.FC = () => {
     return `${label} • ${sortLegend}`;
   };
 
-  const handleSelectAll = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleSelectAll = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.checked) {
-      setSelectedTicketIds(filteredTickets.map(t => t.id));
+      try {
+        // Zaznacz wszystkie pasujące do filtrów (ze wszystkich stron), nie tylko bieżącą
+        const ids = await ticketService.getTicketIds(filterParams);
+        setSelectedTicketIds(ids);
+      } catch (err) {
+        console.error('Błąd pobierania ID zgłoszeń:', err);
+        // Fallback: zaznacz bieżącą stronę
+        setSelectedTicketIds(tickets.map(t => t.id));
+      }
     } else {
       setSelectedTicketIds([]);
     }
@@ -357,8 +306,7 @@ const TicketsPage: React.FC = () => {
 
       await Promise.all(selectedTicketIds.map(id => ticketService.updateTicket(id, updates)));
 
-      const response = await api.get('tickets/');
-      setTickets(response.data);
+      await reloadTickets();
       setBulkSuccessMessage('Zmiany zostały pomyślnie zastosowane!');
       setTimeout(() => {
         setBulkSuccessMessage('');
@@ -380,8 +328,7 @@ const TicketsPage: React.FC = () => {
     try {
       await Promise.all(selectedTicketIds.map(id => ticketService.deleteTicket(id)));
 
-      const response = await api.get('tickets/');
-      setTickets(response.data);
+      await reloadTickets();
 
       setShowDeleteModal(false);
       setBulkDeleteSuccessMessage(true);
@@ -423,18 +370,6 @@ const TicketsPage: React.FC = () => {
         </div>
       </th>
     );
-  };
-
-  // Unikalne kategorie z zgloszen
-  const categories = [...new Set(tickets.map(t => t.category_name).filter(Boolean))];
-
-  // Liczniki (admin)
-  const statusCounts = {
-    all: tickets.length,
-    NOWE: tickets.filter(t => t.status === 'NOWE').length,
-    W_TOKU: tickets.filter(t => t.status === 'W_TOKU').length,
-    ROZWIAZANE: tickets.filter(t => t.status === 'ROZWIAZANE').length,
-    ZAMKNIETE: tickets.filter(t => t.status === 'ZAMKNIETE').length,
   };
 
   const getTicketPlural = (count: number) => {
@@ -621,7 +556,7 @@ const TicketsPage: React.FC = () => {
                       type="checkbox"
                       className="w-4 h-4 text-blue-600 rounded border-gray-300 dark:border-gray-600 dark:bg-gray-700 focus:ring-blue-500 cursor-pointer translate-y-[2px]"
                       onChange={handleSelectAll}
-                      checked={filteredTickets.length > 0 && selectedTicketIds.length === filteredTickets.length}
+                      checked={totalCount > 0 && selectedTicketIds.length === totalCount}
                     />
                   </th>
                   <th colSpan={isEmployee ? 6 : 8} className="px-6 py-2 font-normal text-left">
@@ -721,7 +656,7 @@ const TicketsPage: React.FC = () => {
                         type="checkbox"
                         className="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500 cursor-pointer translate-y-[2px]"
                         onChange={handleSelectAll}
-                        checked={filteredTickets.length > 0 && selectedTicketIds.length === filteredTickets.length}
+                        checked={totalCount > 0 && selectedTicketIds.length === totalCount}
                       />
                     </th>
                   )}
@@ -738,14 +673,14 @@ const TicketsPage: React.FC = () => {
               )}
             </thead>
             <tbody className="divide-y divide-gray-50">
-              {filteredTickets.length === 0 ? (
+              {tickets.length === 0 ? (
                 <tr>
                   <td colSpan={(isAdmin || isTechnician) ? 9 : 6} className="px-6 py-12 text-center text-gray-500 text-sm italic">
                     Brak zgłoszeń spełniających kryteria.
                   </td>
                 </tr>
               ) : (
-                paginatedTickets.map(ticket => (
+                tickets.map(ticket => (
                   <tr key={ticket.id} className={`transition-colors ${selectedTicketIds.includes(ticket.id)
                     ? 'bg-blue-50/60 hover:bg-blue-100/60 dark:bg-blue-900/50 dark:hover:bg-blue-800/60'
                     : 'hover:bg-gray-50/60 dark:hover:bg-gray-700/30'
@@ -859,10 +794,10 @@ const TicketsPage: React.FC = () => {
           <div className="flex items-center">
             <p className="text-xs font-medium text-slate-500">
               Pokazuję <strong className="text-slate-700 dark:text-slate-300">
-                {filteredTickets.length > 0 ? (currentPage - 1) * itemsPerPage + 1 : 0}
+                {totalCount > 0 ? (currentPage - 1) * itemsPerPage + 1 : 0}
               </strong> do <strong className="text-slate-700 dark:text-slate-300">
-                {Math.min(currentPage * itemsPerPage, filteredTickets.length)}
-              </strong> z <strong className="text-slate-700 dark:text-slate-300">{filteredTickets.length}</strong> wyników.
+                {Math.min(currentPage * itemsPerPage, totalCount)}
+              </strong> z <strong className="text-slate-700 dark:text-slate-300">{totalCount}</strong> wyników.
             </p>
           </div>
 
@@ -958,3 +893,4 @@ const TicketsPage: React.FC = () => {
 };
 
 export default TicketsPage;
+

@@ -31,6 +31,34 @@ export const ticketService = {
     return response.data;
   },
 
+  // Pobiera stronę zgłoszeń z filtrowaniem/sortowaniem po stronie serwera.
+  // Zwraca { count, results }. Parametry zgodne z backendem (status, priority,
+  // category, assignment, dateFrom, dateTo, search, ordering, page, page_size).
+  getTicketsPage: async (params: Record<string, string | number | undefined>): Promise<{ count: number; results: Ticket[] }> => {
+    const qs = new URLSearchParams();
+    Object.entries(params).forEach(([k, v]) => {
+      if (v !== undefined && v !== '' && v !== 'all') qs.set(k, String(v));
+    });
+    const response = await api.get<{ count: number; results: Ticket[] }>(`tickets/?${qs.toString()}`);
+    return response.data;
+  },
+
+  // Zwraca ID wszystkich zgłoszeń pasujących do filtrów (do "zaznacz wszystkie").
+  getTicketIds: async (params: Record<string, string | number | undefined>): Promise<number[]> => {
+    const qs = new URLSearchParams({ ids_only: '1' });
+    Object.entries(params).forEach(([k, v]) => {
+      if (v !== undefined && v !== '' && v !== 'all') qs.set(k, String(v));
+    });
+    const response = await api.get<{ ids: number[] }>(`tickets/?${qs.toString()}`);
+    return response.data.ids;
+  },
+
+  // Globalne liczniki statusów (etykiety filtra, niezależne od paginacji).
+  getStatusCounts: async (): Promise<Record<string, number>> => {
+    const response = await api.get<Record<string, number>>('tickets/status-counts/');
+    return response.data;
+  },
+
   // Aktualizuje zgłoszenie (np. zmiania statusu lub technika)
   updateTicket: async (id: string | number, data: Partial<Ticket>): Promise<Ticket> => {
     const response = await api.patch<Ticket>(`tickets/${id}/`, data);

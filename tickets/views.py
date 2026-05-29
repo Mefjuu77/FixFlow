@@ -5,12 +5,15 @@ from django.conf import settings as django_settings
 from django.shortcuts import redirect
 from django.utils import timezone
 from rest_framework import viewsets, generics, status
+from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated, AllowAny, BasePermission
 from rest_framework.exceptions import PermissionDenied
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from django.db.models import Count
 from .models import Category, Ticket, Comment, Attachment, TicketLog, WorkLog
 from .serializers import CategorySerializer, TicketSerializer, CommentSerializer, AttachmentSerializer, TicketLogSerializer, WorkLogSerializer
+from .pagination import OptInPageNumberPagination
 from .email import send_ticket_created_notification, send_comment_notification, TicketEmailAccumulator, send_reopened_notification
 
 
@@ -95,6 +98,19 @@ class TicketViewSet(viewsets.ModelViewSet):
     queryset = Ticket.objects.all()
     serializer_class = TicketSerializer
     permission_classes = [IsAuthenticated, IsTicketOwnerOrStaff]
+    pagination_class = OptInPageNumberPagination
+
+    # Pola dozwolone do sortowania (mapowanie nazwa z API -> wyrażenie ORM)
+    ORDERING_FIELDS = {
+        'id': 'id',
+        'title': 'title',
+        'category_name': 'category__name',
+        'priority': 'priority',
+        'creator': 'creator__first_name',
+        'technician': 'technician__first_name',
+        'status': 'status',
+        'created_at': 'created_at',
+    }
 
     def get_serializer_class(self):
         """Lekki serializer na liście (bez description/attachments), pełny na detail."""
@@ -112,8 +128,118 @@ class TicketViewSet(viewsets.ModelViewSet):
         if self.action == 'retrieve':
             qs = qs.prefetch_related('attachments')
         if user.role == 'EMPLOYEE':
-            return qs.filter(creator=user)
+            qs = qs.filter(creator=user)
+
+        # Filtrowanie / wyszukiwanie / sortowanie po stronie serwera (tylko lista)
+        if self.action == 'list':
+            qs = self._apply_filters(qs)
+            qs = self._apply_ordering(qs)
         return qs
+
+    def _apply_filters(self, qs):
+        """Filtruje queryset na podstawie parametrów zapytania (server-side)."""
+        params = self.request.query_params
+        user = self.request.user
+
+        status_param = params.get('status')
+        if status_param and status_param != 'all':
+            qs = qs.filter(status=status_param)
+
+        # Tylko aktywne (nie rozwiązane/zamknięte)
+        if params.get('active_only') == 'true':
+            qs = qs.exclude(status__in=['ROZWIAZANE', 'ZAMKNIETE'])
+
+        priority_param = params.get('priority')
+        if priority_param and priority_param != 'all':
+            qs = qs.filter(priority=priority_param)
+
+        category_param = params.get('category')
+        if category_param and category_param != 'all':
+            # Akceptuje zarówno ID kategorii, jak i nazwę
+            if category_param.isdigit():
+                qs = qs.filter(category_id=int(category_param))
+            else:
+                qs = qs.filter(category__name=category_param)
+
+        # Zakres dat (po dacie utworzenia)
+        date_from = params.get('dateFrom')
+        if date_from:
+            qs = qs.filter(created_at__date__gte=date_from)
+        date_to = params.get('dateTo')
+        if date_to:
+            qs = qs.filter(created_at__date__lte=date_to)
+
+        # Przypisanie — tylko dla technika/admina (pracownik widzi wyłącznie swoje)
+        assignment = params.get('assignment')
+        if assignment and assignment != 'all' and user.role in ('ADMIN', 'TECHNICIAN'):
+            if assignment == 'unassigned':
+                qs = qs.filter(technician__isnull=True)
+            elif assignment == 'assigned_to_me':
+                qs = qs.filter(technician=user)
+            elif assignment.isdigit():
+                qs = qs.filter(technician_id=int(assignment))
+
+        # Wyszukiwanie po tytule, ID, imieniu/nazwisku zgłaszającego lub technika
+        search = (params.get('search') or '').strip()
+        if search:
+            from django.db.models import Q, Value
+            from django.db.models.functions import Concat
+            q = (
+                Q(title__icontains=search)
+                | Q(creator__first_name__icontains=search)
+                | Q(creator__last_name__icontains=search)
+                | Q(technician__first_name__icontains=search)
+                | Q(technician__last_name__icontains=search)
+            )
+            if search.isdigit():
+                q |= Q(id=int(search))
+            qs = qs.annotate(
+                creator_full=Concat('creator__first_name', Value(' '), 'creator__last_name'),
+                technician_full=Concat('technician__first_name', Value(' '), 'technician__last_name'),
+            ).filter(
+                q
+                | Q(creator_full__icontains=search)
+                | Q(technician_full__icontains=search)
+            )
+
+        return qs
+
+    def _apply_ordering(self, qs):
+        """Sortuje queryset na podstawie parametru `ordering` (np. '-created_at')."""
+        ordering = (self.request.query_params.get('ordering') or '-created_at').strip()
+        desc = ordering.startswith('-')
+        key = ordering[1:] if desc else ordering
+        field = self.ORDERING_FIELDS.get(key, 'created_at')
+        return qs.order_by(f'-{field}' if desc else field)
+
+    def list(self, request, *args, **kwargs):
+        # Tryb `ids_only=1` — zwraca wyłącznie listę ID pasujących do filtrów
+        # (używane przez "zaznacz wszystkie" przy paginacji serwerowej).
+        if request.query_params.get('ids_only') == '1':
+            ids = list(self.get_queryset().values_list('id', flat=True))
+            return Response({'ids': ids})
+        return super().list(request, *args, **kwargs)
+
+    @action(detail=False, methods=['get'], url_path='status-counts')
+    def status_counts(self, request):
+        """
+        Zwraca liczbę zgłoszeń w rozbiciu na statusy, z uwzględnieniem zakresu
+        roli (pracownik widzi tylko swoje). Używane do etykiet w filtrze statusu,
+        aby liczniki były poprawne także przy paginacji serwerowej.
+        """
+        user = request.user
+        qs = Ticket.objects.all()
+        if user.role == 'EMPLOYEE':
+            qs = qs.filter(creator=user)
+
+        counts = {row['status']: row['c'] for row in qs.values('status').annotate(c=Count('id'))}
+        return Response({
+            'all': qs.count(),
+            'NOWE': counts.get('NOWE', 0),
+            'W_TOKU': counts.get('W_TOKU', 0),
+            'ROZWIAZANE': counts.get('ROZWIAZANE', 0),
+            'ZAMKNIETE': counts.get('ZAMKNIETE', 0),
+        })
 
     def perform_create(self, serializer):
         # Automatycznie przypisuje aktualnie zalogowanego użytkownika jako twórcę zgłoszenia
