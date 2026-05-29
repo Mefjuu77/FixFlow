@@ -826,5 +826,17 @@
     "navigate": "nawiguj",
     "select": "wybierz",
     "close": "zamknij"
+  },
+  "resolution": {
+    "acceptedTitle": "Rozwiązanie zaakceptowane",
+    "acceptedMessage": "Dziękujemy za odpowiedź. Zgłoszenie zostało oznaczone jako rozwiązane.",
+    "rejectedTitle": "Rozwiązanie odrzucone",
+    "rejectedMessage": "Odnotowaliśmy Twoje odrzucenie. Zgłoszenie zostało ponownie otwarte, a nasz zespół zajmie się nim ponownie.",
+    "invalidTitle": "Nieprawidłowy lub wygasły link",
+    "invalidMessage": "Ten link jest nieprawidłowy lub wygasł. Zaloguj się, aby zobaczyć swoje zgłoszenie.",
+    "processedTitle": "Już przetworzone",
+    "processedMessage": "Ten link do rozwiązania został już wykorzystany. Status zgłoszenia został zaktualizowany.",
+    "loginCta": "Przejdź do logowania",
+    "footer": "FixFlow — System wsparcia IT"
   }
 }

@@ -812,5 +812,17 @@
     "navigate": "navigate",
     "select": "select",
     "close": "close"
+  },
+  "resolution": {
+    "acceptedTitle": "Resolution accepted",
+    "acceptedMessage": "Thank you for your response. The ticket has been marked as resolved.",
+    "rejectedTitle": "Resolution rejected",
+    "rejectedMessage": "We've noted your rejection. The ticket has been reopened and our team will look into it again.",
+    "invalidTitle": "Invalid or expired link",
+    "invalidMessage": "This link is invalid or has expired. Please log in to view your ticket.",
+    "processedTitle": "Already processed",
+    "processedMessage": "This resolution link has already been used. The ticket status has been updated.",
+    "loginCta": "Go to login",
+    "footer": "FixFlow — IT Support System"
   }
 }
