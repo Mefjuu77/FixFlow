@@ -89,6 +89,7 @@ const TicketsPage: React.FC = () => {
   const state = location.state as { searchQuery?: string } | null;
   const [searchQuery, setSearchQuery] = useState(state?.searchQuery || '');
   const [loading, setLoading] = useState(true);
+  const hasLoadedOnce = useRef(false);
   const [error, setError] = useState('');
 
   // Filtry technika i admina — inicjalizacja z URL params
@@ -187,7 +188,7 @@ const TicketsPage: React.FC = () => {
         console.error('Błąd podczas pobierania zgłoszeń:', err);
         setError(t('tickets.errorLoad'));
       })
-      .finally(() => { if (!cancelled) setLoading(false); });
+      .finally(() => { if (!cancelled) { setLoading(false); hasLoadedOnce.current = true; } });
     return () => { cancelled = true; };
   }, [filterParams, currentPage]);
 
@@ -227,7 +228,7 @@ const TicketsPage: React.FC = () => {
   // Serwer zwraca już przefiltrowaną i posortowaną stronę — używamy jej wprost.
   const totalPages = Math.ceil(totalCount / itemsPerPage);
 
-  if (loading) return (
+  if (loading && !hasLoadedOnce.current) return (
     <div className="flex items-center justify-center h-full">
       <div className="w-10 h-10 border-4 border-blue-600 border-t-transparent rounded-full animate-spin" />
     </div>
@@ -545,7 +546,7 @@ const TicketsPage: React.FC = () => {
       </div>
 
       {/* ============ Tabela ============ */}
-      <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 shadow-sm rounded-2xl overflow-hidden">
+      <div className={`bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 shadow-sm rounded-2xl overflow-hidden transition-opacity duration-200 ${loading ? 'opacity-60 pointer-events-none' : 'opacity-100'}`}>
         <div className="overflow-x-auto scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600 scrollbar-track-transparent">
           <table className="w-full text-left text-sm">
             <thead>
