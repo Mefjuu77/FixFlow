@@ -32,11 +32,6 @@ import {
   Globe,
 } from 'lucide-react';
 
-const ROLE_LABELS: Record<string, string> = {
-  EMPLOYEE: 'Pracownik',
-  TECHNICIAN: 'Technik',
-  ADMIN: 'Administrator',
-};
 
 const ROLE_COLORS: Record<string, string> = {
   EMPLOYEE: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400',
@@ -109,13 +104,13 @@ const SettingsPage: React.FC = () => {
 
     // Validate file type
     if (!file.type.startsWith('image/')) {
-      setErrorMsg('Proszę wybrać plik graficzny (JPG, PNG, GIF, WebP).');
+      setErrorMsg(t('settings.avatarInvalidType'));
       return;
     }
 
     // Validate file size (max 5MB)
     if (file.size > 5 * 1024 * 1024) {
-      setErrorMsg('Rozmiar pliku nie może przekraczać 5 MB.');
+      setErrorMsg(t('settings.avatarTooLarge'));
       return;
     }
 
@@ -154,14 +149,14 @@ const SettingsPage: React.FC = () => {
       // Refresh user data in AuthContext
       await authContext?.refreshUser();
       setAvatarFile(null);
-      setSuccessMsg('Profil został zaktualizowany pomyślnie.');
+      setSuccessMsg(t('settings.profileSaved'));
     } catch (err: any) {
       console.error('Błąd aktualizacji profilu:', err);
       if (err.response?.data) {
         const messages = Object.values(err.response.data).flat().join(' ');
-        setErrorMsg(messages || 'Wystąpił błąd podczas zapisywania.');
+        setErrorMsg(messages || t('settings.profileSaveError'));
       } else {
-        setErrorMsg('Wystąpił błąd podczas zapisywania.');
+        setErrorMsg(t('settings.profileSaveError'));
       }
     } finally {
       setIsSaving(false);
@@ -174,12 +169,12 @@ const SettingsPage: React.FC = () => {
     setPasswordErrorMsg(null);
 
     if (newPassword !== confirmPassword) {
-      setPasswordErrorMsg('Nowe hasła nie są identyczne.');
+      setPasswordErrorMsg(t('settings.pwdMismatch'));
       return;
     }
 
     if (newPassword.length < 6) {
-      setPasswordErrorMsg('Hasło musi mieć co najmniej 6 znaków.');
+      setPasswordErrorMsg(t('settings.pwdTooShort'));
       return;
     }
 
@@ -189,16 +184,16 @@ const SettingsPage: React.FC = () => {
         old_password: oldPassword,
         new_password: newPassword,
       });
-      setPasswordSuccessMsg('Hasło zostało pomyślnie zmienione.');
+      setPasswordSuccessMsg(t('settings.pwdChanged'));
       setOldPassword('');
       setNewPassword('');
       setConfirmPassword('');
     } catch (err: any) {
       if (err.response?.data) {
         const messages = Object.values(err.response.data).flat().join(' ');
-        setPasswordErrorMsg(messages || 'Nie udało się zmienić hasła.');
+        setPasswordErrorMsg(messages || t('settings.pwdChangeError'));
       } else {
-        setPasswordErrorMsg('Wystąpił błąd podczas zmiany hasła.');
+        setPasswordErrorMsg(t('settings.pwdChangeGenericError'));
       }
     } finally {
       setIsChangingPassword(false);
@@ -361,7 +356,7 @@ const SettingsPage: React.FC = () => {
                     <button
                       onClick={() => fileInputRef.current?.click()}
                       className="absolute -bottom-2 -right-2 w-9 h-9 bg-blue-600 hover:bg-blue-700 text-white rounded-xl flex items-center justify-center shadow-lg transition-all hover:scale-110 border-[3px] border-white dark:border-gray-800"
-                      title="Zmień zdjęcie"
+                      title={t('settings.changePhoto')}
                     >
                       <Camera className="w-4 h-4" />
                     </button>
@@ -381,7 +376,7 @@ const SettingsPage: React.FC = () => {
                       </h3>
                       {role && (
                         <span className={`px-2.5 py-1 text-xs font-bold rounded-lg uppercase tracking-wider ${ROLE_COLORS[role] || 'bg-gray-100 text-gray-600'}`}>
-                          {ROLE_LABELS[role]}
+                          {t(`role.${role}`)}
                         </span>
                       )}
                     </div>
@@ -395,7 +390,7 @@ const SettingsPage: React.FC = () => {
                         className="flex items-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-200 text-sm font-semibold rounded-xl transition-all"
                       >
                         <Upload className="w-4 h-4" />
-                        Zmień zdjęcie
+                        {t('settings.changePhoto')}
                       </button>
                       {avatarPreview && (
                         <button
@@ -403,7 +398,7 @@ const SettingsPage: React.FC = () => {
                           className="flex items-center gap-2 px-4 py-2 bg-red-50 hover:bg-red-100 dark:bg-red-900/20 dark:hover:bg-red-900/40 text-red-600 dark:text-red-400 text-sm font-semibold rounded-xl transition-all"
                         >
                           <Trash2 className="w-4 h-4" />
-                          Usuń zdjęcie
+                          {t('settings.removePhoto')}
                         </button>
                       )}
                     </div>
@@ -416,27 +411,27 @@ const SettingsPage: React.FC = () => {
                       <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
                         <User className="w-4 h-4 text-gray-500 dark:text-gray-400" />
                       </div>
-                      <h4 className="text-sm sm:text-base font-bold text-gray-800 dark:text-gray-200">Dane osobowe</h4>
+                      <h4 className="text-sm sm:text-base font-bold text-gray-800 dark:text-gray-200">{t('settings.personalData')}</h4>
                     </div>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-6">
                       <div className="space-y-2">
-                        <label className="text-[13px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-widest">Imię</label>
+                        <label className="text-[13px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-widest">{t('settings.firstNameLabel')}</label>
                         <input
                           type="text"
                           value={firstName}
                           onChange={(e) => setFirstName(e.target.value)}
                           className="w-full px-4 py-3 bg-gray-50/50 dark:bg-gray-900/30 border border-gray-200 dark:border-gray-700 rounded-xl text-sm font-medium text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 focus:bg-white dark:focus:bg-gray-800 transition-all placeholder-gray-400 shadow-sm"
-                          placeholder="Wpisz imię..."
+                          placeholder={t('settings.firstNamePlaceholder')}
                         />
                       </div>
                       <div className="space-y-2">
-                        <label className="text-[13px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-widest">Nazwisko</label>
+                        <label className="text-[13px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-widest">{t('settings.lastNameLabel')}</label>
                         <input
                           type="text"
                           value={lastName}
                           onChange={(e) => setLastName(e.target.value)}
                           className="w-full px-4 py-3 bg-gray-50/50 dark:bg-gray-900/30 border border-gray-200 dark:border-gray-700 rounded-xl text-sm font-medium text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 focus:bg-white dark:focus:bg-gray-800 transition-all placeholder-gray-400 shadow-sm"
-                          placeholder="Wpisz nazwisko..."
+                          placeholder={t('settings.lastNamePlaceholder')}
                         />
                       </div>
                     </div>
@@ -455,7 +450,7 @@ const SettingsPage: React.FC = () => {
                       ) : (
                         <Save className="w-4 h-4" />
                       )}
-                      {isSaving ? 'Zapisywanie...' : 'Zapisz zmiany'}
+                      {isSaving ? t('settings.saving') : t('settings.saveChanges')}
                     </button>
                   </div>
                 </div>
@@ -490,14 +485,14 @@ const SettingsPage: React.FC = () => {
                     <KeyRound className="w-6 h-6 text-blue-600 dark:text-blue-400" />
                   </div>
                   <div>
-                    <h3 className="text-xl font-bold text-gray-900 dark:text-white tracking-tight">Zmiana hasła</h3>
-                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">Zaktualizuj swoje hasło dostępowe do platformy FixFlow.</p>
+                    <h3 className="text-xl font-bold text-gray-900 dark:text-white tracking-tight">{t('settings.changePwdTitle')}</h3>
+                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">{t('settings.changePwdSubtitle')}</p>
                   </div>
                 </div>
 
                 <form onSubmit={handleChangePassword} className="space-y-3 sm:space-y-5 max-w-md">
                   <div className="space-y-2">
-                    <label className="text-[13px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-widest">Obecne hasło</label>
+                    <label className="text-[13px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-widest">{t('settings.currentPassword')}</label>
                     <div className="relative">
                       <input
                         type={showPasswords ? "text" : "password"}
@@ -518,7 +513,7 @@ const SettingsPage: React.FC = () => {
                   </div>
                   
                   <div className="space-y-2">
-                    <label className="text-[13px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-widest">Nowe hasło</label>
+                    <label className="text-[13px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-widest">{t('settings.newPassword')}</label>
                     <div className="relative">
                       <input
                         type={showPasswords ? "text" : "password"}
@@ -533,7 +528,7 @@ const SettingsPage: React.FC = () => {
                   </div>
 
                   <div className="space-y-2">
-                    <label className="text-[13px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-widest">Powtórz nowe hasło</label>
+                    <label className="text-[13px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-widest">{t('settings.confirmPassword')}</label>
                     <div className="relative">
                       <input
                         type={showPasswords ? "text" : "password"}
@@ -558,7 +553,7 @@ const SettingsPage: React.FC = () => {
                       ) : (
                         <Save className="w-4 h-4" />
                       )}
-                      {isChangingPassword ? 'Zmienianie...' : 'Zmień hasło'}
+                      {isChangingPassword ? t('settings.changingPwd') : t('settings.changePwdBtn')}
                     </button>
                   </div>
                 </form>
@@ -633,9 +628,11 @@ const SettingsPage: React.FC = () => {
           {activeTab === 'language' && (
             <div className="space-y-6">
               <div className="bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700/60 rounded-2xl sm:rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-[0_8px_30px_rgb(0,0,0,0.1)] p-4 sm:p-8">
-                <div className="flex items-center gap-3 sm:gap-4 mb-5 sm:mb-8">
-                  <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl bg-blue-50 dark:bg-blue-500/10 flex items-center justify-center border border-blue-100 dark:border-blue-500/20">
-                    <Globe className="w-6 h-6 text-blue-600 dark:text-blue-400" />
+
+                {/* Header */}
+                <div className="flex items-center gap-3 sm:gap-4 mb-7 sm:mb-10">
+                  <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-lg shadow-blue-500/25">
+                    <Globe className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
                   </div>
                   <div>
                     <h3 className="text-xl font-bold text-gray-900 dark:text-white tracking-tight">{t('language.label')}</h3>
@@ -643,36 +640,68 @@ const SettingsPage: React.FC = () => {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-3 sm:gap-6">
+                {/* Language cards */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   {SUPPORTED_LANGUAGES.map((lng) => {
                     const active = (i18n.language?.split('-')[0] || 'pl') === lng;
-                    const meta: Record<AppLanguage, { flag: string; labelKey: string }> = {
-                      pl: { flag: '🇵🇱', labelKey: 'language.polish' },
-                      en: { flag: '🇬🇧', labelKey: 'language.english' },
+                    const meta: Record<AppLanguage, { flag: string; native: string; labelKey: string }> = {
+                      pl: { flag: '🇵🇱', native: 'Polski', labelKey: 'language.polish' },
+                      en: { flag: '🇬🇧', native: 'English', labelKey: 'language.english' },
                     };
+                    const lang = meta[lng];
                     return (
                       <button
                         key={lng}
                         onClick={() => i18n.changeLanguage(lng)}
-                        className={`relative flex items-center gap-3 p-4 sm:p-5 rounded-2xl border-2 transition-all ${active
-                            ? 'border-blue-500 bg-blue-50/50 dark:bg-blue-500/10 shadow-md ring-4 ring-blue-500/10'
-                            : 'border-gray-200 dark:border-gray-700 hover:border-blue-300 dark:hover:border-blue-500/50 hover:shadow-md'
-                          }`}
+                        className={`relative group flex items-center gap-4 sm:gap-5 p-5 sm:p-6 rounded-2xl border-2 transition-all duration-300 text-left overflow-hidden ${active
+                          ? 'border-blue-500 bg-gradient-to-br from-blue-50 to-indigo-50/60 dark:from-blue-500/10 dark:to-indigo-500/5 shadow-lg shadow-blue-500/10'
+                          : 'border-gray-200 dark:border-gray-700 hover:border-blue-300 dark:hover:border-blue-500/40 bg-gray-50/30 dark:bg-gray-900/20 hover:bg-white dark:hover:bg-gray-700/30 hover:shadow-md'
+                        }`}
                       >
-                        <span className="text-2xl leading-none">{meta[lng].flag}</span>
-                        <span className="text-sm font-bold text-gray-900 dark:text-white">{t(meta[lng].labelKey)}</span>
+                        {/* Glow overlay when active */}
                         {active && (
-                          <div className="absolute top-3 right-3">
-                            <CheckCircle className="w-5 h-5 text-blue-500" />
+                          <div className="absolute inset-0 bg-gradient-to-br from-blue-400/5 via-transparent to-indigo-400/5 pointer-events-none rounded-2xl" />
+                        )}
+
+                        {/* Flag bubble */}
+                        <div className={`flex-shrink-0 w-14 h-14 sm:w-16 sm:h-16 rounded-2xl flex items-center justify-center text-3xl sm:text-4xl shadow-sm transition-all duration-300 ${
+                          active
+                            ? 'bg-white dark:bg-gray-800 shadow-md shadow-blue-100 dark:shadow-blue-900/20'
+                            : 'bg-white dark:bg-gray-700/60 group-hover:shadow-md group-hover:bg-white dark:group-hover:bg-gray-700'
+                        }`}>
+                          {lang.flag}
+                        </div>
+
+                        {/* Text */}
+                        <div className="flex-1 min-w-0">
+                          <p className={`text-base sm:text-lg font-bold tracking-tight transition-colors ${active ? 'text-blue-700 dark:text-blue-300' : 'text-gray-900 dark:text-white'}`}>
+                            {t(lang.labelKey)}
+                          </p>
+                          <p className={`text-sm mt-0.5 font-medium transition-colors ${active ? 'text-blue-500/80 dark:text-blue-400/70' : 'text-gray-400 dark:text-gray-500'}`}>
+                            {lang.native}
+                          </p>
+                        </div>
+
+                        {/* Active badge / inactive radio */}
+                        {active ? (
+                          <div className="flex-shrink-0 flex items-center gap-1.5 px-2.5 py-1 bg-blue-500 dark:bg-blue-600 rounded-full shadow-sm">
+                            <CheckCircle className="w-3.5 h-3.5 text-white" />
+                            <span className="text-[11px] font-bold text-white uppercase tracking-wide">{t('language.active')}</span>
                           </div>
+                        ) : (
+                          <div className="flex-shrink-0 w-6 h-6 rounded-full border-2 border-gray-300 dark:border-gray-600 group-hover:border-blue-400 dark:group-hover:border-blue-500 transition-colors duration-200" />
                         )}
                       </button>
                     );
                   })}
                 </div>
+
+                {/* Hint */}
+                <p className="mt-6 text-xs text-gray-400 dark:text-gray-500 text-center">{t('language.hint')}</p>
               </div>
             </div>
           )}
+
 
           {/* ===== NOTIFICATIONS TAB (Technik / Admin) ===== */}
           {activeTab === 'notifications' && (
@@ -682,8 +711,8 @@ const SettingsPage: React.FC = () => {
                     <Bell className="w-6 h-6 text-blue-600 dark:text-blue-400" />
                   </div>
                   <div>
-                    <h3 className="text-xl font-bold text-gray-900 dark:text-white tracking-tight">Powiadomienia</h3>
-                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">Zarządzaj swoimi preferencjami powiadomień.</p>
+                    <h3 className="text-xl font-bold text-gray-900 dark:text-white tracking-tight">{t('settings.notifTitle')}</h3>
+                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">{t('settings.notifSubtitle')}</p>
                   </div>
                 </div>
 
@@ -698,8 +727,8 @@ const SettingsPage: React.FC = () => {
                     }`}
                   >
                     <div>
-                      <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">Nowe zgłoszenia</p>
-                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Otrzymuj e-mail gdy zostanie utworzone nowe zgłoszenie.</p>
+                      <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">{t('settings.notifNewTicket')}</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{t('settings.notifNewTicketDesc')}</p>
                     </div>
                     <div className={`w-11 h-6 rounded-full relative shadow-inner flex-shrink-0 ml-4 transition-colors duration-300 ${notifyNewTicket ? 'bg-blue-600' : 'bg-gray-300 dark:bg-gray-600'}`}>
                       <div className={`absolute left-0.5 top-0.5 w-5 h-5 bg-white rounded-full shadow-sm transition-transform duration-300 ease-in-out ${notifyNewTicket ? 'translate-x-5' : 'translate-x-0'}`} />
@@ -716,8 +745,8 @@ const SettingsPage: React.FC = () => {
                   }`}
                 >
                   <div>
-                    <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">Komentarze</p>
-                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Otrzymuj e-mail gdy ktoś skomentuje Twoje zgłoszenie.</p>
+                    <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">{t('settings.notifComment')}</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{t('settings.notifCommentDesc')}</p>
                   </div>
                   <div className={`w-11 h-6 rounded-full relative shadow-inner flex-shrink-0 ml-4 transition-colors duration-300 ${notifyComment ? 'bg-blue-600' : 'bg-gray-300 dark:bg-gray-600'}`}>
                     <div className={`absolute left-0.5 top-0.5 w-5 h-5 bg-white rounded-full shadow-sm transition-transform duration-300 ease-in-out ${notifyComment ? 'translate-x-5' : 'translate-x-0'}`} />
@@ -733,8 +762,8 @@ const SettingsPage: React.FC = () => {
                   }`}
                 >
                   <div>
-                    <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">Zmiana statusu</p>
-                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Otrzymuj e-mail gdy zmieni się status Twojego zgłoszenia.</p>
+                    <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">{t('settings.notifStatus')}</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{t('settings.notifStatusDesc')}</p>
                   </div>
                   <div className={`w-11 h-6 rounded-full relative shadow-inner flex-shrink-0 ml-4 transition-colors duration-300 ${notifyStatus ? 'bg-blue-600' : 'bg-gray-300 dark:bg-gray-600'}`}>
                     <div className={`absolute left-0.5 top-0.5 w-5 h-5 bg-white rounded-full shadow-sm transition-transform duration-300 ease-in-out ${notifyStatus ? 'translate-x-5' : 'translate-x-0'}`} />
@@ -753,29 +782,29 @@ const SettingsPage: React.FC = () => {
                     <MessageSquareText className="w-5 h-5 sm:w-6 sm:h-6 text-blue-600 dark:text-blue-400" />
                   </div>
                   <div>
-                    <h3 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white tracking-tight">Szablony odpowiedzi</h3>
-                    <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 mt-0.5">Gotowe odpowiedzi do szybkiego wstawiania w komentarzach do zgłoszeń.</p>
+                    <h3 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white tracking-tight">{t('settings.templatesTitle')}</h3>
+                    <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 mt-0.5">{t('settings.templatesSubtitle')}</p>
                   </div>
                 </div>
 
                 {/* Formularz dodawania / edycji */}
                 <div className="bg-gray-50 dark:bg-gray-900/30 border border-gray-200 dark:border-gray-700 rounded-2xl p-4 sm:p-5 space-y-3 mb-6">
                   <div className="space-y-2">
-                    <label className="text-[13px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-widest">Tytuł szablonu</label>
+                    <label className="text-[13px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-widest">{t('settings.tplTitleLabel')}</label>
                     <input
                       type="text"
                       value={tplTitle}
                       onChange={(e) => setTplTitle(e.target.value)}
-                      placeholder="np. Prośba o restart urządzenia"
+                      placeholder={t('settings.tplTitlePlaceholder')}
                       className="w-full px-4 py-2.5 bg-white dark:bg-gray-900/50 border border-gray-200 dark:border-gray-700 rounded-xl text-sm font-medium text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all placeholder-gray-400"
                     />
                   </div>
                   <div className="space-y-2">
-                    <label className="text-[13px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-widest">Treść</label>
+                    <label className="text-[13px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-widest">{t('settings.tplContentLabel')}</label>
                     <textarea
                       value={tplContent}
                       onChange={(e) => setTplContent(e.target.value)}
-                      placeholder="Treść odpowiedzi, którą chcesz móc szybko wstawić..."
+                      placeholder={t('settings.tplContentPlaceholder')}
                       className="w-full px-4 py-2.5 bg-white dark:bg-gray-900/50 border border-gray-200 dark:border-gray-700 rounded-xl text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all placeholder-gray-400 min-h-[90px] resize-y"
                     />
                   </div>
@@ -785,7 +814,7 @@ const SettingsPage: React.FC = () => {
                         onClick={resetTplForm}
                         className="px-4 py-2 text-sm font-medium text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 transition-colors"
                       >
-                        Anuluj
+                        {t('settings.cancel')}
                       </button>
                     )}
                     <button
@@ -794,7 +823,7 @@ const SettingsPage: React.FC = () => {
                       className="inline-flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl text-sm shadow-sm transition-all disabled:opacity-50 active:scale-[0.98]"
                     >
                       {tplSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : tplEditingId ? <Save className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
-                      {tplEditingId ? 'Zapisz zmiany' : 'Dodaj szablon'}
+                      {tplEditingId ? t('settings.saveChanges') : t('settings.addTemplate')}
                     </button>
                   </div>
                 </div>
@@ -803,7 +832,7 @@ const SettingsPage: React.FC = () => {
                 {templates.length === 0 ? (
                   <div className="text-center py-10">
                     <MessageSquareText className="w-8 h-8 text-gray-300 dark:text-gray-600 mx-auto mb-2" />
-                    <p className="text-sm text-gray-400 dark:text-gray-500">Brak szablonów. Dodaj pierwszy powyżej.</p>
+                    <p className="text-sm text-gray-400 dark:text-gray-500">{t('settings.noTemplates')}</p>
                   </div>
                 ) : (
                   <div className="space-y-3">
@@ -817,14 +846,14 @@ const SettingsPage: React.FC = () => {
                           <button
                             onClick={() => { setTplEditingId(tpl.id); setTplTitle(tpl.title); setTplContent(tpl.content); }}
                             className="p-2 text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors"
-                            title="Edytuj"
+                            title={t('settings.editTitle')}
                           >
                             <Pencil className="w-4 h-4" />
                           </button>
                           <button
                             onClick={() => handleDeleteTemplate(tpl.id)}
                             className="p-2 text-gray-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
-                            title="Usuń"
+                            title={t('settings.deleteTitle')}
                           >
                             <Trash2 className="w-4 h-4" />
                           </button>

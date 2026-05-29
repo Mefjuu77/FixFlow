@@ -4,6 +4,7 @@ import api from '../api/axiosConfig';
 import { User } from '../types';
 import useTitle from '../hooks/useTitle';
 import { AuthContext } from '../context/AuthContext';
+import { useTranslation } from 'react-i18next';
 import {
   Plus,
   Search,
@@ -23,11 +24,6 @@ import {
   AlertTriangle,
 } from 'lucide-react';
 
-const ROLE_LABELS: Record<string, string> = {
-  EMPLOYEE: 'Pracownik',
-  TECHNICIAN: 'Technik',
-  ADMIN: 'Administrator',
-};
 
 
 const ROLE_STYLES: Record<string, string> = {
@@ -57,7 +53,8 @@ type SortDirection = 'asc' | 'desc';
 const emptyForm: UserForm = { email: '', first_name: '', last_name: '', role: 'EMPLOYEE', password: '' };
 
 const UsersPage: React.FC = () => {
-  useTitle('Użytkownicy');
+  const { t } = useTranslation();
+  useTitle(t('users.title'));
   const authContext = useContext(AuthContext);
   const currentUser = authContext?.user;
   const [users, setUsers] = useState<User[]>([]);
@@ -134,14 +131,8 @@ const UsersPage: React.FC = () => {
 
   const getSortTooltip = (field: 'name' | 'email', label: string) => {
     const isActive = sortConfig.key === field;
-    let sortLegend = '';
-
-    if (!isActive) {
-      sortLegend = 'Sortuj A → Z';
-    } else {
-      sortLegend = sortConfig.direction === 'asc' ? 'Posortowane A → Z' : 'Posortowane Z → A';
-    }
-
+    const sortLegend = !isActive ? t('users.sortAZ') :
+      sortConfig.direction === 'asc' ? t('users.sortedAZ') : t('users.sortedZA');
     return `${label} • ${sortLegend}`;
   };
 
@@ -157,7 +148,7 @@ const UsersPage: React.FC = () => {
           u.email.toLowerCase().includes(q) ||
           u.first_name.toLowerCase().includes(q) ||
           u.last_name.toLowerCase().includes(q) ||
-          ROLE_LABELS[u.role]?.toLowerCase().includes(q)
+          t(`role.${u.role}`).toLowerCase().includes(q)
         );
       }
       return true;
@@ -206,12 +197,12 @@ const UsersPage: React.FC = () => {
 
   const validateForm = (): boolean => {
     const errs: Partial<Record<keyof UserForm, string>> = {};
-    if (!formData.email.trim()) errs.email = 'Email jest wymagany.';
-    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) errs.email = 'Nieprawidłowy format email.';
-    if (!formData.first_name.trim()) errs.first_name = 'Imię jest wymagane.';
-    if (!formData.last_name.trim()) errs.last_name = 'Nazwisko jest wymagane.';
-    if (!editUserId && !formData.password) errs.password = 'Hasło jest wymagane.';
-    else if (formData.password && formData.password.length < 6) errs.password = 'Hasło musi mieć min. 6 znaków.';
+    if (!formData.email.trim()) errs.email = t('users.validEmailRequired');
+    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) errs.email = t('users.validEmailInvalid');
+    if (!formData.first_name.trim()) errs.first_name = t('users.validFirstNameRequired');
+    if (!formData.last_name.trim()) errs.last_name = t('users.validLastNameRequired');
+    if (!editUserId && !formData.password) errs.password = t('users.validPasswordRequired');
+    else if (formData.password && formData.password.length < 6) errs.password = t('users.validPasswordMin');
     setFormErrors(errs);
     return Object.keys(errs).length === 0;
   };
@@ -252,7 +243,7 @@ const UsersPage: React.FC = () => {
   // ---------- Toggle Active ----------
   const handleToggleActive = async (user: User) => {
     if (user.id === currentUser?.id) {
-      showToast('Nie możesz zmienić statusu własnego konta!');
+      showToast(t('users.toastNoSelfDeactivate'));
       return;
     }
 
@@ -283,16 +274,16 @@ const UsersPage: React.FC = () => {
         {/* ============ Header ============ */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Użytkownicy</h1>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{t('users.title')}</h1>
           <p className="text-sm text-gray-500 dark:text-gray-400 mt-1 font-medium">
-            Dodawaj nowych członków zespołu, ustalaj ich role i zarządzaj dostępem
+            {t('users.subtitle')}
           </p>
         </div>
         <button
           onClick={openCreateModal}
           className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl shadow-sm hover:shadow-md shadow-blue-600/10 transition-all text-sm whitespace-nowrap"
         >
-          <Plus className="w-4 h-4" /> Nowy użytkownik
+          <Plus className="w-4 h-4" /> {t('users.newUser')}
         </button>
       </div>
 
@@ -306,7 +297,7 @@ const UsersPage: React.FC = () => {
             <input
               type="text"
               className="w-full pl-10 pr-4 py-2 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none dark:text-white"
-              placeholder="Szukaj po imieniu, nazwisku lub email..."
+              placeholder={t('users.searchPlaceholder')}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
@@ -315,10 +306,10 @@ const UsersPage: React.FC = () => {
           {/* Role tabs (primary) */}
           <div className="flex items-center gap-1 flex-wrap">
             {([
-              { value: 'all', label: 'Wszyscy', count: roleCounts.all, icon: null },
-              { value: 'EMPLOYEE', label: 'Pracownicy', count: roleCounts.EMPLOYEE, icon: <UserIcon className="w-3.5 h-3.5" /> },
-              { value: 'TECHNICIAN', label: 'Technicy', count: roleCounts.TECHNICIAN, icon: <Wrench className="w-3.5 h-3.5" /> },
-              { value: 'ADMIN', label: 'Administratorzy', count: roleCounts.ADMIN, icon: <Shield className="w-3.5 h-3.5" /> },
+              { value: 'all', label: t('users.roleAll'), count: roleCounts.all, icon: null },
+              { value: 'EMPLOYEE', label: t('users.rolePluralEmployee'), count: roleCounts.EMPLOYEE, icon: <UserIcon className="w-3.5 h-3.5" /> },
+              { value: 'TECHNICIAN', label: t('users.rolePluralTechnician'), count: roleCounts.TECHNICIAN, icon: <Wrench className="w-3.5 h-3.5" /> },
+              { value: 'ADMIN', label: t('users.rolePluralAdmin'), count: roleCounts.ADMIN, icon: <Shield className="w-3.5 h-3.5" /> },
             ] as const).map(tab => (
               <button
                 key={tab.value}
@@ -341,12 +332,12 @@ const UsersPage: React.FC = () => {
 
         {/* Row 2: Status filter (secondary) */}
         <div className="flex items-center gap-2 pt-1 border-t border-gray-100 dark:border-gray-700/60">
-          <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400 dark:text-gray-500 whitespace-nowrap select-none">Status</span>
+          <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400 dark:text-gray-500 whitespace-nowrap select-none">{t('users.statusLabel')}</span>
           <div className="flex items-center gap-1">
             {([
-              { value: 'active' as const, label: 'Aktywni', icon: <UserCheck className="w-3 h-3" /> },
-              { value: 'inactive' as const, label: 'Nieaktywni', icon: <UserX className="w-3 h-3" /> },
-              { value: 'all' as const, label: 'Wszyscy', icon: null },
+              { value: 'active' as const, label: t('users.statusActive'), icon: <UserCheck className="w-3 h-3" /> },
+              { value: 'inactive' as const, label: t('users.statusInactive'), icon: <UserX className="w-3 h-3" /> },
+              { value: 'all' as const, label: t('users.statusAll'), icon: null },
             ]).map(tab => (
               <button
                 key={`status-${tab.value}`}
@@ -378,7 +369,7 @@ const UsersPage: React.FC = () => {
                 onClick={clearFilters}
                 className="px-2 py-1 rounded-md text-[11px] font-medium text-gray-400 dark:text-gray-500 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors flex items-center gap-1"
               >
-                <X className="w-3 h-3" /> Wyczyść filtry
+                <X className="w-3 h-3" /> {t('users.clearFilters')}
               </button>
             </div>
           )}
@@ -397,14 +388,14 @@ const UsersPage: React.FC = () => {
                   onClick={() => handleSort('name')}
                 >
                   <div className="flex items-center gap-1 relative w-max">
-                    Użytkownik
+                    {t('users.colUser')}
                     <span className={`transition-opacity duration-200 flex items-center ${sortConfig.key === 'name' ? 'opacity-100 text-blue-600' : 'opacity-0 group-hover/th:opacity-100 text-gray-400'}`}>
                       {sortConfig.key !== 'name' || sortConfig.direction === 'asc' ? <ArrowUp className="w-3.5 h-3.5" /> : <ArrowDown className="w-3.5 h-3.5" />}
                     </span>
                     {/* Tooltip */}
                     <div className="absolute top-full mt-2 -left-2 z-[60] pointer-events-none opacity-0 group-hover/th:opacity-100 transition-opacity duration-200">
                       <div className="bg-[#24272f] text-white text-[11.5px] font-medium px-3 py-2 rounded shadow-lg w-max whitespace-nowrap normal-case tracking-normal text-left leading-snug">
-                        {getSortTooltip('name', 'Użytkownik')}
+                        {getSortTooltip('name', t('users.colUser'))}
                       </div>
                     </div>
                   </div>
@@ -427,8 +418,8 @@ const UsersPage: React.FC = () => {
                     </div>
                   </div>
                 </th>
-                <th className="px-6 py-4 text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Rola</th>
-                <th className="px-6 py-4 text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Akcje</th>
+                <th className="px-6 py-4 text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">{t('users.colRole')}</th>
+                <th className="px-6 py-4 text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">{t('users.colActions')}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100 dark:divide-gray-700/50">
@@ -441,13 +432,13 @@ const UsersPage: React.FC = () => {
                         <div className="w-14 h-14 bg-blue-50 dark:bg-blue-900/20 rounded-full flex items-center justify-center mb-4">
                           <Users className="w-7 h-7 text-blue-400" />
                         </div>
-                        <p className="text-sm font-semibold text-gray-700 dark:text-gray-200 mb-1">Brak użytkowników w systemie</p>
-                        <p className="text-xs text-gray-400 mb-4">Dodaj pierwszego użytkownika, aby rozpocząć.</p>
+                        <p className="text-sm font-semibold text-gray-700 dark:text-gray-200 mb-1">{t('users.emptyNoUsers')}</p>
+                        <p className="text-xs text-gray-400 mb-4">{t('users.emptyNoUsersHint')}</p>
                         <button
                           onClick={openCreateModal}
                           className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl text-sm shadow-sm transition-all"
                         >
-                          <Plus className="w-4 h-4" /> Dodaj użytkownika
+                          <Plus className="w-4 h-4" /> {t('users.addUser')}
                         </button>
                       </div>
                     ) : (
@@ -456,13 +447,13 @@ const UsersPage: React.FC = () => {
                         <div className="w-14 h-14 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center mb-4">
                           <Search className="w-7 h-7 text-gray-400 dark:text-gray-500" />
                         </div>
-                        <p className="text-sm font-semibold text-gray-700 dark:text-gray-200 mb-1">Brak wyników</p>
-                        <p className="text-xs text-gray-400 mb-4">Spróbuj zmienić kryteria wyszukiwania.</p>
+                        <p className="text-sm font-semibold text-gray-700 dark:text-gray-200 mb-1">{t('users.emptyNoResults')}</p>
+                        <p className="text-xs text-gray-400 mb-4">{t('users.emptyNoResultsHint')}</p>
                         <button
                           onClick={clearFilters}
                           className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700 rounded-xl transition-colors"
                         >
-                          <X className="w-3.5 h-3.5" /> Wyczyść filtry
+                          <X className="w-3.5 h-3.5" /> {t('users.clearFilters')}
                         </button>
                       </div>
                     )}
@@ -495,12 +486,12 @@ const UsersPage: React.FC = () => {
                       <div className="flex items-center justify-start gap-2">
                         <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold rounded-lg border ${inactive ? 'opacity-50' : ''} ${ROLE_STYLES[user.role]}`}>
                           {ROLE_ICONS[user.role]}
-                          {ROLE_LABELS[user.role]}
+                          {t(`role.${user.role}`)}
                         </span>
                         {inactive && (
                           <span className="inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-bold rounded-md bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-800/50">
                             <UserX className="w-3 h-3" />
-                            Nieaktywny
+                            {t('users.inactiveBadge')}
                           </span>
                         )}
                       </div>
@@ -512,7 +503,7 @@ const UsersPage: React.FC = () => {
                           className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-800 hover:text-blue-700 dark:hover:!text-blue-400 hover:bg-blue-50 dark:hover:!bg-blue-500/20 rounded-lg border border-gray-300 dark:border-gray-600 hover:border-blue-200 dark:hover:!border-blue-500/50 transition-colors shadow-sm"
                         >
                           <Settings className="w-3.5 h-3.5" />
-                          Zarządzaj
+                          {t('users.manage')}
                         </button>
                         <button
                           onClick={() => handleToggleActive(user)}
@@ -530,7 +521,7 @@ const UsersPage: React.FC = () => {
                           ) : (
                             <UserX className="w-3.5 h-3.5" />
                           )}
-                          {inactive ? 'Aktywuj' : 'Dezaktywuj'}
+                          {inactive ? t('users.activate') : t('users.deactivate')}
                         </button>
                       </div>
                     </td>
@@ -545,11 +536,11 @@ const UsersPage: React.FC = () => {
         {/* Footer z informacją o liczbie wyników i paginacją */}
         <div className="px-6 py-4 border-t border-gray-100 dark:border-gray-700/50 bg-gray-50/50 dark:bg-gray-800/50 flex flex-col sm:flex-row items-center justify-between gap-4">
           <p className="text-xs font-medium text-slate-500">
-            Pokazuję <strong className="text-slate-700 dark:text-slate-300">
+            {t('users.showing')} <strong className="text-slate-700 dark:text-slate-300">
               {filteredUsers.length > 0 ? (currentPage - 1) * ITEMS_PER_PAGE + 1 : 0}
-            </strong> do <strong className="text-slate-700 dark:text-slate-300">
+            </strong> {t('users.to')} <strong className="text-slate-700 dark:text-slate-300">
               {Math.min(currentPage * ITEMS_PER_PAGE, filteredUsers.length)}
-            </strong> z <strong className="text-slate-700 dark:text-slate-300">{filteredUsers.length}</strong> wyników.
+            </strong> {t('users.of')} <strong className="text-slate-700 dark:text-slate-300">{filteredUsers.length}</strong> {t('users.results')}.
           </p>
 
           {totalPages > 1 && (
@@ -559,7 +550,7 @@ const UsersPage: React.FC = () => {
                 disabled={currentPage === 1}
                 className="px-3 py-1.5 rounded-lg text-xs font-semibold border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-sm"
               >
-                Poprzednia
+                {t('users.prev')}
               </button>
               
               <div className="flex items-center px-1 gap-1">
@@ -598,7 +589,7 @@ const UsersPage: React.FC = () => {
                 disabled={currentPage === totalPages}
                 className="px-3 py-1.5 rounded-lg text-xs font-semibold border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-sm"
               >
-                Następna
+                {t('users.next')}
               </button>
             </div>
           )}
@@ -612,7 +603,7 @@ const UsersPage: React.FC = () => {
           <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-lg mx-4 overflow-hidden">
             <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 dark:border-gray-700">
               <h2 className="text-lg font-bold text-gray-900 dark:text-white">
-                {editUserId ? (focusPassword ? 'Resetuj hasło' : 'Edytuj użytkownika') : 'Nowy użytkownik'}
+                {editUserId ? (focusPassword ? t('users.modalResetPassword') : t('users.modalEdit')) : t('users.modalCreate')}
               </h2>
               <button onClick={() => setIsModalOpen(false)} className="p-1.5 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors">
                 <X className="w-5 h-5 text-gray-500 dark:text-gray-400" />
@@ -623,7 +614,7 @@ const UsersPage: React.FC = () => {
               {/* Imię i Nazwisko */}
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="text-xs font-bold text-gray-600 dark:text-gray-400 mb-1 block">Imię</label>
+                  <label className="text-xs font-bold text-gray-600 dark:text-gray-400 mb-1 block">{t('users.fieldFirstName')}</label>
                   <input
                     type="text"
                     value={formData.first_name}
@@ -634,7 +625,7 @@ const UsersPage: React.FC = () => {
                   {formErrors.first_name && <p className="text-xs text-red-500 dark:text-red-400 mt-1">{formErrors.first_name}</p>}
                 </div>
                 <div>
-                  <label className="text-xs font-bold text-gray-600 dark:text-gray-400 mb-1 block">Nazwisko</label>
+                  <label className="text-xs font-bold text-gray-600 dark:text-gray-400 mb-1 block">{t('users.fieldLastName')}</label>
                   <input
                     type="text"
                     value={formData.last_name}
@@ -648,7 +639,7 @@ const UsersPage: React.FC = () => {
 
               {/* Email */}
               <div>
-                <label className="text-xs font-bold text-gray-600 dark:text-gray-400 mb-1 block">Email</label>
+                <label className="text-xs font-bold text-gray-600 dark:text-gray-400 mb-1 block">{t('users.fieldEmail')}</label>
                 <div className="relative">
                   <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 dark:text-gray-500" />
                   <input
@@ -664,7 +655,7 @@ const UsersPage: React.FC = () => {
 
               {/* Rola */}
               <div>
-                <label className="text-xs font-bold text-gray-600 dark:text-gray-400 mb-1 block">Rola</label>
+                <label className="text-xs font-bold text-gray-600 dark:text-gray-400 mb-1 block">{t('users.fieldRole')}</label>
                 <div className="grid grid-cols-3 gap-2">
                   {(['EMPLOYEE', 'TECHNICIAN', 'ADMIN'] as const).map(r => (
                     <button
@@ -681,7 +672,7 @@ const UsersPage: React.FC = () => {
                         }`}
                     >
                       {ROLE_ICONS[r]}
-                      {ROLE_LABELS[r]}
+                      {t(`role.${r}`)}
                     </button>
                   ))}
                 </div>
@@ -690,7 +681,7 @@ const UsersPage: React.FC = () => {
               {/* Hasło */}
               <div>
                 <label className="text-xs font-bold text-gray-600 dark:text-gray-400 mb-1 block">
-                  Hasło {editUserId && <span className="font-normal text-gray-400 dark:text-gray-500">(zostaw puste aby nie zmieniać)</span>}
+                  {t('users.fieldPassword')} {editUserId && <span className="font-normal text-gray-400 dark:text-gray-500">({t('users.passwordOptional')})</span>}
                 </label>
                 <div className="relative">
                   <input
@@ -698,7 +689,7 @@ const UsersPage: React.FC = () => {
                     value={formData.password}
                     onChange={e => { setFormData({ ...formData, password: e.target.value }); if (formErrors.password) setFormErrors(p => ({ ...p, password: undefined })); }}
                     className={`w-full px-3 py-2 pr-10 border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-900 dark:text-white ${formErrors.password ? 'border-red-300 dark:border-red-500/50 bg-red-50 dark:bg-red-500/10' : focusPassword ? 'border-amber-300 dark:border-amber-500/50 bg-amber-50/30 dark:bg-amber-500/10' : 'border-gray-200 dark:border-gray-700'}`}
-                    placeholder={editUserId ? '••••••••' : 'Min. 6 znaków'}
+                    placeholder={editUserId ? '••••••••' : t('users.passwordPlaceholder')}
                     autoFocus={focusPassword}
                   />
                   <button
@@ -721,7 +712,7 @@ const UsersPage: React.FC = () => {
                     onClick={() => setIsModalOpen(false)}
                     className="px-4 py-2 text-sm font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-xl transition-colors"
                   >
-                    Anuluj
+                    {t('users.cancel')}
                   </button>
                   <button
                     onClick={handleSubmit}
@@ -729,7 +720,7 @@ const UsersPage: React.FC = () => {
                     className="px-5 py-2 text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-xl shadow-sm transition-all disabled:opacity-50 flex items-center"
                   >
                     {isSubmitting && <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />}
-                    {editUserId ? 'Zapisz zmiany' : 'Utwórz użytkownika'}
+                    {editUserId ? t('users.saveChanges') : t('users.createUser')}
                   </button>
                 </div>
               </div>

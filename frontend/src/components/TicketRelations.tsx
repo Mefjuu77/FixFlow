@@ -1,12 +1,10 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Link as RouterLink } from 'react-router-dom';
 import { GitMerge, Link2, Search, X, Loader2, Plus, AlertTriangle } from 'lucide-react';
 import { ticketService } from '../api/ticketService';
 import { Ticket, TicketRef } from '../types';
 
-const STATUS_LABELS: Record<string, string> = {
-  NOWE: 'Nowe', W_TOKU: 'W toku', ROZWIAZANE: 'Rozwiązane', ZAMKNIETE: 'Zamknięte',
-};
 const STATUS_STYLES: Record<string, string> = {
   NOWE: 'bg-blue-100 text-blue-700 dark:bg-blue-500/15 dark:text-blue-400',
   W_TOKU: 'bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-400',
@@ -22,32 +20,36 @@ interface Props {
 
 type Mode = 'merge' | 'link' | null;
 
-const TicketRow: React.FC<{ t: TicketRef; onRemove?: () => void; removeTitle?: string }> = ({ t, onRemove, removeTitle }) => (
-  <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-gray-50 dark:bg-gray-900/40 border border-gray-100 dark:border-gray-700/50 group">
-    <RouterLink
-      to={`/tickets/${t.id}`}
-      className="flex items-center gap-2 min-w-0 flex-1"
-      title={t.title}
-    >
-      <span className="text-xs font-bold text-blue-600 dark:text-blue-400 flex-shrink-0">#{t.id}</span>
-      <span className="text-sm text-gray-700 dark:text-gray-300 truncate hover:text-blue-600 dark:hover:text-blue-400 transition-colors">{t.title}</span>
-    </RouterLink>
-    <span className={`px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider flex-shrink-0 ${STATUS_STYLES[t.status] || ''}`}>
-      {STATUS_LABELS[t.status] || t.status}
-    </span>
-    {onRemove && (
-      <button
-        onClick={onRemove}
-        className="p-1 text-gray-400 hover:text-red-600 dark:hover:text-red-400 rounded opacity-0 group-hover:opacity-100 transition-all flex-shrink-0"
-        title={removeTitle}
+const TicketRow: React.FC<{ ticket: TicketRef; onRemove?: () => void; removeTitle?: string }> = ({ ticket, onRemove, removeTitle }) => {
+  const { t } = useTranslation();
+  return (
+    <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-gray-50 dark:bg-gray-900/40 border border-gray-100 dark:border-gray-700/50 group">
+      <RouterLink
+        to={`/tickets/${ticket.id}`}
+        className="flex items-center gap-2 min-w-0 flex-1"
+        title={ticket.title}
       >
-        <X className="w-3.5 h-3.5" />
-      </button>
-    )}
-  </div>
-);
+        <span className="text-xs font-bold text-blue-600 dark:text-blue-400 flex-shrink-0">#{ticket.id}</span>
+        <span className="text-sm text-gray-700 dark:text-gray-300 truncate hover:text-blue-600 dark:hover:text-blue-400 transition-colors">{ticket.title}</span>
+      </RouterLink>
+      <span className={`px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider flex-shrink-0 ${STATUS_STYLES[ticket.status] || ''}`}>
+        {t(`status.${ticket.status}`, ticket.status)}
+      </span>
+      {onRemove && (
+        <button
+          onClick={onRemove}
+          className="p-1 text-gray-400 hover:text-red-600 dark:hover:text-red-400 rounded opacity-0 group-hover:opacity-100 transition-all flex-shrink-0"
+          title={removeTitle}
+        >
+          <X className="w-3.5 h-3.5" />
+        </button>
+      )}
+    </div>
+  );
+};
 
 const TicketRelations: React.FC<Props> = ({ ticket, canManage, onChanged }) => {
+  const { t } = useTranslation();
   const [mode, setMode] = useState<Mode>(null);
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<Ticket[]>([]);
@@ -152,7 +154,7 @@ const TicketRelations: React.FC<Props> = ({ ticket, canManage, onChanged }) => {
     <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-sm" ref={boxRef}>
       <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-700/60 flex items-center gap-2">
         <GitMerge className="w-4 h-4 text-gray-400" />
-        <h3 className="font-semibold text-gray-800 dark:text-gray-200 text-sm">Powiązania</h3>
+        <h3 className="font-semibold text-gray-800 dark:text-gray-200 text-sm">{t('relations.title')}</h3>
       </div>
 
       <div className="p-4 space-y-4">
@@ -160,16 +162,16 @@ const TicketRelations: React.FC<Props> = ({ ticket, canManage, onChanged }) => {
         {duplicateOf && (
           <div className="p-3 rounded-xl bg-amber-50 dark:bg-amber-900/15 border border-amber-200 dark:border-amber-800/50">
             <div className="flex items-center gap-1.5 text-xs font-bold text-amber-700 dark:text-amber-400 uppercase tracking-wide mb-2">
-              <AlertTriangle className="w-3.5 h-3.5" /> Duplikat zgłoszenia
+              <AlertTriangle className="w-3.5 h-3.5" /> {t('relations.duplicateOf')}
             </div>
-            <TicketRow t={duplicateOf} />
+            <TicketRow ticket={duplicateOf} />
             {canManage && (
               <button
                 onClick={handleUnmerge}
                 disabled={busy}
                 className="mt-2 text-xs font-semibold text-amber-700 dark:text-amber-400 hover:underline disabled:opacity-50"
               >
-                Cofnij oznaczenie duplikatu
+                {t('relations.unmarkDuplicate')}
               </button>
             )}
           </div>
@@ -179,10 +181,10 @@ const TicketRelations: React.FC<Props> = ({ ticket, canManage, onChanged }) => {
         {duplicates.length > 0 && (
           <div>
             <p className="text-[11px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-2">
-              Duplikaty ({duplicates.length})
+              {t('relations.duplicates', { count: duplicates.length })}
             </p>
             <div className="space-y-1.5">
-              {duplicates.map(d => <TicketRow key={d.id} t={d} />)}
+              {duplicates.map(d => <TicketRow key={d.id} ticket={d} />)}
             </div>
           </div>
         )}
@@ -191,15 +193,15 @@ const TicketRelations: React.FC<Props> = ({ ticket, canManage, onChanged }) => {
         {related.length > 0 && (
           <div>
             <p className="text-[11px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-2">
-              Powiązane ({related.length})
+              {t('relations.related', { count: related.length })}
             </p>
             <div className="space-y-1.5">
               {related.map(r => (
                 <TicketRow
                   key={r.id}
-                  t={r}
+                  ticket={r}
                   onRemove={canManage ? () => handleUnlink(r.id) : undefined}
-                  removeTitle="Usuń powiązanie"
+                  removeTitle={t('relations.removeLink')}
                 />
               ))}
             </div>
@@ -215,20 +217,20 @@ const TicketRelations: React.FC<Props> = ({ ticket, canManage, onChanged }) => {
                   onClick={() => setMode('link')}
                   className="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-semibold text-gray-600 dark:text-gray-300 bg-gray-50 dark:bg-gray-900/40 hover:bg-gray-100 dark:hover:bg-gray-700 border border-gray-200 dark:border-gray-700 rounded-lg transition-colors"
                 >
-                  <Link2 className="w-3.5 h-3.5" /> Powiąż
+                  <Link2 className="w-3.5 h-3.5" /> {t('relations.link')}
                 </button>
                 <button
                   onClick={() => setMode('merge')}
                   className="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-semibold text-gray-600 dark:text-gray-300 bg-gray-50 dark:bg-gray-900/40 hover:bg-gray-100 dark:hover:bg-gray-700 border border-gray-200 dark:border-gray-700 rounded-lg transition-colors"
                 >
-                  <GitMerge className="w-3.5 h-3.5" /> Scal duplikat
+                  <GitMerge className="w-3.5 h-3.5" /> {t('relations.mergeDuplicate')}
                 </button>
               </div>
             ) : (
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-bold text-gray-500 dark:text-gray-400">
-                    {mode === 'merge' ? 'Oznacz jako duplikat zgłoszenia:' : 'Powiąż ze zgłoszeniem:'}
+                    {mode === 'merge' ? t('relations.markAsDuplicate') : t('relations.linkTo')}
                   </span>
                   <button onClick={closeSearch} className="p-0.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
                     <X className="w-4 h-4" />
@@ -242,7 +244,7 @@ const TicketRelations: React.FC<Props> = ({ ticket, canManage, onChanged }) => {
                     autoFocus
                     value={query}
                     onChange={(e) => setQuery(e.target.value)}
-                    placeholder="Szukaj po tytule lub ID..."
+                    placeholder={t('relations.searchPlaceholder')}
                     className="w-full pl-9 pr-3 py-2 text-sm bg-white dark:bg-gray-900/50 border border-gray-200 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 text-gray-900 dark:text-gray-100 placeholder-gray-400"
                   />
                 </div>
@@ -255,7 +257,7 @@ const TicketRelations: React.FC<Props> = ({ ticket, canManage, onChanged }) => {
                       onChange={(e) => setMoveContent(e.target.checked)}
                       className="w-3.5 h-3.5 text-blue-600 rounded border-gray-300 dark:border-gray-600 focus:ring-blue-500"
                     />
-                    Przenieś komentarze i czas pracy do zgłoszenia nadrzędnego
+                    {t('relations.moveContent')}
                   </label>
                 )}
 
@@ -265,7 +267,7 @@ const TicketRelations: React.FC<Props> = ({ ticket, canManage, onChanged }) => {
                       <Loader2 className="w-4 h-4 text-blue-500 animate-spin" />
                     </div>
                   ) : query.trim() && results.length === 0 ? (
-                    <p className="text-xs text-gray-400 text-center py-4">Brak pasujących zgłoszeń.</p>
+                    <p className="text-xs text-gray-400 text-center py-4">{t('relations.noResults')}</p>
                   ) : (
                     results.map(r => (
                       <button
@@ -278,7 +280,7 @@ const TicketRelations: React.FC<Props> = ({ ticket, canManage, onChanged }) => {
                         <span className="text-xs font-bold text-blue-600 dark:text-blue-400 flex-shrink-0">#{r.id}</span>
                         <span className="text-sm text-gray-700 dark:text-gray-300 truncate flex-1" title={r.title}>{r.title}</span>
                         <span className={`px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider flex-shrink-0 ${STATUS_STYLES[r.status] || ''}`}>
-                          {STATUS_LABELS[r.status] || r.status}
+                          {t(`status.${r.status}`, r.status)}
                         </span>
                       </button>
                     ))

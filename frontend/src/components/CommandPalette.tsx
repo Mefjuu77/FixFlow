@@ -12,7 +12,7 @@ import {
   ClipboardList, Globe,
 } from 'lucide-react';
 
-const GROUP_ORDER = ['Akcje', 'Nawigacja', 'Ustawienia', 'Zgłoszenia'];
+const GROUP_ORDER = ['actions', 'navigation', 'settings', 'tickets'];
 
 interface CommandItem {
   id: string;
@@ -36,7 +36,7 @@ const CommandPalette: React.FC = () => {
   const navigate = useNavigate();
   const authContext = useContext(AuthContext);
   const themeContext = useContext(ThemeContext);
-  const { i18n } = useTranslation();
+  const { t, i18n } = useTranslation();
 
   const role = authContext?.user?.role;
   const isAdmin = role === 'ADMIN';
@@ -89,99 +89,76 @@ const CommandPalette: React.FC = () => {
 
     // Nawigacja
     items.push(
-      { id: 'nav-dashboard', label: isEmployee ? 'Start' : 'Pulpit', icon: <LayoutGrid className="w-4 h-4" />, action: () => runAndClose(() => navigate('/dashboard')), group: 'Nawigacja', keywords: 'dashboard strona główna home panel start pulpit' },
-      { id: 'nav-tickets', label: 'Zgłoszenia', icon: <ClipboardList className="w-4 h-4" />, action: () => runAndClose(() => navigate('/tickets')), group: 'Nawigacja', keywords: 'tickety lista moje zgłoszenia przypisane do mnie my tickets assigned' },
+      { id: 'nav-dashboard', label: isEmployee ? t('cmd.start') : t('cmd.dashboard'), icon: <LayoutGrid className="w-4 h-4" />, action: () => runAndClose(() => navigate('/dashboard')), group: 'navigation', keywords: 'dashboard strona główna home panel start pulpit' },
+      { id: 'nav-tickets', label: t('cmd.ticketsList'), icon: <ClipboardList className="w-4 h-4" />, action: () => runAndClose(() => navigate('/tickets')), group: 'navigation', keywords: 'tickety lista moje zgłoszenia przypisane do mnie my tickets assigned' },
     );
 
     if (isAdmin || isTechnician) {
       items.push(
-        { id: 'nav-stats', label: 'Statystyki', icon: <BarChart2 className="w-4 h-4" />, action: () => runAndClose(() => navigate('/statistics')), group: 'Nawigacja', keywords: 'wykresy analityka dane' },
+        { id: 'nav-stats', label: t('cmd.statistics'), icon: <BarChart2 className="w-4 h-4" />, action: () => runAndClose(() => navigate('/statistics')), group: 'navigation', keywords: 'wykresy analityka dane' },
       );
     }
 
     if (isAdmin) {
       items.push(
-        { id: 'nav-reports', label: 'Eksport danych', icon: <FileText className="w-4 h-4" />, action: () => runAndClose(() => navigate('/export')), group: 'Nawigacja', keywords: 'eksport raporty pdf csv' },
-        { id: 'nav-users', label: 'Użytkownicy', icon: <Users className="w-4 h-4" />, action: () => runAndClose(() => navigate('/users')), group: 'Nawigacja', keywords: 'pracownicy technicy administracja' },
+        { id: 'nav-reports', label: t('cmd.exportData'), icon: <FileText className="w-4 h-4" />, action: () => runAndClose(() => navigate('/export')), group: 'navigation', keywords: 'eksport raporty pdf csv' },
+        { id: 'nav-users', label: t('cmd.users'), icon: <Users className="w-4 h-4" />, action: () => runAndClose(() => navigate('/users')), group: 'navigation', keywords: 'pracownicy technicy administracja' },
       );
     }
 
     // ========== USTAWIENIA ==========
     items.push(
-      { id: 'nav-settings', label: 'Mój profil', icon: <Settings className="w-4 h-4" />, action: () => runAndClose(() => navigate('/settings')), group: 'Ustawienia', keywords: 'profil konto ustawienia moje dane' },
-      { id: 'nav-settings-security', label: 'Zmień hasło', icon: <KeyRound className="w-4 h-4" />, action: () => runAndClose(() => navigate('/settings?tab=security')), group: 'Ustawienia', keywords: 'hasło zmiana hasła bezpieczeństwo security password' },
-      { id: 'nav-settings-notifications', label: 'Powiadomienia', icon: <Bell className="w-4 h-4" />, action: () => runAndClose(() => navigate('/settings?tab=notifications')), group: 'Ustawienia', keywords: 'powiadomienia alerty maile notifications' },
+      { id: 'nav-settings', label: t('cmd.myProfile'), icon: <Settings className="w-4 h-4" />, action: () => runAndClose(() => navigate('/settings')), group: 'settings', keywords: 'profil konto ustawienia moje dane' },
+      { id: 'nav-settings-security', label: t('cmd.changePassword'), icon: <KeyRound className="w-4 h-4" />, action: () => runAndClose(() => navigate('/settings?tab=security')), group: 'settings', keywords: 'hasło zmiana hasła bezpieczeństwo security password' },
+      { id: 'nav-settings-notifications', label: t('cmd.notifications'), icon: <Bell className="w-4 h-4" />, action: () => runAndClose(() => navigate('/settings?tab=notifications')), group: 'settings', keywords: 'powiadomienia alerty maile notifications' },
     );
 
     if (!isEmployee) {
       items.push(
-        { id: 'nav-settings-appearance', label: 'Wygląd aplikacji', icon: <Palette className="w-4 h-4" />, action: () => runAndClose(() => navigate('/settings?tab=appearance')), group: 'Ustawienia', keywords: 'wygląd motyw kolory interfejs appearance' },
+        { id: 'nav-settings-appearance', label: t('cmd.appearance'), icon: <Palette className="w-4 h-4" />, action: () => runAndClose(() => navigate('/settings?tab=appearance')), group: 'settings', keywords: 'wygląd motyw kolory interfejs appearance' },
       );
     }
 
     items.push(
-      { id: 'nav-settings-language', label: 'Język', icon: <Globe className="w-4 h-4" />, action: () => runAndClose(() => navigate('/settings?tab=language')), group: 'Ustawienia', keywords: 'język language polski angielski english polish locale tłumaczenie' },
+      { id: 'nav-settings-language', label: t('cmd.language'), icon: <Globe className="w-4 h-4" />, action: () => runAndClose(() => navigate('/settings?tab=language')), group: 'settings', keywords: 'język language polski angielski english polish locale tłumaczenie' },
     );
 
     // ========== AKCJE ==========
     items.push(
-      { id: 'action-create-ticket', label: 'Nowe zgłoszenie', icon: <PlusCircle className="w-4 h-4" />, action: () => runAndClose(() => navigate('/create-ticket')), group: 'Akcje', keywords: 'utwórz stwórz dodaj nowy ticket zgłoś create' },
+      { id: 'action-create-ticket', label: t('cmd.newTicket'), icon: <PlusCircle className="w-4 h-4" />, action: () => runAndClose(() => navigate('/create-ticket')), group: 'actions', keywords: 'utwórz stwórz dodaj nowy ticket zgłoś create' },
 
     );
 
     if (isAdmin) {
       items.push(
-        { id: 'action-add-user', label: 'Dodaj użytkownika', icon: <UserPlus className="w-4 h-4" />, action: () => runAndClose(() => navigate('/users', { state: { openCreateModal: true } })), group: 'Akcje', keywords: 'dodaj utwórz stwórz pracownika technika admina nowy uzytkownik user create' },
+        { id: 'action-add-user', label: t('cmd.addUser'), icon: <UserPlus className="w-4 h-4" />, action: () => runAndClose(() => navigate('/users', { state: { openCreateModal: true } })), group: 'actions', keywords: 'dodaj utwórz stwórz pracownika technika admina nowy uzytkownik user create' },
       );
     }
 
     items.push(
       {
         id: 'action-theme',
-        label: themeContext?.isDark ? 'Włącz jasny motyw' : 'Włącz ciemny motyw',
+        label: themeContext?.isDark ? t('cmd.lightTheme') : t('cmd.darkTheme'),
         icon: themeContext?.isDark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />,
         action: () => runAndClose(() => themeContext?.toggleTheme()),
-        group: 'Akcje',
+        group: 'actions',
         keywords: 'dark mode tryb ciemny jasny theme motyw switch'
       },
     );
 
-    // Akcje zmiany języka — pokaż tylko ten język, który NIE jest aktywny
-    const currentLang = (i18n.language || 'pl').split('-')[0];
-    if (currentLang !== 'pl') {
-      items.push({
-        id: 'action-lang-pl',
-        label: 'Zmień język na polski',
-        icon: <Globe className="w-4 h-4" />,
-        action: () => runAndClose(() => i18n.changeLanguage('pl')),
-        group: 'Akcje',
-        keywords: 'język language polski polish pl zmień switch tłumaczenie',
-      });
-    }
-    if (currentLang !== 'en') {
-      items.push({
-        id: 'action-lang-en',
-        label: 'Switch language to English',
-        icon: <Globe className="w-4 h-4" />,
-        action: () => runAndClose(() => i18n.changeLanguage('en')),
-        group: 'Akcje',
-        keywords: 'język language angielski english en zmień switch translation',
-      });
-    }
-
     items.push(
       {
         id: 'action-logout',
-        label: 'Wyloguj się',
+        label: t('cmd.logout'),
         icon: <LogOut className="w-4 h-4" />,
         action: () => runAndClose(() => authContext?.logout()),
-        group: 'Akcje',
+        group: 'actions',
         keywords: 'logout wylogowanie wyjście zakończ sesję'
       },
     );
 
     return items;
-  }, [navigate, runAndClose, isAdmin, isTechnician, themeContext?.isDark, i18n, i18n.language]);
+  }, [navigate, runAndClose, isAdmin, isTechnician, isEmployee, themeContext?.isDark, i18n.language, t]);
 
   // Filtrowanie wyników
   const filteredResults = useMemo(() => {
@@ -209,22 +186,22 @@ const CommandPalette: React.FC = () => {
         sublabel: t.creator_details ? `${t.creator_details.first_name} ${t.creator_details.last_name}` : undefined,
         icon: <Hash className="w-4 h-4" />,
         action: () => runAndClose(() => navigate(`/tickets/${t.id}`)),
-        group: 'Zgłoszenia',
+        group: 'tickets',
       }));
 
     if (matchedTickets.length > 5) {
       filteredTickets.push({
         id: 'action-more-tickets',
-        label: `Pokaż wszystkie zgłoszenia (${matchedTickets.length})`,
-        sublabel: `Wyszukaj "${query}" na pełnej liście zgłoszeń`,
+        label: t('cmd.showAllTickets', { count: matchedTickets.length }),
+        sublabel: t('cmd.searchAll', { query }),
         icon: <Search className="w-4 h-4 text-blue-500" />,
         action: () => runAndClose(() => navigate('/tickets', { state: { searchQuery: query } })),
-        group: 'Zgłoszenia',
+        group: 'tickets',
       });
     }
 
     return [...filteredCommands, ...filteredTickets];
-  }, [query, commands, tickets, navigate, runAndClose]);
+  }, [query, commands, tickets, navigate, runAndClose, t]);
 
   // Grupowanie z zachowaniem stałej kolejności
   const grouped = useMemo(() => {
@@ -297,7 +274,7 @@ const CommandPalette: React.FC = () => {
             value={query}
             onChange={e => setQuery(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder="Wpisz komendę lub wyszukaj zgłoszenie..."
+            placeholder={t('cmd.placeholder')}
             className="flex-1 text-base text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 bg-transparent border-0 ring-0 focus:ring-0 focus:outline-none shadow-none command-palette-input"
           />
         </div>
@@ -307,14 +284,14 @@ const CommandPalette: React.FC = () => {
           {filteredResults.length === 0 ? (
             <div className="px-6 py-12 text-center">
               <Search className="w-10 h-10 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
-              <p className="text-sm text-gray-500 dark:text-gray-400 font-medium">Brak wyników dla „{query}"</p>
-              <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">Spróbuj wpisać nazwę strony, numer zgłoszenia lub akcję</p>
+              <p className="text-sm text-gray-500 dark:text-gray-400 font-medium">{t('cmd.noResults', { query })}</p>
+              <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">{t('cmd.noResultsHint')}</p>
             </div>
           ) : (
             Array.from(grouped.entries()).map(([group, items]) => (
               <div key={group}>
                 <div className="px-6 pt-4 pb-2">
-                  <span className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider">{group}</span>
+                  <span className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider">{t(`cmd.groups.${group}`, group)}</span>
                 </div>
                 {items.map((item) => {
                   globalIndex++;
@@ -364,15 +341,15 @@ const CommandPalette: React.FC = () => {
             <span className="flex items-center gap-2">
               <kbd className="px-2 py-1 bg-gray-200 dark:bg-gray-700 rounded-md text-xs font-bold shadow-sm">↑</kbd>
               <kbd className="px-2 py-1 bg-gray-200 dark:bg-gray-700 rounded-md text-xs font-bold shadow-sm">↓</kbd>
-              <span className="font-medium ml-1">nawiguj</span>
+              <span className="font-medium ml-1">{t('cmd.navigate')}</span>
             </span>
             <span className="flex items-center gap-2">
               <kbd className="px-2 py-1 bg-gray-200 dark:bg-gray-700 rounded-md text-xs font-bold shadow-sm">↵</kbd>
-              <span className="font-medium ml-1">wybierz</span>
+              <span className="font-medium ml-1">{t('cmd.select')}</span>
             </span>
             <span className="flex items-center gap-2 hidden sm:flex">
               <kbd className="px-2 py-1 bg-gray-200 dark:bg-gray-700 rounded-md text-xs font-bold shadow-sm tracking-wider">ESC</kbd>
-              <span className="font-medium ml-1">zamknij</span>
+              <span className="font-medium ml-1">{t('cmd.close')}</span>
             </span>
           </div>
         </div>
