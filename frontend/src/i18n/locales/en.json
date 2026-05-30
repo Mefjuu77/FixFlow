@@ -147,12 +147,54 @@
     "minAgo": "{{n}} min ago",
     "hoursAgo": "{{n}}h ago",
     "yesterday": "yesterday",
-    "weekdaysShort": ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]
+    "weekdaysShort": [
+      "Sun",
+      "Mon",
+      "Tue",
+      "Wed",
+      "Thu",
+      "Fri",
+      "Sat"
+    ]
   },
   "calendar": {
-    "weekdays": ["Mo", "Tu", "We", "Th", "Fr", "Sa", "Su"],
-    "monthsFull": ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"],
-    "monthsShort": ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+    "weekdays": [
+      "Mo",
+      "Tu",
+      "We",
+      "Th",
+      "Fr",
+      "Sa",
+      "Su"
+    ],
+    "monthsFull": [
+      "January",
+      "February",
+      "March",
+      "April",
+      "May",
+      "June",
+      "July",
+      "August",
+      "September",
+      "October",
+      "November",
+      "December"
+    ],
+    "monthsShort": [
+      "Jan",
+      "Feb",
+      "Mar",
+      "Apr",
+      "May",
+      "Jun",
+      "Jul",
+      "Aug",
+      "Sep",
+      "Oct",
+      "Nov",
+      "Dec"
+    ]
   },
   "activity": {
     "system": "System",
@@ -690,10 +732,11 @@
   },
   "settings": {
     "title": "Settings",
-    "subtitle": "Manage your profile, security preferences and notifications",
+    "subtitle": "Manage your account, preferences and notifications",
     "tabProfile": "Profile",
     "tabAccount": "Account",
     "tabSecurity": "Security",
+    "tabPreferences": "Preferences",
     "tabAppearance": "Appearance",
     "tabNotifications": "Notifications",
     "tabTemplates": "Templates",
@@ -757,7 +800,15 @@
     "addCategory": "Add category",
     "noCategories": "No categories. Add one above.",
     "catDeleteConfirm": "Are you sure you want to delete the category \"{{name}}\"? All tickets assigned to this category will also be deleted. This action cannot be undone.",
-    "catSaveError": "Failed to save category."
+    "catSaveError": "Failed to save category.",
+    "catErrorNameShort": "Name must be at least 2 characters.",
+    "catErrorNameLong": "Name cannot exceed 60 characters.",
+    "catErrorDuplicate": "A category with this name already exists.",
+    "tplErrorTitleShort": "Title must be at least 3 characters.",
+    "tplErrorTitleLong": "Title cannot exceed 100 characters.",
+    "tplErrorContentEmpty": "Template content cannot be empty.",
+    "tplErrorContentLong": "Content cannot exceed 2000 characters.",
+    "tplErrorDuplicate": "A template with this title already exists."
   },
   "relations": {
     "title": "Linked tickets",

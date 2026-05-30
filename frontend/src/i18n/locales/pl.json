@@ -149,12 +149,54 @@
     "minAgo": "{{n}} min temu",
     "hoursAgo": "{{n}} godz. temu",
     "yesterday": "wczoraj",
-    "weekdaysShort": ["Nie", "Pon", "Wto", "Śro", "Czw", "Pią", "Sob"]
+    "weekdaysShort": [
+      "Nie",
+      "Pon",
+      "Wto",
+      "Śro",
+      "Czw",
+      "Pią",
+      "Sob"
+    ]
   },
   "calendar": {
-    "weekdays": ["Pn", "Wt", "Śr", "Cz", "Pt", "Sb", "Nd"],
-    "monthsFull": ["Styczeń", "Luty", "Marzec", "Kwiecień", "Maj", "Czerwiec", "Lipiec", "Sierpień", "Wrzesień", "Październik", "Listopad", "Grudzień"],
-    "monthsShort": ["sty", "lut", "mar", "kwi", "maj", "cze", "lip", "sie", "wrz", "paź", "lis", "gru"]
+    "weekdays": [
+      "Pn",
+      "Wt",
+      "Śr",
+      "Cz",
+      "Pt",
+      "Sb",
+      "Nd"
+    ],
+    "monthsFull": [
+      "Styczeń",
+      "Luty",
+      "Marzec",
+      "Kwiecień",
+      "Maj",
+      "Czerwiec",
+      "Lipiec",
+      "Sierpień",
+      "Wrzesień",
+      "Październik",
+      "Listopad",
+      "Grudzień"
+    ],
+    "monthsShort": [
+      "sty",
+      "lut",
+      "mar",
+      "kwi",
+      "maj",
+      "cze",
+      "lip",
+      "sie",
+      "wrz",
+      "paź",
+      "lis",
+      "gru"
+    ]
   },
   "activity": {
     "system": "System",
@@ -704,10 +746,11 @@
   },
   "settings": {
     "title": "Ustawienia",
-    "subtitle": "Zarządzaj swoim profilem, bezpieczeństwem i powiadomieniami",
+    "subtitle": "Zarządzaj swoim kontem, preferencjami i powiadomieniami",
     "tabProfile": "Profil",
     "tabAccount": "Konto",
     "tabSecurity": "Bezpieczeństwo",
+    "tabPreferences": "Preferencje",
     "tabAppearance": "Wygląd",
     "tabNotifications": "Powiadomienia",
     "tabTemplates": "Szablony",
@@ -771,7 +814,15 @@
     "addCategory": "Dodaj kategorię",
     "noCategories": "Brak kategorii. Dodaj pierwszą powyżej.",
     "catDeleteConfirm": "Czy na pewno chcesz usunąć kategorię „{{name}}”? Wszystkie zgłoszenia przypisane do tej kategorii również zostaną usunięte. Tej operacji nie można cofnąć.",
-    "catSaveError": "Nie udało się zapisać kategorii."
+    "catSaveError": "Nie udało się zapisać kategorii.",
+    "catErrorNameShort": "Nazwa musi mieć co najmniej 2 znaki.",
+    "catErrorNameLong": "Nazwa nie może przekraczać 60 znaków.",
+    "catErrorDuplicate": "Kategoria o tej nazwie już istnieje.",
+    "tplErrorTitleShort": "Tytuł musi mieć co najmniej 3 znaki.",
+    "tplErrorTitleLong": "Tytuł nie może przekraczać 100 znaków.",
+    "tplErrorContentEmpty": "Treść szablonu nie może być pusta.",
+    "tplErrorContentLong": "Treść nie może przekraczać 2000 znaków.",
+    "tplErrorDuplicate": "Szablon o tym tytule już istnieje."
   },
   "relations": {
     "title": "Powiązania",

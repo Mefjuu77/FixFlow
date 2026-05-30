@@ -41,7 +41,7 @@ const ROLE_COLORS: Record<string, string> = {
   ADMIN: 'bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-400',
 };
 
-const validTabs = ['profile', 'appearance', 'language', 'notifications', 'templates', 'categories'] as const;
+const validTabs = ['profile', 'preferences', 'notifications', 'templates', 'categories'] as const;
 type SettingsTab = typeof validTabs[number];
 
 const SettingsPage: React.FC = () => {
@@ -224,6 +224,7 @@ const SettingsPage: React.FC = () => {
   const [tplContent, setTplContent] = useState('');
   const [tplEditingId, setTplEditingId] = useState<number | null>(null);
   const [tplSaving, setTplSaving] = useState(false);
+  const [tplError, setTplError] = useState<string | null>(null);
 
   useEffect(() => {
     if (isTechOrAdmin) {
@@ -235,12 +236,25 @@ const SettingsPage: React.FC = () => {
     setTplEditingId(null);
     setTplTitle('');
     setTplContent('');
+    setTplError(null);
   };
 
   const handleSaveTemplate = async () => {
     const title = tplTitle.trim();
     const content = tplContent.trim();
-    if (title.length < 3 || !content) return;
+    setTplError(null);
+
+    if (title.length < 3) { setTplError(t('settings.tplErrorTitleShort')); return; }
+    if (title.length > 100) { setTplError(t('settings.tplErrorTitleLong')); return; }
+    if (!content) { setTplError(t('settings.tplErrorContentEmpty')); return; }
+    if (content.length > 2000) { setTplError(t('settings.tplErrorContentLong')); return; }
+
+    // Duplikat tytułu (case-insensitive, pomijamy edytowany rekord)
+    const isDuplicate = templates.some(
+      tpl => tpl.title.trim().toLowerCase() === title.toLowerCase() && tpl.id !== tplEditingId
+    );
+    if (isDuplicate) { setTplError(t('settings.tplErrorDuplicate')); return; }
+
     setTplSaving(true);
     try {
       if (tplEditingId) {
@@ -252,6 +266,7 @@ const SettingsPage: React.FC = () => {
       resetTplForm();
     } catch (err) {
       console.error('Błąd zapisu szablonu:', err);
+      setTplError(t('settings.catSaveError'));
     } finally {
       setTplSaving(false);
     }
@@ -289,9 +304,18 @@ const SettingsPage: React.FC = () => {
 
   const handleSaveCategory = async () => {
     const name = catName.trim();
-    if (name.length < 2) return;
-    setCatSaving(true);
     setCatError(null);
+
+    if (name.length < 2) { setCatError(t('settings.catErrorNameShort')); return; }
+    if (name.length > 60) { setCatError(t('settings.catErrorNameLong')); return; }
+
+    // Duplikat nazwy (case-insensitive, pomijamy edytowany rekord)
+    const isDuplicate = categories.some(
+      c => c.name.trim().toLowerCase() === name.toLowerCase() && c.id !== catEditingId
+    );
+    if (isDuplicate) { setCatError(t('settings.catErrorDuplicate')); return; }
+
+    setCatSaving(true);
     try {
       if (catEditingId) {
         await ticketService.updateCategory(catEditingId, name);
@@ -321,8 +345,7 @@ const SettingsPage: React.FC = () => {
 
   const personalTabs: { id: string; label: string; icon: React.ReactNode }[] = [
     { id: 'profile', label: t('settings.tabAccount'), icon: <User className="w-4 h-4" /> },
-    { id: 'appearance', label: t('settings.tabAppearance'), icon: <Palette className="w-4 h-4" /> },
-    { id: 'language', label: t('language.label'), icon: <Globe className="w-4 h-4" /> },
+    { id: 'preferences', label: t('settings.tabPreferences'), icon: <Palette className="w-4 h-4" /> },
     { id: 'notifications', label: t('settings.tabNotifications'), icon: <Bell className="w-4 h-4" /> },
   ];
 
@@ -489,7 +512,7 @@ const SettingsPage: React.FC = () => {
                       </div>
                       <h4 className="text-sm sm:text-base font-bold text-gray-800 dark:text-gray-200">{t('settings.personalData')}</h4>
                     </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-6">
+                    <div className="grid grid-cols-1 gap-4 sm:gap-5 max-w-md">
                       <div className="space-y-2">
                         <label className="text-[13px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-widest">{t('settings.firstNameLabel')}</label>
                         <input
@@ -515,7 +538,7 @@ const SettingsPage: React.FC = () => {
 
 
                   {/* Save button — inside card */}
-                  <div className="mt-4 sm:mt-8 pt-4 sm:pt-6 border-t border-gray-100 dark:border-gray-700/50 flex justify-end">
+                  <div className="mt-4 sm:mt-8 pt-4 sm:pt-6 border-t border-gray-100 dark:border-gray-700/50 flex justify-start">
                     <button
                       onClick={handleSaveProfile}
                       disabled={isSaving}
@@ -529,40 +552,39 @@ const SettingsPage: React.FC = () => {
                       {isSaving ? t('settings.saving') : t('settings.saveChanges')}
                     </button>
                   </div>
-                </div>
 
-              {/* ===== Sekcja bezpieczeństwa (zmiana hasła) — scalona z profilem ===== */}
-              {passwordSuccessMsg && (
-                <div className="flex items-center gap-3 p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-xl text-sm text-green-800 dark:text-green-300 animate-in fade-in duration-200">
-                  <CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0" />
-                  <span className="font-medium">{passwordSuccessMsg}</span>
-                  <button onClick={() => setPasswordSuccessMsg(null)} className="ml-auto p-1 hover:bg-green-100 dark:hover:bg-green-800/50 rounded-lg transition-colors">
-                    <X className="w-4 h-4" />
-                  </button>
-                </div>
-              )}
-              {passwordErrorMsg && (
-                <div className="flex items-center gap-3 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl text-sm text-red-800 dark:text-red-300 animate-in fade-in duration-200">
-                  <AlertTriangle className="w-5 h-5 text-red-500 flex-shrink-0" />
-                  <span className="font-medium">{passwordErrorMsg}</span>
-                  <button onClick={() => setPasswordErrorMsg(null)} className="ml-auto p-1 hover:bg-red-100 dark:hover:bg-red-800/50 rounded-lg transition-colors">
-                    <X className="w-4 h-4" />
-                  </button>
-                </div>
-              )}
+                  {/* ===== Sekcja bezpieczeństwa (zmiana hasła) — w tej samej karcie ===== */}
+                  <div className="mt-4 sm:mt-8 pt-4 sm:pt-8 border-t border-gray-100 dark:border-gray-700/50">
+                    <div className="flex items-center gap-2 mb-4 sm:mb-6">
+                      <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
+                        <KeyRound className="w-4 h-4 text-gray-500 dark:text-gray-400" />
+                      </div>
+                      <div>
+                        <h4 className="text-sm sm:text-base font-bold text-gray-800 dark:text-gray-200">{t('settings.changePwdTitle')}</h4>
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{t('settings.changePwdSubtitle')}</p>
+                      </div>
+                    </div>
 
-              <div className="bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700/60 rounded-2xl sm:rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-[0_8px_30px_rgb(0,0,0,0.1)] p-4 sm:p-8">
-                <div className="flex items-center gap-3 sm:gap-4 mb-5 sm:mb-8">
-                  <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl bg-blue-50 dark:bg-blue-500/10 flex items-center justify-center border border-blue-100 dark:border-blue-500/20">
-                    <KeyRound className="w-6 h-6 text-blue-600 dark:text-blue-400" />
-                  </div>
-                  <div>
-                    <h3 className="text-xl font-bold text-gray-900 dark:text-white tracking-tight">{t('settings.changePwdTitle')}</h3>
-                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">{t('settings.changePwdSubtitle')}</p>
-                  </div>
-                </div>
+                    {passwordSuccessMsg && (
+                      <div className="flex items-center gap-3 p-4 mb-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-xl text-sm text-green-800 dark:text-green-300 animate-in fade-in duration-200">
+                        <CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0" />
+                        <span className="font-medium">{passwordSuccessMsg}</span>
+                        <button onClick={() => setPasswordSuccessMsg(null)} className="ml-auto p-1 hover:bg-green-100 dark:hover:bg-green-800/50 rounded-lg transition-colors">
+                          <X className="w-4 h-4" />
+                        </button>
+                      </div>
+                    )}
+                    {passwordErrorMsg && (
+                      <div className="flex items-center gap-3 p-4 mb-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl text-sm text-red-800 dark:text-red-300 animate-in fade-in duration-200">
+                        <AlertTriangle className="w-5 h-5 text-red-500 flex-shrink-0" />
+                        <span className="font-medium">{passwordErrorMsg}</span>
+                        <button onClick={() => setPasswordErrorMsg(null)} className="ml-auto p-1 hover:bg-red-100 dark:hover:bg-red-800/50 rounded-lg transition-colors">
+                          <X className="w-4 h-4" />
+                        </button>
+                      </div>
+                    )}
 
-                <form onSubmit={handleChangePassword} className="space-y-3 sm:space-y-5 max-w-md">
+                    <form onSubmit={handleChangePassword} className="space-y-3 sm:space-y-5 max-w-md">
                   <div className="space-y-2">
                     <label className="text-[13px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-widest">{t('settings.currentPassword')}</label>
                     <div className="relative">
@@ -632,12 +654,14 @@ const SettingsPage: React.FC = () => {
                     </button>
                   </div>
                 </form>
-              </div>
+                  </div>
+                </div>
             </div>
           )}
 
           {/* ===== APPEARANCE TAB ===== */}
-          {activeTab === 'appearance' && (
+          {/* ===== PREFERENCES TAB (Wygląd + Język) ===== */}
+          {activeTab === 'preferences' && (
             <div className="space-y-6">
               <div className="bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700/60 rounded-2xl sm:rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-[0_8px_30px_rgb(0,0,0,0.1)] p-4 sm:p-8">
                 <div className="flex items-center gap-3 sm:gap-4 mb-5 sm:mb-8">
@@ -696,12 +720,8 @@ const SettingsPage: React.FC = () => {
                   </button>
                 </div>
               </div>
-            </div>
-          )}
 
-          {/* ===== LANGUAGE TAB ===== */}
-          {activeTab === 'language' && (
-            <div className="space-y-6">
+              {/* Karta: Język */}
               <div className="bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700/60 rounded-2xl sm:rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-[0_8px_30px_rgb(0,0,0,0.1)] p-4 sm:p-8">
 
                 {/* Header */}
@@ -865,24 +885,37 @@ const SettingsPage: React.FC = () => {
                 {/* Formularz dodawania / edycji */}
                 <div className="bg-gray-50 dark:bg-gray-900/30 border border-gray-200 dark:border-gray-700 rounded-2xl p-4 sm:p-5 space-y-3 mb-6">
                   <div className="space-y-2">
-                    <label className="text-[13px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-widest">{t('settings.tplTitleLabel')}</label>
+                    <div className="flex items-center justify-between">
+                      <label className="text-[13px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-widest">{t('settings.tplTitleLabel')}</label>
+                      <span className={`text-[11px] font-medium tabular-nums ${tplTitle.length > 90 ? 'text-amber-500' : 'text-gray-400 dark:text-gray-500'}`}>{tplTitle.length}/100</span>
+                    </div>
                     <input
                       type="text"
                       value={tplTitle}
-                      onChange={(e) => setTplTitle(e.target.value)}
+                      maxLength={100}
+                      onChange={(e) => { setTplTitle(e.target.value); setTplError(null); }}
                       placeholder={t('settings.tplTitlePlaceholder')}
-                      className="w-full px-4 py-2.5 bg-white dark:bg-gray-900/50 border border-gray-200 dark:border-gray-700 rounded-xl text-sm font-medium text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all placeholder-gray-400"
+                      className={`w-full px-4 py-2.5 bg-white dark:bg-gray-900/50 border rounded-xl text-sm font-medium text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all placeholder-gray-400 ${tplError ? 'border-red-400 dark:border-red-500/60' : 'border-gray-200 dark:border-gray-700'}`}
                     />
                   </div>
                   <div className="space-y-2">
-                    <label className="text-[13px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-widest">{t('settings.tplContentLabel')}</label>
+                    <div className="flex items-center justify-between">
+                      <label className="text-[13px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-widest">{t('settings.tplContentLabel')}</label>
+                      <span className={`text-[11px] font-medium tabular-nums ${tplContent.length > 1800 ? 'text-amber-500' : 'text-gray-400 dark:text-gray-500'}`}>{tplContent.length}/2000</span>
+                    </div>
                     <textarea
                       value={tplContent}
-                      onChange={(e) => setTplContent(e.target.value)}
+                      maxLength={2000}
+                      onChange={(e) => { setTplContent(e.target.value); setTplError(null); }}
                       placeholder={t('settings.tplContentPlaceholder')}
-                      className="w-full px-4 py-2.5 bg-white dark:bg-gray-900/50 border border-gray-200 dark:border-gray-700 rounded-xl text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all placeholder-gray-400 min-h-[90px] resize-y"
+                      className={`w-full px-4 py-2.5 bg-white dark:bg-gray-900/50 border rounded-xl text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all placeholder-gray-400 min-h-[90px] resize-y ${tplError ? 'border-red-400 dark:border-red-500/60' : 'border-gray-200 dark:border-gray-700'}`}
                     />
                   </div>
+                  {tplError && (
+                    <p className="text-xs font-medium text-red-600 dark:text-red-400 flex items-center gap-1.5">
+                      <AlertTriangle className="w-3.5 h-3.5 flex-shrink-0" />{tplError}
+                    </p>
+                  )}
                   <div className="flex items-center justify-end gap-2">
                     {tplEditingId && (
                       <button
@@ -894,7 +927,7 @@ const SettingsPage: React.FC = () => {
                     )}
                     <button
                       onClick={handleSaveTemplate}
-                      disabled={tplSaving || tplTitle.trim().length < 3 || !tplContent.trim()}
+                      disabled={tplSaving}
                       className="inline-flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl text-sm shadow-sm transition-all disabled:opacity-50 active:scale-[0.98]"
                     >
                       {tplSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : tplEditingId ? <Save className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
@@ -961,18 +994,24 @@ const SettingsPage: React.FC = () => {
                 {/* Formularz dodawania / edycji */}
                 <div className="bg-gray-50 dark:bg-gray-900/30 border border-gray-200 dark:border-gray-700 rounded-2xl p-4 sm:p-5 space-y-3 mb-6">
                   <div className="space-y-2">
-                    <label className="text-[13px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-widest">{t('settings.catNameLabel')}</label>
+                    <div className="flex items-center justify-between">
+                      <label className="text-[13px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-widest">{t('settings.catNameLabel')}</label>
+                      <span className={`text-[11px] font-medium tabular-nums ${catName.length > 50 ? 'text-amber-500' : 'text-gray-400 dark:text-gray-500'}`}>{catName.length}/60</span>
+                    </div>
                     <input
                       type="text"
                       value={catName}
-                      onChange={(e) => setCatName(e.target.value)}
+                      maxLength={60}
+                      onChange={(e) => { setCatName(e.target.value); setCatError(null); }}
                       onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleSaveCategory(); } }}
                       placeholder={t('settings.catNamePlaceholder')}
-                      className="w-full px-4 py-2.5 bg-white dark:bg-gray-900/50 border border-gray-200 dark:border-gray-700 rounded-xl text-sm font-medium text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all placeholder-gray-400"
+                      className={`w-full px-4 py-2.5 bg-white dark:bg-gray-900/50 border rounded-xl text-sm font-medium text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all placeholder-gray-400 ${catError ? 'border-red-400 dark:border-red-500/60' : 'border-gray-200 dark:border-gray-700'}`}
                     />
                   </div>
                   {catError && (
-                    <p className="text-xs font-medium text-red-600 dark:text-red-400">{catError}</p>
+                    <p className="text-xs font-medium text-red-600 dark:text-red-400 flex items-center gap-1.5">
+                      <AlertTriangle className="w-3.5 h-3.5 flex-shrink-0" />{catError}
+                    </p>
                   )}
                   <div className="flex items-center justify-end gap-2">
                     {catEditingId && (
@@ -985,7 +1024,7 @@ const SettingsPage: React.FC = () => {
                     )}
                     <button
                       onClick={handleSaveCategory}
-                      disabled={catSaving || catName.trim().length < 2}
+                      disabled={catSaving}
                       className="inline-flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl text-sm shadow-sm transition-all disabled:opacity-50 active:scale-[0.98]"
                     >
                       {catSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : catEditingId ? <Save className="w-4 h-4" /> : <Plus className="w-4 h-4" />}

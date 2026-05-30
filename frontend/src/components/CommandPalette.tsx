@@ -115,12 +115,12 @@ const CommandPalette: React.FC = () => {
 
     if (!isEmployee) {
       items.push(
-        { id: 'nav-settings-appearance', label: t('cmd.appearance'), icon: <Palette className="w-4 h-4" />, action: () => runAndClose(() => navigate('/settings?tab=appearance')), group: 'settings', keywords: 'wygląd motyw kolory interfejs appearance' },
+        { id: 'nav-settings-appearance', label: t('cmd.appearance'), icon: <Palette className="w-4 h-4" />, action: () => runAndClose(() => navigate('/settings?tab=preferences')), group: 'settings', keywords: 'wygląd motyw kolory interfejs appearance preferencje preferences' },
       );
     }
 
     items.push(
-      { id: 'nav-settings-language', label: t('cmd.language'), icon: <Globe className="w-4 h-4" />, action: () => runAndClose(() => navigate('/settings?tab=language')), group: 'settings', keywords: 'język language polski angielski english polish locale tłumaczenie' },
+      { id: 'nav-settings-language', label: t('cmd.language'), icon: <Globe className="w-4 h-4" />, action: () => runAndClose(() => navigate('/settings?tab=preferences')), group: 'settings', keywords: 'język language polski angielski english polish locale tłumaczenie preferencje preferences' },
     );
 
     // ========== AKCJE ==========
