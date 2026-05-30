@@ -692,6 +692,7 @@
     "title": "Settings",
     "subtitle": "Manage your profile, security preferences and notifications",
     "tabProfile": "Profile",
+    "tabAccount": "Account",
     "tabSecurity": "Security",
     "tabAppearance": "Appearance",
     "tabNotifications": "Notifications",

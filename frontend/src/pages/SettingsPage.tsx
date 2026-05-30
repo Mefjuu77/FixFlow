@@ -41,7 +41,7 @@ const ROLE_COLORS: Record<string, string> = {
   ADMIN: 'bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-400',
 };
 
-const validTabs = ['profile', 'security', 'appearance', 'language', 'notifications', 'templates', 'categories'] as const;
+const validTabs = ['profile', 'appearance', 'language', 'notifications', 'templates', 'categories'] as const;
 type SettingsTab = typeof validTabs[number];
 
 const SettingsPage: React.FC = () => {
@@ -320,8 +320,7 @@ const SettingsPage: React.FC = () => {
   };
 
   const personalTabs: { id: string; label: string; icon: React.ReactNode }[] = [
-    { id: 'profile', label: t('settings.tabProfile'), icon: <User className="w-4 h-4" /> },
-    { id: 'security', label: t('settings.tabSecurity'), icon: <KeyRound className="w-4 h-4" /> },
+    { id: 'profile', label: t('settings.tabAccount'), icon: <User className="w-4 h-4" /> },
     { id: 'appearance', label: t('settings.tabAppearance'), icon: <Palette className="w-4 h-4" /> },
     { id: 'language', label: t('language.label'), icon: <Globe className="w-4 h-4" /> },
     { id: 'notifications', label: t('settings.tabNotifications'), icon: <Bell className="w-4 h-4" /> },
@@ -352,15 +351,12 @@ const SettingsPage: React.FC = () => {
   );
 
   return (
-    <div className="w-full max-w-5xl mx-auto space-y-4 sm:space-y-8 animate-in fade-in duration-700 pb-8 sm:pb-12">
-      {/* Header */}
-      <div className="relative overflow-hidden rounded-3xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 shadow-sm">
-        <div className="absolute inset-0 bg-gradient-to-r from-blue-50/50 via-transparent to-purple-50/50 dark:from-blue-900/10 dark:to-purple-900/10" />
-        <div className="relative px-4 sm:px-8 py-5 sm:py-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-          <div>
-            <h1 className="text-2xl sm:text-3xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-gray-900 to-gray-600 dark:from-white dark:to-gray-300 tracking-tight">{t('settings.title')}</h1>
-            <p className="mt-1 sm:mt-2 text-xs sm:text-sm text-gray-500 dark:text-gray-400">{t('settings.subtitle')}</p>
-          </div>
+    <div className="w-full space-y-6 animate-in fade-in duration-700 pb-8 sm:pb-12">
+      {/* Header — lewy górny róg, spójny z resztą widoków */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{t('settings.title')}</h1>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1 font-medium">{t('settings.subtitle')}</p>
         </div>
       </div>
 
@@ -534,12 +530,8 @@ const SettingsPage: React.FC = () => {
                     </button>
                   </div>
                 </div>
-            </div>
-          )}
 
-          {/* ===== SECURITY TAB ===== */}
-          {activeTab === 'security' && (
-            <div className="space-y-6">
+              {/* ===== Sekcja bezpieczeństwa (zmiana hasła) — scalona z profilem ===== */}
               {passwordSuccessMsg && (
                 <div className="flex items-center gap-3 p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-xl text-sm text-green-800 dark:text-green-300 animate-in fade-in duration-200">
                   <CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0" />
@@ -579,6 +571,7 @@ const SettingsPage: React.FC = () => {
                         value={oldPassword}
                         onChange={(e) => setOldPassword(e.target.value)}
                         required
+                        autoComplete="current-password"
                         className="w-full px-4 py-3 bg-gray-50/50 dark:bg-gray-900/30 border border-gray-200 dark:border-gray-700 rounded-xl text-sm font-medium text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 focus:bg-white dark:focus:bg-gray-800 transition-all placeholder-gray-400 shadow-sm pr-11"
                         placeholder="••••••••"
                       />
@@ -601,6 +594,7 @@ const SettingsPage: React.FC = () => {
                         onChange={(e) => setNewPassword(e.target.value)}
                         required
                         minLength={6}
+                        autoComplete="new-password"
                         className="w-full px-4 py-3 bg-gray-50/50 dark:bg-gray-900/30 border border-gray-200 dark:border-gray-700 rounded-xl text-sm font-medium text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 focus:bg-white dark:focus:bg-gray-800 transition-all placeholder-gray-400 shadow-sm"
                         placeholder="••••••••"
                       />
@@ -616,6 +610,7 @@ const SettingsPage: React.FC = () => {
                         onChange={(e) => setConfirmPassword(e.target.value)}
                         required
                         minLength={6}
+                        autoComplete="new-password"
                         className="w-full px-4 py-3 bg-gray-50/50 dark:bg-gray-900/30 border border-gray-200 dark:border-gray-700 rounded-xl text-sm font-medium text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 focus:bg-white dark:focus:bg-gray-800 transition-all placeholder-gray-400 shadow-sm"
                         placeholder="••••••••"
                       />

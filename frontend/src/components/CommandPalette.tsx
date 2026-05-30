@@ -109,7 +109,7 @@ const CommandPalette: React.FC = () => {
     // ========== USTAWIENIA ==========
     items.push(
       { id: 'nav-settings', label: t('cmd.myProfile'), icon: <Settings className="w-4 h-4" />, action: () => runAndClose(() => navigate('/settings')), group: 'settings', keywords: 'profil konto ustawienia moje dane' },
-      { id: 'nav-settings-security', label: t('cmd.changePassword'), icon: <KeyRound className="w-4 h-4" />, action: () => runAndClose(() => navigate('/settings?tab=security')), group: 'settings', keywords: 'hasło zmiana hasła bezpieczeństwo security password' },
+      { id: 'nav-settings-security', label: t('cmd.changePassword'), icon: <KeyRound className="w-4 h-4" />, action: () => runAndClose(() => navigate('/settings?tab=profile')), group: 'settings', keywords: 'hasło zmiana hasła bezpieczeństwo security password' },
       { id: 'nav-settings-notifications', label: t('cmd.notifications'), icon: <Bell className="w-4 h-4" />, action: () => runAndClose(() => navigate('/settings?tab=notifications')), group: 'settings', keywords: 'powiadomienia alerty maile notifications' },
     );
 
