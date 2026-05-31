@@ -1,6 +1,7 @@
 import React, { useContext, useEffect, useState, useRef } from 'react';
 import { AuthContext } from '../context/AuthContext';
 import api from '../api/axiosConfig';
+import { ticketService } from '../api/ticketService';
 import { Ticket } from '../types';
 import { Link, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
@@ -18,6 +19,10 @@ import {
   CheckCircle2,
   Info,
   Clock,
+  Scale,
+  ArrowRight,
+  X,
+  Loader2,
 } from 'lucide-react';
 import dayjs from 'dayjs';
 import isBetween from 'dayjs/plugin/isBetween';
@@ -221,6 +226,280 @@ const HorizontalBar: React.FC<{ label: string; value: number; max: number; color
   );
 };
 
+// ==================== REBALANCE MODAL ====================
+type WorkloadEntry = [string, { count: number; avatar?: string | null; techId?: number }];
+
+interface RebalanceModalProps {
+  activeTickets: Ticket[];
+  unassignedCount: number;
+  workloadEntries: WorkloadEntry[];
+  onClose: () => void;
+  onDone: () => void;
+  t: (key: string, opts?: any) => string;
+}
+
+const RebalanceModal: React.FC<RebalanceModalProps> = ({ activeTickets, unassignedCount, workloadEntries, onClose, onDone, t }) => {
+  const total = activeTickets.length;
+
+  // Lista źródeł: pula nieprzypisanych + technicy z aktywnymi zgłoszeniami
+  const sources = [
+    ...(unassignedCount > 0 ? [{ key: 'unassigned', name: t('statistics.unassigned'), count: unassignedCount, techId: null as number | null, avatar: null as string | null }] : []),
+    ...workloadEntries.map(([name, d]) => ({ key: String(d.techId), name, count: d.count, techId: d.techId ?? null, avatar: d.avatar ?? null })),
+  ];
+  // Cele: tylko technicy (nie można przypisać do "nieprzypisane")
+  const targets = workloadEntries.map(([name, d]) => ({ key: String(d.techId), name, count: d.count, techId: d.techId as number, avatar: d.avatar ?? null }));
+
+  const avg = total > 0 && (workloadEntries.length || 1) > 0
+    ? Math.round(activeTickets.filter(t => t.technician_details).length / Math.max(workloadEntries.length, 1))
+    : 0;
+
+  // Domyślne źródło: największe obciążenie (lub pula nieprzypisanych jeśli istnieje)
+  const [sourceKey, setSourceKey] = useState<string>(sources[0]?.key ?? '');
+  // Domyślny cel: najmniej obłożony technik różny od źródła
+  const initialTarget = [...targets].sort((a, b) => a.count - b.count).find(tg => tg.key !== (sources[0]?.key))?.key
+    ?? targets.find(tg => tg.key !== sources[0]?.key)?.key ?? '';
+  const [targetKey, setTargetKey] = useState<string>(initialTarget);
+  const [order, setOrder] = useState<'oldest' | 'newest'>('oldest');
+  const [submitting, setSubmitting] = useState(false);
+  const [done, setDone] = useState(false);
+  const [openDropdown, setOpenDropdown] = useState<'source' | 'target' | null>(null);
+  const sourceRef = useRef<HTMLDivElement>(null);
+  const targetRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      const tgt = e.target as Node;
+      if (sourceRef.current && !sourceRef.current.contains(tgt) && targetRef.current && !targetRef.current.contains(tgt)) {
+        setOpenDropdown(null);
+      }
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, []);
+
+  const source = sources.find(s => s.key === sourceKey);
+  const target = targets.find(tg => tg.key === targetKey);
+  const sourceCount = source?.count ?? 0;
+
+  // Awatar/ikona dla pozycji listy
+  const personIcon = (item: { avatar: string | null; techId: number | null; name: string }, size = 'w-6 h-6') => {
+    if (item.techId == null) {
+      return <div className={`${size} rounded-full bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center flex-shrink-0 text-amber-600 dark:text-amber-400`}><UserMinus className="w-3.5 h-3.5" /></div>;
+    }
+    return item.avatar
+      ? <img src={item.avatar} alt="" className={`${size} rounded-full object-cover flex-shrink-0`} />
+      : <div className={`${size} rounded-full bg-blue-600 flex items-center justify-center flex-shrink-0 overflow-hidden`}><span className="text-[10px] font-bold text-white uppercase">{item.name.charAt(0)}</span></div>;
+  };
+
+  // Sugerowana liczba: tyle, by zbliżyć źródło do średniej (gdy źródło to technik)
+  const suggested = source && source.techId != null
+    ? Math.max(1, Math.min(sourceCount, source.count - avg))
+    : Math.max(1, Math.ceil(sourceCount / 2));
+  const [count, setCount] = useState<number>(suggested);
+
+  // Reset domyślnej liczby przy zmianie źródła/celu
+  useEffect(() => {
+    const s = sources.find(x => x.key === sourceKey);
+    if (!s) return;
+    const sug = s.techId != null ? Math.max(1, Math.min(s.count, s.count - avg)) : Math.max(1, Math.ceil(s.count / 2));
+    setCount(Math.min(sug, s.count));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sourceKey]);
+
+  const sameSourceTarget = source && target && source.techId != null && source.techId === target.techId;
+  const moveCount = Math.max(0, Math.min(count || 0, sourceCount));
+  const canSubmit = !!source && !!target && !sameSourceTarget && moveCount > 0 && !submitting;
+
+  // Podgląd po zmianie (w %)
+  const pct = (n: number) => total > 0 ? Math.round((n / total) * 100) : 0;
+  const srcAfter = sourceCount - moveCount;
+  const tgtAfter = (target?.count ?? 0) + moveCount;
+
+  const handleConfirm = async () => {
+    if (!canSubmit || !target) return;
+    setSubmitting(true);
+    try {
+      // Wybór zgłoszeń do przeniesienia ze źródła wg kolejności
+      const pool = activeTickets
+        .filter(tk => source!.techId == null ? !tk.technician_details : tk.technician_details?.id === source!.techId)
+        .sort((a, b) => order === 'oldest'
+          ? dayjs(a.created_at).valueOf() - dayjs(b.created_at).valueOf()
+          : dayjs(b.created_at).valueOf() - dayjs(a.created_at).valueOf())
+        .slice(0, moveCount);
+
+      await Promise.all(pool.map(tk => ticketService.updateTicket(tk.id, { technician: target.techId } as any)));
+      setDone(true);
+      setTimeout(() => onDone(), 800);
+    } catch (err) {
+      console.error('Rebalance error', err);
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 animate-in fade-in duration-200 p-4" onClick={() => !submitting && onClose()}>
+      <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
+        {/* Header */}
+        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 dark:border-gray-700">
+          <div className="flex items-center gap-2.5">
+            <div className="w-9 h-9 rounded-xl bg-blue-50 dark:bg-blue-500/10 flex items-center justify-center">
+              <Scale className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+            </div>
+            <h2 className="text-base font-bold text-gray-900 dark:text-white">{t('statistics.rebalanceTitle')}</h2>
+          </div>
+          <button onClick={() => !submitting && onClose()} className="p-1.5 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors">
+            <X className="w-5 h-5 text-gray-500 dark:text-gray-400" />
+          </button>
+        </div>
+
+        <div className="p-6 space-y-4">
+          {/* Źródło → Cel */}
+          <div className="flex items-end gap-2">
+            {/* OD KOGO */}
+            <div className="flex-1 space-y-1.5">
+              <label className="text-[11px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">{t('statistics.rebalanceFrom')}</label>
+              <div className="relative" ref={sourceRef}>
+                <button
+                  type="button"
+                  onClick={() => setOpenDropdown(openDropdown === 'source' ? null : 'source')}
+                  className="w-full flex items-center gap-2 px-3 py-2.5 bg-gray-50 dark:bg-gray-900/40 border border-gray-200 dark:border-gray-700 rounded-xl text-sm font-medium text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500/50 hover:border-blue-300 dark:hover:border-blue-500/50 transition-colors"
+                >
+                  {source && personIcon(source)}
+                  <span className="truncate flex-1 text-left">{source?.name}</span>
+                  <span className="text-xs font-bold text-gray-600 dark:text-gray-300 bg-gray-200 dark:bg-gray-700 px-1.5 py-0.5 rounded-md flex-shrink-0">{sourceCount}</span>
+                  <ChevronDown className={`w-4 h-4 text-gray-400 flex-shrink-0 transition-transform ${openDropdown === 'source' ? 'rotate-180' : ''}`} />
+                </button>
+                {openDropdown === 'source' && (
+                  <div className="absolute z-50 left-0 top-full mt-1 w-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-xl shadow-lg dark:shadow-[0_10px_40px_rgba(0,0,0,0.4)] max-h-56 overflow-y-auto animate-in fade-in zoom-in-95 duration-100 py-1">
+                    {sources.map(s => (
+                      <button
+                        key={s.key}
+                        type="button"
+                        onClick={() => { setSourceKey(s.key); setOpenDropdown(null); }}
+                        className={`w-full flex items-center gap-2.5 px-3 py-2 text-sm hover:bg-blue-50 dark:hover:bg-gray-700 transition-colors ${s.key === sourceKey ? 'bg-blue-50/50 dark:bg-blue-900/40 font-semibold' : ''}`}
+                      >
+                        {personIcon(s, 'w-6 h-6')}
+                        <span className="truncate flex-1 text-left text-gray-700 dark:text-gray-200">{s.name}</span>
+                        <span className="text-xs font-bold text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 px-1.5 py-0.5 rounded-md flex-shrink-0">{s.count}</span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div className="pb-2.5 text-gray-400"><ArrowRight className="w-5 h-5" /></div>
+
+            {/* DO KOGO */}
+            <div className="flex-1 space-y-1.5">
+              <label className="text-[11px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">{t('statistics.rebalanceTo')}</label>
+              <div className="relative" ref={targetRef}>
+                <button
+                  type="button"
+                  onClick={() => setOpenDropdown(openDropdown === 'target' ? null : 'target')}
+                  className="w-full flex items-center gap-2 px-3 py-2.5 bg-gray-50 dark:bg-gray-900/40 border border-gray-200 dark:border-gray-700 rounded-xl text-sm font-medium text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500/50 hover:border-blue-300 dark:hover:border-blue-500/50 transition-colors"
+                >
+                  {target && personIcon(target)}
+                  <span className="truncate flex-1 text-left">{target?.name}</span>
+                  <span className="text-xs font-bold text-gray-600 dark:text-gray-300 bg-gray-200 dark:bg-gray-700 px-1.5 py-0.5 rounded-md flex-shrink-0">{target?.count ?? 0}</span>
+                  <ChevronDown className={`w-4 h-4 text-gray-400 flex-shrink-0 transition-transform ${openDropdown === 'target' ? 'rotate-180' : ''}`} />
+                </button>
+                {openDropdown === 'target' && (
+                  <div className="absolute z-50 left-0 top-full mt-1 w-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-xl shadow-lg dark:shadow-[0_10px_40px_rgba(0,0,0,0.4)] max-h-56 overflow-y-auto animate-in fade-in zoom-in-95 duration-100 py-1">
+                    {targets.map(tg => {
+                      const isSelf = source?.techId != null && source.techId === tg.techId;
+                      return (
+                        <button
+                          key={tg.key}
+                          type="button"
+                          disabled={isSelf}
+                          onClick={() => { if (!isSelf) { setTargetKey(tg.key); setOpenDropdown(null); } }}
+                          className={`w-full flex items-center gap-2.5 px-3 py-2 text-sm transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${tg.key === targetKey ? 'bg-blue-50/50 dark:bg-blue-900/40 font-semibold' : 'hover:bg-blue-50 dark:hover:bg-gray-700'}`}
+                        >
+                          {personIcon(tg, 'w-6 h-6')}
+                          <span className="truncate flex-1 text-left text-gray-700 dark:text-gray-200">{tg.name}</span>
+                          <span className="text-xs font-bold text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 px-1.5 py-0.5 rounded-md flex-shrink-0">{tg.count}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {sameSourceTarget && (
+            <p className="text-xs font-medium text-amber-600 dark:text-amber-400">{t('statistics.rebalanceSamePerson')}</p>
+          )}
+
+          {/* Liczba + kolejność */}
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1.5">
+              <label className="text-[11px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">{t('statistics.rebalanceCount')}</label>
+              <input
+                type="number"
+                min={1}
+                max={sourceCount}
+                value={count}
+                onChange={e => setCount(Math.max(1, Math.min(sourceCount, parseInt(e.target.value) || 1)))}
+                className="w-full px-3 py-2.5 bg-gray-50 dark:bg-gray-900/40 border border-gray-200 dark:border-gray-700 rounded-xl text-sm font-medium text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500/50"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-[11px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">{t('statistics.rebalanceOrder')}</label>
+              <div className="flex gap-1 p-1 bg-gray-100 dark:bg-gray-900/40 border border-gray-200 dark:border-gray-700 rounded-xl">
+                {(['oldest', 'newest'] as const).map(opt => (
+                  <button
+                    key={opt}
+                    type="button"
+                    onClick={() => setOrder(opt)}
+                    className={`flex-1 py-2 rounded-lg text-sm font-semibold transition-all duration-200 ${order === opt
+                      ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm'
+                      : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
+                    }`}
+                  >
+                    {opt === 'oldest' ? t('statistics.rebalanceOldest') : t('statistics.rebalanceNewest')}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Podgląd efektu */}
+          {source && target && !sameSourceTarget && moveCount > 0 && (
+            <div className="p-3 rounded-xl bg-blue-50/60 dark:bg-blue-900/15 border border-blue-100 dark:border-blue-800/40 space-y-1.5">
+              <p className="text-[11px] font-bold text-blue-600 dark:text-blue-400 uppercase tracking-wider">{t('statistics.rebalancePreview')}</p>
+              <div className="flex items-center justify-between text-sm">
+                <span className="font-medium text-gray-700 dark:text-gray-300 truncate">{source.name}</span>
+                <span className="font-mono text-gray-500 dark:text-gray-400">{pct(sourceCount)}% <ArrowRight className="w-3 h-3 inline mx-0.5" /> <span className="text-green-600 dark:text-green-400 font-bold">{pct(srcAfter)}%</span></span>
+              </div>
+              <div className="flex items-center justify-between text-sm">
+                <span className="font-medium text-gray-700 dark:text-gray-300 truncate">{target.name}</span>
+                <span className="font-mono text-gray-500 dark:text-gray-400">{pct(target.count)}% <ArrowRight className="w-3 h-3 inline mx-0.5" /> <span className="text-blue-600 dark:text-blue-400 font-bold">{pct(tgtAfter)}%</span></span>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Footer */}
+        <div className="px-6 py-4 border-t border-gray-100 dark:border-gray-700 flex justify-end gap-3">
+          <button onClick={() => !submitting && onClose()} className="px-4 py-2 text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-xl transition-colors">
+            {t('statistics.rebalanceCancel')}
+          </button>
+          <button
+            onClick={handleConfirm}
+            disabled={!canSubmit || done}
+            className={`px-5 py-2 text-sm font-bold text-white rounded-xl shadow-sm transition-all disabled:opacity-50 flex items-center gap-2 ${done ? 'bg-green-500 pointer-events-none' : 'bg-blue-600 hover:bg-blue-700'}`}
+          >
+            {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : done ? <CheckCircle2 className="w-4 h-4" /> : <Scale className="w-4 h-4" />}
+            {done ? t('statistics.rebalanceDone') : t('statistics.rebalanceConfirm', { count: moveCount })}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 // ==================== MAIN PAGE ====================
 const StatisticsPage: React.FC = () => {
   const { t } = useTranslation();
@@ -229,6 +508,7 @@ const StatisticsPage: React.FC = () => {
   const navigate = useNavigate();
   const [tickets, setTickets] = useState<Ticket[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showRebalance, setShowRebalance] = useState(false);
 
   const role = authContext?.user?.role;
   const isAdmin = role === 'ADMIN';
@@ -327,6 +607,16 @@ const StatisticsPage: React.FC = () => {
     };
     fetchData();
   }, []);
+
+  // Odświeżenie listy zgłoszeń (po rebalansie obciążenia)
+  const reloadTickets = async () => {
+    try {
+      const ticketRes = await api.get('tickets/');
+      setTickets(ticketRes.data);
+    } catch (err) {
+      console.error('Błąd odświeżania danych statystyk', err);
+    }
+  };
 
   if (loading) {
     return (
@@ -978,6 +1268,14 @@ const StatisticsPage: React.FC = () => {
           <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700/60 rounded-2xl shadow-sm p-6 flex flex-col h-[380px]">
             <div className="flex items-center justify-between mb-1">
               <h3 className="font-bold text-gray-900 dark:text-white">{t('statistics.chartWorkloadTitle')}</h3>
+              {(workloadEntries.length + (unassignedCount > 0 ? 1 : 0)) >= 2 && (
+                <button
+                  onClick={() => setShowRebalance(true)}
+                  className="inline-flex items-center gap-1.5 text-xs font-bold text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 px-2.5 py-1 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors"
+                >
+                  <Scale className="w-3.5 h-3.5" /> {t('statistics.rebalanceBtn')}
+                </button>
+              )}
             </div>
             <p className="text-xs text-gray-500 dark:text-gray-400 mb-5">{t('statistics.chartWorkloadSubAdmin')}</p>
 
@@ -1045,6 +1343,17 @@ const StatisticsPage: React.FC = () => {
           </div>
 
         </div>
+
+        {showRebalance && (
+          <RebalanceModal
+            activeTickets={activeTickets}
+            unassignedCount={unassignedCount}
+            workloadEntries={workloadEntries}
+            onClose={() => setShowRebalance(false)}
+            onDone={async () => { await reloadTickets(); setShowRebalance(false); }}
+            t={t}
+          />
+        )}
       </div>
     );
   }

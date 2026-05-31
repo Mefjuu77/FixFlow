@@ -349,7 +349,20 @@
     "suggOldTickets_one": "{{count}} zgłoszenie jest otwarte dłużej niż 7 dni.",
     "suggOldTickets_few": "{{count}} zgłoszenia są otwarte dłużej niż 7 dni.",
     "suggOldTickets_many": "{{count}} zgłoszeń jest otwartych dłużej niż 7 dni.",
-    "suggOldTickets_other": "{{count}} zgłoszeń jest otwartych dłużej niż 7 dni."
+    "suggOldTickets_other": "{{count}} zgłoszeń jest otwartych dłużej niż 7 dni.",
+    "rebalanceBtn": "Rozłóż obciążenie",
+    "rebalanceTitle": "Rebalans obciążenia",
+    "rebalanceFrom": "Od kogo",
+    "rebalanceTo": "Do kogo",
+    "rebalanceCount": "Liczba zgłoszeń",
+    "rebalanceOrder": "Które zgłoszenia",
+    "rebalanceOldest": "Najstarsze",
+    "rebalanceNewest": "Najnowsze",
+    "rebalancePreview": "Po zmianie",
+    "rebalanceSamePerson": "Wybierz różne osoby źródła i celu.",
+    "rebalanceCancel": "Anuluj",
+    "rebalanceConfirm": "Przenieś {{count}}",
+    "rebalanceDone": "Gotowe!"
   },
   "createTicket": {
     "title": "Nowe zgłoszenie",

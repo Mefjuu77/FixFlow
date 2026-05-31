@@ -339,7 +339,20 @@
     "suggImbalance": "Uneven distribution: {{max}} has {{maxCount}} tickets vs {{min}} — {{minCount}}.",
     "suggResolvedDrop": "{{pct}}% fewer tickets resolved than in the previous period ({{curr}} vs {{prev}}).",
     "suggOldTickets_one": "{{count}} ticket has been open for more than 7 days.",
-    "suggOldTickets_other": "{{count}} tickets have been open for more than 7 days."
+    "suggOldTickets_other": "{{count}} tickets have been open for more than 7 days.",
+    "rebalanceBtn": "Balance workload",
+    "rebalanceTitle": "Workload rebalance",
+    "rebalanceFrom": "From",
+    "rebalanceTo": "To",
+    "rebalanceCount": "Ticket count",
+    "rebalanceOrder": "Which tickets",
+    "rebalanceOldest": "Oldest",
+    "rebalanceNewest": "Newest",
+    "rebalancePreview": "After change",
+    "rebalanceSamePerson": "Pick different source and target people.",
+    "rebalanceCancel": "Cancel",
+    "rebalanceConfirm": "Move {{count}}",
+    "rebalanceDone": "Done!"
   },
   "createTicket": {
     "title": "New ticket",
