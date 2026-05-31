@@ -32,6 +32,7 @@ import {
   Pencil,
   Globe,
   Tags,
+  SlidersHorizontal,
 } from 'lucide-react';
 
 
@@ -345,7 +346,7 @@ const SettingsPage: React.FC = () => {
 
   const personalTabs: { id: string; label: string; icon: React.ReactNode }[] = [
     { id: 'profile', label: t('settings.tabAccount'), icon: <User className="w-4 h-4" /> },
-    { id: 'preferences', label: t('settings.tabPreferences'), icon: <Palette className="w-4 h-4" /> },
+    { id: 'preferences', label: t('settings.tabPreferences'), icon: <SlidersHorizontal className="w-4 h-4" /> },
     { id: 'notifications', label: t('settings.tabNotifications'), icon: <Bell className="w-4 h-4" /> },
   ];
 
@@ -661,8 +662,9 @@ const SettingsPage: React.FC = () => {
 
           {/* ===== APPEARANCE TAB ===== */}
           {/* ===== PREFERENCES TAB (Wygląd + Język) ===== */}
-          {activeTab === 'preferences' && (
+                    {activeTab === 'preferences' && (
             <div className="space-y-6">
+              {/* Karta: Motyw */}
               <div className="bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700/60 rounded-2xl sm:rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-[0_8px_30px_rgb(0,0,0,0.1)] p-4 sm:p-8">
                 <div className="flex items-center gap-3 sm:gap-4 mb-5 sm:mb-8">
                   <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl bg-blue-50 dark:bg-blue-500/10 flex items-center justify-center border border-blue-100 dark:border-blue-500/20">
@@ -674,8 +676,7 @@ const SettingsPage: React.FC = () => {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-3 sm:gap-6">
-                  {/* Light mode */}
+                <div className="grid grid-cols-2 gap-3 sm:gap-4 max-w-xl">
                   <button
                     onClick={() => { if (themeContext?.isDark) themeContext.toggleTheme(); }}
                     className={`relative flex flex-col items-center gap-4 p-6 rounded-2xl border-2 transition-all group ${!themeContext?.isDark
@@ -683,13 +684,10 @@ const SettingsPage: React.FC = () => {
                         : 'border-gray-200 dark:border-gray-700 hover:border-blue-300 dark:hover:border-blue-500/50 hover:shadow-md'
                       }`}
                   >
-                    <div className={`w-20 h-14 rounded-xl flex items-center justify-center shadow-sm transition-transform group-hover:scale-105 bg-gradient-to-br from-amber-50 to-orange-50 border border-amber-200/60`}>
-                      <Sun className="w-8 h-8 text-amber-500" />
+                    <div className="w-14 h-14 rounded-xl flex items-center justify-center shadow-sm transition-transform group-hover:scale-105 bg-gradient-to-br from-amber-50 to-orange-50 border border-amber-200/60">
+                      <Sun className="w-7 h-7 text-amber-500" />
                     </div>
-                    <div className="text-center">
-                      <p className="text-sm font-bold text-gray-900 dark:text-white">{t('settings.themeLight')}</p>
-                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{t('settings.themeLightDesc')}</p>
-                    </div>
+                    <p className="text-base font-bold text-gray-900 dark:text-white">{t('settings.themeLight')}</p>
                     {!themeContext?.isDark && (
                       <div className="absolute top-3 right-3">
                         <CheckCircle className="w-5 h-5 text-blue-500" />
@@ -697,7 +695,6 @@ const SettingsPage: React.FC = () => {
                     )}
                   </button>
 
-                  {/* Dark mode */}
                   <button
                     onClick={() => { if (!themeContext?.isDark) themeContext?.toggleTheme(); }}
                     className={`relative flex flex-col items-center gap-4 p-6 rounded-2xl border-2 transition-all group ${themeContext?.isDark
@@ -705,13 +702,10 @@ const SettingsPage: React.FC = () => {
                         : 'border-gray-200 dark:border-gray-700 hover:border-blue-300 dark:hover:border-blue-500/50 hover:shadow-md'
                       }`}
                   >
-                    <div className={`w-20 h-14 rounded-xl flex items-center justify-center shadow-sm transition-transform group-hover:scale-105 bg-gradient-to-br from-slate-800 to-slate-900 border border-slate-600`}>
-                      <Moon className="w-8 h-8 text-blue-400" />
+                    <div className="w-14 h-14 rounded-xl flex items-center justify-center shadow-sm transition-transform group-hover:scale-105 bg-gradient-to-br from-slate-800 to-slate-900 border border-slate-600">
+                      <Moon className="w-7 h-7 text-blue-400" />
                     </div>
-                    <div className="text-center">
-                      <p className="text-sm font-bold text-gray-900 dark:text-white">{t('settings.themeDark')}</p>
-                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{t('settings.themeDarkDesc')}</p>
-                    </div>
+                    <p className="text-base font-bold text-gray-900 dark:text-white">{t('settings.themeDark')}</p>
                     {themeContext?.isDark && (
                       <div className="absolute top-3 right-3">
                         <CheckCircle className="w-5 h-5 text-blue-500" />
@@ -723,9 +717,7 @@ const SettingsPage: React.FC = () => {
 
               {/* Karta: Język */}
               <div className="bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700/60 rounded-2xl sm:rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-[0_8px_30px_rgb(0,0,0,0.1)] p-4 sm:p-8">
-
-                {/* Header */}
-                <div className="flex items-center gap-3 sm:gap-4 mb-7 sm:mb-10">
+                <div className="flex items-center gap-3 sm:gap-4 mb-5 sm:mb-8">
                   <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-lg shadow-blue-500/25">
                     <Globe className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
                   </div>
@@ -735,64 +727,45 @@ const SettingsPage: React.FC = () => {
                   </div>
                 </div>
 
-                {/* Language cards */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="grid grid-cols-2 gap-3 sm:gap-4 max-w-xl">
                   {SUPPORTED_LANGUAGES.map((lng) => {
                     const active = (i18n.language?.split('-')[0] || 'pl') === lng;
-                    const meta: Record<AppLanguage, { flag: string; native: string; labelKey: string }> = {
-                      pl: { flag: '🇵🇱', native: 'Polski', labelKey: 'language.polish' },
-                      en: { flag: '🇬🇧', native: 'English', labelKey: 'language.english' },
+                    const meta: Record<AppLanguage, { flag: string; labelKey: string }> = {
+                      pl: { flag: '🇵🇱', labelKey: 'language.polish' },
+                      en: { flag: '🇬🇧', labelKey: 'language.english' },
                     };
                     const lang = meta[lng];
                     return (
                       <button
                         key={lng}
                         onClick={() => i18n.changeLanguage(lng)}
-                        className={`relative group flex items-center gap-4 sm:gap-5 p-5 sm:p-6 rounded-2xl border-2 transition-all duration-300 text-left overflow-hidden ${active
-                          ? 'border-blue-500 bg-gradient-to-br from-blue-50 to-indigo-50/60 dark:from-blue-500/10 dark:to-indigo-500/5 shadow-lg shadow-blue-500/10'
-                          : 'border-gray-200 dark:border-gray-700 hover:border-blue-300 dark:hover:border-blue-500/40 bg-gray-50/30 dark:bg-gray-900/20 hover:bg-white dark:hover:bg-gray-700/30 hover:shadow-md'
+                        className={`relative flex flex-col items-center gap-4 p-6 rounded-2xl border-2 transition-all group ${active
+                          ? 'border-blue-500 bg-blue-50/50 dark:bg-blue-500/10 shadow-md ring-4 ring-blue-500/10'
+                          : 'border-gray-200 dark:border-gray-700 hover:border-blue-300 dark:hover:border-blue-500/50 hover:shadow-md'
                         }`}
                       >
-                        {/* Glow overlay when active */}
+                        <div
+                          className={`w-14 h-14 rounded-xl flex items-center justify-center shadow-sm transition-transform group-hover:scale-105 overflow-hidden ${
+                            active ? 'bg-white dark:bg-gray-800 shadow-md' : 'bg-gray-50 dark:bg-gray-700/60'
+                          }`}
+                        >
+                          <img
+                            src={lng === 'pl' ? 'https://flagcdn.com/w80/pl.png' : 'https://flagcdn.com/w80/gb.png'}
+                            alt={lng}
+                            className="w-10 h-auto rounded"
+                            loading="lazy"
+                          />
+                        </div>
+                        <p className="text-base font-bold text-gray-900 dark:text-white">{t(lang.labelKey)}</p>
                         {active && (
-                          <div className="absolute inset-0 bg-gradient-to-br from-blue-400/5 via-transparent to-indigo-400/5 pointer-events-none rounded-2xl" />
-                        )}
-
-                        {/* Flag bubble */}
-                        <div className={`flex-shrink-0 w-14 h-14 sm:w-16 sm:h-16 rounded-2xl flex items-center justify-center text-3xl sm:text-4xl shadow-sm transition-all duration-300 ${
-                          active
-                            ? 'bg-white dark:bg-gray-800 shadow-md shadow-blue-100 dark:shadow-blue-900/20'
-                            : 'bg-white dark:bg-gray-700/60 group-hover:shadow-md group-hover:bg-white dark:group-hover:bg-gray-700'
-                        }`}>
-                          {lang.flag}
-                        </div>
-
-                        {/* Text */}
-                        <div className="flex-1 min-w-0">
-                          <p className={`text-base sm:text-lg font-bold tracking-tight transition-colors ${active ? 'text-blue-700 dark:text-blue-300' : 'text-gray-900 dark:text-white'}`}>
-                            {t(lang.labelKey)}
-                          </p>
-                          <p className={`text-sm mt-0.5 font-medium transition-colors ${active ? 'text-blue-500/80 dark:text-blue-400/70' : 'text-gray-400 dark:text-gray-500'}`}>
-                            {lang.native}
-                          </p>
-                        </div>
-
-                        {/* Active badge / inactive radio */}
-                        {active ? (
-                          <div className="flex-shrink-0 flex items-center gap-1.5 px-2.5 py-1 bg-blue-500 dark:bg-blue-600 rounded-full shadow-sm">
-                            <CheckCircle className="w-3.5 h-3.5 text-white" />
-                            <span className="text-[11px] font-bold text-white uppercase tracking-wide">{t('language.active')}</span>
+                          <div className="absolute top-3 right-3">
+                            <CheckCircle className="w-5 h-5 text-blue-500" />
                           </div>
-                        ) : (
-                          <div className="flex-shrink-0 w-6 h-6 rounded-full border-2 border-gray-300 dark:border-gray-600 group-hover:border-blue-400 dark:group-hover:border-blue-500 transition-colors duration-200" />
                         )}
                       </button>
                     );
                   })}
                 </div>
-
-                {/* Hint */}
-                <p className="mt-6 text-xs text-gray-400 dark:text-gray-500 text-center">{t('language.hint')}</p>
               </div>
             </div>
           )}

@@ -741,7 +741,7 @@
     "tabNotifications": "Notifications",
     "tabTemplates": "Templates",
     "themeTitle": "Interface Theme",
-    "themeDescription": "Choose light or dark mode for the application.",
+    "themeDescription": "Choose the application theme.",
     "themeLight": "Light Mode",
     "themeLightDesc": "Bright, clean interface",
     "themeDark": "Dark Mode",
