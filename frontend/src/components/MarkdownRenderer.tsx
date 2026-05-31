@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 
 interface MarkdownRendererProps {
   content: string;
@@ -80,8 +81,9 @@ const sanitizeHTML = (html: string): string => {
  * Renders HTML content safely.
  */
 const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({ content, className = '' }) => {
+  const { t } = useTranslation();
   if (!content || content === '<p></p>') {
-    return <span className="text-gray-400 italic text-sm">Brak opisu.</span>;
+    return <span className="text-gray-400 italic text-sm">{t('common.noDescription')}</span>;
   }
 
   return (

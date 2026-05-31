@@ -12,7 +12,8 @@
     "confirm": "Potwierdź",
     "yes": "Tak",
     "no": "Nie",
-    "all": "Wszystkie"
+    "all": "Wszystkie",
+    "noDescription": "Brak opisu."
   },
   "language": {
     "label": "Język",

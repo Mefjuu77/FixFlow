@@ -1023,7 +1023,7 @@ const StatisticsPage: React.FC = () => {
             <p className="text-xs text-gray-500 dark:text-gray-400 mb-5">{t('statistics.chartCategorySub')}</p>
             <div className="flex-1 space-y-1 overflow-y-auto pr-1" style={{ scrollbarWidth: 'thin', scrollbarColor: '#cbd5e1 transparent' }}>
               {categorySorted.length === 0 ? (
-                <p className="text-sm text-gray-500 dark:text-gray-400 italic text-center py-6">Brak otwartych zgłoszeń.</p>
+                <p className="text-sm text-gray-500 dark:text-gray-400 italic text-center py-6">{t('statistics.noOpenTickets')}</p>
               ) : (
                 categorySorted.map(([cat, count], i) => (
                   <HorizontalBar key={cat} label={t(`categories.${cat}`, cat)} value={count} max={maxCategoryVal} color={categoryColors[i % categoryColors.length]} total={activeTickets.length} tooltipTemplate={t('statistics.barTooltip')} icon={getCategoryIcon(cat)} onClick={() => {
@@ -1064,7 +1064,7 @@ const StatisticsPage: React.FC = () => {
                 } onClick={() => navigate(`/tickets?assignment=${data.techId}`)} />
               ))}
               {workloadEntries.length === 0 && unassignedCount === 0 && (
-                <p className="text-sm text-gray-500 italic text-center py-6">Brak aktywnych zgłoszeń.</p>
+                <p className="text-sm text-gray-500 italic text-center py-6">{t('statistics.noActiveTickets')}</p>
               )}
             </div>
           </div>
@@ -1243,7 +1243,7 @@ const StatisticsPage: React.FC = () => {
             <p className="text-xs text-gray-500 dark:text-gray-400 mb-5">{t('statistics.chartCategorySub')}</p>
             <div className="flex-1 space-y-1 overflow-y-auto pr-1" style={{ scrollbarWidth: 'thin', scrollbarColor: '#cbd5e1 transparent' }}>
               {categorySorted.length === 0 ? (
-                <p className="text-sm text-gray-500 italic text-center py-6">Brak otwartych zgłoszeń.</p>
+                <p className="text-sm text-gray-500 italic text-center py-6">{t('statistics.noOpenTickets')}</p>
               ) : (
                 categorySorted.map(([cat, count], i) => (
                   <HorizontalBar key={cat} label={t(`categories.${cat}`, cat)} value={count} max={maxCategoryVal} color={categoryColors[i % categoryColors.length]} total={activeTickets.length} tooltipTemplate={t('statistics.barTooltip')} icon={getCategoryIcon(cat)} onClick={() => {
@@ -1300,7 +1300,7 @@ const StatisticsPage: React.FC = () => {
                 } onClick={() => navigate(`/tickets?assignment=${data.techId}`)} />
               ))}
               {workloadEntries.length === 0 && unassignedCount === 0 && (
-                <p className="text-sm text-gray-500 italic text-center py-6">Brak aktywnych zgłoszeń.</p>
+                <p className="text-sm text-gray-500 italic text-center py-6">{t('statistics.noActiveTickets')}</p>
               )}
             </div>
           </div>
@@ -1362,8 +1362,8 @@ const StatisticsPage: React.FC = () => {
   return (
     <div className="flex items-center justify-center h-full">
       <div className="text-center p-10">
-        <h2 className="text-xl font-bold text-gray-700">Brak dostępu</h2>
-        <p className="text-sm text-gray-500 mt-2">Sekcja statystyk jest dostępna tylko dla techników i administratorów.</p>
+        <h2 className="text-xl font-bold text-gray-700">{t('statistics.noAccess')}</h2>
+        <p className="text-sm text-gray-500 mt-2">{t('statistics.noAccessDesc')}</p>
       </div>
     </div>
   );
