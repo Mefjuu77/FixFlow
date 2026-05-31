@@ -16,6 +16,7 @@ import {
   TrendingDown,
   Ticket as TicketIcon,
   CheckCircle2,
+  Info,
   Clock,
 } from 'lucide-react';
 import dayjs from 'dayjs';
@@ -796,11 +797,17 @@ const StatisticsPage: React.FC = () => {
                       : 'bg-green-50 dark:bg-green-500/10 text-green-800 dark:text-green-400 border border-green-200 dark:border-green-500/20 hover:bg-green-100 dark:hover:bg-green-500/20'
                     }`}
                 >
-                  <AlertTriangle className={`w-4 h-4 flex-shrink-0 ${s.severity === 'warning' ? 'text-amber-500' : s.severity === 'info' ? 'text-blue-500' : 'text-green-500'}`} />
+                  {s.severity === 'warning' ? (
+                    <AlertTriangle className="w-4 h-4 flex-shrink-0 text-amber-500" />
+                  ) : s.severity === 'info' ? (
+                    <Info className="w-4 h-4 flex-shrink-0 text-blue-500" />
+                  ) : (
+                    <CheckCircle2 className="w-4 h-4 flex-shrink-0 text-green-500" />
+                  )}
                   <span className="flex-1">{s.text}</span>
                   {s.link && (
                     <Link to={s.link} onAuxClick={(e) => { e.preventDefault(); window.open(s.link, '_blank', 'noopener,noreferrer'); }} className="flex-shrink-0 flex items-center text-xs font-bold px-3 py-1.5 bg-white/60 dark:bg-gray-800/60 hover:bg-white dark:hover:bg-gray-700 text-gray-800 dark:text-gray-200 rounded-lg shadow-sm border border-black/5 dark:border-white/5 hover:shadow transition-all group">
-                      Zobacz
+                      {t('statistics.suggestionsView')}
                       <ArrowUpRight className="w-3 h-3 ml-1 text-gray-500 dark:text-gray-400 group-hover:text-gray-800 dark:group-hover:text-gray-200 transition-colors" />
                     </Link>
                   )}
@@ -1018,11 +1025,17 @@ const StatisticsPage: React.FC = () => {
                       : 'bg-green-50 dark:bg-green-500/10 text-green-800 dark:text-green-400 border border-green-200 dark:border-green-500/20 hover:bg-green-100 dark:hover:bg-green-500/20'
                     }`}
                 >
-                  <AlertTriangle className={`w-4 h-4 flex-shrink-0 ${s.severity === 'warning' ? 'text-amber-500' : s.severity === 'info' ? 'text-blue-500' : 'text-green-500'}`} />
+                  {s.severity === 'warning' ? (
+                    <AlertTriangle className="w-4 h-4 flex-shrink-0 text-amber-500" />
+                  ) : s.severity === 'info' ? (
+                    <Info className="w-4 h-4 flex-shrink-0 text-blue-500" />
+                  ) : (
+                    <CheckCircle2 className="w-4 h-4 flex-shrink-0 text-green-500" />
+                  )}
                   <span className="flex-1">{s.text}</span>
                   {s.link && (
                     <Link to={s.link} onAuxClick={(e) => { e.preventDefault(); window.open(s.link, '_blank', 'noopener,noreferrer'); }} className="flex-shrink-0 flex items-center text-xs font-bold px-3 py-1.5 bg-white/60 dark:bg-gray-800/60 hover:bg-white dark:hover:bg-gray-700 text-gray-800 dark:text-gray-200 rounded-lg shadow-sm border border-black/5 dark:border-white/5 hover:shadow transition-all group">
-                      Zobacz
+                      {t('statistics.suggestionsView')}
                       <ArrowUpRight className="w-3 h-3 ml-1 text-gray-500 dark:text-gray-400 group-hover:text-gray-800 dark:group-hover:text-gray-200 transition-colors" />
                     </Link>
                   )}

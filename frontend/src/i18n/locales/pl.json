@@ -474,6 +474,8 @@
   },
   "ticketDetails": {
     "back": "Wstecz",
+    "prevTicket": "Poprzednie zgłoszenie",
+    "nextTicket": "Następne zgłoszenie",
     "ticketLabel": "Zgłoszenie #{{id}}",
     "clickToEditTitle": "Kliknij, aby edytować tytuł",
     "minChars": "Min. 5 znaków (obecnie {{n}})",

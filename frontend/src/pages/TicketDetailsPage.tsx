@@ -15,6 +15,7 @@ import {
   ArrowLeft,
   User,
   ChevronDown,
+  ChevronUp,
   AlertTriangle,
   Lock,
   ChevronsUp,
@@ -134,6 +135,46 @@ const TicketDetailsPage: React.FC = () => {
   const technicianDropdownRef = useRef<HTMLDivElement>(null);
   const transitionAssigneeDropdownRef = useRef<HTMLDivElement>(null);
 
+  // Bezpieczeństwo zapisu pól: guard przeciw setState po odmontowaniu
+  // oraz wskaźnik trwającego zapisu (blokuje równoległe edycje i ostrzega przy zamknięciu karty).
+  const mountedRef = useRef(true);
+  const latestTicketReqRef = useRef<string | undefined>(undefined);
+  const [savingField, setSavingField] = useState(false);
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => { mountedRef.current = false; };
+  }, []);
+
+  // Nawigacja między aktywnymi zgłoszeniami (strzałki obok "Wstecz")
+  // — tylko dla technika/admina; pracownik nie ma "kolejki roboczej".
+  const [navIds, setNavIds] = useState<number[]>([]);
+  useEffect(() => {
+    const role = authContext?.user?.role;
+    if (role !== 'TECHNICIAN' && role !== 'ADMIN') return;
+    // Tylko aktywne zgłoszenia (NOWE + W_TOKU) — "kolejka robocza".
+    // Zakres zależny od roli ustala backend.
+    ticketService.getTicketIds({ active_only: 'true', ordering: '-created_at' })
+      .then(ids => { if (mountedRef.current) setNavIds(ids); })
+      .catch(() => { /* nawigacja opcjonalna — ignoruj błąd */ });
+  }, [authContext?.user?.role]);
+
+  const currentNavIndex = id ? navIds.indexOf(Number(id)) : -1;
+  const prevTicketId = currentNavIndex > 0 ? navIds[currentNavIndex - 1] : null;
+  const nextTicketId = currentNavIndex >= 0 && currentNavIndex < navIds.length - 1 ? navIds[currentNavIndex + 1] : null;
+
+  const goToTicket = (targetId: number | null) => {
+    if (targetId == null || savingField) return;
+    navigate(`/tickets/${targetId}`);
+  };
+
+  // Ostrzeż przed zamknięciem/odświeżeniem karty, gdy trwa zapis pola
+  useEffect(() => {
+    if (!savingField) return;
+    const handler = (e: BeforeUnloadEvent) => { e.preventDefault(); e.returnValue = ''; };
+    window.addEventListener('beforeunload', handler);
+    return () => window.removeEventListener('beforeunload', handler);
+  }, [savingField]);
+
   const targetStatusLabel = transitionModalConfig.targetStatus
     ? t(`status.${transitionModalConfig.targetStatus}`)
     : transitionModalConfig.targetStatus;
@@ -180,19 +221,29 @@ const TicketDetailsPage: React.FC = () => {
   }, []);
 
   const fetchTicket = useCallback(async () => {
+    const requestedId = id;
+    latestTicketReqRef.current = requestedId; // znacznik najnowszego żądania
+    // Pełnoekranowy spinner tylko przy pierwszym ładowaniu; przy nawigacji
+    // między zgłoszeniami zostawiamy bieżącą treść, by uniknąć "podskakiwania".
+    setError('');
     try {
-      const data = await ticketService.getTicket(id!);
+      const data = await ticketService.getTicket(requestedId!);
+      if (!mountedRef.current || latestTicketReqRef.current !== requestedId) return;
       setTicket(data);
+      setError('');
     } catch (err) {
+      if (!mountedRef.current || latestTicketReqRef.current !== requestedId) return;
       setError(t('ticketDetails.errorLoad'));
     } finally {
-      setLoading(false);
+      if (mountedRef.current && latestTicketReqRef.current === requestedId) setLoading(false);
     }
   }, [id]);
 
   const fetchComments = useCallback(async () => {
+    const requestedId = id;
     try {
-      const data = await ticketService.getComments(id!);
+      const data = await ticketService.getComments(requestedId!);
+      if (!mountedRef.current || latestTicketReqRef.current !== requestedId) return;
       setComments(data);
     } catch (err) {
       console.error('Błąd pobierania komentarzy:', err);
@@ -200,8 +251,10 @@ const TicketDetailsPage: React.FC = () => {
   }, [id]);
 
   const fetchLogs = useCallback(async () => {
+    const requestedId = id;
     try {
-      const data = await ticketService.getLogs(id!);
+      const data = await ticketService.getLogs(requestedId!);
+      if (!mountedRef.current || latestTicketReqRef.current !== requestedId) return;
       setTicketLogs(data);
     } catch (err) {
       console.error('Błąd pobierania logów:', err);
@@ -209,8 +262,10 @@ const TicketDetailsPage: React.FC = () => {
   }, [id]);
 
   const fetchWorkLogs = useCallback(async () => {
+    const requestedId = id;
     try {
-      const data = await ticketService.getWorkLogs(id!);
+      const data = await ticketService.getWorkLogs(requestedId!);
+      if (!mountedRef.current || latestTicketReqRef.current !== requestedId) return;
       setWorkLogs(data);
     } catch (err) {
       console.error('Błąd pobierania rejestru prac:', err);
@@ -224,10 +279,15 @@ const TicketDetailsPage: React.FC = () => {
       fetchLogs();
       fetchWorkLogs();
     }
+  }, [id, fetchTicket, fetchComments, fetchLogs, fetchWorkLogs]);
+
+  // Dane referencyjne (technicy, użytkownicy, kategorie) nie zmieniają się
+  // między zgłoszeniami — pobieramy je raz, a nie przy każdej nawigacji.
+  useEffect(() => {
     fetchTechnicians();
     fetchAllUsers();
     fetchCategories();
-  }, [id, fetchTicket, fetchComments, fetchLogs, fetchWorkLogs]);
+  }, []);
 
   // Załaduj szablony szybkich odpowiedzi (technik/admin)
   useEffect(() => {
@@ -282,13 +342,19 @@ const TicketDetailsPage: React.FC = () => {
 
   const updateTicketField = async (updates: Partial<Ticket>) => {
     if (!ticket) return;
+    if (savingField) return; // zapobiega równoległym zapisom
+    setSavingField(true);
     try {
       const updated = await ticketService.updateTicket(ticket.id, updates);
+      if (!mountedRef.current) return; // komponent odmontowany — nie aktualizuj stanu
       setTicket(updated);
       fetchLogs();
     } catch (err) {
+      if (!mountedRef.current) return;
       console.error('Update error', err);
       alert(t('ticketDetails.errorUpdate'));
+    } finally {
+      if (mountedRef.current) setSavingField(false);
     }
   };
 
@@ -521,18 +587,44 @@ const TicketDetailsPage: React.FC = () => {
 
   return (
     <div className="w-full pb-12 animate-in fade-in duration-500">
-      <button 
-        onClick={() => {
-          if (window.history.state && window.history.state.idx > 0) {
-            navigate(-1);
-          } else {
-            navigate('/tickets');
-          }
-        }} 
-        className="flex items-center text-gray-500 dark:text-gray-400 hover:!text-blue-600 dark:hover:!text-blue-400 font-semibold mb-6 transition-colors"
-      >
-        <ArrowLeft className="w-4 h-4 mr-1" /> {t('ticketDetails.back')}
-      </button>
+      <div className="flex items-center gap-3 mb-6">
+        <button 
+          onClick={() => {
+            if (window.history.state && window.history.state.idx > 0) {
+              navigate(-1);
+            } else {
+              navigate('/tickets');
+            }
+          }} 
+          className="flex items-center text-gray-500 dark:text-gray-400 hover:!text-blue-600 dark:hover:!text-blue-400 font-semibold transition-colors"
+        >
+          <ArrowLeft className="w-4 h-4 mr-1" /> {t('ticketDetails.back')}
+        </button>
+
+        {/* Nawigacja między aktywnymi zgłoszeniami — odsunięta od "Wstecz" separatorem */}
+        {currentNavIndex >= 0 && navIds.length > 1 && (
+          <div className="flex items-center gap-1.5 ml-3 pl-3 border-l border-gray-200 dark:border-gray-700">
+            <button
+              onClick={() => goToTicket(prevTicketId)}
+              disabled={prevTicketId == null || savingField}
+              title={t('ticketDetails.prevTicket')}
+              aria-label={t('ticketDetails.prevTicket')}
+              className="flex items-center justify-center w-9 h-9 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-blue-600 dark:hover:text-blue-400 disabled:opacity-40 disabled:cursor-not-allowed transition-colors shadow-sm"
+            >
+              <ChevronUp className="w-4 h-4" />
+            </button>
+            <button
+              onClick={() => goToTicket(nextTicketId)}
+              disabled={nextTicketId == null || savingField}
+              title={t('ticketDetails.nextTicket')}
+              aria-label={t('ticketDetails.nextTicket')}
+              className="flex items-center justify-center w-9 h-9 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-blue-600 dark:hover:text-blue-400 disabled:opacity-40 disabled:cursor-not-allowed transition-colors shadow-sm"
+            >
+              <ChevronDown className="w-4 h-4" />
+            </button>
+          </div>
+        )}
+      </div>
 
       {/* Baner weryfikacji rozwiązania dla klienta */}
       {ticket.status === 'ROZWIAZANE' && authContext?.user?.role === 'EMPLOYEE' && ticket.resolved_at && (() => {
@@ -1018,36 +1110,38 @@ const TicketDetailsPage: React.FC = () => {
                               </span>
                             )}
                           </div>
-                          <div className={`p-4 rounded-xl flex-1 min-w-0 group/comment ${isInternal ? 'bg-amber-50 border border-amber-200' : 'bg-gray-50 border border-gray-100'}`}>
+                          <div className={`relative p-4 rounded-xl flex-1 min-w-0 group/comment ${isInternal ? 'bg-amber-50 border border-amber-200' : 'bg-gray-50 border border-gray-100'}`}>
                             <div className="flex justify-between items-start mb-2">
                               <span className="font-semibold text-gray-900 text-sm">{comment.author_details?.first_name} {comment.author_details?.last_name}</span>
-                              <div className="flex items-center gap-2">
-                                <span className="text-xs text-gray-500">
+                              <div className="flex items-center gap-2 flex-shrink-0">
+                                <span className="text-xs text-gray-500 whitespace-nowrap">
                                   {dayjs(comment.created_at).format('DD MMM YYYY, HH:mm')}
                                 </span>
                                 {comment.is_edited && (
                                   <span className="text-[11px] text-gray-400 italic">{t('ticketDetails.edited')}</span>
                                 )}
-                                {canModify && !isEditing && (
-                                  <div className="flex items-center gap-0.5 opacity-0 group-hover/comment:opacity-100 transition-opacity">
-                                    <button
-                                      onClick={() => { setEditingCommentId(comment.id); setEditCommentText(comment.content); }}
-                                      className="p-1 text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded transition-colors"
-                                      title={t('common.edit')}
-                                    >
-                                      <Pencil className="w-3.5 h-3.5" />
-                                    </button>
-                                    <button
-                                      onClick={() => setCommentToDelete(comment)}
-                                      className="p-1 text-gray-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors"
-                                      title={t('common.delete')}
-                                    >
-                                      <Trash2 className="w-3.5 h-3.5" />
-                                    </button>
-                                  </div>
-                                )}
                               </div>
                             </div>
+
+                            {/* Pływający pasek akcji — nie wpływa na układ daty */}
+                            {canModify && !isEditing && (
+                              <div className="absolute top-2 right-2 flex items-center gap-0.5 p-0.5 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 shadow-sm opacity-0 group-hover/comment:opacity-100 transition-opacity z-10">
+                                <button
+                                  onClick={() => { setEditingCommentId(comment.id); setEditCommentText(comment.content); }}
+                                  className="p-1.5 text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-md transition-colors"
+                                  title={t('common.edit')}
+                                >
+                                  <Pencil className="w-3.5 h-3.5" />
+                                </button>
+                                <button
+                                  onClick={() => setCommentToDelete(comment)}
+                                  className="p-1.5 text-gray-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-md transition-colors"
+                                  title={t('common.delete')}
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                </button>
+                              </div>
+                            )}
                             {isInternal && (
                               <div className="flex items-center gap-1.5 text-xs text-amber-700 bg-amber-100/50 px-2 py-1 rounded w-max mb-2">
                                 <Lock className="w-3 h-3" />
@@ -1929,7 +2023,7 @@ const TicketDetailsPage: React.FC = () => {
                 <div className="relative" ref={creatorDropdownRef}>
                   <div
                     className={`flex items-center gap-2 text-sm text-gray-900 ${isTechnicianOrAdmin ? 'cursor-pointer hover:bg-gray-50 p-1 -ml-1 rounded transition-colors' : ''}`}
-                    onClick={() => isTechnicianOrAdmin && setIsEditingCreator(!isEditingCreator)}
+                    onClick={() => isTechnicianOrAdmin && !savingField && setIsEditingCreator(!isEditingCreator)}
                     title={isTechnicianOrAdmin ? t('ticketDetails.clickToChangeReporter') : ""}
                   >
                     <div className="w-5 h-5 rounded-full bg-blue-600 flex items-center justify-center flex-shrink-0 text-white overflow-hidden">
@@ -1940,6 +2034,7 @@ const TicketDetailsPage: React.FC = () => {
                       )}
                     </div>
                     {ticket.creator_details?.first_name} {ticket.creator_details?.last_name}
+                    {savingField && isEditingCreator && <Loader2 className="w-3.5 h-3.5 animate-spin text-blue-500 ml-1" />}
                   </div>
                   {isEditingCreator && isTechnicianOrAdmin && (
                     <div className="absolute z-50 left-0 -ml-1 top-full mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-xl shadow-lg dark:shadow-[0_10px_40px_rgba(0,0,0,0.4)] w-[calc(100%+8px)] max-h-60 overflow-y-auto animate-in fade-in zoom-in-95 duration-100">
@@ -1947,14 +2042,15 @@ const TicketDetailsPage: React.FC = () => {
                         <button
                           key={u.id}
                           type="button"
+                          disabled={savingField}
                           onMouseDown={async (e) => {
                             e.preventDefault();
                             if (u.id !== ticket.creator) {
                               await updateTicketField({ creator: u.id });
                             }
-                            setIsEditingCreator(false);
+                            if (mountedRef.current) setIsEditingCreator(false);
                           }}
-                          className={`w-full flex items-center gap-2.5 px-3 py-2 text-sm hover:bg-blue-50 dark:hover:bg-gray-700 transition-colors ${ticket.creator === u.id ? 'bg-blue-50/50 dark:bg-blue-900/40 font-semibold' : ''}`}
+                          className={`w-full flex items-center gap-2.5 px-3 py-2 text-sm hover:bg-blue-50 dark:hover:bg-gray-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${ticket.creator === u.id ? 'bg-blue-50/50 dark:bg-blue-900/40 font-semibold' : ''}`}
                         >
                           <div className="w-5 h-5 rounded-full bg-blue-600 text-white flex items-center justify-center flex-shrink-0 overflow-hidden">
                             {u.avatar ? (
@@ -1976,8 +2072,8 @@ const TicketDetailsPage: React.FC = () => {
                 <span className="text-sm text-gray-500 font-medium pt-0.5">{t('ticketDetails.priority')}</span>
                 <div className="relative" ref={priorityDropdownRef}>
                   <div
-                    className={`flex items-center gap-2 text-sm text-gray-900 ${isTechnicianOrAdmin ? 'cursor-pointer hover:bg-gray-50 p-1 -ml-1 rounded transition-colors' : ''}`}
-                    onClick={() => isTechnicianOrAdmin && setIsEditingPriority(!isEditingPriority)}
+                    className={`flex items-center gap-2 text-sm text-gray-900 ${isTechnicianOrAdmin && !savingField ? 'cursor-pointer hover:bg-gray-50 p-1 -ml-1 rounded transition-colors' : 'p-1 -ml-1'} ${savingField ? 'opacity-60 pointer-events-none' : ''}`}
+                    onClick={() => isTechnicianOrAdmin && !savingField && setIsEditingPriority(!isEditingPriority)}
                     title={isTechnicianOrAdmin ? t('ticketDetails.clickToChangePriority') : ''}
                   >
                     {ticket.priority === 'WYSOKI' ? <ChevronsUp className="w-3.5 h-3.5 text-red-500" /> :
@@ -1986,6 +2082,7 @@ const TicketDetailsPage: React.FC = () => {
                     <span className={`font-medium ${ticket.priority === 'WYSOKI' ? 'text-red-600' : ticket.priority === 'NORMALNY' ? 'text-blue-600' : 'text-gray-600'}`}>
                       {ticket.priority === 'WYSOKI' ? t('ticketDetails.priorityHigh') : ticket.priority === 'NORMALNY' ? t('ticketDetails.priorityNormal') : t('ticketDetails.priorityLow')}
                     </span>
+                    {savingField && isEditingPriority && <Loader2 className="w-3.5 h-3.5 animate-spin text-blue-500 ml-1" />}
                   </div>
                   {isEditingPriority && isTechnicianOrAdmin && (
                     <div className="absolute z-50 left-0 -ml-1 top-full mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-xl shadow-lg dark:shadow-[0_10px_40px_rgba(0,0,0,0.4)] w-[calc(100%+8px)] animate-in fade-in zoom-in-95 duration-100 overflow-hidden">
@@ -1997,14 +2094,15 @@ const TicketDetailsPage: React.FC = () => {
                         <button
                           key={opt.value}
                           type="button"
+                          disabled={savingField}
                           onMouseDown={async (e) => {
                             e.preventDefault();
                             if (opt.value !== ticket.priority) {
                               await updateTicketField({ priority: opt.value as Ticket['priority'] });
                             }
-                            setIsEditingPriority(false);
+                            if (mountedRef.current) setIsEditingPriority(false);
                           }}
-                          className={`w-full flex items-center gap-2.5 px-3 py-2 text-sm hover:bg-blue-50 dark:hover:bg-gray-700 transition-colors ${ticket.priority === opt.value ? 'bg-blue-50/50 dark:bg-blue-900/40 font-semibold' : ''}`}
+                          className={`w-full flex items-center gap-2.5 px-3 py-2 text-sm hover:bg-blue-50 dark:hover:bg-gray-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${ticket.priority === opt.value ? 'bg-blue-50/50 dark:bg-blue-900/40 font-semibold' : ''}`}
                         >
                           {opt.icon}
                           <span className={`font-medium ${opt.color}`}>{opt.label}</span>
@@ -2020,14 +2118,15 @@ const TicketDetailsPage: React.FC = () => {
                 <span className="text-sm text-gray-500 font-medium">{t('ticketDetails.category')}</span>
                 <div className="relative" ref={categoryDropdownRef}>
                   <div
-                    className={`flex items-center gap-2 text-sm text-gray-900 ${isTechnicianOrAdmin ? 'cursor-pointer hover:bg-gray-50 p-1 -ml-1 rounded transition-colors' : ''}`}
-                    onClick={() => isTechnicianOrAdmin && setIsEditingCategory(!isEditingCategory)}
+                    className={`flex items-center gap-2 text-sm text-gray-900 ${isTechnicianOrAdmin && !savingField ? 'cursor-pointer hover:bg-gray-50 p-1 -ml-1 rounded transition-colors' : 'p-1 -ml-1'} ${savingField ? 'opacity-60 pointer-events-none' : ''}`}
+                    onClick={() => isTechnicianOrAdmin && !savingField && setIsEditingCategory(!isEditingCategory)}
                     title={isTechnicianOrAdmin ? t('ticketDetails.clickToChangeCategory') : ''}
                   >
                     <span className="w-5 flex justify-center text-gray-500">
                       {getCategoryIcon(ticket.category_name || '')}
                     </span>
                     {ticket.category_name ? t(`categories.${ticket.category_name}`, ticket.category_name) : ''}
+                    {savingField && isEditingCategory && <Loader2 className="w-3.5 h-3.5 animate-spin text-blue-500 ml-1" />}
                   </div>
                   {isEditingCategory && isTechnicianOrAdmin && (
                     <div className="absolute z-50 left-0 -ml-1 top-full mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-xl shadow-lg dark:shadow-[0_10px_40px_rgba(0,0,0,0.4)] w-[calc(100%+8px)] max-h-60 overflow-y-auto animate-in fade-in zoom-in-95 duration-100">
@@ -2035,14 +2134,15 @@ const TicketDetailsPage: React.FC = () => {
                         <button
                           key={cat.id}
                           type="button"
+                          disabled={savingField}
                           onMouseDown={async (e) => {
                             e.preventDefault();
                             if (cat.id !== ticket.category) {
                               await updateTicketField({ category: cat.id } as any);
                             }
-                            setIsEditingCategory(false);
+                            if (mountedRef.current) setIsEditingCategory(false);
                           }}
-                          className={`w-full flex items-center gap-2.5 px-3 py-2 text-sm hover:bg-blue-50 dark:hover:bg-gray-700 transition-colors ${ticket.category === cat.id ? 'bg-blue-50/50 dark:bg-blue-900/40 font-semibold' : ''}`}
+                          className={`w-full flex items-center gap-2.5 px-3 py-2 text-sm hover:bg-blue-50 dark:hover:bg-gray-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${ticket.category === cat.id ? 'bg-blue-50/50 dark:bg-blue-900/40 font-semibold' : ''}`}
                         >
                           <span className="w-4 flex justify-center text-gray-500">{getCategoryIcon(cat.name)}</span>
                           <span className="font-medium text-gray-700">{t(`categories.${cat.name}`, cat.name)}</span>
@@ -2058,8 +2158,8 @@ const TicketDetailsPage: React.FC = () => {
                 <span className="text-sm text-gray-500 font-medium pt-0.5">{t('ticketDetails.assignedTo')}</span>
                 <div className="space-y-1 relative" ref={technicianDropdownRef}>
                   <div
-                    className={`flex items-center gap-2 text-sm text-gray-900 ${isTechnicianOrAdmin ? 'cursor-pointer hover:bg-gray-50 p-1 -ml-1 rounded transition-colors' : ''}`}
-                    onClick={() => isTechnicianOrAdmin && setIsEditingTechnician(!isEditingTechnician)}
+                    className={`flex items-center gap-2 text-sm text-gray-900 ${isTechnicianOrAdmin && !savingField ? 'cursor-pointer hover:bg-gray-50 p-1 -ml-1 rounded transition-colors' : 'p-1 -ml-1'} ${savingField ? 'opacity-60 pointer-events-none' : ''}`}
+                    onClick={() => isTechnicianOrAdmin && !savingField && setIsEditingTechnician(!isEditingTechnician)}
                     title={isTechnicianOrAdmin ? t('ticketDetails.clickToAssign') : ""}
                   >
                     {ticket.technician_details ? (
@@ -2080,19 +2180,21 @@ const TicketDetailsPage: React.FC = () => {
                     ) : (
                       <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-xs font-semibold bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400 border border-dashed border-amber-300 dark:border-amber-700">{t('ticketDetails.unassigned')}</span>
                     )}
+                    {savingField && isEditingTechnician && <Loader2 className="w-3.5 h-3.5 animate-spin text-blue-500 ml-1" />}
                   </div>
                   {isEditingTechnician && isTechnicianOrAdmin && (
                     <div className="absolute z-50 left-0 -ml-1 top-full mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-xl shadow-lg dark:shadow-[0_10px_40px_rgba(0,0,0,0.4)] w-[calc(100%+8px)] max-h-60 overflow-y-auto animate-in fade-in zoom-in-95 duration-100">
                       <button
                         type="button"
+                        disabled={savingField}
                         onMouseDown={async (e) => {
                           e.preventDefault();
                           if (ticket.technician !== null) {
                             await updateTicketField({ technician: null });
                           }
-                          setIsEditingTechnician(false);
+                          if (mountedRef.current) setIsEditingTechnician(false);
                         }}
-                        className={`w-full flex items-center gap-2.5 px-3 py-2 text-sm hover:bg-blue-50 dark:hover:bg-gray-700 transition-colors ${ticket.technician === null ? 'bg-blue-50/50 dark:bg-blue-900/40 font-semibold' : ''}`}
+                        className={`w-full flex items-center gap-2.5 px-3 py-2 text-sm hover:bg-blue-50 dark:hover:bg-gray-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${ticket.technician === null ? 'bg-blue-50/50 dark:bg-blue-900/40 font-semibold' : ''}`}
                       >
                         <div className="w-5 h-5 rounded-full bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 flex items-center justify-center flex-shrink-0">
                           <UserMinus className="w-3 h-3" />
@@ -2103,14 +2205,15 @@ const TicketDetailsPage: React.FC = () => {
                         <button
                           key={t.id}
                           type="button"
+                          disabled={savingField}
                           onMouseDown={async (e) => {
                             e.preventDefault();
                             if (t.id !== ticket.technician) {
                               await updateTicketField({ technician: t.id });
                             }
-                            setIsEditingTechnician(false);
+                            if (mountedRef.current) setIsEditingTechnician(false);
                           }}
-                          className={`w-full flex items-center gap-2.5 px-3 py-2 text-sm hover:bg-blue-50 dark:hover:bg-gray-700 transition-colors ${ticket.technician === t.id ? 'bg-blue-50/50 dark:bg-blue-900/40 font-semibold' : ''}`}
+                          className={`w-full flex items-center gap-2.5 px-3 py-2 text-sm hover:bg-blue-50 dark:hover:bg-gray-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${ticket.technician === t.id ? 'bg-blue-50/50 dark:bg-blue-900/40 font-semibold' : ''}`}
                         >
                           <div className="w-5 h-5 rounded-full bg-blue-600 text-white flex items-center justify-center flex-shrink-0 overflow-hidden">
                             {t.avatar ? (

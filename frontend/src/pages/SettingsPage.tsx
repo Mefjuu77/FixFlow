@@ -784,7 +784,7 @@ const SettingsPage: React.FC = () => {
                   </div>
                 </div>
 
-                <div className="space-y-4">
+                <div className="space-y-4 max-w-xl">
                 {role !== 'EMPLOYEE' && (
                   <div 
                     onClick={() => handleTogglePreference('notify_new_ticket', notifyNewTicket)}

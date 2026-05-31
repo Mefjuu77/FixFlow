@@ -464,6 +464,8 @@
   },
   "ticketDetails": {
     "back": "Back",
+    "prevTicket": "Previous ticket",
+    "nextTicket": "Next ticket",
     "ticketLabel": "Ticket #{{id}}",
     "clickToEditTitle": "Click to edit title",
     "minChars": "Min. 5 characters (currently {{n}})",
