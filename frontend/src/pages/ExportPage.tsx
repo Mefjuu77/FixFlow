@@ -372,10 +372,10 @@ const ExportPage: React.FC = () => {
               <Calendar className="w-4 h-4 text-slate-400" /> {t('export.dateRange')}
             </label>
 
-            <div className="flex gap-1 p-1 bg-slate-50 dark:bg-slate-900/50 border border-slate-100 dark:border-slate-800 rounded-xl overflow-x-auto hide-scrollbar mb-4">
+            <div className="grid grid-cols-3 gap-1 p-1 bg-slate-50 dark:bg-slate-900/50 border border-slate-100 dark:border-slate-800 rounded-xl mb-4">
               {presetButtons.map(pb => (
                 <button key={pb.key} onClick={() => setDatePreset(pb.key)}
-                  className={`flex-1 px-2 py-1.5 rounded-lg text-xs font-bold transition-all duration-200 whitespace-nowrap
+                  className={`px-2 py-1.5 rounded-lg text-xs font-bold transition-all duration-200 whitespace-nowrap text-center
                     ${datePreset === pb.key ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/20' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-200/50 dark:hover:bg-slate-800/50'}`}
                 >
                   {pb.label}
