@@ -12,13 +12,13 @@
 
 ##  Spis treści
 
-- [O projekcie](#-o-projekcie)
-- [Funkcjonalności](#-funkcjonalności)
-- [Stack technologiczny](#-stack-technologiczny)
-- [Wymagania](#-wymagania)
-- [Instalacja](#-instalacja)
-- [Uruchomienie](#-uruchomienie)
-- [Struktura projektu](#-struktura-projektu)
+- [O projekcie](#o-projekcie)
+- [Funkcjonalności](#funkcjonalności)
+- [Stack technologiczny](#stack-technologiczny)
+- [Wymagania](#wymagania)
+- [Instalacja](#instalacja)
+- [Uruchomienie](#uruchomienie)
+- [Struktura projektu](#struktura-projektu)
 
 ---
 
