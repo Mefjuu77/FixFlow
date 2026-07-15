@@ -1,3 +1,7 @@
+# ============================================================
+# FixFlow — .gitignore
+# ============================================================
+
 # Environment variables
 .env
 
@@ -14,6 +18,24 @@ media/
 frontend/node_modules/
 frontend/dist/
 
-# Scratch / utility scripts
+# Scratch / utility / seed scripts
 scratch_*.py
+create_users.py
 db_backup.json
+
+# IDE & editor
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Postman
+.postman/
+postman/
+
+# OS files
+Thumbs.db
+.DS_Store
+
+# Agents
+.agents/

@@ -6,7 +6,7 @@ import time
 logger = logging.getLogger(__name__)
 
 FRONTEND_URL = getattr(settings, 'FIXFLOW_FRONTEND_URL', 'http://localhost:5173')
-BACKEND_URL = 'http://127.0.0.1:8000'  # URL backendu do linków tokenowych
+BACKEND_URL = getattr(settings, 'FIXFLOW_BACKEND_URL', 'http://127.0.0.1:8000')
 AUTO_CLOSE_DAYS = getattr(settings, 'FIXFLOW_AUTO_CLOSE_DAYS', 7)
 
 # ============================================================

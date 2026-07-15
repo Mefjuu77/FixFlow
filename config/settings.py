@@ -190,7 +190,10 @@ EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD', '')
 DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL', EMAIL_HOST_USER)
 
 # URL frontendu (do linków w e-mailach)
-FIXFLOW_FRONTEND_URL = 'http://localhost:5173'
+FIXFLOW_FRONTEND_URL = os.getenv('FIXFLOW_FRONTEND_URL', 'http://localhost:5173')
+
+# URL backendu (do linków tokenowych w e-mailach)
+FIXFLOW_BACKEND_URL = os.getenv('FIXFLOW_BACKEND_URL', 'http://127.0.0.1:8000')
 
 # Ilość dni do automatycznego zamknięcia zgłoszenia po rozwiązaniu
 FIXFLOW_AUTO_CLOSE_DAYS = 7

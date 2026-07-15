@@ -306,13 +306,13 @@ const CommandPalette: React.FC = () => {
                         if (activeIndex !== idx) setActiveIndex(idx);
                       }}
                       className={`w-full flex items-center gap-4 px-6 py-3 text-left ${isActive
-                          ? 'bg-blue-50 dark:bg-blue-600/20 text-blue-700 dark:text-blue-200'
-                          : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800/80'
+                        ? 'bg-blue-50 dark:bg-blue-600/20 text-blue-700 dark:text-blue-200'
+                        : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800/80'
                         }`}
                     >
                       <div className={`flex-shrink-0 w-10 h-10 rounded-xl flex items-center justify-center ${isActive
-                          ? 'bg-blue-100 dark:bg-blue-500/20 text-blue-600 dark:text-blue-300'
-                          : 'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400'
+                        ? 'bg-blue-100 dark:bg-blue-500/20 text-blue-600 dark:text-blue-300'
+                        : 'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400'
                         }`}>
                         {item.icon}
                       </div>
