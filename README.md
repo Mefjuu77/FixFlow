@@ -10,7 +10,7 @@
 
 ---
 
-## 📋 Spis treści
+##  Spis treści
 
 - [O projekcie](#-o-projekcie)
 - [Funkcjonalności](#-funkcjonalności)
@@ -22,7 +22,7 @@
 
 ---
 
-## 📖 O projekcie
+##  O projekcie
 
 FixFlow to fullstackowy system helpdesk zaprojektowany do zarządzania zgłoszeniami IT w organizacji. Umożliwia pracownikom zgłaszanie problemów technicznych, a technikom ich obsługę i śledzenie postępów — z powiadomieniami e-mail na każdym etapie.
 
@@ -33,7 +33,7 @@ System obsługuje trzy role użytkowników:
 
 ---
 
-## ✨ Funkcjonalności
+##  Funkcjonalności
 
 ### Zarządzanie zgłoszeniami
 - Tworzenie, edycja i śledzenie zgłoszeń IT
@@ -67,7 +67,7 @@ System obsługuje trzy role użytkowników:
 
 ---
 
-## 🛠 Stack technologiczny
+##  Stack technologiczny
 
 ### Backend
 | Technologia | Wersja | Opis |
@@ -94,7 +94,7 @@ System obsługuje trzy role użytkowników:
 
 ---
 
-## 📦 Wymagania
+##  Wymagania
 
 - **Python** 3.12+
 - **Node.js** 18+
@@ -103,7 +103,7 @@ System obsługuje trzy role użytkowników:
 
 ---
 
-## 🚀 Instalacja
+##  Instalacja
 
 ### 1. Klonowanie repozytorium
 
@@ -168,7 +168,7 @@ npm install
 
 ---
 
-## ▶️ Uruchomienie
+##  Uruchomienie
 
 Potrzebujesz **dwóch terminali**:
 
@@ -189,7 +189,7 @@ Frontend: `http://localhost:5173/`
 
 ---
 
-## 📁 Struktura projektu
+##  Struktura projektu
 
 ```
 FixFlow/
@@ -220,7 +220,3 @@ FixFlow/
 ```
 
 ---
-
-## 📄 Licencja
-
-Ten projekt jest udostępniony w celach edukacyjnych.
