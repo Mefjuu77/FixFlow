@@ -328,6 +328,8 @@
     "suggestionsSub": "Automatic insights based on data.",
     "suggestionsOk": "No issues – everything looks good! The team is running smoothly.",
     "suggestionsView": "View",
+    "suggActionAssign": "Assign",
+    "suggActionRebalance": "Rebalance",
     "donutTotal": "Total",
     "barTooltip": "({{value}}/{{total}} tickets)",
     "suggUnassigned_one": "{{count}} ticket is not assigned to any technician.",

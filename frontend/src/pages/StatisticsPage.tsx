@@ -23,6 +23,7 @@ import {
   ArrowRight,
   X,
   Loader2,
+  SlidersHorizontal,
 } from 'lucide-react';
 import dayjs from 'dayjs';
 import isBetween from 'dayjs/plugin/isBetween';
@@ -700,7 +701,7 @@ const StatisticsPage: React.FC = () => {
   const maxWorkload = Math.max(unassignedCount, ...(workloadEntries.map(e => e[1].count)), 1);
 
   // Sugestie
-  const suggestions: { text: string; severity: 'warning' | 'info' | 'success', link?: string }[] = [];
+  const suggestions: { text: string; severity: 'warning' | 'info' | 'success'; link?: string; actionLabel?: string; onAction?: () => void }[] = [];
 
   // Helper: link dla sugestii historycznych/trendowych (z zakresem dat)
   const trendLink = (params: Record<string, string>) => {
@@ -716,7 +717,9 @@ const StatisticsPage: React.FC = () => {
     suggestions.push({
       text: t('statistics.suggUnassigned', { count: unassignedCount }),
       severity: 'warning',
-      link: trendLink({ assignment: 'unassigned', active_only: 'true' })
+      link: trendLink({ assignment: 'unassigned', active_only: 'true' }),
+      actionLabel: isAdmin ? t('statistics.suggActionAssign') : undefined,
+      onAction: isAdmin ? () => setShowRebalance(true) : undefined,
     });
   }
 
@@ -747,7 +750,9 @@ const StatisticsPage: React.FC = () => {
       suggestions.push({
         text: t('statistics.suggOverloaded', { name: overloaded[0], count: overloaded[1].count, times: Math.round(overloaded[1].count / avgLoad) }),
         severity: 'warning',
-        link: trendLink({ assignment: String(overloaded[1].techId), active_only: 'true' })
+        link: trendLink({ assignment: String(overloaded[1].techId), active_only: 'true' }),
+        actionLabel: isAdmin ? t('statistics.suggActionRebalance') : undefined,
+        onAction: isAdmin ? () => setShowRebalance(true) : undefined,
       });
     }
   }
@@ -760,6 +765,8 @@ const StatisticsPage: React.FC = () => {
       suggestions.push({
         text: t('statistics.suggImbalance', { max: maxEntry[0], maxCount: maxEntry[1].count, min: minEntry[0], minCount: minEntry[1].count }),
         severity: 'info',
+        actionLabel: isAdmin ? t('statistics.suggActionRebalance') : undefined,
+        onAction: isAdmin ? () => setShowRebalance(true) : undefined,
       });
     }
   }
@@ -1080,27 +1087,45 @@ const StatisticsPage: React.FC = () => {
               {suggestions.map((s, i) => (
                 <div
                   key={i}
-                  className={`flex items-center gap-3 p-3 rounded-xl text-sm font-medium transition-colors ${s.severity === 'warning'
-                    ? 'bg-amber-50 dark:bg-amber-500/10 text-amber-800 dark:text-amber-400 border border-amber-200 dark:border-amber-500/20 hover:bg-amber-100 dark:hover:bg-amber-500/20'
+                  className={`flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 rounded-xl text-sm font-medium transition-colors ${s.severity === 'warning'
+                    ? 'bg-amber-500/10 dark:bg-amber-950/40 text-amber-900 dark:text-amber-300 border border-amber-300/70 dark:border-amber-500/30 hover:bg-amber-500/15 dark:hover:bg-amber-950/60 shadow-sm'
                     : s.severity === 'info'
-                      ? 'bg-blue-50 dark:bg-blue-500/10 text-blue-800 dark:text-blue-400 border border-blue-200 dark:border-blue-500/20 hover:bg-blue-100 dark:hover:bg-blue-500/20'
-                      : 'bg-green-50 dark:bg-green-500/10 text-green-800 dark:text-green-400 border border-green-200 dark:border-green-500/20 hover:bg-green-100 dark:hover:bg-green-500/20'
+                      ? 'bg-blue-500/10 dark:bg-blue-950/40 text-blue-900 dark:text-blue-300 border border-blue-300/70 dark:border-blue-500/30 hover:bg-blue-500/15 dark:hover:bg-blue-950/60 shadow-sm'
+                      : 'bg-emerald-500/10 dark:bg-emerald-950/40 text-emerald-900 dark:text-emerald-300 border border-emerald-300/70 dark:border-emerald-500/30 hover:bg-emerald-500/15 dark:hover:bg-emerald-950/60 shadow-sm'
                     }`}
                 >
-                  {s.severity === 'warning' ? (
-                    <AlertTriangle className="w-4 h-4 flex-shrink-0 text-amber-500" />
-                  ) : s.severity === 'info' ? (
-                    <Info className="w-4 h-4 flex-shrink-0 text-blue-500" />
-                  ) : (
-                    <CheckCircle2 className="w-4 h-4 flex-shrink-0 text-green-500" />
-                  )}
-                  <span className="flex-1">{s.text}</span>
-                  {s.link && (
-                    <Link to={s.link} onAuxClick={(e) => { e.preventDefault(); window.open(s.link, '_blank', 'noopener,noreferrer'); }} className="flex-shrink-0 flex items-center text-xs font-bold px-3 py-1.5 bg-white/60 dark:bg-gray-800/60 hover:bg-white dark:hover:bg-gray-700 text-gray-800 dark:text-gray-200 rounded-lg shadow-sm border border-black/5 dark:border-white/5 hover:shadow transition-all group">
-                      {t('statistics.suggestionsView')}
-                      <ArrowUpRight className="w-3 h-3 ml-1 text-gray-500 dark:text-gray-400 group-hover:text-gray-800 dark:group-hover:text-gray-200 transition-colors" />
-                    </Link>
-                  )}
+                  <div className="flex items-center gap-3 flex-1 min-w-0">
+                    {s.severity === 'warning' ? (
+                      <AlertTriangle className="w-4.5 h-4.5 flex-shrink-0 text-amber-500 dark:text-amber-400" />
+                    ) : s.severity === 'info' ? (
+                      <Info className="w-4.5 h-4.5 flex-shrink-0 text-blue-500 dark:text-blue-400" />
+                    ) : (
+                      <CheckCircle2 className="w-4.5 h-4.5 flex-shrink-0 text-emerald-500 dark:text-emerald-400" />
+                    )}
+                    <span className="flex-1 leading-snug">{s.text}</span>
+                  </div>
+
+                  <div className="flex items-center gap-2 self-end sm:self-center flex-shrink-0">
+                    {s.onAction && s.actionLabel && (
+                      <button
+                        onClick={s.onAction}
+                        className="flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 bg-amber-500 hover:bg-amber-600 active:bg-amber-700 text-white dark:bg-amber-400 dark:hover:bg-amber-300 dark:text-gray-950 rounded-lg shadow-sm transition-all cursor-pointer active:scale-95"
+                      >
+                        <SlidersHorizontal className="w-3.5 h-3.5" />
+                        {s.actionLabel}
+                      </button>
+                    )}
+                    {s.link && (
+                      <Link
+                        to={s.link}
+                        onAuxClick={(e) => { e.preventDefault(); window.open(s.link, '_blank', 'noopener,noreferrer'); }}
+                        className="flex items-center text-xs font-bold px-3 py-1.5 bg-white dark:bg-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-100 rounded-lg shadow-sm border border-gray-200 dark:border-gray-600 hover:shadow transition-all group"
+                      >
+                        {t('statistics.suggestionsView')}
+                        <ArrowUpRight className="w-3.5 h-3.5 ml-1 text-gray-400 dark:text-gray-300 group-hover:text-gray-800 dark:group-hover:text-white transition-colors" />
+                      </Link>
+                    )}
+                  </div>
                 </div>
               ))}
             </div>
@@ -1316,27 +1341,45 @@ const StatisticsPage: React.FC = () => {
               {suggestions.map((s, i) => (
                 <div
                   key={i}
-                  className={`flex items-center gap-3 p-3 rounded-xl text-sm font-medium transition-colors ${s.severity === 'warning'
-                    ? 'bg-amber-50 dark:bg-amber-500/10 text-amber-800 dark:text-amber-400 border border-amber-200 dark:border-amber-500/20 hover:bg-amber-100 dark:hover:bg-amber-500/20'
+                  className={`flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 rounded-xl text-sm font-medium transition-colors ${s.severity === 'warning'
+                    ? 'bg-amber-500/10 dark:bg-amber-950/40 text-amber-900 dark:text-amber-300 border border-amber-300/70 dark:border-amber-500/30 hover:bg-amber-500/15 dark:hover:bg-amber-950/60 shadow-sm'
                     : s.severity === 'info'
-                      ? 'bg-blue-50 dark:bg-blue-500/10 text-blue-800 dark:text-blue-400 border border-blue-200 dark:border-blue-500/20 hover:bg-blue-100 dark:hover:bg-blue-500/20'
-                      : 'bg-green-50 dark:bg-green-500/10 text-green-800 dark:text-green-400 border border-green-200 dark:border-green-500/20 hover:bg-green-100 dark:hover:bg-green-500/20'
+                      ? 'bg-blue-500/10 dark:bg-blue-950/40 text-blue-900 dark:text-blue-300 border border-blue-300/70 dark:border-blue-500/30 hover:bg-blue-500/15 dark:hover:bg-blue-950/60 shadow-sm'
+                      : 'bg-emerald-500/10 dark:bg-emerald-950/40 text-emerald-900 dark:text-emerald-300 border border-emerald-300/70 dark:border-emerald-500/30 hover:bg-emerald-500/15 dark:hover:bg-emerald-950/60 shadow-sm'
                     }`}
                 >
-                  {s.severity === 'warning' ? (
-                    <AlertTriangle className="w-4 h-4 flex-shrink-0 text-amber-500" />
-                  ) : s.severity === 'info' ? (
-                    <Info className="w-4 h-4 flex-shrink-0 text-blue-500" />
-                  ) : (
-                    <CheckCircle2 className="w-4 h-4 flex-shrink-0 text-green-500" />
-                  )}
-                  <span className="flex-1">{s.text}</span>
-                  {s.link && (
-                    <Link to={s.link} onAuxClick={(e) => { e.preventDefault(); window.open(s.link, '_blank', 'noopener,noreferrer'); }} className="flex-shrink-0 flex items-center text-xs font-bold px-3 py-1.5 bg-white/60 dark:bg-gray-800/60 hover:bg-white dark:hover:bg-gray-700 text-gray-800 dark:text-gray-200 rounded-lg shadow-sm border border-black/5 dark:border-white/5 hover:shadow transition-all group">
-                      {t('statistics.suggestionsView')}
-                      <ArrowUpRight className="w-3 h-3 ml-1 text-gray-500 dark:text-gray-400 group-hover:text-gray-800 dark:group-hover:text-gray-200 transition-colors" />
-                    </Link>
-                  )}
+                  <div className="flex items-center gap-3 flex-1 min-w-0">
+                    {s.severity === 'warning' ? (
+                      <AlertTriangle className="w-4.5 h-4.5 flex-shrink-0 text-amber-500 dark:text-amber-400" />
+                    ) : s.severity === 'info' ? (
+                      <Info className="w-4.5 h-4.5 flex-shrink-0 text-blue-500 dark:text-blue-400" />
+                    ) : (
+                      <CheckCircle2 className="w-4.5 h-4.5 flex-shrink-0 text-emerald-500 dark:text-emerald-400" />
+                    )}
+                    <span className="flex-1 leading-snug">{s.text}</span>
+                  </div>
+
+                  <div className="flex items-center gap-2 self-end sm:self-center flex-shrink-0">
+                    {s.onAction && s.actionLabel && (
+                      <button
+                        onClick={s.onAction}
+                        className="flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 bg-amber-500 hover:bg-amber-600 active:bg-amber-700 text-white dark:bg-amber-400 dark:hover:bg-amber-300 dark:text-gray-950 rounded-lg shadow-sm transition-all cursor-pointer active:scale-95"
+                      >
+                        <SlidersHorizontal className="w-3.5 h-3.5" />
+                        {s.actionLabel}
+                      </button>
+                    )}
+                    {s.link && (
+                      <Link
+                        to={s.link}
+                        onAuxClick={(e) => { e.preventDefault(); window.open(s.link, '_blank', 'noopener,noreferrer'); }}
+                        className="flex items-center text-xs font-bold px-3 py-1.5 bg-white dark:bg-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-100 rounded-lg shadow-sm border border-gray-200 dark:border-gray-600 hover:shadow transition-all group"
+                      >
+                        {t('statistics.suggestionsView')}
+                        <ArrowUpRight className="w-3.5 h-3.5 ml-1 text-gray-400 dark:text-gray-300 group-hover:text-gray-800 dark:group-hover:text-white transition-colors" />
+                      </Link>
+                    )}
+                  </div>
                 </div>
               ))}
             </div>

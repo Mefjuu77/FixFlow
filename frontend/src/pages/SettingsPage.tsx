@@ -8,6 +8,7 @@ import api from '../api/axiosConfig';
 import { ticketService } from '../api/ticketService';
 import { ReplyTemplate } from '../types';
 import { Category } from '../types/ticket';
+import { getCategoryIcon } from '../utils/ticketConstants';
 import { SUPPORTED_LANGUAGES, AppLanguage } from '../i18n';
 import {
   Camera,
@@ -334,7 +335,8 @@ const SettingsPage: React.FC = () => {
   };
 
   const handleDeleteCategory = async (cat: Category) => {
-    if (!window.confirm(t('settings.catDeleteConfirm', { name: cat.name }))) return;
+    const catDisplayName = t(`categories.${cat.name}`, cat.name);
+    if (!window.confirm(t('settings.catDeleteConfirm', { name: catDisplayName }))) return;
     try {
       await ticketService.deleteCategory(cat.id);
       setCategories(prev => prev.filter(c => c.id !== cat.id));
@@ -360,14 +362,14 @@ const SettingsPage: React.FC = () => {
       key={tab.id}
       onClick={() => { handleTabChange(tab.id as SettingsTab); setSuccessMsg(null); setErrorMsg(null); }}
       className={`relative flex items-center justify-center lg:justify-start gap-2 w-full px-2 sm:px-4 py-2.5 sm:py-3 rounded-xl sm:rounded-2xl text-xs sm:text-sm font-semibold transition-all duration-300 ${activeTab === tab.id
-          ? 'bg-white dark:bg-gray-800 text-blue-600 dark:text-blue-400 shadow-[0_2px_10px_-3px_rgba(6,81,237,0.1)] dark:shadow-[0_2px_10px_-3px_rgba(59,130,246,0.15)] border border-blue-100 dark:border-blue-900/50'
-          : 'text-gray-500 dark:text-gray-400 bg-white/40 dark:bg-gray-800/20 hover:bg-white/80 dark:hover:bg-gray-800/60 hover:text-gray-900 dark:hover:text-gray-200 border border-gray-200/60 dark:border-gray-700/50 hover:border-gray-300/60'
+          ? 'bg-white dark:bg-gray-700 text-blue-600 dark:text-blue-400 shadow-[0_2px_10px_-3px_rgba(6,81,237,0.1)] dark:shadow-[0_2px_10px_-3px_rgba(59,130,246,0.2)] border border-blue-100 dark:border-blue-800/60'
+          : 'text-gray-600 dark:text-gray-300 bg-white/40 dark:bg-gray-800/50 hover:bg-white/80 dark:hover:bg-gray-700/70 hover:text-gray-900 dark:hover:text-white border border-gray-200/60 dark:border-gray-600/50 hover:border-gray-300/60 dark:hover:border-gray-500/60'
         }`}
     >
       {activeTab === tab.id && (
         <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 sm:w-1.5 h-5 sm:h-6 bg-blue-600 dark:bg-blue-500 rounded-r-full" />
       )}
-      <span className={`${activeTab === tab.id ? 'opacity-100' : 'opacity-70'} transition-all duration-300 flex-shrink-0`}>
+      <span className={`${activeTab === tab.id ? 'opacity-100' : 'opacity-80'} transition-all duration-300 flex-shrink-0`}>
         {tab.icon}
       </span>
       <span className="truncate">{tab.label}</span>
@@ -954,21 +956,41 @@ const SettingsPage: React.FC = () => {
           {activeTab === 'categories' && isAdmin && (
             <div className="space-y-6">
               <div className="bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700/60 rounded-2xl sm:rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-[0_8px_30px_rgb(0,0,0,0.1)] p-4 sm:p-8">
-                <div className="flex items-center gap-3 sm:gap-4 mb-5 sm:mb-8">
-                  <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-2xl bg-blue-50 dark:bg-blue-500/10 flex items-center justify-center border border-blue-100 dark:border-blue-500/20 flex-shrink-0">
-                    <Tags className="w-5 h-5 sm:w-6 sm:h-6 text-blue-600 dark:text-blue-400" />
-                  </div>
-                  <div>
-                    <h3 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white tracking-tight">{t('settings.categoriesTitle')}</h3>
-                    <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 mt-0.5">{t('settings.categoriesSubtitle')}</p>
+                <div className="flex items-center justify-between gap-4 mb-5 sm:mb-8">
+                  <div className="flex items-center gap-3 sm:gap-4">
+                    <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-2xl bg-blue-50 dark:bg-blue-500/10 flex items-center justify-center border border-blue-100 dark:border-blue-500/20 flex-shrink-0">
+                      <Tags className="w-5 h-5 sm:w-6 sm:h-6 text-blue-600 dark:text-blue-400" />
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <h3 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white tracking-tight">{t('settings.categoriesTitle')}</h3>
+                        <span className="px-2.5 py-0.5 text-xs font-bold rounded-full bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300">
+                          {categories.length}
+                        </span>
+                      </div>
+                      <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 mt-0.5">{t('settings.categoriesSubtitle')}</p>
+                    </div>
                   </div>
                 </div>
 
                 {/* Formularz dodawania / edycji */}
-                <div className="bg-gray-50 dark:bg-gray-900/30 border border-gray-200 dark:border-gray-700 rounded-2xl p-4 sm:p-5 space-y-3 mb-6">
+                <div className={`border rounded-2xl p-4 sm:p-5 space-y-3 mb-6 transition-all duration-300 ${
+                  catEditingId
+                    ? 'bg-blue-50/50 dark:bg-blue-950/20 border-blue-300 dark:border-blue-700/60 ring-2 ring-blue-500/10'
+                    : 'bg-gray-50/80 dark:bg-gray-900/30 border-gray-200 dark:border-gray-700/80'
+                }`}>
                   <div className="space-y-2">
                     <div className="flex items-center justify-between">
-                      <label className="text-[13px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-widest">{t('settings.catNameLabel')}</label>
+                      <div className="flex items-center gap-2">
+                        <label className="text-[13px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-widest">
+                          {catEditingId ? t('settings.editTitle') : t('settings.catNameLabel')}
+                        </label>
+                        {catEditingId && (
+                          <span className="px-2 py-0.5 text-[10px] font-extrabold uppercase rounded bg-blue-600 text-white">
+                            Edycja # {catEditingId}
+                          </span>
+                        )}
+                      </div>
                       <span className={`text-[11px] font-medium tabular-nums ${catName.length > 50 ? 'text-amber-500' : 'text-gray-400 dark:text-gray-500'}`}>{catName.length}/60</span>
                     </div>
                     <input
@@ -978,7 +1000,7 @@ const SettingsPage: React.FC = () => {
                       onChange={(e) => { setCatName(e.target.value); setCatError(null); }}
                       onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleSaveCategory(); } }}
                       placeholder={t('settings.catNamePlaceholder')}
-                      className={`w-full px-4 py-2.5 bg-white dark:bg-gray-900/50 border rounded-xl text-sm font-medium text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all placeholder-gray-400 ${catError ? 'border-red-400 dark:border-red-500/60' : 'border-gray-200 dark:border-gray-700'}`}
+                      className={`w-full px-4 py-2.5 bg-white dark:bg-gray-900/60 border rounded-xl text-sm font-medium text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all placeholder-gray-400 ${catError ? 'border-red-400 dark:border-red-500/60' : 'border-gray-200 dark:border-gray-700'}`}
                     />
                   </div>
                   {catError && (
@@ -986,11 +1008,11 @@ const SettingsPage: React.FC = () => {
                       <AlertTriangle className="w-3.5 h-3.5 flex-shrink-0" />{catError}
                     </p>
                   )}
-                  <div className="flex items-center justify-end gap-2">
+                  <div className="flex items-center justify-end gap-2 pt-1">
                     {catEditingId && (
                       <button
                         onClick={resetCatForm}
-                        className="px-4 py-2 text-sm font-medium text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 transition-colors"
+                        className="px-4 py-2 text-sm font-semibold text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white bg-gray-200/60 dark:bg-gray-700/60 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-xl transition-all cursor-pointer"
                       >
                         {t('settings.cancel')}
                       </button>
@@ -998,7 +1020,7 @@ const SettingsPage: React.FC = () => {
                     <button
                       onClick={handleSaveCategory}
                       disabled={catSaving}
-                      className="inline-flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl text-sm shadow-sm transition-all disabled:opacity-50 active:scale-[0.98]"
+                      className="inline-flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl text-sm shadow-sm transition-all disabled:opacity-50 active:scale-[0.98] cursor-pointer"
                     >
                       {catSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : catEditingId ? <Save className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
                       {catEditingId ? t('settings.saveChanges') : t('settings.addCategory')}
@@ -1013,28 +1035,57 @@ const SettingsPage: React.FC = () => {
                     <p className="text-sm text-gray-400 dark:text-gray-500">{t('settings.noCategories')}</p>
                   </div>
                 ) : (
-                  <div className="space-y-3">
-                    {categories.map(cat => (
-                      <div key={cat.id} className="flex items-center justify-between gap-3 p-4 bg-white dark:bg-gray-800/50 border border-gray-100 dark:border-gray-700 rounded-xl">
-                        <p className="text-sm font-semibold text-gray-900 dark:text-gray-100 truncate min-w-0 flex-1">{t(`categories.${cat.name}`, cat.name)}</p>
-                        <div className="flex items-center gap-1 flex-shrink-0">
-                          <button
-                            onClick={() => { setCatEditingId(cat.id); setCatName(cat.name); setCatError(null); }}
-                            className="p-2 text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors"
-                            title={t('settings.editTitle')}
-                          >
-                            <Pencil className="w-4 h-4" />
-                          </button>
-                          <button
-                            onClick={() => handleDeleteCategory(cat)}
-                            className="p-2 text-gray-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
-                            title={t('settings.deleteTitle')}
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
+                  <div className="space-y-2.5">
+                    {categories.map(cat => {
+                      const isEditingThis = catEditingId === cat.id;
+                      const displayName = t(`categories.${cat.name}`, cat.name);
+                      return (
+                        <div
+                          key={cat.id}
+                          className={`flex items-center justify-between gap-3 p-3.5 sm:p-4 rounded-xl sm:rounded-2xl transition-all duration-200 ${
+                            isEditingThis
+                              ? 'bg-blue-50/80 dark:bg-blue-950/40 border-2 border-blue-500/70 dark:border-blue-500/60 shadow-sm'
+                              : 'bg-white dark:bg-gray-800/60 border border-gray-100 dark:border-gray-700/60 hover:border-gray-200 dark:hover:border-gray-600/80 hover:bg-gray-50/50 dark:hover:bg-gray-800/90'
+                          }`}
+                        >
+                          <div className="flex items-center gap-3.5 min-w-0 flex-1">
+                            <div className={`w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 transition-colors ${
+                              isEditingThis
+                                ? 'bg-blue-600 text-white shadow-sm'
+                                : 'bg-gray-100 dark:bg-gray-700/60 text-gray-600 dark:text-gray-300'
+                            }`}>
+                              {getCategoryIcon(cat.name, 'w-4.5 h-4.5')}
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <p className="text-sm font-bold text-gray-900 dark:text-gray-100 truncate">
+                                {displayName}
+                              </p>
+                            </div>
+                          </div>
+
+                          <div className="flex items-center gap-1.5 flex-shrink-0">
+                            <button
+                              onClick={() => { setCatEditingId(cat.id); setCatName(displayName); setCatError(null); }}
+                              className={`p-2 rounded-xl transition-all cursor-pointer ${
+                                isEditingThis
+                                  ? 'bg-blue-600 text-white shadow-sm'
+                                  : 'text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/30'
+                              }`}
+                              title={t('settings.editTitle')}
+                            >
+                              <Pencil className="w-4 h-4" />
+                            </button>
+                            <button
+                              onClick={() => handleDeleteCategory(cat)}
+                              className="p-2 text-gray-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-xl transition-all cursor-pointer"
+                              title={t('settings.deleteTitle')}
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
                         </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 )}
               </div>

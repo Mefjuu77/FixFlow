@@ -330,6 +330,8 @@
     "suggestionsSub": "Automatyczne wskazówki na podstawie danych.",
     "suggestionsOk": "Brak problemów – wszystko wygląda dobrze! Zespół działa sprawnie.",
     "suggestionsView": "Zobacz",
+    "suggActionAssign": "Rozdziel",
+    "suggActionRebalance": "Wyrównaj",
     "donutTotal": "Łącznie",
     "barTooltip": "({{value}}/{{total}} zgłoszeń)",
     "suggUnassigned_one": "{{count}} zgłoszenie nie jest przypisane do żadnego technika.",
