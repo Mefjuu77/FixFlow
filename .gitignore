@@ -20,6 +20,9 @@ frontend/dist/
 
 # Scratch / utility / seed scripts
 scratch_*.py
+seed_*.py
+populate_*.py
+fix_*.py
 create_users.py
 db_backup.json
 scripts/

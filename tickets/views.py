@@ -710,8 +710,8 @@ class GlobalActivityLogView(generics.ListAPIView):
     def get_queryset(self):
         user = self.request.user
         if user.role == 'EMPLOYEE':
-            return TicketLog.objects.none()
-        return TicketLog.objects.select_related('user', 'ticket').order_by('-created_at')[:40]
+            return TicketLog.objects.filter(ticket__creator=user).select_related('user', 'ticket').order_by('-created_at')[:80]
+        return TicketLog.objects.select_related('user', 'ticket').order_by('-created_at')[:150]
 
 
 class WorkLogListCreateView(generics.ListCreateAPIView):
