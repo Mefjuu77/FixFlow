@@ -1021,10 +1021,10 @@ const DashboardPage: React.FC = () => {
     // Oblicz trend procentowy
     const calcTrend = (current: number, prev: number) => {
       if (prev === 0 && current === 0) return { value: 0, direction: 'up' as const };
-      if (prev === 0) return { value: 100, direction: 'up' as const };
+      if (prev === 0) return { value: current > 0 ? 100 : 0, direction: 'up' as const };
       const pct = ((current - prev) / prev) * 100;
       return {
-        value: Math.abs(pct),
+        value: Math.min(Math.abs(pct), 999),
         direction: pct >= 0 ? 'up' as const : 'down' as const,
       };
     };
