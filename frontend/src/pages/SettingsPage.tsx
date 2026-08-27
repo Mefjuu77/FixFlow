@@ -8,7 +8,7 @@ import api from '../api/axiosConfig';
 import { ticketService } from '../api/ticketService';
 import { ReplyTemplate } from '../types';
 import { Category } from '../types/ticket';
-import { getCategoryIcon } from '../utils/ticketConstants';
+import { getCategoryIcon, getCategoryLabel } from '../utils/ticketConstants';
 import { SUPPORTED_LANGUAGES, AppLanguage } from '../i18n';
 import {
   Camera,
@@ -311,10 +311,15 @@ const SettingsPage: React.FC = () => {
     if (name.length < 2) { setCatError(t('settings.catErrorNameShort')); return; }
     if (name.length > 60) { setCatError(t('settings.catErrorNameLong')); return; }
 
-    // Duplikat nazwy (case-insensitive, pomijamy edytowany rekord)
-    const isDuplicate = categories.some(
-      c => c.name.trim().toLowerCase() === name.toLowerCase() && c.id !== catEditingId
-    );
+    // Duplikat nazwy (case-insensitive, pomijamy edytowany rekord).
+    // Sprawdzamy zarówno nazwę kanoniczną z bazy, jak i jej tłumaczenie —
+    // inaczej w PL dałoby się dodać "Sprzęt" obok systemowego "Hardware".
+    const isDuplicate = categories.some(c => {
+      if (c.id === catEditingId) return false;
+      const canonical = c.name.trim().toLowerCase();
+      const translated = getCategoryLabel(c.name, t).trim().toLowerCase();
+      return canonical === name.toLowerCase() || translated === name.toLowerCase();
+    });
     if (isDuplicate) { setCatError(t('settings.catErrorDuplicate')); return; }
 
     setCatSaving(true);

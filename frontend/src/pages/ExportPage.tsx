@@ -19,7 +19,7 @@ import {
   ChevronsDown, Circle, XCircle, ArrowDownToLine, RefreshCw,
   UserMinus, AlertTriangle, X
 } from 'lucide-react';
-import { getCategoryIcon } from '../utils/ticketConstants';
+import { getCategoryIcon, getCategoryLabel } from '../utils/ticketConstants';
 import UserAvatar from '../components/UserAvatar';
 
 // === Typy ===
@@ -294,7 +294,10 @@ const ExportPage: React.FC = () => {
     { value: 'NISKI', label: t('priority.NISKI'), icon: <ChevronsDown className="w-4 h-4 text-gray-400" /> },
   ];
 
-  const categoryOptions = categories.map(c => ({ value: String(c.id), label: c.name, icon: getCategoryIcon(c.name) }));
+  // Etykieta tłumaczona, ikona dobierana po kanonicznej nazwie z bazy.
+  const categoryOptions = categories
+    .map(c => ({ value: String(c.id), label: getCategoryLabel(c.name, t), icon: getCategoryIcon(c.name) }))
+    .sort((a, b) => a.label.localeCompare(b.label, i18n.language));
   const technicianOptions = [
     {
       value: 'unassigned',
@@ -575,7 +578,7 @@ const ExportPage: React.FC = () => {
                       <td className="px-3 lg:px-4 fhd:px-5 py-2.5 text-slate-500 dark:text-slate-400 font-medium hidden fhd:table-cell">
                         <span className="flex items-center gap-1.5 font-medium">
                           {getCategoryIcon(row.category || '')}
-                          {row.category || '—'}
+                          {getCategoryLabel(row.category, t) || '—'}
                         </span>
                       </td>
                       <td className="px-3 lg:px-4 fhd:px-5 py-2.5 whitespace-nowrap">

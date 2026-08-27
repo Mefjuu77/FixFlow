@@ -39,7 +39,7 @@ interface DonutSegment {
   filterValue?: string;
 }
 
-const DonutChart: React.FC<{ segments: DonutSegment[]; total: number; filterType?: string; dateRange?: { start: dayjs.Dayjs; end: dayjs.Dayjs }; extraParams?: Record<string, string>; totalLabel?: string }> = ({ segments, total, filterType, dateRange, extraParams, totalLabel = 'Łącznie' }) => {
+const DonutChart: React.FC<{ segments: DonutSegment[]; total: number; filterType?: string; dateRange?: { start: dayjs.Dayjs; end: dayjs.Dayjs }; extraParams?: Record<string, string>; totalLabel?: string }> = ({ segments, total, filterType, dateRange, extraParams, totalLabel = '' }) => {
   const navigate = useNavigate();
   const [hovered, setHovered] = useState<number | null>(null);
   const size = 200;

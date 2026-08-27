@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { ticketService } from '../api/ticketService';
@@ -16,12 +16,12 @@ import {
   Check,
   UploadCloud
 } from 'lucide-react';
-import { getCategoryIcon } from '../utils/ticketConstants';
+import { getCategoryIcon, getCategoryLabel, CANONICAL_CATEGORIES } from '../utils/ticketConstants';
 import MarkdownEditor from '../components/MarkdownEditor';
 import useTitle from '../hooks/useTitle';
 
 const CreateTicketPage: React.FC = () => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   useTitle(t('createTicket.title'));
   const [formData, setFormData] = useState<TicketPayload>({
     title: '',
@@ -50,24 +50,17 @@ const CreateTicketPage: React.FC = () => {
     const fetchCategories = async () => {
       try {
         const data = await ticketService.getCategories();
+        setCategories(data);
 
-        // Sortowanie alfabetyczne kategorii
-        const sortedData = data.sort((a, b) => a.name.localeCompare(b.name));
-
-        // Przeniesienie "Inne" na sam koniec
-        const otherIndex = sortedData.findIndex(c => c.name.toLowerCase() === 'inne');
-        let finalData = sortedData;
-        if (otherIndex > -1) {
-          const [other] = sortedData.splice(otherIndex, 1);
-          finalData = [...sortedData, other];
-        }
-
-        setCategories(finalData);
-
-        // Auto-select category from URL param ?category=Sieć
-        const paramCategory = searchParams.get('category');
+        // Auto-select kategorii z parametru URL (?category=Hardware).
+        // Dopasowujemy po kanonicznej nazwie z bazy oraz po nazwie
+        // przetłumaczonej — linki mogą pochodzić z dowolnego języka.
+        const paramCategory = searchParams.get('category')?.trim().toLowerCase();
         if (paramCategory) {
-          const match = finalData.find(c => c.name.toLowerCase() === paramCategory.toLowerCase());
+          const match = data.find(c =>
+            c.name.toLowerCase() === paramCategory ||
+            getCategoryLabel(c.name, t).toLowerCase() === paramCategory
+          );
           if (match) setFormData(prev => ({ ...prev, category: match.id }));
         }
       } catch (err) {
@@ -76,6 +69,19 @@ const CreateTicketPage: React.FC = () => {
     };
     fetchCategories();
   }, []);
+
+  // Kolejność listy zależy od języka → przeliczana przy zmianie tłumaczeń.
+  // "Other"/"Inne" zawsze na końcu.
+  const sortedCategories = useMemo(() => {
+    const withLabels = categories.map(c => ({ cat: c, label: getCategoryLabel(c.name, t) }));
+    withLabels.sort((a, b) => a.label.localeCompare(b.label, i18n.language));
+    const otherIndex = withLabels.findIndex(x => x.cat.name === CANONICAL_CATEGORIES.OTHER);
+    if (otherIndex > -1) {
+      const [other] = withLabels.splice(otherIndex, 1);
+      withLabels.push(other);
+    }
+    return withLabels;
+  }, [categories, t, i18n.language]);
 
   // Zamknij dropdown przy kliknięciu poza nim
   useEffect(() => {
@@ -97,11 +103,11 @@ const CreateTicketPage: React.FC = () => {
   ];
 
   const descriptionPlaceholderMap: Record<string, string> = {
-    'Dostęp do konta': t('createTicket.descPlaceholderAccount'),
-    'Oprogramowanie': t('createTicket.descPlaceholderSoftware'),
-    'Sieć i internet': t('createTicket.descPlaceholderNetwork'),
-    'Sprzęt': t('createTicket.descPlaceholderHardware'),
-    'Inne': t('createTicket.descPlaceholderDefault'),
+    [CANONICAL_CATEGORIES.ACCOUNT_ACCESS]: t('createTicket.descPlaceholderAccount'),
+    [CANONICAL_CATEGORIES.SOFTWARE]: t('createTicket.descPlaceholderSoftware'),
+    [CANONICAL_CATEGORIES.NETWORK]: t('createTicket.descPlaceholderNetwork'),
+    [CANONICAL_CATEGORIES.HARDWARE]: t('createTicket.descPlaceholderHardware'),
+    [CANONICAL_CATEGORIES.OTHER]: t('createTicket.descPlaceholderDefault'),
   };
 
   const selectedCategoryName = categories.find(c => c.id === formData.category)?.name || '';
@@ -313,27 +319,26 @@ const CreateTicketPage: React.FC = () => {
               >
                 <div className="flex items-center gap-3">
                   <div className="text-blue-600">{getCategoryIcon(selectedCategory?.name || '', 'w-4 h-4')}</div>
-                  <span className={`font-medium ${formData.category !== 0 ? 'text-gray-900 dark:text-gray-100' : 'text-gray-500 dark:text-gray-400'}`}>{selectedCategory?.name ? t(`categories.${selectedCategory.name}`, selectedCategory.name) : t('createTicket.categoryPlaceholder')}</span>
+                  <span className={`font-medium ${formData.category !== 0 ? 'text-gray-900 dark:text-gray-100' : 'text-gray-500 dark:text-gray-400'}`}>{selectedCategory?.name ? getCategoryLabel(selectedCategory.name, t) : t('createTicket.categoryPlaceholder')}</span>
                 </div>
                 <ChevronDown className={`w-5 h-5 text-gray-400 transition-transform ${activeDropdown === 'category' ? 'rotate-180' : ''}`} />
               </button>
 
               {activeDropdown === 'category' && (
                 <div className="absolute z-50 w-full mt-2 bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-xl shadow-2xl py-2 animate-in fade-in zoom-in-95 duration-100">
-                  {categories.map((cat) => (
+                  {sortedCategories.map(({ cat, label }) => (
                     <button
                       key={cat.id}
                       type="button"
                       onClick={() => {
                         setFormData({ ...formData, category: cat.id });
                         setActiveDropdown(null);
-                        if (error === 'Proszę wybrać kategorię.') setError('');
                         if (fieldErrors.category) setFieldErrors(prev => ({ ...prev, category: undefined }));
                       }}
                       className={`w-full flex items-center gap-3 px-4 py-2.5 transition-colors text-left ${formData.category === cat.id ? 'bg-blue-50/70 dark:bg-blue-900/50 text-blue-700 dark:text-blue-400 font-bold' : 'hover:bg-blue-50/50 dark:hover:bg-gray-700/80 text-gray-700 dark:text-gray-300 hover:text-blue-700 dark:hover:text-blue-400 font-medium'}`}
                     >
                       <div className="text-blue-600">{getCategoryIcon(cat.name, 'w-4 h-4')}</div>
-                      <span className="flex-1">{t(`categories.${cat.name}`, cat.name)}</span>
+                      <span className="flex-1">{label}</span>
                       {formData.category === cat.id && <Check className="w-5 h-5 text-blue-600" />}
                     </button>
                   ))}

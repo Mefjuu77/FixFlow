@@ -1,4 +1,5 @@
 import React from 'react';
+import type { TFunction } from 'i18next';
 import {
   Monitor, AppWindow, KeyRound, Shapes,
   ChevronsUp, Equal, ChevronsDown,
@@ -10,6 +11,26 @@ import {
 } from 'lucide-react';
 
 // ==================== Kategorie ====================
+
+/**
+ * Kanoniczne (angielskie) nazwy kategorii systemowych zapisane w bazie danych.
+ * Używaj ich zawsze przy dopasowywaniu kategorii w kodzie — nigdy nazw
+ * przetłumaczonych, bo te zależą od aktywnego języka.
+ */
+export const CANONICAL_CATEGORIES = {
+  HARDWARE: 'Hardware',
+  SOFTWARE: 'Software',
+  NETWORK: 'Network & Internet',
+  ACCOUNT_ACCESS: 'Account Access',
+  OTHER: 'Other',
+} as const;
+
+/**
+ * Zwraca zlokalizowaną nazwę kategorii. Kategorie systemowe mają tłumaczenia
+ * w `categories.*`; kategorie własne (dodane przez admina) wracają bez zmian.
+ */
+export const getCategoryLabel = (name: string | null | undefined, t: TFunction): string =>
+  name ? t(`categories.${name}`, { defaultValue: name }) : '';
 
 export const getCategoryIcon = (name: string, size = 'w-4 h-4') => {
   const n = (name || '').toLowerCase();

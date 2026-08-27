@@ -28,6 +28,7 @@ import dayjs from 'dayjs';
 import useTitle from '../hooks/useTitle';
 import relativeTime from 'dayjs/plugin/relativeTime';
 import { getActivityConfig, formatActivityTime } from '../utils/dashboardActivity';
+import { CANONICAL_CATEGORIES } from '../utils/ticketConstants';
 
 
 
@@ -250,7 +251,7 @@ const DashboardPage: React.FC = () => {
                 label: t('dashboard.quickLoginLabel'),
                 sub: t('dashboard.quickLoginSub'),
                 icon: <KeyRound className="w-5 h-5" />,
-                category: 'Dostęp do konta',
+                category: CANONICAL_CATEGORIES.ACCOUNT_ACCESS,
                 color: 'text-rose-600 dark:text-rose-400',
                 bg: 'bg-rose-50 dark:bg-rose-500/10',
               },
@@ -258,7 +259,7 @@ const DashboardPage: React.FC = () => {
                 label: t('dashboard.quickSoftwareLabel'),
                 sub: t('dashboard.quickSoftwareSub'),
                 icon: <Monitor className="w-5 h-5" />,
-                category: 'Oprogramowanie',
+                category: CANONICAL_CATEGORIES.SOFTWARE,
                 color: 'text-blue-600 dark:text-blue-400',
                 bg: 'bg-blue-50 dark:bg-blue-500/10',
               },
@@ -266,7 +267,7 @@ const DashboardPage: React.FC = () => {
                 label: t('dashboard.quickNetworkLabel'),
                 sub: t('dashboard.quickNetworkSub'),
                 icon: <Globe className="w-5 h-5" />,
-                category: 'Sieć i internet',
+                category: CANONICAL_CATEGORIES.NETWORK,
                 color: 'text-teal-600 dark:text-teal-400',
                 bg: 'bg-teal-50 dark:bg-teal-500/10',
               },
@@ -274,7 +275,7 @@ const DashboardPage: React.FC = () => {
                 label: t('dashboard.quickHardwareLabel'),
                 sub: t('dashboard.quickHardwareSub'),
                 icon: <Printer className="w-5 h-5" />,
-                category: 'Sprzęt',
+                category: CANONICAL_CATEGORIES.HARDWARE,
                 color: 'text-amber-600 dark:text-amber-400',
                 bg: 'bg-amber-50 dark:bg-amber-500/10',
               },

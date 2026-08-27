@@ -5,6 +5,7 @@ import {
 } from 'lucide-react';
 import dayjs from 'dayjs';
 import type { TFunction } from 'i18next';
+import { getCategoryLabel } from './ticketConstants';
 
 export type ActivityVariant = 'tech' | 'admin';
 
@@ -67,6 +68,7 @@ export const getActivityConfig = (
   const trunc = (s: string, max = 40) => (s.length > max ? s.slice(0, max) + '...' : s);
   const sl = (v: string) => (v ? t(`status.${v}`, v) : v);
   const pl = (v: string) => (v ? t(`priority.${v}`, v) : v);
+  const cl = (v: string) => getCategoryLabel(v, t);
 
   const ticketObj = bulk ? t('activity.bulkCount', { count: bulk }) : t('activity.ticketWord', { id: ticketId });
 
@@ -107,8 +109,8 @@ export const getActivityConfig = (
     }
 
     case 'CATEGORY_CHANGED': {
-      const oldC = log.old_value || null;
-      const newC = log.new_value || null;
+      const oldC = log.old_value ? cl(log.old_value) : null;
+      const newC = log.new_value ? cl(log.new_value) : null;
       const detail = bulk ? (newC ? ` → ${newC}` : '') : (oldC && newC ? `: ${oldC} → ${newC}` : newC ? ` → ${newC}` : '');
       return { type: 'ORANGE', icon: ClipboardList, tab: ticketsTab, unread: false,
         text: make('activity.categorySelf', 'activity.categoryOther', { detail }) };
